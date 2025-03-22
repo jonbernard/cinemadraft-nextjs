@@ -1,0 +1,261 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AvailableYears {
+  id        Int       @id @default(autoincrement())
+  year      Int?      @unique
+  createdAt DateTime? @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+}
+
+model Awards {
+  id                  Int       @id @default(autoincrement())
+  fbId                String?
+  name                String
+  eventId             BigInt
+  active              Boolean?  @default(false)
+  points              Int?
+  requiresNomineeName Boolean?  @default(false)
+  createdAt           DateTime? @db.Timestamptz(6)
+  updatedAt           DateTime? @db.Timestamptz(6)
+
+  @@index([eventId], map: "Awards_eventId")
+}
+
+model DraftPicks {
+  id        Int       @id @default(autoincrement())
+  draftId   Int
+  movieId   BigInt
+  order     Int
+  userId    Int?
+  createdAt DateTime? @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+
+  @@index([draftId], map: "DraftPicks_draftId")
+  @@index([movieId], map: "DraftPicks_movieId")
+}
+
+model Drafts {
+  id        Int       @id @default(autoincrement())
+  userId    Int?
+  leagueId  Int?
+  year      Int?
+  group     Int?
+  order     Int?
+  dummy     Boolean?
+  dummyName String?
+  createdAt DateTime? @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+
+  @@index([leagueId], map: "Drafts_leagueId")
+  @@index([userId], map: "Drafts_userId")
+  @@index([year], map: "Drafts_year")
+}
+
+model Events {
+  id             Int       @id @default(autoincrement())
+  fbId           String?
+  name           String
+  abbreviation   String
+  image          String?
+  liveResults    Boolean?  @default(false)
+  nomActive      Boolean?  @default(false)
+  nomDate        BigInt?
+  nomTime        BigInt?
+  nomDuration    BigInt?
+  awardsActive   Boolean?  @default(false)
+  awardsDate     BigInt?
+  awardsTime     BigInt?
+  awardsDuration BigInt?
+  createdAt      DateTime? @db.Timestamptz(6)
+  updatedAt      DateTime? @db.Timestamptz(6)
+
+  @@index([abbreviation], map: "Events_abbreviation")
+  @@index([nomDate, awardsDate], map: "Events_nomDate_awardsDate")
+}
+
+model Leagues {
+  id             Int                          @id @default(autoincrement())
+  fbId           String?
+  activeYear     Int?
+  draftingStatus enum_Leagues_draftingStatus?
+  type           enum_Leagues_type?
+  name           String
+  owner          String
+  uuid           String?                      @db.Uuid
+  createdAt      DateTime?                    @db.Timestamptz(6)
+  updatedAt      DateTime?                    @db.Timestamptz(6)
+}
+
+model Lists {
+  id        Int                @id @default(autoincrement())
+  userId    Int?
+  movieId   Int?
+  order     Int
+  year      Int
+  createdAt DateTime?          @db.Timestamptz(6)
+  updatedAt DateTime?          @db.Timestamptz(6)
+  status    enum_Lists_status? @default(none)
+
+  @@index([userId], map: "Lists_userId")
+  @@index([year], map: "Lists_year")
+}
+
+model Movies {
+  id          Int       @id @default(autoincrement())
+  title       String?
+  sortTitle   String?
+  fbId        String?   @db.VarChar(255)
+  imdbId      String?   @db.VarChar(255)
+  tmdbId      String?   @db.VarChar(255)
+  backdrop    String?
+  poster      String?
+  releaseDate DateTime? @db.Timestamptz(6)
+  createdAt   DateTime? @db.Timestamptz(6)
+  updatedAt   DateTime? @db.Timestamptz(6)
+
+  @@index([tmdbId], map: "Movies_tmdbId")
+}
+
+model Nominations {
+  id              Int       @id @default(autoincrement())
+  fbId            String?
+  movieId         BigInt
+  awardId         BigInt
+  year            String?
+  detailName      String?
+  detailCharacter String?
+  detailId        BigInt?
+  createdAt       DateTime? @db.Timestamptz(6)
+  updatedAt       DateTime? @db.Timestamptz(6)
+
+  @@index([awardId], map: "Nominations_awardId")
+  @@index([movieId], map: "Nominations_movieId")
+  @@index([year], map: "Nominations_year")
+}
+
+model Notifications {
+  id        Int       @id @default(autoincrement())
+  message   String?
+  icon      String?
+  link      String?
+  userId    BigInt?
+  read      Boolean?  @default(false)
+  createdAt DateTime? @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+
+  @@index([userId], map: "Notifications_userId")
+}
+
+model Points {
+  id        Int       @id @default(autoincrement())
+  level     String?   @db.VarChar(255)
+  tier      Int?
+  points    Int?
+  createdAt DateTime? @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+}
+
+model ProfileFeeds {
+  id         Int       @id @default(autoincrement())
+  message    String?
+  icon       String?
+  link       String?
+  components String?
+  userUuid   String?
+  createdAt  DateTime? @db.Timestamptz(6)
+  updatedAt  DateTime? @db.Timestamptz(6)
+
+  @@index([userUuid], map: "ProfileFeeds_userUuid")
+}
+
+model Reviews {
+  id        Int       @id @default(autoincrement())
+  userId    Int?
+  movieId   Int?
+  rating    Decimal?  @db.Decimal
+  review    String?
+  createdAt DateTime? @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+
+  @@index([movieId], map: "Reviews_movieId")
+  @@index([userId], map: "Reviews_userId")
+}
+
+model SequelizeMeta {
+  name String @id @db.VarChar(255)
+}
+
+model Users {
+  id         Int              @id @default(autoincrement())
+  uuid       String?          @unique @db.Uuid
+  firstName  String?          @db.VarChar(255)
+  lastName   String?          @db.VarChar(255)
+  email      String           @unique @db.VarChar(255)
+  role       enum_Users_role? @default(user)
+  salt       String?
+  password   String?
+  image      String?
+  provider   String?
+  providerId String?
+  lastLogin  DateTime?        @db.Timestamptz(6)
+  createdAt  DateTime?        @db.Timestamptz(6)
+  updatedAt  DateTime?        @db.Timestamptz(6)
+
+  @@index([providerId], map: "Users_providerId")
+  @@index([uuid], map: "Users_uuid")
+}
+
+model Watchlists {
+  id        Int       @id @default(autoincrement())
+  movieId   BigInt?
+  userId    BigInt?
+  createdAt DateTime? @db.Timestamptz(6)
+  updatedAt DateTime? @db.Timestamptz(6)
+
+  @@index([userId], map: "Watchlists_userId")
+}
+
+model Winners {
+  id           Int       @id @default(autoincrement())
+  fbId         String?   @db.VarChar(255)
+  movieId      BigInt
+  awardId      BigInt
+  nominationId BigInt
+  year         Int
+  createdAt    DateTime? @db.Timestamptz(6)
+  updatedAt    DateTime? @db.Timestamptz(6)
+
+  @@index([awardId], map: "Winners_awardId")
+  @@index([movieId], map: "Winners_movieId")
+  @@index([nominationId], map: "Winners_nominationId")
+  @@index([year], map: "Winners_year")
+}
+
+enum enum_Leagues_draftingStatus {
+  pending
+  active
+  complete
+}
+
+enum enum_Leagues_type {
+  linear
+  snake
+}
+
+enum enum_Lists_status {
+  none
+  selected
+  unavailable
+}
+
+enum enum_Users_role {
+  admin
+  user
+}
