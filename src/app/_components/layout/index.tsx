@@ -1,17 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import {
-  styled,
-} from '@mui/material/styles';
-import {
-  Box, AppBar as MuiAppBar, Toolbar, Typography, IconButton,
-} from '@mui/material';
+
+import { Box, AppBar as MuiAppBar, Toolbar, Typography } from '@mui/material';
 import type { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
-import MenuIcon from '@mui/icons-material/Menu';
+import { styled } from '@mui/material/styles';
+
 import LayoutDrawer from './drawer';
 
-const drawerWidth = 240;
+const drawerWidth = 280;
 
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
@@ -38,11 +35,23 @@ const AppBar = styled(MuiAppBar, {
     {
       props: ({ open }) => open,
       style: {
-        marginLeft: drawerWidth,
         width: `calc(100% - ${drawerWidth}px)`,
+        transition: theme.transitions.create(['width'], {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.leavingScreen,
+        }),
+      },
+    },
+    {
+      props: ({ open }) => !open,
+      style: {
+        width: `calc(100% - ${theme.spacing(7)} - 1px)`,
+        [theme.breakpoints.up('sm')]: {
+          width: `calc(100% - ${theme.spacing(8)} - 1px)`,
+        },
         transition: theme.transitions.create(['width', 'margin'], {
           easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
+          duration: theme.transitions.duration.leavingScreen,
         }),
       },
     },
@@ -62,28 +71,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed" open={open} color="transparent" elevation={0} className="bg-white/50! backdrop-blur-sm">
+      <AppBar
+        position="fixed"
+        open={open}
+        color="transparent"
+        elevation={0}
+        className="bg-white/50! backdrop-blur-sm"
+      >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
-            edge="start"
-            sx={[
-              {
-                marginRight: 5,
-              },
-              open && { display: 'none' },
-            ]}
-          >
-            <MenuIcon />
-          </IconButton>
           <Typography variant="h6" noWrap component="div">
             Mini variant drawer
           </Typography>
         </Toolbar>
       </AppBar>
-      <LayoutDrawer open={open} handleDrawerClose={handleDrawerClose} />
+      <LayoutDrawer
+        open={open}
+        handleDrawerClose={handleDrawerClose}
+        handleDrawerOpen={handleDrawerOpen}
+      />
       <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
         <DrawerHeader />
         {children}
