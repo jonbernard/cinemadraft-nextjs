@@ -3,26 +3,25 @@ import { database } from "..";
 
 const PAGE_SIZE = 40;
 
-export const addToWatchlist = async (movieId: number, userId: number, data: any) => {
+export const addToWatchlist = async (movieId: number, userId: number, data: Prisma.WatchlistsCreateInput) => {
   if (!userId) {
     throw new Error('Provide valid params');
   }
 
-  return await database.watchlist.upsert({
-    where: {
-      movieId_userId: {
-        movieId,
-        userId
+  return await database.watchlists.create({
+    data: {
+      ...data,
+      movie: {
+        connect: {
+          id: movieId
+        }
+      },
+      user: {
+        connect: {
+          id: userId
+        }
       }
     },
-    create: {
-      ...data,
-      movieId,
-      userId
-    },
-    update: {
-      ...data
-    }
   });
 };
 
@@ -31,7 +30,7 @@ export const deleteFromWatchlist = async (id: number, userId: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.watchlist.delete({
+  return await database.watchlists.delete({
     where: {
       id,
       userId
@@ -44,7 +43,7 @@ export const getAllWatchlistByTmdbIds = async (tmdbIds: string[], userId: number
     throw new Error('Provide valid params');
   }
 
-  return await database.watchlist.findMany({
+  return await database.watchlists.findMany({
     where: {
       movieId: {
         not: null
@@ -72,7 +71,7 @@ export const getWatchlistByAwards = async (year: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.watchlist.findMany({
+  return await database.watchlists.findMany({
     where: {
       movieId: {
         not: null
@@ -105,7 +104,7 @@ export const searchWatchlist = async (
   const skip = page ? PAGE_SIZE * (page - 1) : undefined;
   const take = page ? PAGE_SIZE : undefined;
 
-  return await database.watchlist.findMany({
+  return await database.watchlists.findMany({
     where: {
       userId
     },
