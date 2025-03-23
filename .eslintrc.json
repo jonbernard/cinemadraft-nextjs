@@ -1,0 +1,75 @@
+{
+  "env": {
+    "node": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2021
+  },
+  "ignorePatterns": [
+    // "database/zod/**/*",
+    "src/routes/index.ts",
+    "src/routes/openapi*"
+  ],
+  "rules": {
+    "@next/next/no-img-element": "off",
+    "import/no-relative-packages": "off",
+    "max-len": [
+      "error",
+      {
+        "code": 180,
+        "ignoreComments": true,
+        "ignoreTemplateLiterals": true
+      }
+    ],
+    "no-extra-parens": [
+      "warn"
+    ],
+    "no-console": [
+      "warn",
+      {
+        "allow": [
+          "info",
+          "warn",
+          "error"
+        ]
+      }
+    ],
+    "react/jsx-no-useless-fragment": [
+      "error",
+      {
+        "allowExpressions": true
+      }
+    ],
+    "no-restricted-syntax": 0,
+    "import/prefer-default-export": 0,
+    "react/require-default-props": 0,
+    "react/function-component-definition": 0,
+    "react/display-name": 0,
+    "react/jsx-props-no-spreading": 0,
+    "jsx-a11y/click-events-have-key-events": 0
+  },
+  "extends": [
+    "airbnb",
+    "next/core-web-vitals"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "*.ts",
+        "*.tsx"
+      ],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "project": "./tsconfig.json"
+      },
+      "extends": [
+        "plugin:@typescript-eslint/recommended",
+        "airbnb-typescript"
+      ],
+      "rules": {
+        "@typescript-eslint/no-namespace": 0,
+        "@typescript-eslint/indent": 0
+      }
+    }
+  ]
+}
