@@ -15,15 +15,18 @@ model AvailableYears {
 }
 
 model Awards {
-  id                  Int       @id @default(autoincrement())
+  id                  Int           @id @default(autoincrement())
   fbId                String?
   name                String
-  eventId             BigInt
-  active              Boolean?  @default(false)
+  eventId             Int
+  active              Boolean?      @default(false)
   points              Int?
-  requiresNomineeName Boolean?  @default(false)
-  createdAt           DateTime? @db.Timestamptz(6)
-  updatedAt           DateTime? @db.Timestamptz(6)
+  requiresNomineeName Boolean?      @default(false)
+  createdAt           DateTime?     @db.Timestamptz(6)
+  updatedAt           DateTime?     @db.Timestamptz(6)
+  event               Events        @relation(fields: [eventId], references: [id])
+  nominations         Nominations[]
+  winners             Winners[]
 
   @@index([eventId], map: "Awards_eventId")
 }
@@ -31,18 +34,21 @@ model Awards {
 model DraftPicks {
   id        Int       @id @default(autoincrement())
   draftId   Int
-  movieId   BigInt
+  movieId   Int
   order     Int
   userId    Int?
   createdAt DateTime? @db.Timestamptz(6)
   updatedAt DateTime? @db.Timestamptz(6)
+  draft     Drafts    @relation(fields: [draftId], references: [id])
+  movie     Movies    @relation(fields: [movieId], references: [id])
+  user      Users?    @relation(fields: [userId], references: [id])
 
   @@index([draftId], map: "DraftPicks_draftId")
   @@index([movieId], map: "DraftPicks_movieId")
 }
 
 model Drafts {
-  id        Int       @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   userId    Int?
   leagueId  Int?
   year      Int?
@@ -50,8 +56,11 @@ model Drafts {
   order     Int?
   dummy     Boolean?
   dummyName String?
-  createdAt DateTime? @db.Timestamptz(6)
-  updatedAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime?    @db.Timestamptz(6)
+  updatedAt DateTime?    @db.Timestamptz(6)
+  user      Users?       @relation(fields: [userId], references: [id])
+  league    Leagues?     @relation(fields: [leagueId], references: [id])
+  picks     DraftPicks[]
 
   @@index([leagueId], map: "Drafts_leagueId")
   @@index([userId], map: "Drafts_userId")
@@ -75,6 +84,7 @@ model Events {
   awardsDuration BigInt?
   createdAt      DateTime? @db.Timestamptz(6)
   updatedAt      DateTime? @db.Timestamptz(6)
+  awards         Awards[]
 
   @@index([abbreviation], map: "Events_abbreviation")
   @@index([nomDate, awardsDate], map: "Events_nomDate_awardsDate")
@@ -91,6 +101,7 @@ model Leagues {
   uuid           String?                      @db.Uuid
   createdAt      DateTime?                    @db.Timestamptz(6)
   updatedAt      DateTime?                    @db.Timestamptz(6)
+  drafts         Drafts[]
 }
 
 model Lists {
@@ -102,23 +113,31 @@ model Lists {
   createdAt DateTime?          @db.Timestamptz(6)
   updatedAt DateTime?          @db.Timestamptz(6)
   status    enum_Lists_status? @default(none)
+  user      Users?             @relation(fields: [userId], references: [id])
+  movie     Movies?            @relation(fields: [movieId], references: [id])
 
   @@index([userId], map: "Lists_userId")
   @@index([year], map: "Lists_year")
 }
 
 model Movies {
-  id          Int       @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   title       String?
   sortTitle   String?
-  fbId        String?   @db.VarChar(255)
-  imdbId      String?   @db.VarChar(255)
-  tmdbId      String?   @db.VarChar(255)
+  fbId        String?       @db.VarChar(255)
+  imdbId      String?       @db.VarChar(255)
+  tmdbId      String?       @db.VarChar(255)
   backdrop    String?
   poster      String?
-  releaseDate DateTime? @db.Timestamptz(6)
-  createdAt   DateTime? @db.Timestamptz(6)
-  updatedAt   DateTime? @db.Timestamptz(6)
+  releaseDate DateTime?     @db.Timestamptz(6)
+  createdAt   DateTime?     @db.Timestamptz(6)
+  updatedAt   DateTime?     @db.Timestamptz(6)
+  draftPicks  DraftPicks[]
+  lists       Lists[]
+  nominations Nominations[]
+  reviews     Reviews[]
+  watchlists  Watchlists[]
+  winners     Winners[]
 
   @@index([tmdbId], map: "Movies_tmdbId")
 }
@@ -126,14 +145,17 @@ model Movies {
 model Nominations {
   id              Int       @id @default(autoincrement())
   fbId            String?
-  movieId         BigInt
-  awardId         BigInt
+  movieId         Int
+  awardId         Int
   year            String?
   detailName      String?
   detailCharacter String?
-  detailId        BigInt?
+  detailId        Int?
   createdAt       DateTime? @db.Timestamptz(6)
   updatedAt       DateTime? @db.Timestamptz(6)
+  movie           Movies    @relation(fields: [movieId], references: [id])
+  award           Awards    @relation(fields: [awardId], references: [id])
+  winners         Winners[]
 
   @@index([awardId], map: "Nominations_awardId")
   @@index([movieId], map: "Nominations_movieId")
@@ -145,10 +167,11 @@ model Notifications {
   message   String?
   icon      String?
   link      String?
-  userId    BigInt?
+  userId    Int?
   read      Boolean?  @default(false)
   createdAt DateTime? @db.Timestamptz(6)
   updatedAt DateTime? @db.Timestamptz(6)
+  user      Users?    @relation(fields: [userId], references: [id])
 
   @@index([userId], map: "Notifications_userId")
 }
@@ -168,9 +191,10 @@ model ProfileFeeds {
   icon       String?
   link       String?
   components String?
-  userUuid   String?
+  userUuid   String?   @db.Uuid
   createdAt  DateTime? @db.Timestamptz(6)
   updatedAt  DateTime? @db.Timestamptz(6)
+  user       Users?    @relation(fields: [userUuid], references: [uuid])
 
   @@index([userUuid], map: "ProfileFeeds_userUuid")
 }
@@ -183,6 +207,8 @@ model Reviews {
   review    String?
   createdAt DateTime? @db.Timestamptz(6)
   updatedAt DateTime? @db.Timestamptz(6)
+  user      Users?    @relation(fields: [userId], references: [id])
+  movie     Movies?   @relation(fields: [movieId], references: [id])
 
   @@index([movieId], map: "Reviews_movieId")
   @@index([userId], map: "Reviews_userId")
@@ -193,20 +219,27 @@ model SequelizeMeta {
 }
 
 model Users {
-  id         Int              @id @default(autoincrement())
-  uuid       String?          @unique @db.Uuid
-  firstName  String?          @db.VarChar(255)
-  lastName   String?          @db.VarChar(255)
-  email      String           @unique @db.VarChar(255)
-  role       enum_Users_role? @default(user)
-  salt       String?
-  password   String?
-  image      String?
-  provider   String?
-  providerId String?
-  lastLogin  DateTime?        @db.Timestamptz(6)
-  createdAt  DateTime?        @db.Timestamptz(6)
-  updatedAt  DateTime?        @db.Timestamptz(6)
+  id            Int              @id @default(autoincrement())
+  uuid          String?          @unique @db.Uuid
+  firstName     String?          @db.VarChar(255)
+  lastName      String?          @db.VarChar(255)
+  email         String           @unique @db.VarChar(255)
+  role          enum_Users_role? @default(user)
+  salt          String?
+  password      String?
+  image         String?
+  provider      String?
+  providerId    String?
+  lastLogin     DateTime?        @db.Timestamptz(6)
+  createdAt     DateTime?        @db.Timestamptz(6)
+  updatedAt     DateTime?        @db.Timestamptz(6)
+  draftPicks    DraftPicks[]
+  drafts        Drafts[]
+  lists         Lists[]
+  notifications Notifications[]
+  profileFeeds  ProfileFeeds[]
+  reviews       Reviews[]
+  watchlists    Watchlists[]
 
   @@index([providerId], map: "Users_providerId")
   @@index([uuid], map: "Users_uuid")
@@ -214,23 +247,28 @@ model Users {
 
 model Watchlists {
   id        Int       @id @default(autoincrement())
-  movieId   BigInt?
-  userId    BigInt?
+  movieId   Int?
+  userId    Int?
   createdAt DateTime? @db.Timestamptz(6)
   updatedAt DateTime? @db.Timestamptz(6)
+  movie     Movies?   @relation(fields: [movieId], references: [id])
+  user      Users?    @relation(fields: [userId], references: [id])
 
   @@index([userId], map: "Watchlists_userId")
 }
 
 model Winners {
-  id           Int       @id @default(autoincrement())
-  fbId         String?   @db.VarChar(255)
-  movieId      BigInt
-  awardId      BigInt
-  nominationId BigInt
+  id           Int         @id @default(autoincrement())
+  fbId         String?     @db.VarChar(255)
+  movieId      Int
+  awardId      Int
+  nominationId Int
   year         Int
-  createdAt    DateTime? @db.Timestamptz(6)
-  updatedAt    DateTime? @db.Timestamptz(6)
+  createdAt    DateTime?   @db.Timestamptz(6)
+  updatedAt    DateTime?   @db.Timestamptz(6)
+  movie        Movies      @relation(fields: [movieId], references: [id])
+  award        Awards      @relation(fields: [awardId], references: [id])
+  nomination   Nominations @relation(fields: [nominationId], references: [id])
 
   @@index([awardId], map: "Winners_awardId")
   @@index([movieId], map: "Winners_movieId")
