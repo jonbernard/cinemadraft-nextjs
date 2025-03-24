@@ -1,13 +1,14 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-export const addWinner = async (data: Prisma.WinnersCreateInput) => {
-  return await database.winners.create({
+import { database } from '..';
+
+export const addWinner = async (data: Prisma.WinnerCreateInput) => {
+  return database.winner.create({
     data,
     include: {
       movie: true,
-      award: true
-    }
+      award: true,
+    },
   });
 };
 
@@ -16,27 +17,27 @@ export const deleteWinner = async (awardId: number, year: number) => {
     throw new Error('Provide valid params');
   }
 
-  const winner = await database.winners.findFirst({
+  const winner = await database.winner.findFirst({
     where: {
       award: {
-        id: awardId
+        id: awardId,
       },
-      year
-    }
+      year,
+    },
   });
 
-  return await database.winners.delete({
+  return database.winner.delete({
     where: {
-      id: winner?.id
-    }
+      id: winner?.id,
+    },
   });
 };
 
 export const getAllWinners = async () => {
-  return await database.winners.findMany({
+  return database.winner.findMany({
     include: {
       movie: true,
-      award: true
-    }
+      award: true,
+    },
   });
-}; 
+};

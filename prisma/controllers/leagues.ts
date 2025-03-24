@@ -1,76 +1,79 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-export const addLeague = async (data: Prisma.LeaguesCreateInput & { owner: number[] }) => {
-  return await database.leagues.create({
+import { database } from '..';
+
+export const addLeague = async (
+  data: Prisma.LeagueCreateInput & { owner: number[] },
+) => {
+  return database.league.create({
     data: {
       ...data,
-      draftingStatus: 'pending'
-    }
+      draftingStatus: 'pending',
+    },
   });
 };
 
 export const getAllLeagues = async () => {
-  return await database.leagues.findMany();
+  return database.league.findMany();
 };
 
 export const getLeagueById = async (id: number, year?: number) => {
-  return await database.leagues.findUnique({
+  return database.league.findUnique({
     where: {
-      id
+      id,
     },
     include: {
       drafts: {
         where: {
-          year: year || Number(process.env.NEXT_PUBLIC_ACTIVE_YEAR)
+          year: year || Number(process.env.NEXT_PUBLIC_ACTIVE_YEAR),
         },
         include: {
           picks: {
             include: {
-              movie: true
+              movie: true,
             },
             orderBy: {
-              order: 'asc'
-            }
+              order: 'asc',
+            },
           },
           user: {
             select: {
               // displayName: true,
               firstName: true,
               lastName: true,
-              uuid: true
-            }
-          }
+              uuid: true,
+            },
+          },
         },
         orderBy: [
           { order: 'asc' },
           // { picks: { order: 'asc' } }
-        ]
-      }
-    }
+        ],
+      },
+    },
   });
 };
 
 export const getLeagueByIdRaw = async (id: number) => {
-  return await database.leagues.findUnique({
+  return database.league.findUnique({
     where: {
-      id
-    }
+      id,
+    },
   });
 };
 
 export const getLeagueByUuid = async (uuid: string, userId: number) => {
-  return await database.leagues.findFirst({
+  return database.league.findFirst({
     where: {
-      uuid
+      uuid,
     },
     include: {
       drafts: {
         where: {
-          userId
-        }
-      }
-    }
+          userId,
+        },
+      },
+    },
   });
 };
 
@@ -79,21 +82,21 @@ export const getLeaguesByUserId = async (userId: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.leagues.findMany({
+  return database.league.findMany({
     where: {
       drafts: {
         some: {
-          userId
-        }
-      }
+          userId,
+        },
+      },
     },
     include: {
       drafts: {
         orderBy: {
-          year: 'desc'
-        }
-      }
-    }
+          year: 'desc',
+        },
+      },
+    },
   });
 };
 
@@ -102,41 +105,47 @@ export const getLeaguesByUser = async (userId: number, year: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.leagues.findMany({
+  return database.league.findMany({
     where: {
       drafts: {
         some: {
-          userId
-        }
-      }
+          userId,
+        },
+      },
     },
     include: {
       drafts: {
         where: {
           userId,
-          year
-        }
-      }
-    }
-  });
-};
-
-export const updateLeague = async (id: number, data: Prisma.LeaguesUpdateInput) => {
-  return await database.leagues.update({
-    where: {
-      id
+          year,
+        },
+      },
     },
-    data
   });
 };
 
-export const updateLeagueStatus = async (id: number, draftingStatus: Prisma.LeaguesUpdateInput['draftingStatus']) => {
-  return await database.leagues.update({
+export const updateLeague = async (
+  id: number,
+  data: Prisma.LeagueUpdateInput,
+) => {
+  return database.league.update({
     where: {
-      id
+      id,
+    },
+    data,
+  });
+};
+
+export const updateLeagueStatus = async (
+  id: number,
+  draftingStatus: Prisma.LeagueUpdateInput['draftingStatus'],
+) => {
+  return database.league.update({
+    where: {
+      id,
     },
     data: {
-      draftingStatus
-    }
+      draftingStatus,
+    },
   });
-}; 
+};

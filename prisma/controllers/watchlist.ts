@@ -1,26 +1,31 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
+
+import { database } from '..';
 
 const PAGE_SIZE = 40;
 
-export const addToWatchlist = async (movieId: number, userId: number, data: Prisma.WatchlistsCreateInput) => {
+export const addToWatchlist = async (
+  movieId: number,
+  userId: number,
+  data: Prisma.WatchlistCreateInput,
+) => {
   if (!userId) {
     throw new Error('Provide valid params');
   }
 
-  return await database.watchlists.create({
+  return database.watchlist.create({
     data: {
       ...data,
       movie: {
         connect: {
-          id: movieId
-        }
+          id: movieId,
+        },
       },
       user: {
         connect: {
-          id: userId
-        }
-      }
+          id: userId,
+        },
+      },
     },
   });
 };
@@ -30,39 +35,42 @@ export const deleteFromWatchlist = async (id: number, userId: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.watchlists.delete({
+  return database.watchlist.delete({
     where: {
       id,
-      userId
-    }
+      userId,
+    },
   });
 };
 
-export const getAllWatchlistByTmdbIds = async (tmdbIds: string[], userId: number) => {
+export const getAllWatchlistByTmdbIds = async (
+  tmdbIds: string[],
+  userId: number,
+) => {
   if (!userId) {
     throw new Error('Provide valid params');
   }
 
-  return await database.watchlists.findMany({
+  return database.watchlist.findMany({
     where: {
       movieId: {
-        not: null
+        not: null,
       },
       movie: {
         tmdbId: {
-          in: tmdbIds
-        }
+          in: tmdbIds,
+        },
       },
-      userId
+      userId,
     },
     select: {
       id: true,
       movie: {
         select: {
-          tmdbId: true
-        }
-      }
-    }
+          tmdbId: true,
+        },
+      },
+    },
   });
 };
 
@@ -71,23 +79,23 @@ export const getWatchlistByAwards = async (year: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.watchlists.findMany({
+  return database.watchlist.findMany({
     where: {
       movieId: {
-        not: null
-      }
+        not: null,
+      },
     },
     include: {
       movie: {
         select: {
           title: true,
-          poster: true
-        }
-      }
+          poster: true,
+        },
+      },
     },
     orderBy: {
-      createdAt: 'desc'
-    }
+      createdAt: 'desc',
+    },
   });
 };
 
@@ -95,7 +103,7 @@ export const searchWatchlist = async (
   userId: number,
   page?: number,
   columnName?: string,
-  direction: 'asc' | 'desc' = 'desc'
+  direction: 'asc' | 'desc' = 'desc',
 ) => {
   if (!userId) {
     throw new Error('Provide valid params');
@@ -104,9 +112,9 @@ export const searchWatchlist = async (
   const skip = page ? PAGE_SIZE * (page - 1) : undefined;
   const take = page ? PAGE_SIZE : undefined;
 
-  return await database.watchlists.findMany({
+  return database.watchlist.findMany({
     where: {
-      userId
+      userId,
     },
     select: {
       id: true,
@@ -121,25 +129,26 @@ export const searchWatchlist = async (
           releaseDate: true,
           reviews: {
             where: {
-              userId
+              userId,
             },
             select: {
-              id: true
-            }
-          }
-        }
-      }
+              id: true,
+            },
+          },
+        },
+      },
     },
     skip,
     take,
-    orderBy: columnName === 'releaseDate' 
-      ? {
-          movie: {
-            releaseDate: direction
+    orderBy:
+      columnName === 'releaseDate'
+        ? {
+            movie: {
+              releaseDate: direction,
+            },
           }
-        }
-      : {
-          [columnName || 'createdAt']: direction
-        }
+        : {
+            [columnName || 'createdAt']: direction,
+          },
   });
-}; 
+};

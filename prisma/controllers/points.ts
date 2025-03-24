@@ -1,6 +1,5 @@
-
-import { database } from "..";
+import { database } from '..';
 
 export const getAllPoints = async () => {
-  return await database.points.findMany();
-}; 
+  return database.point.findMany();
+};

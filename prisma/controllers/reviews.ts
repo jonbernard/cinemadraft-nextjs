@@ -1,29 +1,33 @@
+import { Prisma } from '@prisma/client';
 
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { database } from '..';
 
-export const addReview = async (movieId: number, userId: number, data: Prisma.ReviewsCreateInput) => {
+export const addReview = async (
+  movieId: number,
+  userId: number,
+  data: Prisma.ReviewCreateInput,
+) => {
   if (!userId || !movieId) {
     throw new Error('Provide valid params');
   }
 
-  return await database.reviews.create({
+  return database.review.create({
     data: {
       ...data,
       movie: {
         connect: {
           id: movieId,
-        }
+        },
       },
       user: {
         connect: {
           id: userId,
-        }
-      }
+        },
+      },
     },
     include: {
-      movie: true
-    }
+      movie: true,
+    },
   });
 };
 
@@ -32,13 +36,13 @@ export const getReviewById = async (id: number, userId: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.reviews.findFirst({
+  return database.review.findFirst({
     where: {
-      id
+      id,
     },
     include: {
-      movie: true
-    }
+      movie: true,
+    },
   });
 };
 
@@ -47,12 +51,12 @@ export const getReviewByTmdbId = async (movieId: number, userId: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.reviews.findFirst({
+  return database.review.findFirst({
     where: {
-      movieId
+      movieId,
     },
     include: {
-      movie: true
-    }
+      movie: true,
+    },
   });
-}; 
+};

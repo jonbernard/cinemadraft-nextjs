@@ -1,50 +1,51 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-export const addDraftPick = async (pick: Prisma.DraftPicksCreateInput) => {
-  return await database.draftPicks.create({
-    data: pick
+import { database } from '..';
+
+export const addDraftPick = async (pick: Prisma.DraftPickCreateInput) => {
+  return database.draftPick.create({
+    data: pick,
   });
 };
 
 export const updateDraftPick = async (id: number, order: number) => {
-  return await database.draftPicks.update({
+  return database.draftPick.update({
     where: {
-      id
+      id,
     },
     data: {
-      order
-    }
+      order,
+    },
   });
 };
 
 export const getDraftPickById = async (id: number) => {
-  return await database.draftPicks.findUnique({
+  return database.draftPick.findUnique({
     where: {
-      id
+      id,
     },
     include: {
       draft: {
         include: {
-          league: true
-        }
-      }
-    }
+          league: true,
+        },
+      },
+    },
   });
 };
 
 export const getDraftPicksByMovieId = async (movieId: number) => {
-  return await database.draftPicks.findMany({
+  return database.draftPick.findMany({
     where: {
-      movieId
-    }
+      movieId,
+    },
   });
 };
 
 export const deleteDraftPickById = async (id: number) => {
-  return await database.draftPicks.delete({
+  return database.draftPick.delete({
     where: {
-      id
-    }
+      id,
+    },
   });
-}; 
+};

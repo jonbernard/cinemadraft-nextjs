@@ -1,28 +1,31 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-export const addNomination = async (nomination: Prisma.NominationsCreateInput) => {
-  return await database.nominations.create({
-    data: nomination
+import { database } from '..';
+
+export const addNomination = async (
+  nomination: Prisma.NominationCreateInput,
+) => {
+  return database.nomination.create({
+    data: nomination,
   });
 };
 
 export const deleteNominationById = async (id: number) => {
-  return await database.nominations.delete({
+  return database.nomination.delete({
     where: {
-      id
-    }
+      id,
+    },
   });
 };
 
 export const getAllNominations = async () => {
-  return await database.nominations.findMany();
+  return database.nomination.findMany();
 };
 
 export const getWatchlistByYear = async (year: number, userId: number) => {
-  return await database.nominations.findMany({
+  return database.nomination.findMany({
     where: {
-      year: year.toString() || process.env.NEXT_PUBLIC_ACTIVE_YEAR
+      year: year.toString() || process.env.NEXT_PUBLIC_ACTIVE_YEAR,
     },
     select: {
       id: true,
@@ -35,10 +38,10 @@ export const getWatchlistByYear = async (year: number, userId: number) => {
           event: {
             select: {
               name: true,
-              abbreviation: true
-            }
-          }
-        }
+              abbreviation: true,
+            },
+          },
+        },
       },
       movie: {
         select: {
@@ -47,22 +50,22 @@ export const getWatchlistByYear = async (year: number, userId: number) => {
           title: true,
           watchlists: {
             where: {
-              userId
+              userId,
             },
             select: {
-              id: true
-            }
-          }
-        }
-      }
-    }
+              id: true,
+            },
+          },
+        },
+      },
+    },
   });
 };
 
 export const getWatchlistNomsByYear = async (year: number, userId: number) => {
-  return await database.nominations.findMany({
+  return database.nomination.findMany({
     where: {
-      year: year.toString() || process.env.NEXT_PUBLIC_ACTIVE_YEAR
+      year: year.toString() || process.env.NEXT_PUBLIC_ACTIVE_YEAR,
     },
     select: {
       id: true,
@@ -74,24 +77,24 @@ export const getWatchlistNomsByYear = async (year: number, userId: number) => {
           title: true,
           watchlists: {
             where: {
-              userId
+              userId,
             },
             select: {
-              id: true
-            }
-          }
-        }
-      }
-    }
+              id: true,
+            },
+          },
+        },
+      },
+    },
   });
 };
 
 export const getNomResults = async (movieIds: number[]) => {
-  return await database.nominations.findMany({
+  return database.nomination.findMany({
     where: {
       movieId: {
-        in: movieIds
-      }
+        in: movieIds,
+      },
     },
     select: {
       id: true,
@@ -103,8 +106,8 @@ export const getNomResults = async (movieIds: number[]) => {
           id: true,
           tmdbId: true,
           sortTitle: true,
-          title: true
-        }
+          title: true,
+        },
       },
       award: {
         select: {
@@ -120,31 +123,31 @@ export const getNomResults = async (movieIds: number[]) => {
               id: true,
               name: true,
               abbreviation: true,
-              awardsDate: true
-            }
+              awardsDate: true,
+            },
           },
           winners: {
             where: {
               movieId: {
-                in: movieIds
-              }
+                in: movieIds,
+              },
             },
             select: {
               id: true,
               awardId: true,
-              movieId: true
-            }
-          }
-        }
-      }
-    }
+              movieId: true,
+            },
+          },
+        },
+      },
+    },
   });
 };
 
 export const getNomResultsByYear = async (year: number) => {
-  return await database.nominations.findMany({
+  return database.nomination.findMany({
     where: {
-      year: year.toString()
+      year: year.toString(),
     },
     select: {
       id: true,
@@ -156,8 +159,8 @@ export const getNomResultsByYear = async (year: number) => {
           id: true,
           tmdbId: true,
           sortTitle: true,
-          title: true
-        }
+          title: true,
+        },
       },
       award: {
         select: {
@@ -173,8 +176,8 @@ export const getNomResultsByYear = async (year: number) => {
               id: true,
               name: true,
               abbreviation: true,
-              awardsDate: true
-            }
+              awardsDate: true,
+            },
           },
           winners: {
             // where: {
@@ -185,11 +188,11 @@ export const getNomResultsByYear = async (year: number) => {
             select: {
               id: true,
               awardId: true,
-              movieId: true
-            }
-          }
-        }
-      }
-    }
+              movieId: true,
+            },
+          },
+        },
+      },
+    },
   });
-}; 
+};

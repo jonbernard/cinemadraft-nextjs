@@ -1,15 +1,18 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-export const bulkAddProfileFeeds = async (profileFeeds: Prisma.ProfileFeedsCreateManyInput[]) => {
-  return await database.profileFeeds.createMany({
-    data: profileFeeds
+import { database } from '..';
+
+export const bulkAddProfileFeeds = async (
+  profileFeeds: Prisma.ProfileFeedCreateManyInput[],
+) => {
+  return database.profileFeed.createMany({
+    data: profileFeeds,
   });
 };
 
-export const addProfileFeed = async (body: Prisma.ProfileFeedsCreateInput) => {
-  return await database.profileFeeds.create({
-    data: body
+export const addProfileFeed = async (body: Prisma.ProfileFeedCreateInput) => {
+  return database.profileFeed.create({
+    data: body,
   });
 };
 
@@ -18,21 +21,21 @@ export const deleteProfileFeed = async (id: number, userUuid: string) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.profileFeeds.delete({
+  return database.profileFeed.delete({
     where: {
       id,
-      userUuid
-    }
+      userUuid,
+    },
   });
 };
 
 export const getAllProfileFeedsByUserUuid = async (uuid: string) => {
-  return await database.profileFeeds.findMany({
+  return database.profileFeed.findMany({
     where: {
-      userUuid: uuid
+      userUuid: uuid,
     },
     orderBy: {
-      createdAt: 'desc'
-    }
+      createdAt: 'desc',
+    },
   });
-}; 
+};

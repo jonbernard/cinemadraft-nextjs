@@ -2,10 +2,12 @@
 
 import * as React from 'react';
 
-import { Box, AppBar as MuiAppBar, Toolbar, Typography } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
+import { Box, AppBar as MuiAppBar, TextField, Toolbar } from '@mui/material';
 import type { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
 import { styled } from '@mui/material/styles';
 
+import ColorMode from './colorMode';
 import LayoutDrawer from './drawer';
 
 const drawerWidth = 280;
@@ -76,12 +78,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         open={open}
         color="transparent"
         elevation={0}
-        className="bg-white/50! backdrop-blur-sm"
+        className="backdrop-blur-sm"
       >
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div">
-            Mini variant drawer
-          </Typography>
+        <Toolbar className="justify-between">
+          <TextField
+            slotProps={{
+              input: {
+                startAdornment: <SearchIcon />,
+              },
+            }}
+            variant="outlined"
+            size="small"
+          />
+          <ColorMode />
         </Toolbar>
       </AppBar>
       <LayoutDrawer

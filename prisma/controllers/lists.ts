@@ -1,50 +1,55 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-export const addList = async (body: Prisma.ListsCreateInput) => {
-  return await database.lists.create({
+import { database } from '..';
+
+export const addList = async (body: Prisma.ListCreateInput) => {
+  return database.list.create({
     data: body,
     include: {
-      movie: true
-    }
+      movie: true,
+    },
   });
 };
 
 export const updateList = async (id: number, order: number, userId: number) => {
-  return await database.lists.update({
+  return database.list.update({
     where: {
       id,
-      userId
+      userId,
     },
     data: {
-      order
+      order,
     },
     include: {
-      movie: true
-    }
+      movie: true,
+    },
   });
 };
 
-export const updateListStatus = async (id: number, status: Prisma.ListsUpdateInput['status'], userId: number) => {
-  return await database.lists.update({
+export const updateListStatus = async (
+  id: number,
+  status: Prisma.ListUpdateInput['status'],
+  userId: number,
+) => {
+  return database.list.update({
     where: {
       id,
-      userId
+      userId,
     },
     data: {
-      status
+      status,
     },
     include: {
-      movie: true
-    }
+      movie: true,
+    },
   });
 };
 
 export const deleteListById = async (id: number) => {
-  return await database.lists.delete({
+  return database.list.delete({
     where: {
-      id
-    }
+      id,
+    },
   });
 };
 
@@ -53,16 +58,16 @@ export const getListsByYear = async (userId: number, year: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.lists.findMany({
+  return database.list.findMany({
     where: {
       userId,
-      year
+      year,
     },
     orderBy: {
-      order: 'asc'
+      order: 'asc',
     },
     include: {
-      movie: true
-    }
+      movie: true,
+    },
   });
-}; 
+};

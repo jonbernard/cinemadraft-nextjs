@@ -1,33 +1,37 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
+
+import { database } from '..';
 
 export const getAllMovies = async () => {
-  return await database.movies.findMany();
+  return database.movie.findMany();
 };
 
-export const addMovie = async (body: Prisma.MoviesCreateInput) => {
-  return await database.movies.create({
-    data: body
+export const addMovie = async (body: Prisma.MovieCreateInput) => {
+  return database.movie.create({
+    data: body,
   });
 };
 
 export const getMovieByTmdbId = async (tmdbId: string | number) => {
   const stringTmdbId = typeof tmdbId === 'number' ? tmdbId.toString() : tmdbId;
-  
-  return await database.movies.findFirst({
+
+  return database.movie.findFirst({
     where: {
-      tmdbId: stringTmdbId
-    }
+      tmdbId: stringTmdbId,
+    },
   });
 };
 
-export const updateMovie = async (id: string | number, data: Prisma.MoviesUpdateInput) => {
+export const updateMovie = async (
+  id: string | number,
+  data: Prisma.MovieUpdateInput,
+) => {
   const tmdbId = typeof id === 'number' ? id.toString() : id;
-  
-  return await database.movies.updateMany({
+
+  return database.movie.updateMany({
     where: {
-      tmdbId
+      tmdbId,
     },
-    data
+    data,
   });
-}; 
+};

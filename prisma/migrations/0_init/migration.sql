@@ -11,17 +11,17 @@ CREATE TYPE "enum_Lists_status" AS ENUM ('none', 'selected', 'unavailable');
 CREATE TYPE "enum_Users_role" AS ENUM ('admin', 'user');
 
 -- CreateTable
-CREATE TABLE "AvailableYears" (
+CREATE TABLE "available_years" (
     "id" SERIAL NOT NULL,
     "year" INTEGER,
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "AvailableYears_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "available_years_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Awards" (
+CREATE TABLE "awards" (
     "id" SERIAL NOT NULL,
     "fbId" TEXT,
     "name" TEXT NOT NULL,
@@ -32,11 +32,11 @@ CREATE TABLE "Awards" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Awards_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "awards_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "DraftPicks" (
+CREATE TABLE "draft_picks" (
     "id" SERIAL NOT NULL,
     "draftId" INTEGER NOT NULL,
     "movieId" BIGINT NOT NULL,
@@ -45,11 +45,11 @@ CREATE TABLE "DraftPicks" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "DraftPicks_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "draft_picks_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Drafts" (
+CREATE TABLE "drafts" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER,
     "leagueId" INTEGER,
@@ -61,11 +61,11 @@ CREATE TABLE "Drafts" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Drafts_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "drafts_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Events" (
+CREATE TABLE "events" (
     "id" SERIAL NOT NULL,
     "fbId" TEXT,
     "name" TEXT NOT NULL,
@@ -83,11 +83,11 @@ CREATE TABLE "Events" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Events_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "events_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Leagues" (
+CREATE TABLE "leagues" (
     "id" SERIAL NOT NULL,
     "fbId" TEXT,
     "activeYear" INTEGER,
@@ -99,11 +99,11 @@ CREATE TABLE "Leagues" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Leagues_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "leagues_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Lists" (
+CREATE TABLE "lists" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER,
     "movieId" INTEGER,
@@ -113,11 +113,11 @@ CREATE TABLE "Lists" (
     "updatedAt" TIMESTAMPTZ(6),
     "status" "enum_Lists_status" DEFAULT 'none',
 
-    CONSTRAINT "Lists_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "lists_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Movies" (
+CREATE TABLE "movies" (
     "id" SERIAL NOT NULL,
     "title" TEXT,
     "sortTitle" TEXT,
@@ -130,11 +130,11 @@ CREATE TABLE "Movies" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Movies_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "movies_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Nominations" (
+CREATE TABLE "nominations" (
     "id" SERIAL NOT NULL,
     "fbId" TEXT,
     "movieId" BIGINT NOT NULL,
@@ -146,11 +146,11 @@ CREATE TABLE "Nominations" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Nominations_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "nominations_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Notifications" (
+CREATE TABLE "notifications" (
     "id" SERIAL NOT NULL,
     "message" TEXT,
     "icon" TEXT,
@@ -160,11 +160,11 @@ CREATE TABLE "Notifications" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Notifications_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Points" (
+CREATE TABLE "points" (
     "id" SERIAL NOT NULL,
     "level" VARCHAR(255),
     "tier" INTEGER,
@@ -172,11 +172,11 @@ CREATE TABLE "Points" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Points_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "points_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "ProfileFeeds" (
+CREATE TABLE "profile_feeds" (
     "id" SERIAL NOT NULL,
     "message" TEXT,
     "icon" TEXT,
@@ -186,11 +186,11 @@ CREATE TABLE "ProfileFeeds" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "ProfileFeeds_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "profile_feeds_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Reviews" (
+CREATE TABLE "reviews" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER,
     "movieId" INTEGER,
@@ -199,7 +199,7 @@ CREATE TABLE "Reviews" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Reviews_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "reviews_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -210,7 +210,7 @@ CREATE TABLE "SequelizeMeta" (
 );
 
 -- CreateTable
-CREATE TABLE "Users" (
+CREATE TABLE "users" (
     "id" SERIAL NOT NULL,
     "uuid" UUID,
     "firstName" VARCHAR(255),
@@ -226,22 +226,22 @@ CREATE TABLE "Users" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Users_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Watchlists" (
+CREATE TABLE "watchlists" (
     "id" SERIAL NOT NULL,
     "movieId" BIGINT,
     "userId" BIGINT,
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Watchlists_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "watchlists_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Winners" (
+CREATE TABLE "winners" (
     "id" SERIAL NOT NULL,
     "fbId" VARCHAR(255),
     "movieId" BIGINT NOT NULL,
@@ -251,90 +251,90 @@ CREATE TABLE "Winners" (
     "createdAt" TIMESTAMPTZ(6),
     "updatedAt" TIMESTAMPTZ(6),
 
-    CONSTRAINT "Winners_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "winners_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "AvailableYears_year_key" ON "AvailableYears"("year");
+CREATE UNIQUE INDEX "available_years_year_key" ON "available_years"("year");
 
 -- CreateIndex
-CREATE INDEX "Awards_eventId" ON "Awards"("eventId");
+CREATE INDEX "Awards_eventId" ON "awards"("eventId");
 
 -- CreateIndex
-CREATE INDEX "DraftPicks_draftId" ON "DraftPicks"("draftId");
+CREATE INDEX "DraftPicks_draftId" ON "draft_picks"("draftId");
 
 -- CreateIndex
-CREATE INDEX "DraftPicks_movieId" ON "DraftPicks"("movieId");
+CREATE INDEX "DraftPicks_movieId" ON "draft_picks"("movieId");
 
 -- CreateIndex
-CREATE INDEX "Drafts_leagueId" ON "Drafts"("leagueId");
+CREATE INDEX "Drafts_leagueId" ON "drafts"("leagueId");
 
 -- CreateIndex
-CREATE INDEX "Drafts_userId" ON "Drafts"("userId");
+CREATE INDEX "Drafts_userId" ON "drafts"("userId");
 
 -- CreateIndex
-CREATE INDEX "Drafts_year" ON "Drafts"("year");
+CREATE INDEX "Drafts_year" ON "drafts"("year");
 
 -- CreateIndex
-CREATE INDEX "Events_abbreviation" ON "Events"("abbreviation");
+CREATE INDEX "Events_abbreviation" ON "events"("abbreviation");
 
 -- CreateIndex
-CREATE INDEX "Events_nomDate_awardsDate" ON "Events"("nomDate", "awardsDate");
+CREATE INDEX "Events_nomDate_awardsDate" ON "events"("nomDate", "awardsDate");
 
 -- CreateIndex
-CREATE INDEX "Lists_userId" ON "Lists"("userId");
+CREATE INDEX "Lists_userId" ON "lists"("userId");
 
 -- CreateIndex
-CREATE INDEX "Lists_year" ON "Lists"("year");
+CREATE INDEX "Lists_year" ON "lists"("year");
 
 -- CreateIndex
-CREATE INDEX "Movies_tmdbId" ON "Movies"("tmdbId");
+CREATE INDEX "Movies_tmdbId" ON "movies"("tmdbId");
 
 -- CreateIndex
-CREATE INDEX "Nominations_awardId" ON "Nominations"("awardId");
+CREATE INDEX "Nominations_awardId" ON "nominations"("awardId");
 
 -- CreateIndex
-CREATE INDEX "Nominations_movieId" ON "Nominations"("movieId");
+CREATE INDEX "Nominations_movieId" ON "nominations"("movieId");
 
 -- CreateIndex
-CREATE INDEX "Nominations_year" ON "Nominations"("year");
+CREATE INDEX "Nominations_year" ON "nominations"("year");
 
 -- CreateIndex
-CREATE INDEX "Notifications_userId" ON "Notifications"("userId");
+CREATE INDEX "Notifications_userId" ON "notifications"("userId");
 
 -- CreateIndex
-CREATE INDEX "ProfileFeeds_userUuid" ON "ProfileFeeds"("userUuid");
+CREATE INDEX "ProfileFeeds_userUuid" ON "profile_feeds"("userUuid");
 
 -- CreateIndex
-CREATE INDEX "Reviews_movieId" ON "Reviews"("movieId");
+CREATE INDEX "Reviews_movieId" ON "reviews"("movieId");
 
 -- CreateIndex
-CREATE INDEX "Reviews_userId" ON "Reviews"("userId");
+CREATE INDEX "Reviews_userId" ON "reviews"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Users_uuid_key" ON "Users"("uuid");
+CREATE UNIQUE INDEX "users_uuid_key" ON "users"("uuid");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Users_email_key" ON "Users"("email");
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
-CREATE INDEX "Users_providerId" ON "Users"("providerId");
+CREATE INDEX "Users_providerId" ON "users"("providerId");
 
 -- CreateIndex
-CREATE INDEX "Users_uuid" ON "Users"("uuid");
+CREATE INDEX "Users_uuid" ON "users"("uuid");
 
 -- CreateIndex
-CREATE INDEX "Watchlists_userId" ON "Watchlists"("userId");
+CREATE INDEX "Watchlists_userId" ON "watchlists"("userId");
 
 -- CreateIndex
-CREATE INDEX "Winners_awardId" ON "Winners"("awardId");
+CREATE INDEX "Winners_awardId" ON "winners"("awardId");
 
 -- CreateIndex
-CREATE INDEX "Winners_movieId" ON "Winners"("movieId");
+CREATE INDEX "Winners_movieId" ON "winners"("movieId");
 
 -- CreateIndex
-CREATE INDEX "Winners_nominationId" ON "Winners"("nominationId");
+CREATE INDEX "Winners_nominationId" ON "winners"("nominationId");
 
 -- CreateIndex
-CREATE INDEX "Winners_year" ON "Winners"("year");
+CREATE INDEX "Winners_year" ON "winners"("year");
 

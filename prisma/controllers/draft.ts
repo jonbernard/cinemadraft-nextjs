@@ -1,44 +1,48 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-export const addDraft = async (data: Prisma.DraftsCreateInput) => {
-  return await database.drafts.create({
-    data
+import { database } from '..';
+
+export const addDraft = async (data: Prisma.DraftCreateInput) => {
+  return database.draft.create({
+    data,
   });
 };
 
-export const updateDraft = async (id: number, data: Prisma.DraftsUpdateInput) => {
-  return await database.drafts.update({
+export const updateDraft = async (
+  id: number,
+  data: Prisma.DraftUpdateInput,
+) => {
+  return database.draft.update({
     where: {
-      id
+      id,
     },
-    data
+    data,
   });
 };
 
 export const deleteDraftById = async (id: number) => {
-  return await database.drafts.delete({
+  return database.draft.delete({
     where: {
-      id
-    }
+      id,
+    },
   });
 };
 
 export const getDraftById = async (id: number) => {
-  return await database.drafts.findUnique({
+  return database.draft.findUnique({
     where: {
-      id
+      id,
     },
     include: {
-      picks: true
-    }
+      picks: true,
+    },
   });
 };
 
 export const getDraftByIdExtended = async (id: number) => {
-  return await database.drafts.findUnique({
+  return database.draft.findUnique({
     where: {
-      id
+      id,
     },
     select: {
       id: true,
@@ -48,18 +52,18 @@ export const getDraftByIdExtended = async (id: number) => {
       order: true,
       picks: {
         include: {
-          movie: true
-        }
-      }
-    }
+          movie: true,
+        },
+      },
+    },
   });
 };
 
 export const getDraftsByYear = async (leagueId: number, year: number) => {
-  return await database.drafts.findMany({
+  return database.draft.findMany({
     where: {
       leagueId,
-      year
+      year,
     },
     include: {
       picks: {
@@ -70,10 +74,10 @@ export const getDraftsByYear = async (leagueId: number, year: number) => {
               sortTitle: true,
               title: true,
               poster: true,
-              tmdbId: true
-            }
-          }
-        }
+              tmdbId: true,
+            },
+          },
+        },
       },
       user: {
         select: {
@@ -81,15 +85,15 @@ export const getDraftsByYear = async (leagueId: number, year: number) => {
           lastName: true,
           image: true,
           // displayName: true,
-          uuid: true
-        }
-      }
+          uuid: true,
+        },
+      },
     },
     orderBy: [
       { group: 'asc' },
       { order: 'asc' },
       // { picks: { order: 'asc' } }
-    ]
+    ],
   });
 };
 
@@ -98,59 +102,63 @@ export const getDraftsByUser = async (userId: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.drafts.findMany({
+  return database.draft.findMany({
     where: {
-      userId
+      userId,
     },
     include: {
-      league: true
+      league: true,
     },
     orderBy: {
-      year: 'desc'
-    }
+      year: 'desc',
+    },
   });
 };
 
 export const getDraftsByLeagueId = async (leagueId: number) => {
-  return await database.drafts.findMany({
+  return database.draft.findMany({
     where: {
-      leagueId
+      leagueId,
     },
     include: {
-      league: true
+      league: true,
     },
     orderBy: {
-      year: 'desc'
-    }
+      year: 'desc',
+    },
   });
 };
 
 export const getUsersByLeagueId = async (leagueId: number) => {
-  return await database.drafts.findMany({
+  return database.draft.findMany({
     where: {
-      leagueId
+      leagueId,
     },
     select: {
-      userId: true
-    }
+      userId: true,
+    },
   });
 };
 
-export const getDraftsByLeagueIds = async (leagueIds: number[], year: number, userId: number) => {
-  return await database.drafts.findMany({
+export const getDraftsByLeagueIds = async (
+  leagueIds: number[],
+  year: number,
+  userId: number,
+) => {
+  return database.draft.findMany({
     where: {
       leagueId: {
-        in: leagueIds
+        in: leagueIds,
       },
-      year
+      year,
     },
     select: {
       leagueId: true,
       year: true,
       league: {
         select: {
-          name: true
-        }
+          name: true,
+        },
       },
       picks: {
         select: {
@@ -164,16 +172,16 @@ export const getDraftsByLeagueIds = async (leagueIds: number[], year: number, us
               poster: true,
               watchlists: {
                 where: {
-                  userId
+                  userId,
                 },
                 select: {
-                  id: true
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+                  id: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   });
-}; 
+};

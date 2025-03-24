@@ -1,11 +1,12 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
-import moment from "moment";
+import { Prisma } from '@prisma/client';
+import moment from 'moment';
 
-export const createUser = async (data: Prisma.UsersCreateInput) => {
-  return await database.users.upsert({
+import { database } from '..';
+
+export const createUser = async (data: Prisma.UserCreateInput) => {
+  return database.user.upsert({
     where: {
-      email: data.email
+      email: data.email,
     },
     create: {
       firstName: data.firstName,
@@ -15,39 +16,39 @@ export const createUser = async (data: Prisma.UsersCreateInput) => {
       provider: 'auth0',
       providerId: data.providerId,
       uuid: data.uuid,
-      lastLogin: moment().format()
+      lastLogin: moment().format(),
     },
     update: {
       firstName: data.firstName,
       lastName: data.lastName,
       image: data.image,
-      lastLogin: moment().format()
-    }
+      lastLogin: moment().format(),
+    },
   });
 };
 
 export const getUser = async (providerId: string) => {
-  return await database.users.findFirst({
+  return database.user.findFirst({
     where: {
-      providerId
-    }
+      providerId,
+    },
   });
 };
 
 export const getUserByEmail = async (email: string) => {
-  return await database.users.findUnique({
+  return database.user.findUnique({
     where: {
-      email
-    }
+      email,
+    },
   });
 };
 
 export const getUsersByIds = async (ids: number[]) => {
-  return await database.users.findMany({
+  return database.user.findMany({
     where: {
       id: {
-        in: ids
-      }
+        in: ids,
+      },
     },
     select: {
       id: true,
@@ -55,34 +56,34 @@ export const getUsersByIds = async (ids: number[]) => {
       lastName: true,
       image: true,
       // displayName: true,
-      uuid: true
-    }
+      uuid: true,
+    },
   });
 };
 
 export const getPublicUserByUuid = async (uuid: string) => {
-  return await database.users.findUnique({
+  return database.user.findUnique({
     where: {
-      uuid
+      uuid,
     },
     select: {
       firstName: true,
       lastName: true,
       image: true,
       // displayName: true,
-      uuid: true
-    }
+      uuid: true,
+    },
   });
 };
 
 export const updateUserImage = async (id: number, image: string) => {
-  return await database.users.update({
+  return database.user.update({
     where: {
-      id
+      id,
     },
     data: {
-      image
-    }
+      image,
+    },
   });
 };
 
@@ -91,18 +92,18 @@ export const updateUserLastLogin = async (id: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.users.update({
+  return database.user.update({
     where: {
-      id
+      id,
     },
     data: {
-      lastLogin: moment().format()
-    }
+      lastLogin: moment().format(),
+    },
   });
 };
 
 export const getAllUsers = async () => {
-  return await database.users.findMany();
+  return database.user.findMany();
 };
 
 export const getUserDrafts = async (id: number) => {
@@ -110,16 +111,16 @@ export const getUserDrafts = async (id: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.users.findUnique({
+  return database.user.findUnique({
     where: {
-      id
+      id,
     },
     include: {
       drafts: {
         include: {
-          league: true
-        }
-      }
-    }
+          league: true,
+        },
+      },
+    },
   });
-}; 
+};

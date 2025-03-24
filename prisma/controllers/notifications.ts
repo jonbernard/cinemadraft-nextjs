@@ -1,9 +1,12 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-export const bulkAddNotifications = async (notifications: Prisma.NotificationsCreateManyInput[]) => {
-  return await database.notifications.createMany({
-    data: notifications
+import { database } from '..';
+
+export const bulkAddNotifications = async (
+  notifications: Prisma.NotificationCreateManyInput[],
+) => {
+  return database.notification.createMany({
+    data: notifications,
   });
 };
 
@@ -12,29 +15,32 @@ export const deleteNotification = async (id: number, userId: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.notifications.delete({
+  return database.notification.delete({
     where: {
       id,
-      userId
-    }
+      userId,
+    },
   });
 };
 
-export const markNotificationsAsRead = async (ids: number[], userId: number) => {
+export const markNotificationsAsRead = async (
+  ids: number[],
+  userId: number,
+) => {
   if (!userId) {
     throw new Error('Provide valid params');
   }
 
-  return await database.notifications.updateMany({
+  return database.notification.updateMany({
     where: {
       id: {
-        in: ids
+        in: ids,
       },
-      userId
+      userId,
     },
     data: {
-      read: true
-    }
+      read: true,
+    },
   });
 };
 
@@ -43,13 +49,13 @@ export const getAllNotificationsByUserId = async (userId: number) => {
     throw new Error('Provide valid params');
   }
 
-  return await database.notifications.findMany({
+  return database.notification.findMany({
     where: {
-      userId
+      userId,
     },
     take: 10,
     orderBy: {
-      createdAt: 'desc'
-    }
+      createdAt: 'desc',
+    },
   });
-}; 
+};

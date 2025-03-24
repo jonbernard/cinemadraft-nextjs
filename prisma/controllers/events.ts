@@ -1,9 +1,13 @@
-import { Prisma } from "@prisma/client";
-import { database } from "..";
+import { Prisma } from '@prisma/client';
 
-const getEventConfig = (abbreviation: string | null, year: number): Prisma.EventsFindManyArgs => {
+import { database } from '..';
+
+const getEventConfig = (
+  abbreviation: string | null,
+  year: number,
+): Prisma.EventFindManyArgs => {
   const where = abbreviation ? { abbreviation } : {};
-  
+
   return {
     where,
     include: {
@@ -16,75 +20,73 @@ const getEventConfig = (abbreviation: string | null, year: number): Prisma.Event
           // },
           nominations: {
             where: {
-              year: year.toString()
+              year: year.toString(),
             },
             include: {
-              movie: true
-            }
+              movie: true,
+            },
           },
           winners: {
             where: {
-              year
-            }
-          }
-        }
-      }
-    }
+              year,
+            },
+          },
+        },
+      },
+    },
   };
 };
 
 export const getAllEvents = async () => {
-  return await database.events.findMany({
+  return database.event.findMany({
     orderBy: {
-      name: 'asc'
+      name: 'asc',
     },
-    ...getEventConfig(null, Number(process.env.NEXT_PUBLIC_ACTIVE_YEAR))
+    ...getEventConfig(null, Number(process.env.NEXT_PUBLIC_ACTIVE_YEAR)),
   });
 };
 
 export const getLiveEvent = async () => {
-  return await database.events.findFirst({
+  return database.event.findFirst({
     where: {
-      OR: [
-        { nomActive: true },
-        { awardsActive: true }
-      ]
-    }
+      OR: [{ nomActive: true }, { awardsActive: true }],
+    },
   });
 };
 
-export const updateEventByAbbr = async (abbreviation: string, data: Prisma.EventsUpdateInput) => {
-  return await database.events.updateMany({
+export const updateEventByAbbr = async (
+  abbreviation: string,
+  data: Prisma.EventUpdateInput,
+) => {
+  return database.event.updateMany({
     where: {
-      abbreviation
+      abbreviation,
     },
-    data
+    data,
   });
 };
 
 export const resetActiveEvents = async () => {
-  return await database.events.updateMany({
+  return database.event.updateMany({
     where: {
-      OR: [
-        { nomActive: true },
-        { awardsActive: true }
-      ]
+      OR: [{ nomActive: true }, { awardsActive: true }],
     },
     data: {
       nomActive: false,
-      awardsActive: false
-    }
+      awardsActive: false,
+    },
   });
 };
 
 export const getEventByAbbr = async (abbreviation: string) => {
-  return await database.events.findFirst(
-    getEventConfig(abbreviation, Number(process.env.NEXT_PUBLIC_ACTIVE_YEAR))
+  return database.event.findFirst(
+    getEventConfig(abbreviation, Number(process.env.NEXT_PUBLIC_ACTIVE_YEAR)),
   );
 };
 
-export const getEventByAbbrAndYear = async (abbreviation: string, year: number) => {
-  return await database.events.findFirst(
-    getEventConfig(abbreviation, year)
-  );
-}; 
+export const getEventByAbbrAndYear = async (
+  abbreviation: string,
+  year: number,
+) => {
+  return database.event.findFirst(getEventConfig(abbreviation, year));
+};
