@@ -304,31 +304,11 @@ P4.T3 verifies every incoming request against this secret. This is not optional 
 
 ---
 
-## Task 6: Auth0 Management API application
+## Task 6: Auth0 ✅ nothing required
 
-Needed only for the one-off user import in phase 4. Revoke it immediately afterward.
+Originally "create a Management API application to export users". **Removed (D25).**
 
-- [ ] **Step 1: Create a Machine-to-Machine application**
-
-Auth0 dashboard → **Applications → Create Application** → **Machine to Machine**. Name it `Cinemadraft Clerk Migration`.
-
-- [ ] **Step 2: Authorize it against the Management API**
-
-Select **Auth0 Management API**. Grant **`read:users`** only. Do not grant write scopes — this application never needs to modify anything.
-
-- [ ] **Step 3: Capture the credentials**
-
-```bash
-vercel env add AUTH0_MGMT_DOMAIN development
-vercel env add AUTH0_MGMT_CLIENT_ID development
-vercel env add AUTH0_MGMT_CLIENT_SECRET development
-```
-
-Development scope only — the import runs locally, never in production.
-
-- [ ] **Step 4: Record how many users exist**
-
-Auth0 → **User Management → Users**. Note the total count in `docs/PROGRESS.md`. Phase 4's import reconciles against this number, and a mismatch is how you'll catch a partial import.
+Accounts are claimed on first Clerk sign-in with a verified matching email, so there is no bulk import and nothing to export. Auth0 keeps serving the current site until cutover, then is decommissioned.
 
 ---
 
@@ -491,7 +471,7 @@ vercel env add TMDB_API_KEY production
 # repeat per key, per environment
 ```
 
-Cloudinary keys are deliberately **not** carried over — phase 11 replaces it with Vercel Blob. Auth0 runtime keys are **not** carried over either; only the Management API credentials from Task 6, which are temporary.
+Cloudinary keys are deliberately **not** carried over — phase 11 replaces it with Vercel Blob. No Auth0 credentials are carried over at all: the runtime keys belong to the old app, and D25 removed the need for Management API access.
 
 ---
 
@@ -505,14 +485,12 @@ Cloudinary keys are deliberately **not** carried over — phase 11 replaces it w
   - [ ] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
   - [ ] `CLERK_SECRET_KEY`
   - [ ] `CLERK_WEBHOOK_SIGNING_SECRET`
-  - [ ] `AUTH0_MGMT_DOMAIN`, `AUTH0_MGMT_CLIENT_ID`, `AUTH0_MGMT_CLIENT_SECRET`
   - [ ] `TMDB_API_KEY`, `OMDB_KEY`
   - [ ] `NEXT_PUBLIC_ACTIVE_YEAR`
 - [ ] `.local/prod-dump.dump` exists, `pg_restore --list` shows the expected tables, and `.local/` is gitignored
 - [ ] `.local/prod-row-counts.txt` exists
 - [ ] `fixtures/` contains a valid JSON response per endpoint, none of them errors
-- [ ] Clerk connections match the Auth0 connections exactly (Task 5, Step 3)
-- [ ] Auth0 user count recorded in `docs/PROGRESS.md`
+- [ ] Clerk is passwordless with email verification required (Task 5, Step 3) — this is what makes account claiming safe
 - [ ] Blob public hostname recorded in `docs/PROGRESS.md`
 - [ ] `next.cinemadraft.com` resolves to Vercel; `cinemadraft.com` **not yet added to Vercel**, still served by Heroku
 
