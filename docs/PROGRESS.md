@@ -15,7 +15,7 @@ Tick the box as the **final step** of each task.
 
 Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by Jon, not an agent.
 
-- [ ] P0.T0 Prerequisites — CLIs installed, `pg_dump` 16+, Vercel and Heroku logins verified
+- [ ] P0.T0 Prerequisites — Vercel CLI, `libpq` client tools (no native Postgres server), Vercel and Heroku logins verified
 - [ ] P0.T1 Vercel project created, repo linked, domain added with DNS still on Heroku
 - [ ] P0.T2 Neon provisioned via Marketplace, free plan, preview branching on
 - [ ] P0.T3 Upstash Redis provisioned, region matched to Vercel function region
