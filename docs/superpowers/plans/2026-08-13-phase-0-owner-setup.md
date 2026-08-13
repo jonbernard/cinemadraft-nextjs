@@ -1,0 +1,432 @@
+# Phase 0 — Owner Setup
+
+**Executed by:** Jon, not an agent. Everything here needs a browser login or a credential only you hold.
+
+**Goal:** Provision Vercel, Neon, Upstash, Vercel Blob, Clerk and an Auth0 Management application, and capture the two artifacts that become unrecoverable once Heroku is retired — a production database dump and the API contract fixtures.
+
+**Time:** roughly 60–90 minutes. Clerk (Task 5) is the longest and the only one with a real decision embedded in it.
+
+**Gate:** `vercel env pull` produces a `.env.local` containing every key in the checklist at the end, and `prod-dump.sql` plus `fixtures/` exist locally.
+
+> **Do these in order.** Task 1 creates the Vercel project that Tasks 2–4 attach storage to. Task 7 must happen before anything touches Heroku.
+
+---
+
+## Task 0: Prerequisites
+
+- [ ] **Step 1: Install the CLIs**
+
+```bash
+npm i -g vercel
+brew install postgresql@16   # for pg_dump / psql, if not already present
+```
+
+- [ ] **Step 2: Confirm pg_dump is version 16+**
+
+```bash
+pg_dump --version
+```
+
+Expected: `pg_dump (PostgreSQL) 16.x` or higher. An older `pg_dump` cannot dump a newer server and will fail in Task 7.
+
+- [ ] **Step 3: Log in to Vercel**
+
+```bash
+vercel login
+```
+
+- [ ] **Step 4: Confirm Heroku access**
+
+```bash
+heroku auth:whoami
+heroku pg:info --app <your-heroku-app-name>
+```
+
+Write the app name down — Task 7 needs it.
+
+---
+
+## Task 1: Vercel project
+
+- [ ] **Step 1: Link the repo**
+
+From `/Users/jonbernard/Development/cinemadraft-nextjs`:
+
+```bash
+vercel link
+```
+
+Choose **Create a new project**. Name it `cinemadraft`. Accept the detected framework (it will say "Other" until phase 1 scaffolds Next.js — that's fine, it re-detects on first deploy).
+
+- [ ] **Step 2: Connect the Git repository**
+
+Vercel dashboard → the `cinemadraft` project → **Settings → Git** → connect the GitHub repo. Set the production branch to `main`.
+
+- [ ] **Step 3: Add the domain but do NOT point DNS**
+
+**Settings → Domains** → add `cinemadraft.com`.
+
+Vercel will show DNS records to configure. **Do not configure them.** The domain stays pointed at Heroku until phase 13. This step only reserves the domain on the Vercel side so the cutover is a DNS change and nothing else.
+
+- [ ] **Step 4: Set the Node version**
+
+**Settings → General → Node.js Version** → `22.x`.
+
+---
+
+## Task 2: Neon Postgres
+
+- [ ] **Step 1: Provision through the Vercel Marketplace**
+
+Vercel dashboard → the project → **Storage** tab → **Create Database** → **Neon**.
+
+Provisioning through the Marketplace rather than neon.tech directly matters: the integration injects `DATABASE_URL` into the Vercel environment automatically, and keeps it in sync.
+
+- [ ] **Step 2: Confirm the free plan**
+
+Select the **Free** plan. Confirm before completing — the dialog sometimes preselects a paid tier.
+
+- [ ] **Step 3: Enable preview branching**
+
+In the Neon integration settings, enable **Create a database branch for each preview deployment**. This gives every pull request an isolated database and costs nothing on the free tier.
+
+- [ ] **Step 4: Verify the connection string landed**
+
+```bash
+vercel env pull .env.local
+grep DATABASE_URL .env.local
+```
+
+Expected: a `postgres://...neon.tech/...` URL. If it's absent, the integration didn't attach — reconnect it from the Storage tab.
+
+- [ ] **Step 5: Confirm you can reach it**
+
+```bash
+psql "$(grep '^DATABASE_URL' .env.local | cut -d= -f2- | tr -d '"')" -c 'select version();'
+```
+
+Expected: a PostgreSQL version string.
+
+---
+
+## Task 3: Upstash Redis
+
+- [ ] **Step 1: Provision through the Marketplace**
+
+**Storage** tab → **Create Database** → **Upstash** → **Redis**. Free plan.
+
+- [ ] **Step 2: Pick the region closest to your Vercel function region**
+
+Default Vercel region is `iad1` (Washington DC). Choose the matching Upstash region — cross-region Redis calls add latency to every cached TMDB lookup, which is exactly the path that has to be fast during a live draft.
+
+- [ ] **Step 3: Verify the keys landed**
+
+```bash
+vercel env pull .env.local
+grep UPSTASH .env.local
+```
+
+Expected: both `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+
+---
+
+## Task 4: Vercel Blob
+
+- [ ] **Step 1: Create the store**
+
+**Storage** tab → **Create** → **Blob**. Name it `cinemadraft-media`.
+
+- [ ] **Step 2: Verify the token landed**
+
+```bash
+vercel env pull .env.local
+grep BLOB_READ_WRITE_TOKEN .env.local
+```
+
+- [ ] **Step 3: Note the public hostname**
+
+The store's public URL looks like `https://<id>.public.blob.vercel-storage.com`. Phase 11 needs it for `next/image` remote patterns. Record it in `docs/PROGRESS.md` under the Phase 0 notes.
+
+---
+
+## Task 5: Clerk
+
+The longest task, and the one where a mistake is expensive. Read Step 3 fully before doing it.
+
+- [ ] **Step 1: Create the application**
+
+[dashboard.clerk.com](https://dashboard.clerk.com) → **Create application**. Name it `Cinemadraft`.
+
+- [ ] **Step 2: Find out what Auth0 is actually using**
+
+Before choosing connections, open the Auth0 dashboard → **Authentication → Social** and → **Authentication → Database**. Write down every enabled connection.
+
+This is the step that protects existing users. If Auth0 has Google enabled and Clerk does not, every Google user who signs in after cutover gets a **brand new identity** instead of their existing account, silently — with no leagues, no drafts, no history. It will look like data loss and it will not be obvious why.
+
+- [ ] **Step 3: Enable exactly those connections in Clerk**
+
+Clerk → **User & Authentication → Social Connections**. Enable each connection you wrote down in Step 2. Match them exactly — not more, not fewer.
+
+Also enable **Email address** as an identifier, since the import and the webhook both key on email.
+
+- [ ] **Step 4: Configure URLs**
+
+Clerk → **Paths**:
+
+| Setting | Value |
+|---|---|
+| Sign-in URL | `/sign-in` |
+| Sign-up URL | `/sign-up` |
+| After sign-in | `/` |
+| After sign-up | `/` |
+
+- [ ] **Step 5: Capture the API keys**
+
+Clerk → **API Keys**. Copy the publishable key and the secret key, then add them to Vercel:
+
+```bash
+vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY production
+vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY preview
+vercel env add NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY development
+vercel env add CLERK_SECRET_KEY production
+vercel env add CLERK_SECRET_KEY preview
+vercel env add CLERK_SECRET_KEY development
+```
+
+Each command prompts for the value. The publishable key is safe to expose; the secret key is not — never commit either.
+
+- [ ] **Step 6: Create the webhook**
+
+Clerk → **Webhooks** → **Add Endpoint**.
+
+- Endpoint URL: `https://<your-vercel-preview-domain>/api/webhooks/clerk`
+  (use the preview domain for now; update it to `https://cinemadraft.com/api/webhooks/clerk` at phase 13)
+- Subscribe to: **`user.created`** and **`user.updated`** only.
+
+- [ ] **Step 7: Capture the signing secret**
+
+From the webhook's detail page, copy the signing secret:
+
+```bash
+vercel env add CLERK_WEBHOOK_SIGNING_SECRET production
+vercel env add CLERK_WEBHOOK_SIGNING_SECRET preview
+vercel env add CLERK_WEBHOOK_SIGNING_SECRET development
+```
+
+The webhook handler in phase 4 verifies every request against this. An unverified webhook endpoint lets anyone create users in your database.
+
+---
+
+## Task 6: Auth0 Management API application
+
+Needed only for the one-off user import in phase 4. Revoke it immediately afterward.
+
+- [ ] **Step 1: Create a Machine-to-Machine application**
+
+Auth0 dashboard → **Applications → Create Application** → **Machine to Machine**. Name it `Cinemadraft Clerk Migration`.
+
+- [ ] **Step 2: Authorize it against the Management API**
+
+Select **Auth0 Management API**. Grant **`read:users`** only. Do not grant write scopes — this application never needs to modify anything.
+
+- [ ] **Step 3: Capture the credentials**
+
+```bash
+vercel env add AUTH0_MGMT_DOMAIN development
+vercel env add AUTH0_MGMT_CLIENT_ID development
+vercel env add AUTH0_MGMT_CLIENT_SECRET development
+```
+
+Development scope only — the import runs locally, never in production.
+
+- [ ] **Step 4: Record how many users exist**
+
+Auth0 → **User Management → Users**. Note the total count in `docs/PROGRESS.md`. Phase 4's import reconciles against this number, and a mismatch is how you'll catch a partial import.
+
+---
+
+## Task 7: Capture the irreplaceable artifacts
+
+🔴 **This is the task that cannot be redone later.** Both artifacts come from the live Heroku app, which is retired in phase 13.
+
+- [ ] **Step 1: Dump the production database**
+
+```bash
+cd /Users/jonbernard/Development/cinemadraft-nextjs
+mkdir -p .local
+heroku pg:backups:capture --app <your-heroku-app-name>
+heroku pg:backups:download --app <your-heroku-app-name> --output .local/prod-dump.dump
+```
+
+- [ ] **Step 2: Verify the dump is real**
+
+```bash
+pg_restore --list .local/prod-dump.dump | head -40
+ls -lh .local/prod-dump.dump
+```
+
+Expected: a table-of-contents listing your tables (`users`, `leagues`, `drafts`, `movies`, …) and a file size in megabytes, not bytes.
+
+- [ ] **Step 3: Confirm `.local/` is ignored**
+
+```bash
+grep -q '^\.local/' .gitignore || echo '.local/' >> .gitignore
+git check-ignore .local/prod-dump.dump
+```
+
+Expected: the path prints, meaning it's ignored. **The dump contains every user's personal data and must never be committed.**
+
+- [ ] **Step 4: Record row counts for later verification**
+
+```bash
+heroku pg:psql --app <your-heroku-app-name> -c "
+select relname as table, n_live_tup as rows
+from pg_stat_user_tables
+order by n_live_tup desc;" | tee .local/prod-row-counts.txt
+```
+
+Phase 2 restores into Neon and compares against this file. A restore that silently drops rows is otherwise very hard to notice.
+
+- [ ] **Step 5: Capture the API contract fixtures**
+
+These are the golden responses that every ported repository is tested against (spec §13). Create `.local/capture-fixtures.sh`:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE="https://cinemadraft.com/api"
+TOKEN="${CINEMADRAFT_TOKEN:?set CINEMADRAFT_TOKEN to a valid bearer token}"
+OUT="fixtures"
+mkdir -p "$OUT"
+
+# Public endpoints
+declare -a PUBLIC=(
+  "health"
+  "years"
+  "awards"
+  "events"
+  "movie/now-playing"
+)
+
+# Authenticated endpoints
+declare -a AUTHED=(
+  "dashboard"
+  "league"
+  "user"
+  "watchlist"
+  "lists"
+  "reviews"
+  "notifications"
+  "profile/feed"
+  "draft"
+  "draftpicks"
+  "points"
+  "nominations"
+  "winners"
+)
+
+for ep in "${PUBLIC[@]}"; do
+  name="${ep//\//_}"
+  echo "GET /$ep"
+  curl -sS "$BASE/$ep" > "$OUT/$name.json"
+done
+
+for ep in "${AUTHED[@]}"; do
+  name="${ep//\//_}"
+  echo "GET /$ep (auth)"
+  curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/$ep" > "$OUT/$name.json"
+done
+
+echo "Captured $(ls "$OUT" | wc -l | tr -d ' ') fixtures"
+```
+
+- [ ] **Step 6: Get a bearer token**
+
+Sign in to cinemadraft.com in your browser, open DevTools → **Network**, click any `/api/` request, and copy the `Authorization: Bearer …` header value.
+
+- [ ] **Step 7: Run the capture**
+
+```bash
+chmod +x .local/capture-fixtures.sh
+CINEMADRAFT_TOKEN='<paste token>' .local/capture-fixtures.sh
+```
+
+- [ ] **Step 8: Verify the fixtures are real responses, not errors**
+
+```bash
+for f in fixtures/*.json; do
+  printf '%-28s %s\n' "$(basename "$f")" "$(head -c 90 "$f")"
+done
+```
+
+Check every file. Any containing `{"error":"unauthorized"}` or an empty body means that endpoint didn't capture — fix the token or the path and re-run before moving on.
+
+- [ ] **Step 9: Commit the fixtures**
+
+Fixtures are committed (unlike the dump) because they're the test baseline and contain only your own account's data.
+
+```bash
+git add fixtures
+git commit -m "P0.T7: capture API contract fixtures from production
+
+Golden responses from the live Heroku API. These are the baseline every
+ported repository is tested against and cannot be recaptured after
+Heroku is retired.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
+```
+
+> If any fixture contains another user's personal data, scrub it before committing, or move `fixtures/` into `.local/` and note the location in `PROGRESS.md` instead.
+
+---
+
+## Task 8: Remaining service credentials
+
+- [ ] **Step 1: Carry over the external API keys from Heroku**
+
+```bash
+heroku config --app <your-heroku-app-name>
+```
+
+Add each of these to Vercel across all three environments:
+
+| Key | Notes |
+|---|---|
+| `TMDB_API_KEY` | required — search, posters, discovery |
+| `OMDB_KEY` | required — supplementary ratings |
+| `CACHE_DURATION_IN_MINUTES` | optional, has a default |
+| `NEXT_PUBLIC_ACTIVE_YEAR` | renamed from `REACT_APP_ACTIVE_YEAR` |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | renamed from `REACT_APP_GA_MEASUREMENT_ID` |
+
+```bash
+vercel env add TMDB_API_KEY production
+# repeat per key, per environment
+```
+
+Cloudinary keys are deliberately **not** carried over — phase 11 replaces it with Vercel Blob. Auth0 runtime keys are **not** carried over either; only the Management API credentials from Task 6, which are temporary.
+
+---
+
+## Completion checklist
+
+- [ ] `vercel env pull .env.local` succeeds and `.env.local` contains:
+  - [ ] `DATABASE_URL`
+  - [ ] `UPSTASH_REDIS_REST_URL`
+  - [ ] `UPSTASH_REDIS_REST_TOKEN`
+  - [ ] `BLOB_READ_WRITE_TOKEN`
+  - [ ] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+  - [ ] `CLERK_SECRET_KEY`
+  - [ ] `CLERK_WEBHOOK_SIGNING_SECRET`
+  - [ ] `AUTH0_MGMT_DOMAIN`, `AUTH0_MGMT_CLIENT_ID`, `AUTH0_MGMT_CLIENT_SECRET`
+  - [ ] `TMDB_API_KEY`, `OMDB_KEY`
+  - [ ] `NEXT_PUBLIC_ACTIVE_YEAR`
+- [ ] `.local/prod-dump.dump` exists, `pg_restore --list` shows the expected tables, and `.local/` is gitignored
+- [ ] `.local/prod-row-counts.txt` exists
+- [ ] `fixtures/` contains a valid JSON response per endpoint, none of them errors
+- [ ] Clerk connections match the Auth0 connections exactly (Task 5, Step 3)
+- [ ] Auth0 user count recorded in `docs/PROGRESS.md`
+- [ ] Blob public hostname recorded in `docs/PROGRESS.md`
+- [ ] `cinemadraft.com` added to Vercel with **DNS still pointed at Heroku**
+
+Tick Phase 0 in `docs/PROGRESS.md`, then phase 1 can begin.
