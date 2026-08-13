@@ -28,7 +28,7 @@ Postgres client tools are installed in Step 2 — do not install a Postgres serv
 
 `pg_restore` must be **at least** the Postgres major version of the dump's source server. A v15 client reading a v16 dump fails with `unsupported version in file header`.
 
-`pg_restore` is backward-compatible, so a v17 client covers every case — it reads dumps from 15, 16 or 17, and talks to whatever major version Neon provisions.
+`pg_restore` is backward-compatible, so a v17-or-newer client covers every case — it reads dumps from 15, 16 or 17, and talks to whatever major version Neon provisions.
 
 **Install `libpq`, not `postgresql@17`.** All local databases in this project run in Docker (see Phase 1). `libpq` is the client-only formula — `psql`, `pg_dump`, `pg_restore` — with no server binaries and nothing that can be started as a background service by accident.
 
@@ -43,9 +43,9 @@ exec zsh
 Verify:
 
 ```bash
-pg_restore --version   # expect 17.x
-psql --version         # expect 17.x
-which psql             # expect the libpq path, not /opt/homebrew/bin
+pg_dump --version      # expect 17.x or newer (Homebrew currently ships 18.x)
+pg_restore --version   # same
+which psql             # expect /opt/homebrew/opt/libpq/bin/psql, not /opt/homebrew/bin/psql
 ```
 
 If you already installed `postgresql@17`, it does no harm — just never run `brew services start postgresql@17`. To remove it: `brew uninstall postgresql@17`.
