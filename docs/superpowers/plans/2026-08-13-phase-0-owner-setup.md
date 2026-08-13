@@ -193,12 +193,25 @@ Pub/sub for phase 14 realtime is a separate question, deliberately deferred to t
 
 **Storage** tab → **Create** → **Blob**. Name it `cinemadraft-media`.
 
-- [ ] **Step 2: Verify the token landed**
+- [ ] **Step 2: Verify the variables landed**
 
 ```bash
-vercel env pull .env.local
-grep BLOB_READ_WRITE_TOKEN .env.local
+vercel env ls | grep -i blob
 ```
+
+Connecting the store injects `BLOB_STORE_ID` and `BLOB_WEBHOOK_PUBLIC_KEY` (both non-sensitive). It does **not** necessarily inject `BLOB_READ_WRITE_TOKEN`, which is the credential `@vercel/blob`'s `put()` requires.
+
+If the token is absent, generate one from the Blob store's settings in the dashboard and add it to all three environments:
+
+```bash
+vercel env add BLOB_READ_WRITE_TOKEN production
+vercel env add BLOB_READ_WRITE_TOKEN preview
+vercel env add BLOB_READ_WRITE_TOKEN development
+```
+
+**Development is included on purpose.** The phase 11 migration script runs locally — it reads every existing Cloudinary avatar and uploads it to Blob — so it needs a real token, not the OIDC identity a deployed function gets.
+
+If no token can be generated anywhere, Blob is OIDC-only on this account and phase 11 must run its migration as a deployed one-shot route rather than a local script. Record which applies before leaving this task.
 
 - [ ] **Step 3: Note the public hostname**
 

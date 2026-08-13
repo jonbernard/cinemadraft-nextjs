@@ -31,7 +31,9 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 _Fill these in as you go — later phases read them._
 
 - Heroku app name: `cinemadraft` (add-on `postgresql-fluffy-16646`, plan `essential-1`)
+- Blob store id: `store_5d9WUBVvsBKE…` — `BLOB_STORE_ID` and `BLOB_WEBHOOK_PUBLIC_KEY` attached (non-sensitive)
 - Blob public hostname: `________`
+- `BLOB_READ_WRITE_TOKEN` present? `________` — if no, phase 11 migration must run as a deployed route, not a local script
 - Auth0 user count at migration time: `________`
 - Auth0 connections enabled (must match Clerk): `________`
 - Vercel project: `cinemadraft-nextjs` (`prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`), linked in repo mode
