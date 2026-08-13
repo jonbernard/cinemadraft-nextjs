@@ -8,7 +8,7 @@
 
 **Gate:** `vercel env ls` shows every key in the checklist at the end, and `.local/prod-dump.dump` plus `fixtures/` exist locally.
 
-> **Sensitive variables cannot be pulled.** Vercel's Sensitive type is write-only. Verification is by *presence* in `vercel env ls`, not by reading values. Connection strings needed locally come from each provider's own console and live in the gitignored `.local/`.
+> **Sensitive variables cannot be pulled.** Vercel's Sensitive type is write-only. Verification is by _presence_ in `vercel env ls`, not by reading values. Connection strings needed locally come from each provider's own console and live in the gitignored `.local/`.
 
 > **Do these in order.** Task 1 creates the Vercel project that Tasks 2–4 attach storage to. Task 7 must happen before anything touches Heroku.
 
@@ -230,34 +230,38 @@ The store's public URL looks like `https://<id>.public.blob.vercel-storage.com`.
 
 ## Task 5: Clerk
 
-The longest task, and the one where a mistake is expensive. Read Step 3 fully before doing it.
+The one where a mistake is expensive. Step 3's email-verification requirement is what makes account claiming (D25) safe — read it before enabling anything.
 
-- [ ] **Step 1: Create the application**
+- [x] **Step 1: Create the application**
 
 [dashboard.clerk.com](https://dashboard.clerk.com) → **Create application**. Name it `Cinemadraft`.
 
-- [ ] **Step 2: Find out what Auth0 is actually using**
+- [x] **Step 2: Find out what Auth0 is actually using**
 
 Before choosing connections, open the Auth0 dashboard → **Authentication → Social** and → **Authentication → Database**. Write down every enabled connection.
 
 This is the step that protects existing users. If Auth0 has Google enabled and Clerk does not, every Google user who signs in after cutover gets a **brand new identity** instead of their existing account, silently — with no leagues, no drafts, no history. It will look like data loss and it will not be obvious why.
 
-- [ ] **Step 3: Enable exactly those connections in Clerk**
+- [x] **Step 3: Enable exactly those connections in Clerk**
 
 Clerk → **User & Authentication → Social Connections**. Enable each connection you wrote down in Step 2. Match them exactly — not more, not fewer.
 
 Also enable **Email address** as an identifier, since the import and the webhook both key on email.
 
-- [ ] **Step 4: Configure URLs**
+- [x] **Step 4: URLs — nothing to do here**
 
-Clerk → **Paths**:
+The dashboard's **Configure → Paths** section configures Clerk's *hosted* Account Portal. This project does not use it: P4.T6 builds its own sign-in and sign-up pages using the phase 3 design tokens, so the pages live in the app.
 
-| Setting       | Value      |
-| ------------- | ---------- |
-| Sign-in URL   | `/sign-in` |
-| Sign-up URL   | `/sign-up` |
-| After sign-in | `/`        |
-| After sign-up | `/`        |
+For app-hosted pages, Clerk reads paths from environment variables instead:
+
+```
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL=/
+NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/
+```
+
+**These are added in phase 4, not now.** They reference routes that do not exist yet, and pointing at missing routes produces redirect loops.
 
 - [ ] **Step 5: Capture the API keys**
 
