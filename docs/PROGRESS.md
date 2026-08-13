@@ -20,7 +20,7 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 - [x] P0.T2 Neon provisioned via Marketplace; connectivity verified; empty and ready for restore
 - [x] P0.T3 ~~Upstash Redis~~ — **removed**. Vercel Runtime Cache is included with the platform; nothing to provision (D23)
 - [x] P0.T4 Vercel Blob store created; `BLOB_STORE_ID` + `BLOB_WEBHOOK_PUBLIC_KEY` attached; OIDC auth model understood; uploads will be **public** per D24
-- [ ] P0.T5 Clerk app created — Email+Password and Google enabled, **email verification required**, keys and webhook secret in Vercel
+- [x] P0.T5 Clerk app created — **passwordless** (email code + Google, D26), webhook at `next.cinemadraft.com`, three keys in Vercel
 - [x] P0.T6 ~~Auth0 Management app~~ — **removed**. No bulk import under D25; Auth0 needs nothing
 - [ ] P0.T7 🔴 Production dump + row counts + API contract fixtures captured
 - [ ] P0.T8 TMDB / OMDB / remaining env keys carried over

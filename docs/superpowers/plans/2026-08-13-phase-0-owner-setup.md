@@ -228,7 +228,7 @@ The store's public URL looks like `https://<id>.public.blob.vercel-storage.com`.
 
 ---
 
-## Task 5: Clerk
+## Task 5: Clerk ✅ complete
 
 The one where a mistake is expensive. Step 3's email-verification requirement is what makes account claiming (D25) safe — read it before enabling anything.
 
@@ -250,7 +250,7 @@ Also enable **Email address** as an identifier, since the import and the webhook
 
 - [x] **Step 4: URLs — nothing to do here**
 
-The dashboard's **Configure → Paths** section configures Clerk's *hosted* Account Portal. This project does not use it: P4.T6 builds its own sign-in and sign-up pages using the phase 3 design tokens, so the pages live in the app.
+The dashboard's **Configure → Paths** section configures Clerk's _hosted_ Account Portal. This project does not use it: P4.T6 builds its own sign-in and sign-up pages using the phase 3 design tokens, so the pages live in the app.
 
 For app-hosted pages, Clerk reads paths from environment variables instead:
 
@@ -263,7 +263,7 @@ NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL=/
 
 **These are added in phase 4, not now.** They reference routes that do not exist yet, and pointing at missing routes produces redirect loops.
 
-- [ ] **Step 5: Capture the API keys**
+- [x] **Step 5: Capture the API keys**
 
 Clerk → **API Keys**. Copy the publishable key and the secret key, then add them to Vercel:
 
@@ -278,7 +278,7 @@ vercel env add CLERK_SECRET_KEY development
 
 Each command prompts for the value. The publishable key is safe to expose; the secret key is not — never commit either.
 
-- [ ] **Step 6: Create the webhook**
+- [x] **Step 6: Create the webhook**
 
 Clerk → **Webhooks** → **Add Endpoint**.
 
@@ -286,7 +286,7 @@ Clerk → **Webhooks** → **Add Endpoint**.
   Stable through the whole build. At phase 13, either add a second endpoint for `https://cinemadraft.com/api/webhooks/clerk` or repoint this one.
 - Subscribe to: **`user.created`** and **`user.updated`** only.
 
-- [ ] **Step 7: Capture the signing secret**
+- [x] **Step 7: Capture the signing secret**
 
 Clerk does not display anything called `CLERK_WEBHOOK_SIGNING_SECRET` — that is just the environment variable name this project uses. Clerk shows a field labelled **Signing Secret** on the endpoint's detail page, with a value beginning `whsec_` (Clerk uses Svix for webhooks).
 
