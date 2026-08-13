@@ -399,7 +399,7 @@ No component unit tests.
 
 | # | Phase | Gate |
 |---|---|---|
-| 0 | **Owner setup** — provision Vercel, Neon, Upstash, Blob, Clerk (§15) | All credentials present in Vercel env; `vercel env pull` succeeds |
+| 0 | **Owner setup** — provision Vercel, Neon, Blob, Clerk (§15) | All required keys present in `vercel env ls` (Sensitive values cannot be pulled back) |
 | 1 | Scaffold: Next 16, TS strict, MUI v7, lint, CI | `npm run build` green; deploys to a Vercel preview |
 | 2 | Data layer: dump → Neon, introspect, baseline, repositories, contract fixtures | All contract tests green |
 | 3 | Design system: tokens, both themes, typography, contrast + clamping tests | Design tests green |
@@ -413,7 +413,7 @@ No component unit tests.
 | 11 | Cloudinary → Vercel Blob, existing uploads migrated | Images render from Blob |
 | 12 | Parallel run on staging domain against a copy of production data | Full manual verification pass |
 | 13 | DNS cutover; Heroku retired | Site live on Vercel |
-| 14 | Realtime: Upstash pub/sub + SSE replaces polling | Live event works end to end |
+| 14 | Realtime: SSE + a transport chosen at phase start replaces polling | Live event works end to end |
 | 15 | New features (§7) | Per-feature E2E |
 
 Phases 4–6 are the D17 priority trio. Auth leads because the dashboard and draft board both depend on a resolved user.
@@ -461,7 +461,7 @@ This effort spans more sessions than one context window. State lives in files, n
 | **Contract fixtures become uncapturable** — the source of truth is a live Heroku app that gets retired | Capture in phase 0/2, before any migration work. This is unrecoverable if skipped |
 | **Materialized scores drift from source** — the failure mode §11 introduces | Nightly reconciliation job diffs recomputed vs stored and reports mismatches; full recompute available as a first-class command |
 | **Winner corrections during a live ceremony** leave stale points | Recompute must be fully reversible; treated as a normal path and E2E tested, not an exception |
-| **Search regresses the draft experience** — TMDB rate limits or slow typeahead during a live draft | Local-first search, Upstash-cached TMDB calls, debounce + cancellation; load-tested in phase 8 |
+| **Search regresses the draft experience** — TMDB rate limits or slow typeahead during a live draft | Local-first search, Runtime Cache-backed TMDB calls, debounce + cancellation; load-tested in phase 8 |
 | Neon free tier limits under real traffic | Measure during the phase 12 parallel run, before cutover |
 | Poster accents produce unreadable UI | Luminance clamping with a unit test; raw poster color never trusted |
 | MUI v7 API drift from v5 during the component port | Port shared components first (phase 3) to surface breakage early |

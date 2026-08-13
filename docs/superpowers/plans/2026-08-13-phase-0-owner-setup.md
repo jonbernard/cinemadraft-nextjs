@@ -2,7 +2,7 @@
 
 **Executed by:** Jon, not an agent. Everything here needs a browser login or a credential only you hold.
 
-**Goal:** Provision Vercel, Neon, Upstash, Vercel Blob, Clerk and an Auth0 Management application, and capture the two artifacts that become unrecoverable once Heroku is retired — a production database dump and the API contract fixtures.
+**Goal:** Provision Vercel, Neon, Vercel Blob, Clerk and an Auth0 Management application, and capture the two artifacts that become unrecoverable once Heroku is retired — a production database dump and the API contract fixtures.
 
 **Time:** roughly 60–90 minutes. Clerk (Task 5) is the longest and the only one with a real decision embedded in it.
 
@@ -175,24 +175,15 @@ Expected: a PostgreSQL version string. Record the major version in `docs/PROGRES
 
 ---
 
-## Task 3: Upstash Redis
+## Task 3: Caching ✅ nothing to provision
 
-- [ ] **Step 1: Provision through the Marketplace**
+Originally "provision Upstash Redis". **Removed (D23).**
 
-**Storage** tab → **Create Database** → **Upstash** → **Redis**. Free plan.
+Upstash no longer offers a free tier through the Vercel Marketplace — the smallest plan is pay-as-you-go and requires a credit card, which violates the free-only constraint.
 
-- [ ] **Step 2: Pick the region closest to your Vercel function region**
+The **Vercel Runtime Cache** covers the need and is included with the platform: a per-region key-value store with tag-based invalidation, callable from Functions, and targeted natively by Next.js 16 via `'use cache: remote'`. No integration, no keys, no card.
 
-Default Vercel region is `iad1` (Washington DC). Choose the matching Upstash region — cross-region Redis calls add latency to every cached TMDB lookup, which is exactly the path that has to be fast during a live draft.
-
-- [ ] **Step 3: Verify the keys landed**
-
-```bash
-vercel env pull .env.local
-grep UPSTASH .env.local
-```
-
-Expected: both `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+Pub/sub for phase 14 realtime is a separate question, deliberately deferred to that phase. It is not on the cutover path — polling ships at phase 13.
 
 ---
 
