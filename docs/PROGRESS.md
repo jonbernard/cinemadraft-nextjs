@@ -74,17 +74,18 @@ Plan: _not yet written_
 
 Plan: _not yet written_
 
-- [ ] P2.T1 Restore dump into Neon, verify row counts against `.local/prod-row-counts.txt`
-- [ ] P2.T2 `prisma db pull`, review every model (use TablePlus against `cinemadraft-neon` for the review)
-- [ ] P2.T3 Baseline migrations
-- [ ] P2.T4 Drop `SequelizeMeta`
-- [ ] P2.T5 `lib/db.ts` — Prisma singleton + Neon adapter
-- [ ] P2.T6 Migration: `Movie.accentHex`, `User.clerkId`, `AvailableYear.isActive` + partial unique index
-- [ ] P2.T7 Typed error classes
-- [ ] P2.T7a Load the production dump into the local Docker database for contract tests
-- [ ] P2.T8+ One repository per domain, TDD'd against fixtures (16 repositories — enumerated when the plan is written)
-
----
+- [ ] P2.T1 Restore dump into Neon as-is (`--no-owner --no-privileges`, unpooled URL)
+- [ ] P2.T2 🔴 Verify row counts against `.local/prod-row-counts.txt`
+- [ ] P2.T3 Write `prisma/normalize.sql` — snake_case renames, drop dead columns (D27)
+- [ ] P2.T4 🔴 Apply it, verify row counts **again** — must be identical
+- [ ] P2.T5 `prisma db pull`, review every model in TablePlus
+- [ ] P2.T6 Add `@@map` / `@map` so Prisma stays PascalCase/camelCase over snake_case
+- [ ] P2.T7 Baseline migrations
+- [ ] P2.T8 `lib/db.ts` — Prisma singleton + Neon adapter
+- [ ] P2.T9 Migration: `Movie.accentHex`, `User.clerkId`, `AvailableYear.isActive` + partial unique index
+- [ ] P2.T10 Typed error classes
+- [ ] P2.T11 Load normalized data into the local Docker database for contract tests
+- [ ] P2.T12+ One repository per live table, TDD'd against fixtures (16 total)
 
 ## Phase 3 — Design system
 
