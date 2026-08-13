@@ -288,7 +288,11 @@ Clerk → **Webhooks** → **Add Endpoint**.
 
 - [ ] **Step 7: Capture the signing secret**
 
-From the webhook's detail page, copy the signing secret:
+Clerk does not display anything called `CLERK_WEBHOOK_SIGNING_SECRET` — that is just the environment variable name this project uses. Clerk shows a field labelled **Signing Secret** on the endpoint's detail page, with a value beginning `whsec_` (Clerk uses Svix for webhooks).
+
+**The secret only exists once the endpoint is created**, so this step cannot be done before Step 6.
+
+Copy that value into:
 
 ```bash
 vercel env add CLERK_WEBHOOK_SIGNING_SECRET production
@@ -296,7 +300,7 @@ vercel env add CLERK_WEBHOOK_SIGNING_SECRET preview
 vercel env add CLERK_WEBHOOK_SIGNING_SECRET development
 ```
 
-The webhook handler in phase 4 verifies every request against this. An unverified webhook endpoint lets anyone create users in your database.
+P4.T3 verifies every incoming request against this secret. This is not optional hardening: the webhook is what claims existing accounts (D25), so an unverified endpoint would let anyone forge a `user.created` for any email address and take over that member's leagues.
 
 ---
 
