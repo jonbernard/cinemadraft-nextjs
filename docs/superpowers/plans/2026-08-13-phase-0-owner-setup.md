@@ -51,6 +51,19 @@ If you already installed `postgresql@17`, it does no harm — just never run `br
 
 > **No native Postgres server runs on this machine.** Local development and test databases are Docker containers. The only local Postgres binaries are client tools.
 
+- [ ] **Step 2b: Set up TablePlus connections (optional but recommended)**
+
+TablePlus is the inspection tool for this project. It **cannot** restore the custom-format `.dump` from Heroku — that stays `pg_restore` — but it is the right tool for reviewing the introspected schema in Phase 2 Task 2, and for spot-checking data after the restore.
+
+Save two connections:
+
+| Name | Source | SSL |
+|---|---|---|
+| `cinemadraft-neon` | paste `DATABASE_URL` from `.env.local` via **Import from URL** | **require** — Neon rejects unencrypted connections |
+| `cinemadraft-local` | `localhost:5432`, credentials from `docker-compose.local.yml` | off |
+
+The local connection only works after P1.T8 creates the container.
+
 - [ ] **Step 3: Log in to Vercel**
 
 ```bash

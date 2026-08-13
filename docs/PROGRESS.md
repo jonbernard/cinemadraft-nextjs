@@ -59,7 +59,7 @@ Plan: _not yet written_
 Plan: _not yet written_
 
 - [ ] P2.T1 Restore dump into Neon, verify row counts against `.local/prod-row-counts.txt`
-- [ ] P2.T2 `prisma db pull`, review every model
+- [ ] P2.T2 `prisma db pull`, review every model (use TablePlus against `cinemadraft-neon` for the review)
 - [ ] P2.T3 Baseline migrations
 - [ ] P2.T4 Drop `SequelizeMeta`
 - [ ] P2.T5 `lib/db.ts` — Prisma singleton + Neon adapter
