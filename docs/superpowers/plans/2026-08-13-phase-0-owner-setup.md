@@ -21,13 +21,29 @@ npm i -g vercel
 brew install postgresql@16   # for pg_dump / psql, if not already present
 ```
 
-- [ ] **Step 2: Confirm pg_dump is version 16+**
+- [ ] **Step 2: Install a Postgres client that can read the dump**
+
+`heroku pg:backups:capture` runs `pg_dump` **server-side** on Heroku, so your local `pg_dump` version does not matter. What matters is **`pg_restore`**, used locally in Task 7 Step 2 and again in Phase 2 Task 1 to restore into Neon.
+
+`pg_restore` must be **at least** the Postgres major version of the dump's source server. A v15 client reading a v16 dump fails with `unsupported version in file header`.
+
+`pg_restore` is backward-compatible, so installing 17 covers every case — it reads dumps from 15, 16 or 17, and talks to whatever major version Neon provisions.
 
 ```bash
-pg_dump --version
+brew install postgresql@17
+brew unlink postgresql@15 2>/dev/null || true
+brew unlink postgresql@16 2>/dev/null || true
+brew link --force postgresql@17
+echo 'export PATH="$(brew --prefix postgresql@17)/bin:$PATH"' >> ~/.zshrc
+exec zsh
 ```
 
-Expected: `pg_dump (PostgreSQL) 16.x` or higher. An older `pg_dump` cannot dump a newer server and will fail in Task 7.
+Verify:
+
+```bash
+pg_restore --version   # expect 17.x
+psql --version         # expect 17.x
+```
 
 - [ ] **Step 3: Log in to Vercel**
 
