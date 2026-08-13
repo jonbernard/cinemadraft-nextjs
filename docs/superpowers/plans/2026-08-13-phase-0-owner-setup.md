@@ -71,7 +71,7 @@ The local connection only works after P1.T8 creates the container.
 vercel login
 ```
 
-- [ ] **Step 4: Confirm Heroku access**
+- [x] **Step 4: Confirm Heroku access**
 
 ```bash
 heroku auth:whoami
