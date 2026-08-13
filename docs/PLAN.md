@@ -58,7 +58,7 @@ Legend for gates: a phase is done when its gate is demonstrably true, verified b
 
 Provision Vercel, Neon, Upstash, Vercel Blob, Clerk and an Auth0 Management application. Capture a production database dump and the API contract fixtures while Heroku is still live.
 
-**Gate:** `vercel env pull` produces a `.env.local` containing every required key; `prod-dump.sql` and `fixtures/` exist locally.
+**Gate:** `vercel env pull` produces a `.env.local` containing every required key; `.local/prod-dump.dump` and `fixtures/` exist locally.
 
 **Why it blocks:** the contract fixtures and the database dump come from a Heroku app that gets retired in phase 13. They are unrecoverable if skipped.
 
@@ -86,7 +86,7 @@ Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Direc
 
 Restore production data to Neon, introspect, baseline, build repositories against captured fixtures.
 
-- T1: Restore `prod-dump.sql` into the Neon database; verify row counts against Heroku
+- T1: Restore `.local/prod-dump.dump` into the Neon database; verify row counts against Heroku
 - T2: `prisma db pull` → `schema.prisma`; review every model for correct `@@map` and types
 - T3: Baseline: `prisma migrate diff` → `prisma migrate resolve --applied 0_init`
 - T4: Drop `SequelizeMeta`

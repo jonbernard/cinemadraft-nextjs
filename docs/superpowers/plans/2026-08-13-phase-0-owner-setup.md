@@ -6,7 +6,7 @@
 
 **Time:** roughly 60–90 minutes. Clerk (Task 5) is the longest and the only one with a real decision embedded in it.
 
-**Gate:** `vercel env pull` produces a `.env.local` containing every key in the checklist at the end, and `prod-dump.sql` plus `fixtures/` exist locally.
+**Gate:** `vercel env pull` produces a `.env.local` containing every key in the checklist at the end, and `.local/prod-dump.dump` plus `fixtures/` exist locally.
 
 > **Do these in order.** Task 1 creates the Vercel project that Tasks 2–4 attach storage to. Task 7 must happen before anything touches Heroku.
 
@@ -18,8 +18,9 @@
 
 ```bash
 npm i -g vercel
-brew install postgresql@16   # for pg_dump / psql, if not already present
 ```
+
+Postgres client tools are installed in Step 2 — do not install a Postgres server.
 
 - [ ] **Step 2: Install a Postgres client that can read the dump**
 
