@@ -18,7 +18,7 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 - [x] P0.T0 Prerequisites — `libpq` 18.4 client tools installed and on PATH (no native Postgres server)
 - [x] P0.T1 Vercel project `cinemadraft-nextjs` linked; staging domain `next.cinemadraft.com` live; apex still on Heroku
 - [x] P0.T2 Neon provisioned via Marketplace; connectivity verified; empty and ready for restore
-- [ ] P0.T3 Upstash Redis provisioned, region matched to Vercel function region
+- [x] P0.T3 ~~Upstash Redis~~ — **removed**. Vercel Runtime Cache is included with the platform; nothing to provision (D23)
 - [ ] P0.T4 Vercel Blob store created
 - [ ] P0.T5 Clerk app created — **connections matched to Auth0 exactly**, keys and webhook secret in Vercel
 - [ ] P0.T6 Auth0 Management app created with `read:users` only
@@ -199,4 +199,5 @@ Plan: _written after phase 7, driven by `docs/PARITY.md`_
 ## Open questions carried forward
 
 - **`NEXT_PUBLIC_ACTIVE_YEAR` still set in Vercel.** Delete it once P5.T0 ships the database-backed read path (D22).
+- **Realtime transport undecided** — deferred to phase 14 by D23. Not on the cutover path.
 - **Logo mark undecided.** Wordmark-only until resolved. See `docs/DECISIONS.md` → Still open.

@@ -57,7 +57,7 @@ Legend for gates: a phase is done when its gate is demonstrably true, verified b
 **Plan:** `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` ✅ written
 **Executed by:** the owner, not an agent.
 
-Provision Vercel, Neon, Upstash, Vercel Blob, Clerk and an Auth0 Management application. Capture a production database dump and the API contract fixtures while Heroku is still live. Staging domain is `next.cinemadraft.com`; the apex stays on Heroku until phase 13.
+Provision Vercel, Neon, Vercel Blob, Clerk and an Auth0 Management application. Capture a production database dump and the API contract fixtures while Heroku is still live. Staging domain is `next.cinemadraft.com`; the apex stays on Heroku until phase 13.
 
 **Gate:** `vercel env ls` lists every required key (Sensitive values cannot be pulled back — verify by presence); `.local/prod-dump.dump` and `fixtures/` exist locally.
 
@@ -187,7 +187,7 @@ The award show page is the input to the entire scoring pipeline; errors here pro
 
 - T1: `lib/services/search.ts` — local-first `Movie` query with trigram/prefix index
 - T2: TMDB fill-in, deduped on `tmdbId`, local row wins
-- T3: Upstash caching keyed on query + year
+- T3: Vercel Runtime Cache for TMDB responses, keyed on query + year, tagged for invalidation
 - T4: Context-aware ranking — draft / browse / award-admin (§10)
 - T5: Typeahead client component — 250 ms debounce, request cancellation, poster-first results
 - T6: Award show page — categories, nominee grids
@@ -240,7 +240,7 @@ Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index a
 
 - T1: Deploy to `next.cinemadraft.com` against a copy of production data
 - T2: Manual verification pass, feature by feature, against `PARITY.md`
-- T3: Measure Neon and Upstash free-tier headroom under realistic load
+- T3: Measure Neon free-tier headroom and Runtime Cache hit rate under realistic load
 - T4: Load-test draft-day search
 - T5: Fix everything found
 
@@ -264,7 +264,8 @@ Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index a
 
 Replaces the polling fallback (D13).
 
-- T1: Upstash pub/sub publisher in the winner-marking Server Action
+- T0: **Choose the realtime transport** (D23 deferred this) — evaluate Upstash direct, Pusher, Ably, and Postgres `LISTEN`/`NOTIFY`, then record the decision
+- T1: Publisher wired into the winner-marking Server Action
 - T2: `/api/live/[event]/stream` SSE route
 - T3: Client subscription replacing the polling hook
 - T4: Winner-seal stamp animation — the one orchestrated motion moment (§6.8)

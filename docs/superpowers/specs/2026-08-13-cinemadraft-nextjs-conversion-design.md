@@ -38,7 +38,8 @@ Each was decided explicitly during design. A future session must not re-litigate
 | D3 | **MUI v7** as component substrate; visual identity delivered through the theme layer | Avoids rebuilding 25k LOC while still replacing the look entirely |
 | D4 | **Prisma 6** + `@prisma/adapter-neon` | Chosen ORM |
 | D5 | **Neon Postgres** via Vercel Marketplace (free) | Vercel's default Postgres partner. Supabase explicitly rejected |
-| D6 | **Upstash Redis** (free) for caching, and for pub/sub in the realtime phase | Explicitly chosen over Supabase Realtime |
+| D6 | ~~Upstash Redis for caching and pub/sub~~ — **superseded by D23** | Upstash no longer offers a free tier through the Vercel Marketplace; the smallest plan is pay-as-you-go and requires a card |
+| D23 | **Vercel Runtime Cache** for caching. Realtime transport **deferred to phase 14** | Runtime Cache is included with the platform — no card, no extra vendor — and Next.js 16 targets it natively via `'use cache: remote'`. Pub/sub is only needed post-cutover, so the choice is made when it is built, not months early |
 | D7 | **Clerk** for auth, replacing Auth0 | Owner's choice, accepting user-migration risk |
 | D8 | **Server Components + Server Actions**; no general `/api` layer | `/api` retained only where HTTP is required: Clerk webhook, SSE stream, ical feed |
 | D9 | **Vercel Blob** replaces Cloudinary | One less vendor |
@@ -71,8 +72,8 @@ Each was decided explicitly during design. A future session must not re-litigate
 | Auth | Auth0 SPA SDK | Clerk (`@clerk/nextjs`) |
 | Data fetching | SWR (client) | Server Components |
 | Mutations | REST via axios | Server Actions |
-| Realtime | socket.io | Upstash pub/sub + SSE (phase 14) |
-| Cache | `memory-cache` | Upstash Redis |
+| Realtime | socket.io | SSE + a transport chosen in phase 14 |
+| Cache | `memory-cache` | Vercel Runtime Cache |
 | Media | Cloudinary | Vercel Blob |
 | Forms | Formik + Yup | react-hook-form + Zod |
 | Drag & drop | `react-beautiful-dnd` | `@hello-pangea/dnd` |
@@ -102,9 +103,8 @@ lib/
   db.ts                     Prisma singleton + Neon adapter
   repositories/*.ts         ONLY layer importing Prisma; returns DTOs
   services/*.ts             business logic (points, draft rules, nominations)
-  external/tmdb.ts          TMDB client, Upstash-cached
+  external/tmdb.ts          TMDB client, Runtime Cache-backed
   external/color.ts         poster accent extraction (§6.6)
-  redis.ts                  Upstash client
   auth.ts                   getCurrentUser / requireUser / requireAdmin
 actions/*.ts                Server Actions
 components/                 ported MUI components ('use client')
@@ -324,7 +324,7 @@ A single `lib/services/search.ts` with a source-merging strategy:
 2. **TMDB fill.** Call TMDB only when local results are thin, and merge.
 3. **Dedupe on `tmdbId`**, local row winning — a film must never appear twice.
 4. **Rank** with an eligibility-year boost, exact-title-match boost, and a penalty for films already drafted in the caller's league when the context is a draft.
-5. **Cache** TMDB responses in Upstash keyed by query plus year. TMDB's rate limit is the constraint, and identical queries during a live draft are common.
+5. **Cache** TMDB responses in the Vercel Runtime Cache, keyed by query plus year and tagged for invalidation. TMDB's rate limit is the constraint, and identical queries during a live draft are common.
 
 Client-side: debounced input (250 ms), request cancellation on keystroke, and results that render the poster — this audience recognizes films by artwork faster than by title.
 
@@ -428,7 +428,7 @@ Phase 0 is owner-executed and blocks everything else. The implementation plan ca
 
 **Neon** — provision through the Vercel Marketplace so the integration injects `DATABASE_URL` automatically. Enable a preview branch for pull requests. Confirm the free-tier plan.
 
-**Upstash Redis** — provision through the Vercel Marketplace. Confirm `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` land in the Vercel environment.
+**Caching** — nothing to provision. The Vercel Runtime Cache is included with the platform and requires no integration, no keys, and no card. This replaced Upstash, which no longer offers a free Marketplace tier (D23).
 
 **Vercel Blob** — create the store, confirm `BLOB_READ_WRITE_TOKEN`.
 
@@ -455,6 +455,7 @@ This effort spans more sessions than one context window. State lives in files, n
 
 | Risk | Mitigation |
 |---|---|
+| **Realtime transport undecided** — phase 14 needs pub/sub and no free option is currently provisioned | Deferred deliberately (D23). Candidates: Upstash direct (outside the Marketplace), Pusher Channels free tier, Ably free tier, or Postgres `LISTEN`/`NOTIFY` on an unpooled Neon connection. Cutover does not depend on it — polling ships at phase 13 |
 | Auth0 → Clerk migration orphans users | `auth0Id` retained; email-keyed webhook self-heals; verify social connections before import (phase 0) |
 | Port regressions in data shape | Repository contract tests against golden fixtures captured from live production |
 | **Contract fixtures become uncapturable** — the source of truth is a live Heroku app that gets retired | Capture in phase 0/2, before any migration work. This is unrecoverable if skipped |
