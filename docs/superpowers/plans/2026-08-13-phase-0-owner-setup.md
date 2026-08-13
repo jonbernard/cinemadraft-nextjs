@@ -107,11 +107,13 @@ No `DATABASE_URL` was present, so Task 2 provisions Neon into a clean slate.
 
 Vercel dashboard → the `cinemadraft` project → **Settings → Git** → connect the GitHub repo. Set the production branch to `main`.
 
-- [ ] **Step 3: Add the domain but do NOT point DNS**
+- [x] **Step 3: Staging domain — `next.cinemadraft.com`**
 
-**Settings → Domains** → add `cinemadraft.com`.
+Already configured. This is the working domain for the entire build, and the parallel-run domain in phase 12.
 
-Vercel will show DNS records to configure. **Do not configure them.** The domain stays pointed at Heroku until phase 13. This step only reserves the domain on the Vercel side so the cutover is a DNS change and nothing else.
+**`cinemadraft.com` is deliberately NOT added to Vercel yet.** It stays pointed at Heroku, serving the live site, until phase 13. Adding it now would only show as misconfigured and create the temptation to "fix" it.
+
+Using a stable subdomain rather than preview URLs matters for one specific reason: the Clerk webhook (Task 5, Step 6). Vercel preview URLs change on every deployment, so a webhook pointed at one breaks constantly. `next.cinemadraft.com` is stable from phase 4 through cutover.
 
 - [ ] **Step 4: Set the Node version**
 
@@ -244,8 +246,8 @@ Each command prompts for the value. The publishable key is safe to expose; the s
 
 Clerk → **Webhooks** → **Add Endpoint**.
 
-- Endpoint URL: `https://<your-vercel-preview-domain>/api/webhooks/clerk`
-  (use the preview domain for now; update it to `https://cinemadraft.com/api/webhooks/clerk` at phase 13)
+- Endpoint URL: `https://next.cinemadraft.com/api/webhooks/clerk`
+  Stable through the whole build. At phase 13, either add a second endpoint for `https://cinemadraft.com/api/webhooks/clerk` or repoint this one.
 - Subscribe to: **`user.created`** and **`user.updated`** only.
 
 - [ ] **Step 7: Capture the signing secret**
@@ -472,6 +474,6 @@ Cloudinary keys are deliberately **not** carried over — phase 11 replaces it w
 - [ ] Clerk connections match the Auth0 connections exactly (Task 5, Step 3)
 - [ ] Auth0 user count recorded in `docs/PROGRESS.md`
 - [ ] Blob public hostname recorded in `docs/PROGRESS.md`
-- [ ] `cinemadraft.com` added to Vercel with **DNS still pointed at Heroku**
+- [ ] `next.cinemadraft.com` resolves to Vercel; `cinemadraft.com` **not yet added to Vercel**, still served by Heroku
 
 Tick Phase 0 in `docs/PROGRESS.md`, then phase 1 can begin.

@@ -56,7 +56,7 @@ Legend for gates: a phase is done when its gate is demonstrably true, verified b
 **Plan:** `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` ✅ written
 **Executed by:** the owner, not an agent.
 
-Provision Vercel, Neon, Upstash, Vercel Blob, Clerk and an Auth0 Management application. Capture a production database dump and the API contract fixtures while Heroku is still live.
+Provision Vercel, Neon, Upstash, Vercel Blob, Clerk and an Auth0 Management application. Capture a production database dump and the API contract fixtures while Heroku is still live. Staging domain is `next.cinemadraft.com`; the apex stays on Heroku until phase 13.
 
 **Gate:** `vercel env pull` produces a `.env.local` containing every required key; `.local/prod-dump.dump` and `fixtures/` exist locally.
 
@@ -236,7 +236,7 @@ Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index a
 
 ### Phase 12 — Parallel run
 
-- T1: Deploy to a staging Vercel domain against a copy of production data
+- T1: Deploy to `next.cinemadraft.com` against a copy of production data
 - T2: Manual verification pass, feature by feature, against `PARITY.md`
 - T3: Measure Neon and Upstash free-tier headroom under realistic load
 - T4: Load-test draft-day search
@@ -249,7 +249,7 @@ Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index a
 ### Phase 13 — Cutover
 
 - T1: Final `pg_dump` from Heroku → Neon
-- T2: Point `cinemadraft.com` DNS at Vercel
+- T2: Add `cinemadraft.com` to the Vercel project and point its DNS at Vercel; add or repoint the Clerk webhook to the apex
 - T3: Verify production sign-in, draft, and scoring
 - T4: Monitor for 48 hours
 - T5: Retire Heroku
