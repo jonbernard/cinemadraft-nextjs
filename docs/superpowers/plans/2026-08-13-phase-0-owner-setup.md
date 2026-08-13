@@ -6,7 +6,9 @@
 
 **Time:** roughly 60–90 minutes. Clerk (Task 5) is the longest and the only one with a real decision embedded in it.
 
-**Gate:** `vercel env pull` produces a `.env.local` containing every key in the checklist at the end, and `.local/prod-dump.dump` plus `fixtures/` exist locally.
+**Gate:** `vercel env ls` shows every key in the checklist at the end, and `.local/prod-dump.dump` plus `fixtures/` exist locally.
+
+> **Sensitive variables cannot be pulled.** Vercel's Sensitive type is write-only. Verification is by *presence* in `vercel env ls`, not by reading values. Connection strings needed locally come from each provider's own console and live in the gitignored `.local/`.
 
 > **Do these in order.** Task 1 creates the Vercel project that Tasks 2–4 attach storage to. Task 7 must happen before anything touches Heroku.
 
@@ -139,22 +141,39 @@ Select the **Free** plan. Confirm before completing — the dialog sometimes pre
 
 In the Neon integration settings, enable **Create a database branch for each preview deployment**. This gives every pull request an isolated database and costs nothing on the free tier.
 
-- [ ] **Step 4: Verify the connection string landed**
+- [ ] **Step 4: Verify the variables attached**
 
 ```bash
-vercel env pull .env.local
-grep DATABASE_URL .env.local
+vercel env ls
 ```
 
-Expected: a `postgres://...neon.tech/...` URL. If it's absent, the integration didn't attach — reconnect it from the Storage tab.
+Expected: `DATABASE_URL`, `POSTGRES_PRISMA_URL`, `PGHOST` and friends, all typed **Sensitive**, in **Production and Preview**.
 
-- [ ] **Step 5: Confirm you can reach it**
+Two things about this that are easy to misread as failures:
+
+**Development is intentionally absent.** Local development and tests run against the Docker container (Phase 1 T8), never Neon. Pointing a local shell at production data is exactly the accident worth preventing.
+
+**`vercel env pull` cannot retrieve the values.** Vercel treats Sensitive variables as write-only — the pulled file contains `DATABASE_URL="[SENSITIVE]"`, and the dashboard will not reveal them either. This does not affect the deployed app, which receives the real values at runtime. It only means the CLI is not how you obtain the connection string.
+
+- [ ] **Step 5: Get the connection string from the Neon console**
+
+Vercel **Storage** tab → the Neon store → **Open in Neon** → **Connection Details** → copy the **pooled** connection string.
+
+Save it for the one-off restore work in Phase 2:
 
 ```bash
-psql "$(grep '^DATABASE_URL' .env.local | cut -d= -f2- | tr -d '"')" -c 'select version();'
+printf 'DATABASE_URL="<pooled connection string>"\n' > .local/.env.neon
 ```
 
-Expected: a PostgreSQL version string.
+`.local/` is gitignored. This file is a local convenience for `pg_restore` and `prisma db pull`; the deployed app never reads it.
+
+- [ ] **Step 6: Confirm you can reach it**
+
+```bash
+psql "$(grep '^DATABASE_URL' .local/.env.neon | cut -d= -f2- | tr -d '"')" -tAc 'select version();'
+```
+
+Expected: a PostgreSQL version string. Record the major version in `docs/PROGRESS.md` alongside Heroku's 17.9.
 
 ---
 
@@ -459,7 +478,7 @@ Cloudinary keys are deliberately **not** carried over — phase 11 replaces it w
 
 ## Completion checklist
 
-- [ ] `vercel env pull .env.local` succeeds and `.env.local` contains:
+- [ ] `vercel env ls` lists all of the following (values are Sensitive and cannot be read back):
   - [ ] `DATABASE_URL`
   - [ ] `UPSTASH_REDIS_REST_URL`
   - [ ] `UPSTASH_REDIS_REST_TOKEN`

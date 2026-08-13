@@ -36,6 +36,8 @@ _Fill these in as you go — later phases read them._
 - Auth0 connections enabled (must match Clerk): `________`
 - Vercel project: `cinemadraft-nextjs` (`prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`), linked in repo mode
 - Staging domain: `next.cinemadraft.com` — also the Clerk webhook host
+- Neon attached to Production + Preview only (by design; Development uses Docker). Vars are Sensitive and cannot be `vercel env pull`ed — connection string comes from the Neon console into `.local/.env.neon`
+- Neon Postgres version: `________`
 - Vercel function region: `________`
 - Postgres client: libpq 18.4 at `/opt/homebrew/opt/libpq/bin`
 - Heroku Postgres server version: `17.9` — libpq 18.4 reads it fine

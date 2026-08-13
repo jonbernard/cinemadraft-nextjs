@@ -41,7 +41,8 @@ Every task inherits these. Values copied verbatim from the spec.
 - **Server Actions never throw across the boundary.** They return `{ ok: true; data: T } | { ok: false; error: string; field?: string }`.
 - **Every color comes from a theme token.** No raw hex in components (§6.2, §6.3).
 - **Scoring rule is defined in exactly one place:** `lib/services/scoring.ts`. Nomination = P, win = 2P total.
-- **No secret is ever committed.** All credentials live in Vercel env, pulled locally with `vercel env pull`.
+- **No secret is ever committed.** Credentials live in Vercel env. Most are Sensitive and write-only, so local connection strings are copied from the provider console into the gitignored `.local/`.
+- **Neon is Preview/Production only.** The Development `DATABASE_URL` points at the Docker container. Local shells and tests must never target Neon.
 - **Reduced motion respected** on every animation.
 - **Contrast:** every token pair meets WCAG AA — 4.5:1 text, 3:1 large text and non-text UI.
 
@@ -58,7 +59,7 @@ Legend for gates: a phase is done when its gate is demonstrably true, verified b
 
 Provision Vercel, Neon, Upstash, Vercel Blob, Clerk and an Auth0 Management application. Capture a production database dump and the API contract fixtures while Heroku is still live. Staging domain is `next.cinemadraft.com`; the apex stays on Heroku until phase 13.
 
-**Gate:** `vercel env pull` produces a `.env.local` containing every required key; `.local/prod-dump.dump` and `fixtures/` exist locally.
+**Gate:** `vercel env ls` lists every required key (Sensitive values cannot be pulled back — verify by presence); `.local/prod-dump.dump` and `fixtures/` exist locally.
 
 **Why it blocks:** the contract fixtures and the database dump come from a Heroku app that gets retired in phase 13. They are unrecoverable if skipped.
 
