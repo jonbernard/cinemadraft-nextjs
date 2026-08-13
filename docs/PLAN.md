@@ -126,10 +126,10 @@ Tokens, both themes, typography, and the tests that keep them honest.
 - T2: `lib/auth.ts` — `getCurrentUser`, `requireUser`, `requireAdmin`; resolves Clerk session → `User` via `clerkId`
 - T3: `/api/webhooks/clerk` — signature verification (reject unsigned requests)
 - T4: **Claim logic** — on `user.created` / `user.updated`, for each **verified** email match `lower(email)` against `User`; on match set `clerkId`, otherwise create a row (D25)
-- T5: **Verified-email test suite** — an unverified email must never claim an existing row. This is the security-critical test in the whole project
+- T5: **Claim safety test suite** — (a) an unverified email must never claim an existing row; (b) a second Clerk identity must never overwrite a `clerkId` already set on a matched row. These are the security-critical tests in the project
 - T6: Sign-in / sign-up pages styled with phase 3 tokens, with copy telling returning users to sign up with their original email
 - T7: E2E: claim a real production account and confirm its leagues are intact
-- T8: Admin relink path for a user whose Clerk email differs from their historical one
+- T8: Admin relink path — for a user whose Clerk email differs from their historical one, and for resolving logged claim collisions
 
 **Gate:** a real production account is claimed via a verified email and resolves with leagues intact; an unverified email provably cannot claim.
 

@@ -29,6 +29,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D22 | **Active season year is data, not config** — `AvailableYear.isActive`, settable from the running app; `NEXT_PUBLIC_ACTIVE_YEAR` is deleted |
 | D23 | **Vercel Runtime Cache** replaces Upstash for caching; **realtime transport deferred to phase 14** |
 | D25 | **No bulk user migration** — accounts are claimed on first Clerk auth with a **verified** matching email. Linking on an unverified email is an account-takeover vector |
+| D26 | **Passwordless.** Clerk offers email verification code + Google only; password is disabled. Every sign-in is email-verified by construction, and no user ever migrates or resets a password |
 | D24 | **Blob uploads are `access: 'public'`.** Content is avatars, already public via Cloudinary and shown to other league members by design |
 
 ## Explicitly rejected

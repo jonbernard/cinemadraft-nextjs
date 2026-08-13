@@ -321,13 +321,32 @@ Claiming needs only the webhook, which was already in the design. No Auth0 Manag
    - **No match** → create a new `User` row.
 4. `getCurrentUser()` resolves the Clerk session to a `User` via `clerkId`.
 
+### Enabled connections
+
+Clerk offers exactly two sign-in methods. **Password is disabled.**
+
+| Method | Notes |
+|---|---|
+| Email verification code | Passwordless. Prefer a code over a magic link — links break when opened in a different browser than the one that requested them, which is common from phone mail apps |
+| Google | Returns a provider-verified email |
+
+Disabling password removes the entire password-migration problem: the 51 existing email+password users never set or reset a password, they receive a code.
+
 ### The security control
 
 **Claiming requires a verified email.** Linking on an unverified address would let anyone sign up as another member's email and inherit their account.
 
+Both enabled methods are verified by construction — an email code can only be read by whoever controls the inbox, and Google returns a verified address — so no unverified path into the claim logic exists. The rule is still enforced explicitly, because a future connection change must not silently reopen the hole:
+
 - The webhook links only when the address's `verification.status` is `verified`.
 - An unverified Clerk user is left unlinked; `user.updated` fires when verification completes and claiming happens then.
 - Matching is on `lower(email)`. Production has 51 distinct emails and no duplicates, so a match is unambiguous.
+
+### Guard: never reassign a claimed row
+
+With two sign-in methods on one address, a user can end up with two Clerk identities — signing in with Google once and an email code later. Clerk's account linking should merge them, but the claim logic must not depend on that.
+
+**If a matched `User` row already has a `clerkId` and it differs from the incoming one, do not overwrite it.** Log the collision and surface it for admin review. Silently reassigning would transfer one person's leagues to whoever authenticated most recently.
 
 ### Consequences
 

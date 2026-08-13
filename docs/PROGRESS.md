@@ -37,6 +37,8 @@ _Fill these in as you go — later phases read them._
 - Local Blob access unresolved: OIDC tokens are environment-scoped and the store is connected to Production/Preview only. Settings → Security has no per-environment control. **Phase 11 fallback: run the media migration as a deployed one-shot route** rather than a local script — its OIDC identity is production-scoped and already authorized
 - Auth0 users: 51 on `auth0|` (email+password, 36 active in past year), 9 dormant Firebase-era, **0 on google-oauth2**. 51 distinct emails, no duplicates
 - Auth0 connections: `google-oauth2` (unused by anyone) and `Username-Password-Authentication`
+- **Clerk is passwordless** (D26): email verification code + Google only. The 51 email+password users will receive a code instead — no password migration or reset
+- Confirm Clerk **account linking** is enabled so one email does not produce two Clerk identities
 - Vercel project: `cinemadraft-nextjs` (`prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`), linked in repo mode
 - Staging domain: `next.cinemadraft.com` — also the Clerk webhook host
 - Neon attached to Production + Preview only (by design; Development uses Docker). Vars are Sensitive and cannot be `vercel env pull`ed — connection string comes from the Neon console into `.local/.env.neon`
@@ -105,7 +107,7 @@ Plan: _not yet written_
 - [ ] P4.T2 `lib/auth.ts` — session → `User` resolution
 - [ ] P4.T3 Clerk webhook with signature verification
 - [ ] P4.T4 Claim logic — verified-email match sets `clerkId`, else create (D25)
-- [ ] P4.T5 🔴 Verified-email test suite — unverified email must never claim an existing row
+- [ ] P4.T5 🔴 Claim safety tests — unverified email can't claim; a second Clerk identity can't overwrite an existing `clerkId`
 - [ ] P4.T6 Sign-in / sign-up pages, with returning-user copy
 - [ ] P4.T7 E2E: claim a real production account, leagues intact
 - [ ] P4.T8 Admin relink path for mismatched emails
