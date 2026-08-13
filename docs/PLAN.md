@@ -252,7 +252,8 @@ Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index a
 
 ### Phase 13 — Cutover
 
-- T1: Final `pg_dump` from Heroku → Neon
+- T1: Swap Clerk to its Production instance — create it for `cinemadraft.com`, add DNS records, set `pk_live_`/`sk_live_` in Vercel Production, recreate the webhook and its signing secret (all per-instance)
+- T2: Final `pg_dump` from Heroku → Neon
 - T2: Add `cinemadraft.com` to the Vercel project and point its DNS at Vercel; add or repoint the Clerk webhook to the apex
 - T3: Verify production sign-in, draft, and scoring
 - T4: Monitor for 48 hours

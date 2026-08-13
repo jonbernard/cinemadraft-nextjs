@@ -205,5 +205,6 @@ Plan: _written after phase 7, driven by `docs/PARITY.md`_
 ## Open questions carried forward
 
 - **`NEXT_PUBLIC_ACTIVE_YEAR` still set in Vercel.** Delete it once P5.T0 ships the database-backed read path (D22).
+- **Clerk keys are Development instance (`pk_test_`) in all environments.** Correct for the build — the Production instance needs a verified domain. At release, create it, swap Production to `pk_live_`/`sk_live_`, and recreate the webhook (endpoints and signing secrets are per-instance).
 - **Realtime transport undecided** — deferred to phase 14 by D23. Not on the cutover path.
 - **Logo mark undecided.** Wordmark-only until resolved. See `docs/DECISIONS.md` → Still open.
