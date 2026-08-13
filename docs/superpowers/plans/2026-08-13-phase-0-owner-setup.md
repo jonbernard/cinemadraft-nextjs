@@ -316,7 +316,7 @@ Accounts are claimed on first Clerk sign-in with a verified matching email, so t
 
 🔴 **This is the task that cannot be redone later.** Both artifacts come from the live Heroku app, which is retired in phase 13.
 
-- [ ] **Step 1: Dump the production database**
+- [x] **Step 1: Dump the production database**
 
 ```bash
 cd /Users/jonbernard/Development/cinemadraft-nextjs
@@ -325,7 +325,7 @@ heroku pg:backups:capture --app <your-heroku-app-name>
 heroku pg:backups:download --app <your-heroku-app-name> --output .local/prod-dump.dump
 ```
 
-- [ ] **Step 2: Verify the dump is real**
+- [x] **Step 2: Verify the dump is real**
 
 ```bash
 pg_restore --list .local/prod-dump.dump | head -40

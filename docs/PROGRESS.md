@@ -48,7 +48,9 @@ _Fill these in as you go — later phases read them._
 - Postgres client: libpq 18.4 at `/opt/homebrew/opt/libpq/bin`
 - Heroku Postgres server version: `17.9` — libpq 18.4 reads it fine
 - Production data size: `11.9 MB`, 17 tables (16 app tables + `SequelizeMeta`). Dump will be fast
-- **Dead models — do NOT build repositories for these:** `session` (no migration ever existed) and `moviesstats` (migration is entirely commented out). 18 model files, 16 live tables
+- **Dead models — do NOT build repositories for these:** `session` and `moviesstats`. **Confirmed from the production dump** — it contains 17 tables and neither appears
+- Dump contents: `AvailableYears Awards DraftPicks Drafts Events Leagues Lists Movies Nominations Notifications Points ProfileFeeds Reviews SequelizeMeta Users Watchlists Winners` — quoted **PascalCase**, plus 4 enum types and the `pg_stat_statements` extension
+- Restore needs `--no-owner --no-privileges`: the dump's owner role `ub7c7u1vm0346s` does not exist in Neon
 
 ---
 

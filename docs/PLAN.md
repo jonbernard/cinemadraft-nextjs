@@ -87,8 +87,12 @@ Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Direc
 
 Restore production data to Neon, introspect, baseline, build repositories against captured fixtures.
 
-- T1: Restore `.local/prod-dump.dump` into Neon using **`DATABASE_URL_UNPOOLED`** (pg_restore does not work correctly through a pooler); verify row counts against `.local/prod-row-counts.txt`
-- T2: `prisma db pull` → `schema.prisma`; review every model for correct `@@map` and types
+- T1: Restore into Neon. Verified against the actual dump — use `DATABASE_URL_UNPOOLED` (pg_restore does not work through a pooler) and `--no-owner --no-privileges` (the dump's owner role `ub7c7u1vm0346s` is a Heroku role that does not exist in Neon):
+  ```bash
+  pg_restore --no-owner --no-privileges --dbname "$DATABASE_URL_UNPOOLED" .local/prod-dump.dump
+  ```
+  A warning about the `pg_stat_statements` extension is expected and harmless. Verify row counts against `.local/prod-row-counts.txt` afterwards.
+- T2: `prisma db pull` → `schema.prisma`; review every model in TablePlus. Expect **17 tables** — 16 app tables plus `SequelizeMeta` — with **quoted PascalCase** names (`AvailableYears`, `DraftPicks`, `ProfileFeeds`, `Watchlists`), so `@@map` values are PascalCase, not snake_case. Four enum types exist and should introspect as Prisma enums: `enum_Leagues_draftingStatus`, `enum_Leagues_type`, `enum_Lists_status`, `enum_Users_role`
 - T3: Baseline: `prisma migrate diff` → `prisma migrate resolve --applied 0_init`
 - T4: Drop `SequelizeMeta`
 - T5: `lib/db.ts` — Prisma singleton with `@prisma/adapter-neon`
