@@ -125,23 +125,23 @@ Phase 1 pins the same version in `package.json` `engines` and `.nvmrc`. A mismat
 
 ---
 
-## Task 2: Neon Postgres
+## Task 2: Neon Postgres ✅ complete — PG 17.10, empty, reachable
 
-- [ ] **Step 1: Provision through the Vercel Marketplace**
+- [x] **Step 1: Provision through the Vercel Marketplace**
 
 Vercel dashboard → the project → **Storage** tab → **Create Database** → **Neon**.
 
 Provisioning through the Marketplace rather than neon.tech directly matters: the integration injects `DATABASE_URL` into the Vercel environment automatically, and keeps it in sync.
 
-- [ ] **Step 2: Confirm the free plan**
+- [x] **Step 2: Confirm the free plan**
 
 Select the **Free** plan. Confirm before completing — the dialog sometimes preselects a paid tier.
 
-- [ ] **Step 3: Enable preview branching**
+- [x] **Step 3: Enable preview branching**
 
 In the Neon integration settings, enable **Create a database branch for each preview deployment**. This gives every pull request an isolated database and costs nothing on the free tier.
 
-- [ ] **Step 4: Verify the variables attached**
+- [x] **Step 4: Verify the variables attached**
 
 ```bash
 vercel env ls
@@ -155,22 +155,20 @@ Two things about this that are easy to misread as failures:
 
 **`vercel env pull` cannot retrieve the values.** Vercel treats Sensitive variables as write-only — the pulled file contains `DATABASE_URL="[SENSITIVE]"`, and the dashboard will not reveal them either. This does not affect the deployed app, which receives the real values at runtime. It only means the CLI is not how you obtain the connection string.
 
-- [ ] **Step 5: Get the connection string from the Neon console**
+- [x] **Step 5: Get the connection string from the Neon console**
 
 Vercel **Storage** tab → the Neon store → **Open in Neon** → **Connection Details** → copy the **pooled** connection string.
 
 Save it for the one-off restore work in Phase 2:
 
-```bash
-printf 'DATABASE_URL="<pooled connection string>"\n' > .local/.env.neon
-```
+Save the whole connection block Neon offers as `.env.neon` in the repo root — it is covered by the existing `.env*` ignore rule. It gives you `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` (direct), and Phase 2 needs both: pooled for the app, **unpooled for `pg_restore` and `prisma migrate`**, which do not work correctly through a connection pooler.
 
-`.local/` is gitignored. This file is a local convenience for `pg_restore` and `prisma db pull`; the deployed app never reads it.
+This file is a local convenience for restore and introspection; the deployed app never reads it.
 
-- [ ] **Step 6: Confirm you can reach it**
+- [x] **Step 6: Confirm you can reach it**
 
 ```bash
-psql "$(grep '^DATABASE_URL' .local/.env.neon | cut -d= -f2- | tr -d '"')" -tAc 'select version();'
+psql "$(grep '^DATABASE_URL=' .env.neon | cut -d= -f2- | tr -d '"')" -tAc 'select version();'
 ```
 
 Expected: a PostgreSQL version string. Record the major version in `docs/PROGRESS.md` alongside Heroku's 17.9.

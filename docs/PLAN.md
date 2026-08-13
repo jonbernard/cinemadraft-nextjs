@@ -87,7 +87,7 @@ Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Direc
 
 Restore production data to Neon, introspect, baseline, build repositories against captured fixtures.
 
-- T1: Restore `.local/prod-dump.dump` into the Neon database; verify row counts against Heroku
+- T1: Restore `.local/prod-dump.dump` into Neon using **`DATABASE_URL_UNPOOLED`** (pg_restore does not work correctly through a pooler); verify row counts against `.local/prod-row-counts.txt`
 - T2: `prisma db pull` → `schema.prisma`; review every model for correct `@@map` and types
 - T3: Baseline: `prisma migrate diff` → `prisma migrate resolve --applied 0_init`
 - T4: Drop `SequelizeMeta`

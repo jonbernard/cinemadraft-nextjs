@@ -17,7 +17,7 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 
 - [x] P0.T0 Prerequisites — `libpq` 18.4 client tools installed and on PATH (no native Postgres server)
 - [x] P0.T1 Vercel project `cinemadraft-nextjs` linked; staging domain `next.cinemadraft.com` live; apex still on Heroku
-- [ ] P0.T2 Neon provisioned via Marketplace, free plan, preview branching on
+- [x] P0.T2 Neon provisioned via Marketplace; connectivity verified; empty and ready for restore
 - [ ] P0.T3 Upstash Redis provisioned, region matched to Vercel function region
 - [ ] P0.T4 Vercel Blob store created
 - [ ] P0.T5 Clerk app created — **connections matched to Auth0 exactly**, keys and webhook secret in Vercel
@@ -37,7 +37,8 @@ _Fill these in as you go — later phases read them._
 - Vercel project: `cinemadraft-nextjs` (`prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`), linked in repo mode
 - Staging domain: `next.cinemadraft.com` — also the Clerk webhook host
 - Neon attached to Production + Preview only (by design; Development uses Docker). Vars are Sensitive and cannot be `vercel env pull`ed — connection string comes from the Neon console into `.local/.env.neon`
-- Neon Postgres version: `________`
+- Neon Postgres version: `17.10` on `neondb` as `neondb_owner` — **same major as Heroku's 17.9**, so the restore is same-major
+- Neon connection string kept locally at `.env.neon` (repo root, covered by the `.env*` ignore rule)
 - Vercel function region: `________`
 - Postgres client: libpq 18.4 at `/opt/homebrew/opt/libpq/bin`
 - Heroku Postgres server version: `17.9` — libpq 18.4 reads it fine
