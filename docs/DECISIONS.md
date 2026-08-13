@@ -22,6 +22,10 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D15 | Light and dark themes both first-class; dark is default |
 | D16 | All prior committed work in this repo is ignored — started fresh |
 | D17 | Port priority: auth, dashboard, draft — then everything else |
+| D18 | A **parity audit** (phase 7) follows the priority trio and gates cutover; output is `docs/PARITY.md` |
+| D19 | Scoring becomes a **pure, unit-tested rule** with materialized results and bounded event-driven recompute |
+| D20 | Search is **local-first**, merged with cached TMDB, and context-aware (draft / browse / award admin) |
+| D21 | The **award show page gets its own phase** — it is the input to the entire scoring pipeline |
 
 ## Explicitly rejected
 
@@ -31,6 +35,14 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Keeping Auth0 as a Clerk OAuth connection** — no migration risk, but retains the vendor being removed.
 - **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI.
 - **Greying out zero-point films in the roster** — the strip is ordered by draft position, not performance. A last pick may be the best pick.
+
+## Confirmed scoring rule
+
+Extracted from the source app (`server/routes/points.js`, `sumPoints`) and preserved exactly:
+
+- A **nomination** earns the award's point value `P`.
+- A **win** earns `P` a second time — so a win is worth **2P total**.
+- `team total = Σ movie totals`; `movie total = Σ per-award points`.
 
 ## Still open
 

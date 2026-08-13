@@ -42,7 +42,7 @@ Each was decided explicitly during design. A future session must not re-litigate
 | D9 | **Vercel Blob** replaces Cloudinary | One less vendor |
 | D10 | **Schema replicated exactly**, then introspected with `prisma db pull` | Guarantees data fidelity; cleanups become later migrations |
 | D11 | **Parallel run, then DNS swap** | Safe rollback |
-| D12 | Contract tests at the **repository layer** + Playwright E2E on critical flows | See §9 — the HTTP seam disappears under D8, so contracts move to the data layer |
+| D12 | Contract tests at the **repository layer** + Playwright E2E on critical flows | See §13 — the HTTP seam disappears under D8, so contracts move to the data layer |
 | D13 | Realtime ships **after** cutover; live page uses polling until then | Feature is seasonal |
 | D14 | New features (§7) ship **after** cutover | Keeps migration risk separate from feature risk |
 | D15 | **Both light and dark themes** are first-class | Dark is default; light is a designed palette, not an inversion |
@@ -68,7 +68,7 @@ Each was decided explicitly during design. A future session must not re-litigate
 | Auth | Auth0 SPA SDK | Clerk (`@clerk/nextjs`) |
 | Data fetching | SWR (client) | Server Components |
 | Mutations | REST via axios | Server Actions |
-| Realtime | socket.io | Upstash pub/sub + SSE (phase 9) |
+| Realtime | socket.io | Upstash pub/sub + SSE (phase 14) |
 | Cache | `memory-cache` | Upstash Redis |
 | Media | Cloudinary | Vercel Blob |
 | Forms | Formik + Yup | react-hook-form + Zod |
@@ -93,7 +93,7 @@ app/
     live/[abbr]/
   api/
     webhooks/clerk/         user sync
-    live/[event]/stream/    SSE (phase 9)
+    live/[event]/stream/    SSE (phase 14)
     ical/[...]/             calendar feed
 lib/
   db.ts                     Prisma singleton + Neon adapter
@@ -278,7 +278,88 @@ The highest-risk item in the project.
 
 **Watch item:** social and passwordless Auth0 users require the matching Clerk connection to be enabled *before* import. Without it, their sign-in silently creates a second identity.
 
-## 10. Testing
+## 10. Movie search
+
+Search is load-bearing in three different places and today is a thin proxy that serves none of them well. `server/routes/search.js` forwards the query straight to TMDB `/search/movie` and returns the raw page. It does not consult the local `Movie` table, does not dedupe against films already ingested, has no ranking beyond TMDB's default, and applies no awards-season relevance.
+
+The three jobs are genuinely different and the design must serve each:
+
+| Context | What the user is doing | What must rank first |
+|---|---|---|
+| **Draft** | Finding a film eligible for this award year | Eligible-year films already known to the system, excluding films already drafted in this league |
+| **Browse / watchlist** | Finding any film | General relevance; already-tracked films marked as such |
+| **Award show admin** | Attaching a nominee to a category | Films already ingested; exact-title matches; year-scoped |
+
+### Design
+
+A single `lib/services/search.ts` with a source-merging strategy:
+
+1. **Local first.** Query the `Movie` table (trigram or `ILIKE` prefix index on title, scoped by year where the context supplies one). These rows are the valuable ones — already ingested, already carrying `accentHex`, already scoreable.
+2. **TMDB fill.** Call TMDB only when local results are thin, and merge.
+3. **Dedupe on `tmdbId`**, local row winning — a film must never appear twice.
+4. **Rank** with an eligibility-year boost, exact-title-match boost, and a penalty for films already drafted in the caller's league when the context is a draft.
+5. **Cache** TMDB responses in Upstash keyed by query plus year. TMDB's rate limit is the constraint, and identical queries during a live draft are common.
+
+Client-side: debounced input (250 ms), request cancellation on keystroke, and results that render the poster — this audience recognizes films by artwork faster than by title.
+
+Search results are read-only, so this is a Server Component data path with a Server Action for the interactive typeahead, not a route handler.
+
+## 11. Scoring pipeline
+
+### How it works today
+
+`server/routes/points.js` recomputes everything on every request. For a league board it loads all nominations for all the league's movies and reduces them in JavaScript through Ramda pipelines defined in the route file. Nothing is stored. The rule, from `sumPoints`:
+
+```js
+const points = path(['award', 'pointsData', 'points'], nom);
+return points + (nom.movieId === nom.award.winner.movieId ? points : 0);
+```
+
+A nomination earns the award's point value. A win earns it a second time. So **nomination = P, win = 2P total.**
+
+This is correct but fragile: the rule lives in a route file rather than a testable unit, cost scales with league size on every page view, and there is no way to answer "why is this number what it is" — which the points ledger (§6.7) now requires.
+
+### Target design
+
+**The rule becomes a pure function.** `lib/services/scoring.ts` exports a function from nomination and winner records to points, with no database access. It is unit-tested against the current behavior, including the nomination-plus-win doubling. This function is the single definition of scoring in the system.
+
+**Results are materialized.** Three derived tables, each with a `computedAt`:
+
+- `MovieScore` — `(movieId, year) → points`
+- `TeamScore` — `(draftId) → points`, the sum of its movies
+- `LeagueStanding` — `(leagueId, year) → ordered team rankings`
+
+**Recomputation is bounded and event-driven.** When an admin records a nomination or marks a winner, the blast radius is known and small:
+
+```
+award changed
+  → movies nominated in that award        (MovieScore)
+    → teams holding any of those movies   (TeamScore)
+      → leagues containing those teams    (LeagueStanding)
+        → revalidateTag per affected league
+```
+
+A single winner announcement during a live ceremony touches a handful of movies, not the whole database. This is what makes the live event feel instant.
+
+**Full recompute exists as a first-class command**, for backfill and for recovery. It is the same code path with an unbounded scope.
+
+**Reconciliation guards against drift.** A scheduled job recomputes from source and diffs against the materialized tables, reporting any mismatch. Materialized values that silently drift from their source are the failure mode this design otherwise introduces, so detecting drift is part of the design rather than an afterthought. Runs on Vercel Cron, nightly during the season.
+
+**The ledger comes free.** Because the pure function operates on nomination and winner records, the per-award line items in §6.7 are the function's inputs rather than a separate query.
+
+## 12. Award show page
+
+Elevated to its own phase — it is where nominations and winners are administered, which makes it the input to the entire scoring pipeline. Errors here propagate to every league.
+
+Requirements:
+
+- Category list for an event and year, with nominee grids per category.
+- Admin: attach a nominee (uses the award-show search context, §10), mark a winner, correct a mistake.
+- Marking a winner triggers the bounded recompute in §11 and, in phase 14, publishes to the live channel.
+- One winner signal only — the carmine corner seal (§6.7). The current page uses both a size change and a green check for the same fact.
+- Correcting a winner must fully reverse the prior recompute. Winner changes during a live ceremony are common and the design must treat them as normal, not exceptional.
+
+## 13. Testing
 
 **Repository contract tests.** Before porting begins, capture golden JSON fixtures from the live Heroku API for every endpoint. Each repository and service function is then asserted to produce the same shape. Under D8 there is no HTTP layer to test, so this is the seam that catches port regressions — a differently-nested return from `getPointsByLeagueId` is exactly the class of bug this exists to find.
 
@@ -288,26 +369,52 @@ The highest-risk item in the project.
 
 No component unit tests.
 
-## 11. Phases
+## 14. Phases
 
 | # | Phase | Gate |
 |---|---|---|
-| 0 | Scaffold; provision Vercel, Neon, Upstash, Blob, Clerk | `npm run build` green; deploys to a Vercel preview |
-| 1 | Data layer: dump → Neon, introspect, baseline, repositories + contract fixtures | All contract tests green |
-| 2 | Design system: tokens, both themes, typography, contrast tests | Contrast + clamping tests green |
-| 3 | Auth: Clerk, user import script, webhook, guards | Sign in as a migrated production user |
-| 4 | Dashboard (RSC + Server Actions) | E2E green |
-| 5 | Draft: snake board, picks, ordering | E2E green |
-| 6 | Remaining features: films, award shows, leagues, live (polling), reviews, users, admin | E2E green per feature |
-| 7 | Cloudinary → Vercel Blob, existing uploads migrated | Images render from Blob |
-| 8 | Parallel run on staging domain against a copy of production data | Full manual verification pass |
-| 9 | DNS cutover; Heroku retired | Site live on Vercel |
-| 10 | Realtime: Upstash pub/sub + SSE replaces polling | Live event works end to end |
-| 11 | New features (§7) | Per-feature E2E |
+| 0 | **Owner setup** — provision Vercel, Neon, Upstash, Blob, Clerk (§15) | All credentials present in Vercel env; `vercel env pull` succeeds |
+| 1 | Scaffold: Next 16, TS strict, MUI v7, lint, CI | `npm run build` green; deploys to a Vercel preview |
+| 2 | Data layer: dump → Neon, introspect, baseline, repositories, contract fixtures | All contract tests green |
+| 3 | Design system: tokens, both themes, typography, contrast + clamping tests | Design tests green |
+| 4 | **Auth** — Clerk, user import script, webhook, guards | Sign in as a migrated production user |
+| 5 | **Dashboard** — RSC + Server Actions | E2E green |
+| 6 | **Draft** — snake board with poster thumbnails, picks, ordering | E2E green |
+| 7 | **Parity audit** — enumerate every route, page and controller in the source app; mark ported / deficit / dropped; produce `docs/PARITY.md` | Matrix complete and reviewed; remaining work decomposed into tasks |
+| 8 | **Award show page** + search rework (§10, §12) | Admin can attach nominees and mark winners; search serves all three contexts |
+| 9 | **Scoring pipeline** (§11) — pure rule, materialized tables, bounded recompute, reconciliation | Scoring unit tests green; reconciliation reports zero drift against production data |
+| 10 | Remaining features to parity, driven by `PARITY.md`: films, leagues, live (polling), reviews, users, admin | E2E green per feature; parity matrix fully closed |
+| 11 | Cloudinary → Vercel Blob, existing uploads migrated | Images render from Blob |
+| 12 | Parallel run on staging domain against a copy of production data | Full manual verification pass |
+| 13 | DNS cutover; Heroku retired | Site live on Vercel |
+| 14 | Realtime: Upstash pub/sub + SSE replaces polling | Live event works end to end |
+| 15 | New features (§7) | Per-feature E2E |
 
-Phases 3–5 are the D17 priority trio (auth, dashboard, draft) and come before phase 6. Auth leads within the trio because the dashboard and draft board both depend on a resolved user.
+Phases 4–6 are the D17 priority trio. Auth leads because the dashboard and draft board both depend on a resolved user.
 
-## 12. Resumability
+**Phase 7 is a mandatory checkpoint, not a formality.** After the priority trio the app will be visibly incomplete, and the gap needs to be measured rather than estimated. The audit enumerates the source app's 18 route files, 17 controllers and every page, and classifies each as ported, deficient, or intentionally dropped. Its output — `docs/PARITY.md` — becomes the task list for phase 10 and the definition of "done" for the migration. Cutover cannot happen with an open parity matrix.
+
+## 15. Owner setup runbook
+
+Phase 0 is owner-executed and blocks everything else. The implementation plan carries the full step-by-step; summarized here so the spec is self-contained.
+
+**Vercel** — create the project, link the local repo, connect the Git repository, set the production branch, add `cinemadraft.com` as a domain but **do not** point DNS at it until phase 13.
+
+**Neon** — provision through the Vercel Marketplace so the integration injects `DATABASE_URL` automatically. Enable a preview branch for pull requests. Confirm the free-tier plan.
+
+**Upstash Redis** — provision through the Vercel Marketplace. Confirm `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` land in the Vercel environment.
+
+**Vercel Blob** — create the store, confirm `BLOB_READ_WRITE_TOKEN`.
+
+**Clerk** — the longest step, and the one with a decision embedded in it. Create the application; enable exactly the connections that the Auth0 tenant currently uses (§9 — this must be verified against Auth0 before any import runs, or social users get duplicate identities); configure the sign-in and sign-up URLs; create the webhook endpoint pointing at `/api/webhooks/clerk` subscribed to `user.created` and `user.updated`; capture the publishable key, secret key, and webhook signing secret.
+
+**Auth0** — create a Management API application with read access to users, for the one-off import. This can be revoked immediately after phase 4.
+
+**Heroku** — confirm `pg_dump` access to the production database and capture a dump before anything else. Also confirm the app can serve the contract fixtures (§13) while it is still live.
+
+Every credential goes into Vercel environment variables, then is pulled locally with `vercel env pull`. No secret is committed.
+
+## 16. Resumability
 
 This effort spans more sessions than one context window. State lives in files, not conversation.
 
@@ -318,19 +425,24 @@ This effort spans more sessions than one context window. State lives in files, n
 
 **Protocol for a new session:** read `PROGRESS.md`, find the first unchecked task, read its entry in `PLAN.md`, continue. One commit per task, message referencing the task ID. No conversational handoff required.
 
-## 13. Risks
+## 17. Risks
 
 | Risk | Mitigation |
 |---|---|
-| Auth0 → Clerk migration orphans users | `auth0Id` retained; email-keyed webhook self-heals; verify social connections before import |
+| Auth0 → Clerk migration orphans users | `auth0Id` retained; email-keyed webhook self-heals; verify social connections before import (phase 0) |
 | Port regressions in data shape | Repository contract tests against golden fixtures captured from live production |
-| Neon free tier limits under real traffic | Measure during phase 8 parallel run, before cutover |
+| **Contract fixtures become uncapturable** — the source of truth is a live Heroku app that gets retired | Capture in phase 0/2, before any migration work. This is unrecoverable if skipped |
+| **Materialized scores drift from source** — the failure mode §11 introduces | Nightly reconciliation job diffs recomputed vs stored and reports mismatches; full recompute available as a first-class command |
+| **Winner corrections during a live ceremony** leave stale points | Recompute must be fully reversible; treated as a normal path and E2E tested, not an exception |
+| **Search regresses the draft experience** — TMDB rate limits or slow typeahead during a live draft | Local-first search, Upstash-cached TMDB calls, debounce + cancellation; load-tested in phase 8 |
+| Neon free tier limits under real traffic | Measure during the phase 12 parallel run, before cutover |
 | Poster accents produce unreadable UI | Luminance clamping with a unit test; raw poster color never trusted |
-| MUI v7 API drift from v5 during the component port | Port shared components first (phase 2/3) to surface breakage early |
-| Vercel function duration limits break SSE | Deferred to phase 10; polling ships at cutover |
-| Scope creep from new features into the migration | D14 — features are phase 11, after cutover |
+| MUI v7 API drift from v5 during the component port | Port shared components first (phase 3) to surface breakage early |
+| Vercel function duration limits break SSE | Deferred to phase 14; polling ships at cutover |
+| **Cutover with hidden feature gaps** | Phase 7 parity audit produces `docs/PARITY.md`; cutover is blocked while the matrix has open rows |
+| Scope creep from new features into the migration | D14 — features are phase 15, after cutover |
 
-## 14. Out of scope
+## 18. Out of scope
 
 - Rewriting the UI to shadcn/Tailwind (D3 keeps MUI)
 - Redesigning the database schema (D10 replicates exactly)
