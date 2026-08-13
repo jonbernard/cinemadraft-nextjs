@@ -226,11 +226,12 @@ Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index a
 
 ### Phase 11 — Media
 
-- T1: Vercel Blob client wrapper
-- T2: Upload path switched from Cloudinary to Blob
-- T3: Migration script for existing Cloudinary assets
-- T4: Rewrite stored URLs
-- T5: `next/image` configured for the Blob domain
+- T1: Vercel Blob client wrapper; uploads use `access: 'public'` (D24)
+- T2: Upload path switched from the Cloudinary widget to Blob
+- T3: **Replace Cloudinary's on-the-fly resizing with `next/image`** — Blob does not transform images, and `useUserImage` currently requests a 128×128 fill from Cloudinary
+- T4: Migration script for existing assets, handling **both** stored forms — full URLs and bare Cloudinary public IDs (`useUserImage` branches on `startsWith('http')`)
+- T5: Rewrite stored values to Blob URLs
+- T6: `next/image` `remotePatterns` configured for the Blob hostname
 
 **Gate:** images render from Blob; no Cloudinary request remains in the network log.
 

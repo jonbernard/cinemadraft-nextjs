@@ -19,7 +19,7 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 - [x] P0.T1 Vercel project `cinemadraft-nextjs` linked; staging domain `next.cinemadraft.com` live; apex still on Heroku
 - [x] P0.T2 Neon provisioned via Marketplace; connectivity verified; empty and ready for restore
 - [x] P0.T3 ~~Upstash Redis~~ — **removed**. Vercel Runtime Cache is included with the platform; nothing to provision (D23)
-- [ ] P0.T4 Vercel Blob store created
+- [ ] P0.T4 Vercel Blob store created (`cinemadraft-media`); uploads will be **public** per D24
 - [ ] P0.T5 Clerk app created — **connections matched to Auth0 exactly**, keys and webhook secret in Vercel
 - [ ] P0.T6 Auth0 Management app created with `read:users` only
 - [ ] P0.T7 🔴 Production dump + row counts + API contract fixtures captured

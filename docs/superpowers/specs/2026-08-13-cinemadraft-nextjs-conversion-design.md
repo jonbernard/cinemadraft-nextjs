@@ -43,6 +43,7 @@ Each was decided explicitly during design. A future session must not re-litigate
 | D7 | **Clerk** for auth, replacing Auth0 | Owner's choice, accepting user-migration risk |
 | D8 | **Server Components + Server Actions**; no general `/api` layer | `/api` retained only where HTTP is required: Clerk webhook, SSE stream, ical feed |
 | D9 | **Vercel Blob** replaces Cloudinary | One less vendor |
+| D24 | Blob uploads are **public** | The only stored content is user avatars, already served unsigned by Cloudinary and displayed to other league members by design. Private would require signing a URL per avatar on pages that render dozens, defeating CDN caching and `next/image` |
 | D10 | **Schema replicated exactly**, then introspected with `prisma db pull` | Guarantees data fidelity; cleanups become later migrations |
 | D11 | **Parallel run, then DNS swap** | Safe rollback |
 | D12 | Contract tests at the **repository layer** + Playwright E2E on critical flows | See §13 — the HTTP seam disappears under D8, so contracts move to the data layer |
@@ -385,6 +386,16 @@ Requirements:
 - One winner signal only — the carmine corner seal (§6.7). The current page uses both a size change and a green check for the same fact.
 - Correcting a winner must fully reverse the prior recompute. Winner changes during a live ceremony are common and the design must treat them as normal, not exceptional.
 
+### Media migration (D9, D24)
+
+The Blob store holds one kind of content: **user profile avatars**. Uploads are `access: 'public'` — the URLs carry an unguessable random suffix, matching the practical guarantee Cloudinary provides today.
+
+Two details make this more than a URL swap:
+
+**Vercel Blob does not transform images.** `src/hooks/useUserImage.js` currently asks Cloudinary for an on-the-fly 128×128 fill. Blob stores and serves bytes only, so resizing moves to `next/image`, with the Blob hostname registered in `images.remotePatterns`.
+
+**Stored values are inconsistent.** `useUserImage` branches on `value.startsWith('http')` — some rows hold a full URL, others a bare Cloudinary public ID. The phase 11 migration must handle both forms and normalize them to Blob URLs.
+
 ## 13. Testing
 
 **Repository contract tests.** Before porting begins, capture golden JSON fixtures from the live Heroku API for every endpoint. Each repository and service function is then asserted to produce the same shape. Under D8 there is no HTTP layer to test, so this is the seam that catches port regressions — a differently-nested return from `getPointsByLeagueId` is exactly the class of bug this exists to find.
@@ -430,7 +441,7 @@ Phase 0 is owner-executed and blocks everything else. The implementation plan ca
 
 **Caching** — nothing to provision. The Vercel Runtime Cache is included with the platform and requires no integration, no keys, and no card. This replaced Upstash, which no longer offers a free Marketplace tier (D23).
 
-**Vercel Blob** — create the store, confirm `BLOB_READ_WRITE_TOKEN`.
+**Vercel Blob** — create the store, confirm `BLOB_READ_WRITE_TOKEN`, and record the public hostname. Uploads use `access: 'public'` (D24).
 
 **Clerk** — the longest step, and the one with a decision embedded in it. Create the application; enable exactly the connections that the Auth0 tenant currently uses (§9 — this must be verified against Auth0 before any import runs, or social users get duplicate identities); configure the sign-in and sign-up URLs; create the webhook endpoint pointing at `/api/webhooks/clerk` subscribed to `user.created` and `user.updated`; capture the publishable key, secret key, and webhook signing secret.
 
