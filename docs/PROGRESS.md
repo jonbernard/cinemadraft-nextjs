@@ -30,13 +30,15 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 
 _Fill these in as you go — later phases read them._
 
-- Heroku app name: `________`
+- Heroku app name: `cinemadraft` (add-on `postgresql-fluffy-16646`, plan `essential-1`)
 - Blob public hostname: `________`
 - Auth0 user count at migration time: `________`
 - Auth0 connections enabled (must match Clerk): `________`
 - Vercel function region: `________`
 - Postgres client: libpq 18.4 at `/opt/homebrew/opt/libpq/bin`
-- Heroku Postgres server version: `________`
+- Heroku Postgres server version: `17.9` — libpq 18.4 reads it fine
+- Production data size: `11.9 MB`, 17 tables (16 app tables + `SequelizeMeta`). Dump will be fast
+- **Dead models — do NOT build repositories for these:** `session` (no migration ever existed) and `moviesstats` (migration is entirely commented out). 18 model files, 16 live tables
 
 ---
 

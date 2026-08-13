@@ -14,7 +14,7 @@
 
 ## Task 0: Prerequisites
 
-- [ ] **Step 1: Install the CLIs**
+- [x] **Step 1: Install the CLIs**
 
 ```bash
 npm i -g vercel
@@ -22,7 +22,7 @@ npm i -g vercel
 
 Postgres client tools are installed in Step 2 — do not install a Postgres server.
 
-- [ ] **Step 2: Install a Postgres client that can read the dump**
+- [x] **Step 2: Install a Postgres client that can read the dump**
 
 `heroku pg:backups:capture` runs `pg_dump` **server-side** on Heroku, so your local `pg_dump` version does not matter. What matters is **`pg_restore`**, used locally in Task 7 Step 2 and again in Phase 2 Task 1 to restore into Neon.
 
@@ -58,14 +58,14 @@ TablePlus is the inspection tool for this project. It **cannot** restore the cus
 
 Save two connections:
 
-| Name | Source | SSL |
-|---|---|---|
-| `cinemadraft-neon` | paste `DATABASE_URL` from `.env.local` via **Import from URL** | **require** — Neon rejects unencrypted connections |
-| `cinemadraft-local` | `localhost:5432`, credentials from `docker-compose.local.yml` | off |
+| Name                | Source                                                         | SSL                                                |
+| ------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
+| `cinemadraft-neon`  | paste `DATABASE_URL` from `.env.local` via **Import from URL** | **require** — Neon rejects unencrypted connections |
+| `cinemadraft-local` | `localhost:5432`, credentials from `docker-compose.local.yml`  | off                                                |
 
 The local connection only works after P1.T8 creates the container.
 
-- [ ] **Step 3: Log in to Vercel**
+- [x] **Step 3: Log in to Vercel**
 
 ```bash
 vercel login
@@ -209,12 +209,12 @@ Also enable **Email address** as an identifier, since the import and the webhook
 
 Clerk → **Paths**:
 
-| Setting | Value |
-|---|---|
-| Sign-in URL | `/sign-in` |
-| Sign-up URL | `/sign-up` |
-| After sign-in | `/` |
-| After sign-up | `/` |
+| Setting       | Value      |
+| ------------- | ---------- |
+| Sign-in URL   | `/sign-in` |
+| Sign-up URL   | `/sign-up` |
+| After sign-in | `/`        |
+| After sign-up | `/`        |
 
 - [ ] **Step 5: Capture the API keys**
 
@@ -427,12 +427,12 @@ heroku config --app <your-heroku-app-name>
 
 Add each of these to Vercel across all three environments:
 
-| Key | Notes |
-|---|---|
-| `TMDB_API_KEY` | required — search, posters, discovery |
-| `OMDB_KEY` | required — supplementary ratings |
-| `CACHE_DURATION_IN_MINUTES` | optional, has a default |
-| `NEXT_PUBLIC_ACTIVE_YEAR` | renamed from `REACT_APP_ACTIVE_YEAR` |
+| Key                             | Notes                                      |
+| ------------------------------- | ------------------------------------------ |
+| `TMDB_API_KEY`                  | required — search, posters, discovery      |
+| `OMDB_KEY`                      | required — supplementary ratings           |
+| `CACHE_DURATION_IN_MINUTES`     | optional, has a default                    |
+| `NEXT_PUBLIC_ACTIVE_YEAR`       | renamed from `REACT_APP_ACTIVE_YEAR`       |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | renamed from `REACT_APP_GA_MEASUREMENT_ID` |
 
 ```bash

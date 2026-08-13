@@ -17,7 +17,9 @@ Cinemadraft is a fantasy movie award league. Members draft a team of up to 8 fil
 
 - ~25,000 lines of JavaScript
 - CRA 4 + MUI v5 (unmodified Minimal template), react-router v6, SWR, Auth0 SPA SDK
-- Express API: 18 route files → 17 controllers → 20 Sequelize models, 18 migrations
+- Express API: 18 route files → 17 controllers → 18 Sequelize model files, 18 migrations
+- **16 live database tables.** Two model files are dead and must not be ported: `session` (no migration ever created it) and `moviesstats` (its migration is fully commented out). Verified against production 2026-08-13: Heroku reports 17 tables, which is 16 app tables plus `SequelizeMeta`
+- Production database is small — 11.9 MB on Postgres 17.9
 - socket.io for live award-show broadcast (`sendSelectedAward`, `sendNewWinner`)
 - In-process `memory-cache` for TMDB image configuration
 - External services: TMDB, OMDB, Cloudinary, Auth0

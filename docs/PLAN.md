@@ -94,7 +94,9 @@ Restore production data to Neon, introspect, baseline, build repositories agains
 - T6: Migration adding `Movie.accentHex` and `User.clerkId` (unique, nullable)
 - T7: Typed error classes (`NotFoundError`, `ForbiddenError`, `ConflictError`)
 - T7a: Load the production dump into the **local Docker** database — this is what repository contract tests run against, never Neon
-- T8–T24: One repository per domain, each TDD'd against its captured fixture — availableYears, awards, draft, draftPicks, events, leagues, lists, movies, nominations, notifications, points, profileFeeds, reviews, users, watchlist, winners
+- T8–T23: One repository per live table, each TDD'd against its captured fixture — availableYears, awards, draft, draftPicks, events, leagues, lists, movies, nominations, notifications, points, profileFeeds, reviews, users, watchlist, winners (**16 total**)
+
+> **Do not create repositories for `session` or `moviesstats`.** Both are dead Sequelize models with no table in production — `session` never had a migration, and `moviesstats` has its migration entirely commented out. `prisma db pull` will not produce models for them, and it should not.
 
 **Gate:** every repository contract test passes against the golden fixtures captured in phase 0.
 
