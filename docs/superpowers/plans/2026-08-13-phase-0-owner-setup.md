@@ -187,13 +187,13 @@ Pub/sub for phase 14 realtime is a separate question, deliberately deferred to t
 
 ---
 
-## Task 4: Vercel Blob
+## Task 4: Vercel Blob ✅ complete
 
-- [ ] **Step 1: Create the store**
+- [x] **Step 1: Create the store**
 
 **Storage** tab → **Create** → **Blob**. Name it `cinemadraft-media`.
 
-- [ ] **Step 2: Verify the variables landed**
+- [x] **Step 2: Verify the variables landed**
 
 ```bash
 vercel env ls | grep -i blob
@@ -203,7 +203,7 @@ Connecting the store injects `BLOB_STORE_ID` and `BLOB_WEBHOOK_PUBLIC_KEY`, both
 
 **There is no `BLOB_READ_WRITE_TOKEN`, and none is needed.** Vercel Blob on this account authenticates via **OIDC**: the CLI and SDK use `VERCEL_OIDC_TOKEN` together with `BLOB_STORE_ID`. The CLI is explicit about the pairing — "must both be set, or both be unset."
 
-- [ ] **Step 2b: Local Blob access — optional, phase 11 only**
+- [x] **Step 2b: Local Blob access — optional, phase 11 only**
 
 Blob operations from a local shell fail:
 
@@ -222,7 +222,7 @@ Two ways forward, in order of preference:
 
 Either is fine. This blocks nothing before phase 11 — record which applies in `docs/PROGRESS.md` and move on.
 
-- [ ] **Step 3: Note the public hostname**
+- [x] **Step 3: Note the public hostname**
 
 The store's public URL looks like `https://<id>.public.blob.vercel-storage.com`. Phase 11 needs it for `next/image` remote patterns. Record it in `docs/PROGRESS.md` under the Phase 0 notes.
 
