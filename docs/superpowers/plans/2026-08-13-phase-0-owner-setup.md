@@ -117,7 +117,9 @@ Using a stable subdomain rather than preview URLs matters for one specific reaso
 
 - [x] **Step 4: Set the Node version**
 
-**Settings → General → Node.js Version** → `22.x`.
+**Settings → General → Node.js Version** → `24.x`. Already set.
+
+Phase 1 pins the same version in `package.json` `engines` and `.nvmrc`. A mismatch between the Vercel setting and `engines` fails the build rather than silently using the wrong runtime, which is the behavior we want.
 
 ---
 

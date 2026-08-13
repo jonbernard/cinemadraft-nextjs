@@ -77,7 +77,7 @@ Each was decided explicitly during design. A future session must not re-litigate
 | Forms | Formik + Yup | react-hook-form + Zod |
 | Drag & drop | `react-beautiful-dnd` | `@hello-pangea/dnd` |
 | Dates | moment | date-fns |
-| Node | 14.16 | 22 |
+| Node | 14.16 | 24 (current LTS) |
 | Tests | none | Vitest + Playwright |
 
 Two swaps are forced rather than preferred: `react-beautiful-dnd` is unmaintained and breaks under React 19, and `@hello-pangea/dnd` is its maintained drop-in fork. Zod replaces Yup because Server Actions require server-side validation schemas regardless.
