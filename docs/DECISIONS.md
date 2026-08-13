@@ -14,7 +14,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D7 | Clerk for auth, replacing Auth0 |
 | D8 | Server Components + Server Actions; no general `/api` layer |
 | D9 | Vercel Blob replaces Cloudinary |
-| D10 | Schema replicated exactly from production, then `prisma db pull` |
+| D10 | Data replicated exactly, **then identifiers normalized** (D27), then `prisma db pull` |
 | D11 | Parallel run, then DNS swap |
 | D12 | Contract tests at the repository layer + Playwright E2E |
 | D13 | Realtime ships after cutover; polling until then |
@@ -29,6 +29,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D22 | **Active season year is data, not config** — `AvailableYear.isActive`, settable from the running app; `NEXT_PUBLIC_ACTIVE_YEAR` is deleted |
 | D23 | **Vercel Runtime Cache** replaces Upstash for caching; **realtime transport deferred to phase 14** |
 | D25 | **No bulk user migration** — accounts are claimed on first Clerk auth with a **verified** matching email. Linking on an unverified email is an account-takeover vector |
+| D27 | **snake_case normalization** — plural snake_case tables/columns/enums, drop NULL `password`+`salt` and `SequelizeMeta`. **No PK type changes.** Script is committed and repeatable, because cutover re-dumps from Heroku's original schema |
 | D26 | **Passwordless.** Clerk offers email verification code + Google only; password is disabled. Every sign-in is email-verified by construction, and no user ever migrates or resets a password |
 | D24 | **Blob uploads are `access: 'public'`.** Content is avatars, already public via Cloudinary and shown to other league members by design |
 
@@ -40,6 +41,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Keeping Auth0 as a Clerk OAuth connection** — no migration risk, but retains the vendor being removed.
 - **Bulk-importing users from Auth0 into Clerk** — superseded by D25. Auth0 does not export password hashes without a support request, and all 51 users are email+password. Claiming needs only the webhook that already existed.
 - **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI.
+- **Unifying primary key types** — `Users.id` is an int, `Awards.id` a UUID. Unifying rewrites every PK and FK for no user-visible benefit.
+- **Transforming the dump file before restore** — restore as-is then rename in SQL; catalog renames cannot mismap data, dump rewrites can.
 - **Upstash Redis via the Vercel Marketplace** — no longer has a free tier; smallest plan is pay-as-you-go and requires a credit card, which violates the free-only constraint.
 - **Vercel Edge Config for the active year** — right tool for middleware-latency flags, wrong tool for domain data that belongs beside the years table.
 - **Greying out zero-point films in the roster** — the strip is ordered by draft position, not performance. A last pick may be the best pick.

@@ -45,7 +45,8 @@ Each was decided explicitly during design. A future session must not re-litigate
 | D8 | **Server Components + Server Actions**; no general `/api` layer | `/api` retained only where HTTP is required: Clerk webhook, SSE stream, ical feed |
 | D9 | **Vercel Blob** replaces Cloudinary | One less vendor |
 | D24 | Blob uploads are **public** | The only stored content is user avatars, already served unsigned by Cloudinary and displayed to other league members by design. Private would require signing a URL per avatar on pages that render dozens, defeating CDN caching and `next/image` |
-| D10 | **Schema replicated exactly**, then introspected with `prisma db pull` | Guarantees data fidelity; cleanups become later migrations |
+| D10 | **Data replicated exactly**, then **identifiers normalized**, then introspected | Restoring as-is preserves fidelity; renames are catalog-only so no data is rewritten |
+| D27 | **snake_case normalization** — plural snake_case tables, snake_case columns and enums; drop the 100%-NULL `password`/`salt` columns and `SequelizeMeta`. **No primary-key type changes** | The production schema is quoted PascalCase tables with camelCase columns (~81 of 132), so every query needs double quotes. Renames are lossless; PK type changes would rewrite every foreign key for no user-visible benefit |
 | D11 | **Parallel run, then DNS swap** | Safe rollback |
 | D12 | Contract tests at the **repository layer** + Playwright E2E on critical flows | See §13 — the HTTP seam disappears under D8, so contracts move to the data layer |
 | D13 | Realtime ships **after** cutover; live page uses polling until then | Feature is seasonal |
@@ -262,12 +263,52 @@ Approved, all scheduled **after** cutover.
 
 ## 8. Data and schema
 
-1. `pg_dump` from Heroku Postgres.
-2. Restore into Neon.
-3. `prisma db pull` to generate `schema.prisma` from the real schema.
-4. Baseline it: `prisma migrate diff` → `prisma migrate resolve --applied` so Prisma owns migrations going forward.
-5. Drop Sequelize's `SequelizeMeta` table after baselining.
-6. Add `Movie.accentHex`, `User.clerkId`, and `AvailableYear.isActive` as the first Prisma-owned migrations.
+### Migration sequence
+
+1. `pg_dump` from Heroku (server-side; 357 KB custom-format archive).
+2. **Restore into Neon exactly as dumped** — `--no-owner --no-privileges` because the dump's owner role `ub7c7u1vm0346s` does not exist in Neon, over `DATABASE_URL_UNPOOLED` because `pg_restore` does not work through a pooler.
+3. **Verify row counts** against `.local/prod-row-counts.txt`.
+4. **Apply the normalization script** (D27, below).
+5. **Verify row counts again** — they must be identical. Renames touch only the catalog, so any change here indicates a bug.
+6. `prisma db pull` to generate `schema.prisma` from the clean schema.
+7. Baseline: `prisma migrate diff` → `prisma migrate resolve --applied` so Prisma owns migrations from here.
+8. Add `Movie.accentHex`, `User.clerkId`, and `AvailableYear.isActive` as the first Prisma-owned migrations.
+
+The 18 Sequelize migrations stay in the source repo as history and are not ported.
+
+### Normalization (D27)
+
+Production uses quoted PascalCase table names and camelCase column names — roughly 81 of 132 app columns — so every raw query requires double quoting.
+
+**The dump file is never edited.** Restore as-is, then rename in SQL. `ALTER TABLE … RENAME` is a catalog operation: data never moves, so it cannot be silently mismapped. Rewriting a dump before import is where migrations lose rows quietly.
+
+**In scope — all lossless:**
+
+| Change | Example |
+|---|---|
+| Tables → plural snake_case | `AvailableYears` → `available_years`, `DraftPicks` → `draft_picks`, `ProfileFeeds` → `profile_feeds` |
+| Columns → snake_case | `providerId` → `provider_id`, `lastLogin` → `last_login`, `createdAt` → `created_at` |
+| Enum types → snake_case | `enum_Users_role` → `user_role`, `enum_Leagues_draftingStatus` → `league_drafting_status` |
+| Drop dead columns | `Users.password` and `Users.salt` — **NULL for all 60 users**, and unpopulatable under D26's passwordless auth |
+| Drop `SequelizeMeta` | Sequelize no longer owns migrations |
+| Normalize constraint and index names | best-effort, follows the table renames |
+
+**Out of scope:** primary-key types stay as they are. `Users.id` is an autoincrement integer while `Awards` and `DraftPicks` use UUID strings. Unifying them would rewrite every primary key and every foreign key referencing it — a genuine data rewrite with orphaned-relation risk and no user-visible benefit.
+
+**Prisma keeps camelCase in TypeScript.** Models are PascalCase singular, fields camelCase, both mapped to snake_case in the database:
+
+```prisma
+model User {
+  id          Int      @id @default(autoincrement())
+  providerId  String?  @map("provider_id")
+  createdAt   DateTime @map("created_at") @db.Timestamptz(6)
+  @@map("users")
+}
+```
+
+So application code reads naturally while the database follows Postgres convention.
+
+**The script is committed and repeatable.** At cutover the production database is re-dumped from Heroku, which still carries the original schema, and the identical transformation must be applied to that final data. A one-off manual rename would strand the cutover.
 
 ### The active season year (D22)
 
