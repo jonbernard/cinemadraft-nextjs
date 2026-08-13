@@ -226,10 +226,10 @@ Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index a
 
 ### Phase 11 — Media
 
-- T1: Vercel Blob client wrapper; uploads use `access: 'public'` (D24)
+- T1: Vercel Blob client wrapper; uploads use `access: 'public'` (D24); auth is OIDC, not a read-write token
 - T2: Upload path switched from the Cloudinary widget to Blob
 - T3: **Replace Cloudinary's on-the-fly resizing with `next/image`** — Blob does not transform images, and `useUserImage` currently requests a 128×128 fill from Cloudinary
-- T4: Migration for existing assets — a local script if `BLOB_READ_WRITE_TOKEN` exists, otherwise a deployed one-shot route (see Phase 0 notes). Handles **both** stored forms — full URLs and bare Cloudinary public IDs (`useUserImage` branches on `startsWith('http')`)
+- T4: Local migration script for existing assets — authenticates via OIDC (`VERCEL_OIDC_TOKEN` + `BLOB_STORE_ID`, Development OIDC enabled in Phase 0). Handles **both** stored forms — full URLs and bare Cloudinary public IDs (`useUserImage` branches on `startsWith('http')`)
 - T5: Rewrite stored values to Blob URLs
 - T6: `next/image` `remotePatterns` configured for the Blob hostname
 

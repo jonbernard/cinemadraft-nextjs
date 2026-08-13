@@ -199,19 +199,37 @@ Pub/sub for phase 14 realtime is a separate question, deliberately deferred to t
 vercel env ls | grep -i blob
 ```
 
-Connecting the store injects `BLOB_STORE_ID` and `BLOB_WEBHOOK_PUBLIC_KEY` (both non-sensitive). It does **not** necessarily inject `BLOB_READ_WRITE_TOKEN`, which is the credential `@vercel/blob`'s `put()` requires.
+Connecting the store injects `BLOB_STORE_ID` and `BLOB_WEBHOOK_PUBLIC_KEY`, both non-sensitive, to Production and Preview.
 
-If the token is absent, generate one from the Blob store's settings in the dashboard and add it to all three environments:
+**There is no `BLOB_READ_WRITE_TOKEN`, and none is needed.** Vercel Blob on this account authenticates via **OIDC**: the CLI and SDK use `VERCEL_OIDC_TOKEN` together with `BLOB_STORE_ID`. The CLI is explicit about the pairing — "must both be set, or both be unset."
 
-```bash
-vercel env add BLOB_READ_WRITE_TOKEN production
-vercel env add BLOB_READ_WRITE_TOKEN preview
-vercel env add BLOB_READ_WRITE_TOKEN development
+- [ ] **Step 2b: Enable OIDC for the Development environment**
+
+Blob operations from a local shell fail out of the box:
+
+```
+Error: Vercel Blob: OIDC is enabled for this project, but not for the "development" environment.
 ```
 
-**Development is included on purpose.** The phase 11 migration script runs locally — it reads every existing Cloudinary avatar and uploads it to Blob — so it needs a real token, not the OIDC identity a deployed function gets.
+OIDC is scoped per environment and Development is off by default. Two changes make local Blob work:
 
-If no token can be generated anywhere, Blob is OIDC-only on this account and phase 11 must run its migration as a deployed one-shot route rather than a local script. Record which applies before leaving this task.
+1. Dashboard → project → **Settings → Security** → the OIDC / Secure Backend Access section → enable **Development**.
+2. Add the store id to Development so both halves of the pair are present locally:
+
+```bash
+vercel env add BLOB_STORE_ID development
+```
+
+Verify:
+
+```bash
+vercel env pull .env.local --yes
+vercel blob list
+```
+
+Expected: an empty listing rather than an auth error.
+
+This matters for phase 11, whose migration script reads existing Cloudinary avatars and uploads them to Blob from a local shell. Without Development OIDC, that script cannot authenticate.
 
 - [ ] **Step 3: Note the public hostname**
 

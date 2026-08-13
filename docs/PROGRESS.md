@@ -33,7 +33,8 @@ _Fill these in as you go — later phases read them._
 - Heroku app name: `cinemadraft` (add-on `postgresql-fluffy-16646`, plan `essential-1`)
 - Blob store id: `store_5d9WUBVvsBKE…` — `BLOB_STORE_ID` and `BLOB_WEBHOOK_PUBLIC_KEY` attached (non-sensitive)
 - Blob public hostname: `________`
-- `BLOB_READ_WRITE_TOKEN` present? `________` — if no, phase 11 migration must run as a deployed route, not a local script
+- Blob auth is **OIDC**, not a read-write token: `VERCEL_OIDC_TOKEN` + `BLOB_STORE_ID` must both be set. OIDC is per-environment and **Development must be enabled** in Settings → Security for local Blob work (phase 11)
+- Development OIDC enabled? `________`
 - Auth0 user count at migration time: `________`
 - Auth0 connections enabled (must match Clerk): `________`
 - Vercel project: `cinemadraft-nextjs` (`prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`), linked in repo mode
