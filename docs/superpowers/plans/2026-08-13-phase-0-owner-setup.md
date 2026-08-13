@@ -92,18 +92,18 @@ From `/Users/jonbernard/Development/cinemadraft-nextjs`:
 vercel link
 ```
 
-The project already existed and was linked rather than created. **Project name: `cinemadraft-nextjs`** (id `prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`, org `team_KKQyxHG0EC4qRhCVurwdV3ZX`). It is linked in *repo* mode — `.vercel/repo.json`, not `project.json`.
+The project already existed and was linked rather than created. **Project name: `cinemadraft-nextjs`** (id `prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`, org `team_KKQyxHG0EC4qRhCVurwdV3ZX`). It is linked in _repo_ mode — `.vercel/repo.json`, not `project.json`.
 
 Because the project pre-existed the restart, it was audited for leftovers from the abandoned scaffold:
 
-| Env var | Age | Verdict |
-|---|---|---|
-| `AUTH_SENDGRID_KEY` | 508d | **Dead** — NextAuth email provider. Clerk handles its own email. Remove with `vercel env rm AUTH_SENDGRID_KEY`, or revoke in SendGrid |
-| `NEXT_PUBLIC_ACTIVE_YEAR` | 509d | **Keep** — already on Task 8's list. Verify the value is the current season |
+| Env var                   | Age  | Verdict                                                                                                                               |
+| ------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `AUTH_SENDGRID_KEY`       | 508d | **Dead** — NextAuth email provider. Clerk handles its own email. Remove with `vercel env rm AUTH_SENDGRID_KEY`, or revoke in SendGrid |
+| `NEXT_PUBLIC_ACTIVE_YEAR` | 509d | **Keep** — already on Task 8's list. Verify the value is the current season                                                           |
 
 No `DATABASE_URL` was present, so Task 2 provisions Neon into a clean slate.
 
-- [ ] **Step 2: Connect the Git repository**
+- [x] **Step 2: Connect the Git repository**
 
 Vercel dashboard → the `cinemadraft` project → **Settings → Git** → connect the GitHub repo. Set the production branch to `main`.
 
@@ -115,7 +115,7 @@ Already configured. This is the working domain for the entire build, and the par
 
 Using a stable subdomain rather than preview URLs matters for one specific reason: the Clerk webhook (Task 5, Step 6). Vercel preview URLs change on every deployment, so a webhook pointed at one breaks constantly. `next.cinemadraft.com` is stable from phase 4 through cutover.
 
-- [ ] **Step 4: Set the Node version**
+- [x] **Step 4: Set the Node version**
 
 **Settings → General → Node.js Version** → `22.x`.
 

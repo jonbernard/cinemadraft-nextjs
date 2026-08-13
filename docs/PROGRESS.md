@@ -48,7 +48,7 @@ _Fill these in as you go — later phases read them._
 
 Plan: _not yet written_
 
-- [ ] P1.T1 `create-next-app`, TS strict, Node 22 pinned
+- [ ] P1.T1 `create-next-app`, TS strict, Node 24 pinned
 - [ ] P1.T2 MUI v7 + `@mui/material-nextjs` + emotion cache provider
 - [ ] P1.T3 ESLint + Prettier, `npm run lint` green
 - [ ] P1.T4 Vitest config + smoke test

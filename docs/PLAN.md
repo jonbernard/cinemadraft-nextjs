@@ -30,7 +30,7 @@ This document is the **index**. Each phase has its own detail plan under `docs/s
 
 Every task inherits these. Values copied verbatim from the spec.
 
-- **Node 22.** Package manager: npm.
+- **Node 24** (current LTS), set in the Vercel project. Package manager: npm.
 - **All local databases run in Docker.** No native Postgres server on the dev machine. Local Postgres binaries are client-only (`libpq`: `psql`, `pg_dump`, `pg_restore`). Local dev and test databases are containers defined in `docker-compose.local.yml`, pinned to the same major version Neon provisions.
 - **TypeScript strict.** No `any` in committed code without an inline justification comment.
 - **Next.js 16 App Router**, React 19. No Pages Router.
@@ -68,7 +68,7 @@ Provision Vercel, Neon, Upstash, Vercel Blob, Clerk and an Auth0 Management appl
 
 Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Directory skeleton per §5. Deploys to a Vercel preview.
 
-- T1: `create-next-app` with TS, App Router; pin Node 22 in `package.json` engines and `.nvmrc`
+- T1: `create-next-app` with TS, App Router; pin Node 24 in `package.json` `engines` and `.nvmrc`, matching the Vercel project setting
 - T2: MUI v7 + `@mui/material-nextjs` + emotion; App Router cache provider wired in `app/layout.tsx`
 - T3: ESLint + Prettier config; `npm run lint` green
 - T4: Vitest config + one passing smoke test
