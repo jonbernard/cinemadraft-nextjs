@@ -49,7 +49,8 @@ Plan: _not yet written_
 - [ ] P1.T5 Playwright config + smoke test
 - [ ] P1.T6 GitHub Actions CI — lint, typecheck, test, build
 - [ ] P1.T7 Directory skeleton per spec §5
-- [ ] P1.T8 First Vercel preview deploy green
+- [ ] P1.T8 `docker-compose.local.yml` — local Postgres container + `db:up` / `db:down` scripts
+- [ ] P1.T9 First Vercel preview deploy green
 
 ---
 
@@ -64,6 +65,7 @@ Plan: _not yet written_
 - [ ] P2.T5 `lib/db.ts` — Prisma singleton + Neon adapter
 - [ ] P2.T6 Migration: `Movie.accentHex`, `User.clerkId`
 - [ ] P2.T7 Typed error classes
+- [ ] P2.T7a Load the production dump into the local Docker database for contract tests
 - [ ] P2.T8+ One repository per domain, TDD'd against fixtures (16 repositories — enumerated when the plan is written)
 
 ---

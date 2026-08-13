@@ -31,6 +31,7 @@ This document is the **index**. Each phase has its own detail plan under `docs/s
 Every task inherits these. Values copied verbatim from the spec.
 
 - **Node 22.** Package manager: npm.
+- **All local databases run in Docker.** No native Postgres server on the dev machine. Local Postgres binaries are client-only (`libpq`: `psql`, `pg_dump`, `pg_restore`). Local dev and test databases are containers defined in `docker-compose.local.yml`, pinned to the same major version Neon provisions.
 - **TypeScript strict.** No `any` in committed code without an inline justification comment.
 - **Next.js 16 App Router**, React 19. No Pages Router.
 - **MUI v7** with `@mui/material-nextjs`. No Tailwind, no shadcn (D3).
@@ -74,9 +75,10 @@ Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Direc
 - T5: Playwright config + one passing smoke test against `next dev`
 - T6: GitHub Actions CI running lint, typecheck, unit, build
 - T7: Directory skeleton from §5 with a placeholder in each folder
-- T8: First Vercel preview deploy succeeds
+- T8: `docker-compose.local.yml` — Postgres container matching Neon's major version; `npm run db:up` / `db:down` scripts
+- T9: First Vercel preview deploy succeeds
 
-**Gate:** `npm run lint && npm run typecheck && npm run test && npm run build` all green locally and in CI; preview URL loads.
+**Gate:** `npm run lint && npm run typecheck && npm run test && npm run build` all green locally and in CI; `npm run db:up` brings up a reachable local Postgres container; preview URL loads.
 
 ---
 
@@ -91,6 +93,7 @@ Restore production data to Neon, introspect, baseline, build repositories agains
 - T5: `lib/db.ts` — Prisma singleton with `@prisma/adapter-neon`
 - T6: Migration adding `Movie.accentHex` and `User.clerkId` (unique, nullable)
 - T7: Typed error classes (`NotFoundError`, `ForbiddenError`, `ConflictError`)
+- T7a: Load the production dump into the **local Docker** database — this is what repository contract tests run against, never Neon
 - T8–T24: One repository per domain, each TDD'd against its captured fixture — availableYears, awards, draft, draftPicks, events, leagues, lists, movies, nominations, notifications, points, profileFeeds, reviews, users, watchlist, winners
 
 **Gate:** every repository contract test passes against the golden fixtures captured in phase 0.

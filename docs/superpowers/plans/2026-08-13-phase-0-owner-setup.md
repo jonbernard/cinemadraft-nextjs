@@ -27,14 +27,15 @@ brew install postgresql@16   # for pg_dump / psql, if not already present
 
 `pg_restore` must be **at least** the Postgres major version of the dump's source server. A v15 client reading a v16 dump fails with `unsupported version in file header`.
 
-`pg_restore` is backward-compatible, so installing 17 covers every case — it reads dumps from 15, 16 or 17, and talks to whatever major version Neon provisions.
+`pg_restore` is backward-compatible, so a v17 client covers every case — it reads dumps from 15, 16 or 17, and talks to whatever major version Neon provisions.
+
+**Install `libpq`, not `postgresql@17`.** All local databases in this project run in Docker (see Phase 1). `libpq` is the client-only formula — `psql`, `pg_dump`, `pg_restore` — with no server binaries and nothing that can be started as a background service by accident.
 
 ```bash
-brew install postgresql@17
+brew install libpq
 brew unlink postgresql@15 2>/dev/null || true
 brew unlink postgresql@16 2>/dev/null || true
-brew link --force postgresql@17
-echo 'export PATH="$(brew --prefix postgresql@17)/bin:$PATH"' >> ~/.zshrc
+echo 'export PATH="$(brew --prefix libpq)/bin:$PATH"' >> ~/.zshrc
 exec zsh
 ```
 
@@ -43,7 +44,12 @@ Verify:
 ```bash
 pg_restore --version   # expect 17.x
 psql --version         # expect 17.x
+which psql             # expect the libpq path, not /opt/homebrew/bin
 ```
+
+If you already installed `postgresql@17`, it does no harm — just never run `brew services start postgresql@17`. To remove it: `brew uninstall postgresql@17`.
+
+> **No native Postgres server runs on this machine.** Local development and test databases are Docker containers. The only local Postgres binaries are client tools.
 
 - [ ] **Step 3: Log in to Vercel**
 
