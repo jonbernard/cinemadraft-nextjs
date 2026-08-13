@@ -92,7 +92,16 @@ From `/Users/jonbernard/Development/cinemadraft-nextjs`:
 vercel link
 ```
 
-Choose **Create a new project**. Name it `cinemadraft`. Accept the detected framework (it will say "Other" until phase 1 scaffolds Next.js — that's fine, it re-detects on first deploy).
+The project already existed and was linked rather than created. **Project name: `cinemadraft-nextjs`** (id `prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`, org `team_KKQyxHG0EC4qRhCVurwdV3ZX`). It is linked in *repo* mode — `.vercel/repo.json`, not `project.json`.
+
+Because the project pre-existed the restart, it was audited for leftovers from the abandoned scaffold:
+
+| Env var | Age | Verdict |
+|---|---|---|
+| `AUTH_SENDGRID_KEY` | 508d | **Dead** — NextAuth email provider. Clerk handles its own email. Remove with `vercel env rm AUTH_SENDGRID_KEY`, or revoke in SendGrid |
+| `NEXT_PUBLIC_ACTIVE_YEAR` | 509d | **Keep** — already on Task 8's list. Verify the value is the current season |
+
+No `DATABASE_URL` was present, so Task 2 provisions Neon into a clean slate.
 
 - [ ] **Step 2: Connect the Git repository**
 

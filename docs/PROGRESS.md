@@ -34,6 +34,7 @@ _Fill these in as you go — later phases read them._
 - Blob public hostname: `________`
 - Auth0 user count at migration time: `________`
 - Auth0 connections enabled (must match Clerk): `________`
+- Vercel project: `cinemadraft-nextjs` (`prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`), linked in repo mode
 - Vercel function region: `________`
 - Postgres client: libpq 18.4 at `/opt/homebrew/opt/libpq/bin`
 - Heroku Postgres server version: `17.9` — libpq 18.4 reads it fine
