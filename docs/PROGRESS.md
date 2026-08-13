@@ -15,7 +15,7 @@ Tick the box as the **final step** of each task.
 
 Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by Jon, not an agent.
 
-- [ ] P0.T0 Prerequisites — Vercel CLI, `libpq` client tools (no native Postgres server), Vercel and Heroku logins verified
+- [x] P0.T0 Prerequisites — `libpq` 18.4 client tools installed and on PATH (no native Postgres server)
 - [ ] P0.T1 Vercel project created, repo linked, domain added with DNS still on Heroku
 - [ ] P0.T2 Neon provisioned via Marketplace, free plan, preview branching on
 - [ ] P0.T3 Upstash Redis provisioned, region matched to Vercel function region
@@ -35,6 +35,8 @@ _Fill these in as you go — later phases read them._
 - Auth0 user count at migration time: `________`
 - Auth0 connections enabled (must match Clerk): `________`
 - Vercel function region: `________`
+- Postgres client: libpq 18.4 at `/opt/homebrew/opt/libpq/bin`
+- Heroku Postgres server version: `________`
 
 ---
 
