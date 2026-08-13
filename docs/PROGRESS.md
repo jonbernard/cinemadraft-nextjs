@@ -20,8 +20,8 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 - [x] P0.T2 Neon provisioned via Marketplace; connectivity verified; empty and ready for restore
 - [x] P0.T3 ~~Upstash Redis~~ — **removed**. Vercel Runtime Cache is included with the platform; nothing to provision (D23)
 - [x] P0.T4 Vercel Blob store created; `BLOB_STORE_ID` + `BLOB_WEBHOOK_PUBLIC_KEY` attached; OIDC auth model understood; uploads will be **public** per D24
-- [ ] P0.T5 Clerk app created — **connections matched to Auth0 exactly**, keys and webhook secret in Vercel
-- [ ] P0.T6 Auth0 Management app created with `read:users` only
+- [ ] P0.T5 Clerk app created — Email+Password and Google enabled, **email verification required**, keys and webhook secret in Vercel
+- [x] P0.T6 ~~Auth0 Management app~~ — **removed**. No bulk import under D25; Auth0 needs nothing
 - [ ] P0.T7 🔴 Production dump + row counts + API contract fixtures captured
 - [ ] P0.T8 TMDB / OMDB / remaining env keys carried over
 - [ ] P0 completion checklist fully ticked
@@ -35,8 +35,8 @@ _Fill these in as you go — later phases read them._
 - Blob public hostname: `________`
 - Blob auth is **OIDC**, not a read-write token: `VERCEL_OIDC_TOKEN` + `BLOB_STORE_ID` must both be set. OIDC is per-environment and **Development must be enabled** in Settings → Security for local Blob work (phase 11)
 - Local Blob access unresolved: OIDC tokens are environment-scoped and the store is connected to Production/Preview only. Settings → Security has no per-environment control. **Phase 11 fallback: run the media migration as a deployed one-shot route** rather than a local script — its OIDC identity is production-scoped and already authorized
-- Auth0 user count at migration time: `________`
-- Auth0 connections enabled (must match Clerk): `________`
+- Auth0 users: 51 on `auth0|` (email+password, 36 active in past year), 9 dormant Firebase-era, **0 on google-oauth2**. 51 distinct emails, no duplicates
+- Auth0 connections: `google-oauth2` (unused by anyone) and `Username-Password-Authentication`
 - Vercel project: `cinemadraft-nextjs` (`prj_6AQy9PCklalfMLCMHSuRDtAgEzfK`), linked in repo mode
 - Staging domain: `next.cinemadraft.com` — also the Clerk webhook host
 - Neon attached to Production + Preview only (by design; Development uses Docker). Vars are Sensitive and cannot be `vercel env pull`ed — connection string comes from the Neon console into `.local/.env.neon`
@@ -104,10 +104,11 @@ Plan: _not yet written_
 - [ ] P4.T1 Clerk installed, middleware on `(app)` segment
 - [ ] P4.T2 `lib/auth.ts` — session → `User` resolution
 - [ ] P4.T3 Clerk webhook with signature verification
-- [ ] P4.T4 Auth0 → Clerk import script, dry-run mode
-- [ ] P4.T5 🔴 Run import + backfill `clerkId` — **only after Clerk connections verified**
-- [ ] P4.T6 Sign-in / sign-up pages
-- [ ] P4.T7 E2E: migrated production user signs in with leagues intact
+- [ ] P4.T4 Claim logic — verified-email match sets `clerkId`, else create (D25)
+- [ ] P4.T5 🔴 Verified-email test suite — unverified email must never claim an existing row
+- [ ] P4.T6 Sign-in / sign-up pages, with returning-user copy
+- [ ] P4.T7 E2E: claim a real production account, leagues intact
+- [ ] P4.T8 Admin relink path for mismatched emails
 
 ---
 

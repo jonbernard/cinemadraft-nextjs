@@ -40,7 +40,8 @@ Each was decided explicitly during design. A future session must not re-litigate
 | D5 | **Neon Postgres** via Vercel Marketplace (free) | Vercel's default Postgres partner. Supabase explicitly rejected |
 | D6 | ~~Upstash Redis for caching and pub/sub~~ — **superseded by D23** | Upstash no longer offers a free tier through the Vercel Marketplace; the smallest plan is pay-as-you-go and requires a card |
 | D23 | **Vercel Runtime Cache** for caching. Realtime transport **deferred to phase 14** | Runtime Cache is included with the platform — no card, no extra vendor — and Next.js 16 targets it natively via `'use cache: remote'`. Pub/sub is only needed post-cutover, so the choice is made when it is built, not months early |
-| D7 | **Clerk** for auth, replacing Auth0 | Owner's choice, accepting user-migration risk |
+| D7 | **Clerk** for auth, replacing Auth0 | Owner's choice |
+| D25 | **No bulk user migration.** Accounts are claimed on first authentication with a **verified** matching email | Every active user is email+password and Auth0 does not export password hashes. Claiming needs only the webhook that already existed in the design |
 | D8 | **Server Components + Server Actions**; no general `/api` layer | `/api` retained only where HTTP is required: Clerk webhook, SSE stream, ical feed |
 | D9 | **Vercel Blob** replaces Cloudinary | One less vendor |
 | D24 | Blob uploads are **public** | The only stored content is user avatars, already served unsigned by Cloudinary and displayed to other league members by design. Private would require signing a URL per avatar on pages that render dozens, defeating CDN caching and `next/image` |
@@ -295,15 +296,45 @@ The 18 Sequelize migrations stay in the source repo as history and are not porte
 
 ## 9. Auth migration
 
-The highest-risk item in the project.
+**There is no bulk user migration.** Existing accounts are *claimed* the first time their owner authenticates with Clerk using a verified, matching email.
 
-1. Prisma migration adds `User.clerkId` (unique, nullable). `auth0Id` is retained permanently.
-2. A one-off script reads Auth0 users via the Management API and creates them in Clerk via the Backend API, setting `external_id` to the Auth0 `sub` and preserving email.
-3. Backfill `User.clerkId`, matched on email.
-4. A Clerk `user.created` webhook upserts on email, so any user missed by the import self-heals on first sign-in rather than creating a duplicate.
-5. `getCurrentUser()` resolves the Clerk session to a `User` row via `clerkId`, falling back to email.
+### Why claiming beats importing
 
-**Watch item:** social and passwordless Auth0 users require the matching Clerk connection to be enabled *before* import. Without it, their sign-in silently creates a second identity.
+Production data (queried 2026-08-13):
+
+| Auth0 sub prefix | Users | Active past year | Meaning |
+|---|---|---|---|
+| `auth0\|…` | 51 | 36 | Username-Password-Authentication |
+| bare Firebase UID | 9 | 0 | Predate Auth0; dormant |
+| `google-oauth2\|…` | 0 | 0 | Google is enabled in Auth0 but unused |
+
+Every active user is email + password, and Auth0's Management API does not export password hashes — obtaining them requires a support request. An import would therefore either block on Auth0 support or force 36 people through a password reset, and would still need the email-matching webhook as a fallback for anyone it missed.
+
+Claiming needs only the webhook, which was already in the design. No Auth0 Management API application, no import script, no password handling.
+
+### Mechanism
+
+1. Prisma migration adds `User.clerkId` (unique, nullable). `providerId` is retained permanently as the historical Auth0/Firebase identifier.
+2. A user signs up or signs in through Clerk with any enabled connection.
+3. The Clerk webhook (`user.created`, `user.updated`) fires. For each **verified** email address on the Clerk user, it looks for a `User` row with a matching lowercased email.
+   - **Match found** → set `clerkId` on that row. The user keeps every league, draft, review and point.
+   - **No match** → create a new `User` row.
+4. `getCurrentUser()` resolves the Clerk session to a `User` via `clerkId`.
+
+### The security control
+
+**Claiming requires a verified email.** Linking on an unverified address would let anyone sign up as another member's email and inherit their account.
+
+- The webhook links only when the address's `verification.status` is `verified`.
+- An unverified Clerk user is left unlinked; `user.updated` fires when verification completes and claiming happens then.
+- Matching is on `lower(email)`. Production has 51 distinct emails and no duplicates, so a match is unambiguous.
+
+### Consequences
+
+- **Dormant Firebase-era users need no special handling.** If one returns, they claim their row like anyone else.
+- **A user whose Clerk email differs from their Auth0 email** gets a new empty account instead of their history. This is a support case — an admin relink, not a systemic failure.
+- **Returning users are signing *up*, not in.** The sign-up page must say so: "Played before? Sign up with the same email and your leagues come with you."
+- Auth0 can be decommissioned at cutover with no export step.
 
 ## 10. Movie search
 
@@ -443,9 +474,9 @@ Phase 0 is owner-executed and blocks everything else. The implementation plan ca
 
 **Vercel Blob** — create the store, confirm `BLOB_READ_WRITE_TOKEN`, and record the public hostname. Uploads use `access: 'public'` (D24).
 
-**Clerk** — the longest step, and the one with a decision embedded in it. Create the application; enable exactly the connections that the Auth0 tenant currently uses (§9 — this must be verified against Auth0 before any import runs, or social users get duplicate identities); configure the sign-in and sign-up URLs; create the webhook endpoint pointing at `/api/webhooks/clerk` subscribed to `user.created` and `user.updated`; capture the publishable key, secret key, and webhook signing secret.
+**Clerk** — create the application; enable Email + Password and Google; require email verification; configure the sign-in and sign-up URLs; create the webhook endpoint at `https://next.cinemadraft.com/api/webhooks/clerk` subscribed to `user.created` and `user.updated`; capture the publishable key, secret key, and webhook signing secret.
 
-**Auth0** — create a Management API application with read access to users, for the one-off import. This can be revoked immediately after phase 4.
+**Auth0** — nothing required. D25 removed the bulk import, so no Management API application is needed. Auth0 is decommissioned at cutover.
 
 **Heroku** — confirm `pg_dump` access to the production database and capture a dump before anything else. Also confirm the app can serve the contract fixtures (§13) while it is still live.
 
@@ -467,7 +498,8 @@ This effort spans more sessions than one context window. State lives in files, n
 | Risk | Mitigation |
 |---|---|
 | **Realtime transport undecided** — phase 14 needs pub/sub and no free option is currently provisioned | Deferred deliberately (D23). Candidates: Upstash direct (outside the Marketplace), Pusher Channels free tier, Ably free tier, or Postgres `LISTEN`/`NOTIFY` on an unpooled Neon connection. Cutover does not depend on it — polling ships at phase 13 |
-| Auth0 → Clerk migration orphans users | `auth0Id` retained; email-keyed webhook self-heals; verify social connections before import (phase 0) |
+| **Unverified email claims another user's account** | The webhook links only on `verification.status === 'verified'`; unverified Clerk users stay unlinked until `user.updated` confirms verification. This is the single security-critical rule in the auth design |
+| A user's Clerk email differs from their Auth0 email | They get a new empty account rather than their history. Admin relink by setting `clerkId` on the correct row; 51 distinct emails with no duplicates makes this rare |
 | Port regressions in data shape | Repository contract tests against golden fixtures captured from live production |
 | **Contract fixtures become uncapturable** — the source of truth is a live Heroku app that gets retired | Capture in phase 0/2, before any migration work. This is unrecoverable if skipped |
 | **Materialized scores drift from source** — the failure mode §11 introduces | Nightly reconciliation job diffs recomputed vs stored and reports mismatches; full recompute available as a first-class command |

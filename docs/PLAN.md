@@ -123,16 +123,17 @@ Tokens, both themes, typography, and the tests that keep them honest.
 ### Phase 4 — Auth 🔴 priority trio
 
 - T1: `@clerk/nextjs` installed; middleware protecting the `(app)` segment
-- T2: `lib/auth.ts` — `getCurrentUser`, `requireUser`, `requireAdmin`; resolves Clerk session → `User` via `clerkId`, falling back to email
-- T3: `/api/webhooks/clerk` — signature verification, `user.created` / `user.updated` upsert keyed on email
-- T4: Auth0 → Clerk user import script (dry-run mode first, reporting what it *would* create)
-- T5: Run the import against production users; backfill `User.clerkId`
-- T6: Sign-in / sign-up pages styled with phase 3 tokens
-- T7: E2E: sign in as a migrated production user
+- T2: `lib/auth.ts` — `getCurrentUser`, `requireUser`, `requireAdmin`; resolves Clerk session → `User` via `clerkId`
+- T3: `/api/webhooks/clerk` — signature verification (reject unsigned requests)
+- T4: **Claim logic** — on `user.created` / `user.updated`, for each **verified** email match `lower(email)` against `User`; on match set `clerkId`, otherwise create a row (D25)
+- T5: **Verified-email test suite** — an unverified email must never claim an existing row. This is the security-critical test in the whole project
+- T6: Sign-in / sign-up pages styled with phase 3 tokens, with copy telling returning users to sign up with their original email
+- T7: E2E: claim a real production account and confirm its leagues are intact
+- T8: Admin relink path for a user whose Clerk email differs from their historical one
 
-**Gate:** a real migrated user signs in and resolves to their existing `User` row with leagues intact.
+**Gate:** a real production account is claimed via a verified email and resolves with leagues intact; an unverified email provably cannot claim.
 
-**Watch item:** T5 must not run until the Auth0 social/passwordless connections are enabled in Clerk (phase 0). Otherwise those users get duplicate identities.
+> **No bulk import, no Auth0 Management API, no password handling** (D25). All 51 Auth0 users are email+password and Auth0 does not export hashes without a support request.
 
 ---
 

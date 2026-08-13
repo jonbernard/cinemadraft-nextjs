@@ -28,6 +28,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D21 | The **award show page gets its own phase** — it is the input to the entire scoring pipeline |
 | D22 | **Active season year is data, not config** — `AvailableYear.isActive`, settable from the running app; `NEXT_PUBLIC_ACTIVE_YEAR` is deleted |
 | D23 | **Vercel Runtime Cache** replaces Upstash for caching; **realtime transport deferred to phase 14** |
+| D25 | **No bulk user migration** — accounts are claimed on first Clerk auth with a **verified** matching email. Linking on an unverified email is an account-takeover vector |
 | D24 | **Blob uploads are `access: 'public'`.** Content is avatars, already public via Cloudinary and shown to other league members by design |
 
 ## Explicitly rejected
@@ -36,6 +37,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Gold-on-black palette** — the default for awards products; would be indistinguishable from any Oscars microsite.
 - **Reusing the prior scaffold's `schema.prisma`** — valuable, but D16 overrides.
 - **Keeping Auth0 as a Clerk OAuth connection** — no migration risk, but retains the vendor being removed.
+- **Bulk-importing users from Auth0 into Clerk** — superseded by D25. Auth0 does not export password hashes without a support request, and all 51 users are email+password. Claiming needs only the webhook that already existed.
 - **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI.
 - **Upstash Redis via the Vercel Marketplace** — no longer has a free tier; smallest plan is pay-as-you-go and requires a credit card, which violates the free-only constraint.
 - **Vercel Edge Config for the active year** — right tool for middleware-latency flags, wrong tool for domain data that belongs beside the years table.
