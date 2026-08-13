@@ -26,6 +26,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D19 | Scoring becomes a **pure, unit-tested rule** with materialized results and bounded event-driven recompute |
 | D20 | Search is **local-first**, merged with cached TMDB, and context-aware (draft / browse / award admin) |
 | D21 | The **award show page gets its own phase** — it is the input to the entire scoring pipeline |
+| D22 | **Active season year is data, not config** — `AvailableYear.isActive`, settable from the running app; `NEXT_PUBLIC_ACTIVE_YEAR` is deleted |
 
 ## Explicitly rejected
 
@@ -34,6 +35,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Reusing the prior scaffold's `schema.prisma`** — valuable, but D16 overrides.
 - **Keeping Auth0 as a Clerk OAuth connection** — no migration risk, but retains the vendor being removed.
 - **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI.
+- **Vercel Edge Config for the active year** — right tool for middleware-latency flags, wrong tool for domain data that belongs beside the years table.
 - **Greying out zero-point films in the roster** — the strip is ordered by draft position, not performance. A last pick may be the best pick.
 
 ## Confirmed scoring rule

@@ -69,7 +69,7 @@ Plan: _not yet written_
 - [ ] P2.T3 Baseline migrations
 - [ ] P2.T4 Drop `SequelizeMeta`
 - [ ] P2.T5 `lib/db.ts` — Prisma singleton + Neon adapter
-- [ ] P2.T6 Migration: `Movie.accentHex`, `User.clerkId`
+- [ ] P2.T6 Migration: `Movie.accentHex`, `User.clerkId`, `AvailableYear.isActive` + partial unique index
 - [ ] P2.T7 Typed error classes
 - [ ] P2.T7a Load the production dump into the local Docker database for contract tests
 - [ ] P2.T8+ One repository per domain, TDD'd against fixtures (16 repositories — enumerated when the plan is written)
@@ -109,6 +109,7 @@ Plan: _not yet written_
 
 Plan: _not yet written_
 
+- [ ] P5.T0 `lib/services/season.ts` — `getActiveYear()`, retires `NEXT_PUBLIC_ACTIVE_YEAR`
 - [ ] P5.T1 `lib/services/dashboard.ts`
 - [ ] P5.T2 Dashboard RSC page
 - [ ] P5.T3 Season rail component
@@ -194,4 +195,5 @@ Plan: _written after phase 7, driven by `docs/PARITY.md`_
 
 ## Open questions carried forward
 
+- **`NEXT_PUBLIC_ACTIVE_YEAR` still set in Vercel.** Delete it once P5.T0 ships the database-backed read path (D22).
 - **Logo mark undecided.** Wordmark-only until resolved. See `docs/DECISIONS.md` → Still open.

@@ -50,6 +50,7 @@ Each was decided explicitly during design. A future session must not re-litigate
 | D15 | **Both light and dark themes** are first-class | Dark is default; light is a designed palette, not an inversion |
 | D16 | **All prior committed work in `cinemadraft-nextjs` is ignored.** Start fresh | Owner's instruction. Existing git history is not a source of truth |
 | D17 | Priority order for feature porting: **dashboard, draft, auth**, then the rest | Owner's choice |
+| D22 | **The active season year is data, not config.** `AvailableYear.isActive`, settable from the running app | Today it is `NEXT_PUBLIC_ACTIVE_YEAR`, a build-time constant requiring a rebuild and redeploy every season |
 
 ### Rejected alternatives worth recording
 
@@ -264,7 +265,30 @@ Approved, all scheduled **after** cutover.
 3. `prisma db pull` to generate `schema.prisma` from the real schema.
 4. Baseline it: `prisma migrate diff` → `prisma migrate resolve --applied` so Prisma owns migrations going forward.
 5. Drop Sequelize's `SequelizeMeta` table after baselining.
-6. Add `Movie.accentHex` and `User.clerkId` as the first Prisma-owned migrations.
+6. Add `Movie.accentHex`, `User.clerkId`, and `AvailableYear.isActive` as the first Prisma-owned migrations.
+
+### The active season year (D22)
+
+Today the active year is `NEXT_PUBLIC_ACTIVE_YEAR`, a build-time environment variable read in roughly ten client files. Changing seasons means editing an env var and redeploying — an annual annoyance with no upside.
+
+The `available_years` table already exists and already stores every year. It simply has no concept of which one is current.
+
+**Migration.** Add `is_active boolean not null default false`, plus a partial unique index so the database itself guarantees at most one active year:
+
+```sql
+CREATE UNIQUE INDEX available_years_one_active
+  ON available_years (is_active) WHERE is_active;
+```
+
+No application path can produce two active years. Correctness lives in the schema rather than in a convention someone has to remember.
+
+**Read path.** `lib/services/season.ts` exposes `getActiveYear(): Promise<number>`, cached and tagged `active-year`. Server Components resolve it and pass it down as props — under D8 there is no client-side env var to replace.
+
+**Write path.** An admin-only Server Action `setActiveYear(year)` clears the current flag, sets the new one in the same transaction, and calls `revalidateTag('active-year')`. Changing seasons becomes a click in the running app.
+
+`NEXT_PUBLIC_ACTIVE_YEAR` is deleted from Vercel once the read path ships.
+
+**Rejected:** Vercel Edge Config. It is the right tool for flags needed at middleware latency; the active year is domain data belonging beside the years table, and using Edge Config would split configuration across two systems.
 
 The 18 Sequelize migrations stay in the source repo as history and are not ported.
 

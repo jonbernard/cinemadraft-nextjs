@@ -91,7 +91,7 @@ Restore production data to Neon, introspect, baseline, build repositories agains
 - T3: Baseline: `prisma migrate diff` → `prisma migrate resolve --applied 0_init`
 - T4: Drop `SequelizeMeta`
 - T5: `lib/db.ts` — Prisma singleton with `@prisma/adapter-neon`
-- T6: Migration adding `Movie.accentHex` and `User.clerkId` (unique, nullable)
+- T6: Migration adding `Movie.accentHex`, `User.clerkId` (unique, nullable), and `AvailableYear.isActive` (bool, default false) with the partial unique index `available_years_one_active` guaranteeing at most one active year
 - T7: Typed error classes (`NotFoundError`, `ForbiddenError`, `ConflictError`)
 - T7a: Load the production dump into the **local Docker** database — this is what repository contract tests run against, never Neon
 - T8–T23: One repository per live table, each TDD'd against its captured fixture — availableYears, awards, draft, draftPicks, events, leagues, lists, movies, nominations, notifications, points, profileFeeds, reviews, users, watchlist, winners (**16 total**)
@@ -139,6 +139,7 @@ Tokens, both themes, typography, and the tests that keep them honest.
 
 Replaces the welcome-card home with state: standings position, next deadline, recent movement.
 
+- T0: `lib/services/season.ts` — `getActiveYear()`, cached and tagged `active-year`; replaces `NEXT_PUBLIC_ACTIVE_YEAR` (D22)
 - T1: `lib/services/dashboard.ts` composing existing repositories
 - T2: Dashboard RSC page
 - T3: Season rail component (§6.7) — shows, dates, completed/next, countdown
@@ -216,7 +217,7 @@ Replaces per-request Ramda recomputation in a route file with a tested rule and 
 
 ### Phase 10 — Remaining features to parity
 
-Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index at that point. Expected surfaces: films (browse + watchlist + list, consolidated per §6.9), leagues, live event on polling, reviews, users, admin, notifications, and the **ical calendar feed** (`/api/ical/[...]` — one of the three permitted `/api` routes under D8).
+Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index at that point. Expected surfaces: films (browse + watchlist + list, consolidated per §6.9), leagues, live event on polling, reviews, users, admin (**including the `setActiveYear` Server Action and its control — D22**), notifications, and the **ical calendar feed** (`/api/ical/[...]` — one of the three permitted `/api` routes under D8).
 
 **Gate:** every row in `PARITY.md` closed; E2E green per feature.
 
