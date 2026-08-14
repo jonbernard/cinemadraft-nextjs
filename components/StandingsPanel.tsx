@@ -92,7 +92,10 @@ export function StandingsPanel({
             aria-current={row.isViewer ? true : undefined}
             className={cn(
               'border-border-rule border-b',
-              row.isViewer && 'bg-bg-surface border-l-accent-fill border-l-2',
+              // `bg-raised` rather than `bg-surface`: the panel itself sits on
+              // a surface, and a tint the same colour as its own ground is no
+              // tint at all.
+              row.isViewer && 'bg-bg-raised border-l-accent-fill border-l-2',
             )}
           >
             <td className="text-text-secondary tabular py-2 pr-3 text-right font-mono">
