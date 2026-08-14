@@ -1,6 +1,7 @@
 'use client';
 
 import { useColorScheme } from '@mui/material/styles';
+import { useCallback } from 'react';
 
 /**
  * The light/dark switch (D15).
@@ -14,12 +15,13 @@ import { useColorScheme } from '@mui/material/styles';
 export function ThemeToggle() {
   const { mode, setMode } = useColorScheme();
   const next = mode === 'dark' ? 'light' : 'dark';
+  const toggle = useCallback(() => setMode(next), [setMode, next]);
 
   return (
     <button
       type="button"
       disabled={!mode}
-      onClick={() => setMode(next)}
+      onClick={toggle}
       aria-label={mode ? `Switch to ${next} theme` : 'Theme'}
       className="border-border-rule text-text-secondary hover:text-text-primary min-w-24 border px-3 py-1 font-mono text-xs uppercase"
     >

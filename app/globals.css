@@ -32,16 +32,16 @@
  * them under MUI's own attribute.
  */
 @theme {
-  --color-bg-base: #0B0D10;
-  --color-bg-surface: #14171C;
-  --color-bg-raised: #1D2127;
-  --color-border-rule: #2A2F38;
-  --color-text-primary: #E8E6E1;
-  --color-text-secondary: #8A9099;
+  --color-bg-base: #0b0d10;
+  --color-bg-surface: #14171c;
+  --color-bg-raised: #1d2127;
+  --color-border-rule: #2a2f38;
+  --color-text-primary: #e8e6e1;
+  --color-text-secondary: #8a9099;
   --color-text-dim: #828993;
-  --color-accent-fill: #A8323E;
-  --color-accent-text: #DA707C;
-  --color-beam: #7FA6B8;
+  --color-accent-fill: #a8323e;
+  --color-accent-text: #da707c;
+  --color-beam: #7fa6b8;
 
   /* Faces are registered here rather than in tokens.ts: their values are
    * next/font-generated custom properties that only exist at runtime, so
@@ -66,17 +66,19 @@
  * both systems — no second theme context, and no component reading a hook to
  * decide which class to render.
  */
-@custom-variant dark (&:where([data-mui-color-scheme="dark"], [data-mui-color-scheme="dark"] *));
+@custom-variant dark (
+  &:where([data-mui-color-scheme="dark"], [data-mui-color-scheme="dark"] *)
+);
 
 [data-mui-color-scheme="light"] {
-  --color-bg-base: #F5F3EF;
-  --color-bg-surface: #FFFFFF;
-  --color-bg-raised: #EDEAE3;
-  --color-border-rule: #DED9CF;
-  --color-text-primary: #14171C;
-  --color-text-secondary: #5F636C;
-  --color-text-dim: #5F636C;
-  --color-accent-fill: #8C2F39;
-  --color-accent-text: #8C2F39;
-  --color-beam: #3F6273;
+  --color-bg-base: #f5f3ef;
+  --color-bg-surface: #ffffff;
+  --color-bg-raised: #edeae3;
+  --color-border-rule: #ded9cf;
+  --color-text-primary: #14171c;
+  --color-text-secondary: #5f636c;
+  --color-text-dim: #5f636c;
+  --color-accent-fill: #8c2f39;
+  --color-accent-text: #8c2f39;
+  --color-beam: #3f6273;
 }
