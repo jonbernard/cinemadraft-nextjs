@@ -88,12 +88,20 @@ describe('RosterStrip', () => {
 
   it('keeps every frame the same size regardless of count', () => {
     // The reason the grid wraps instead of fitting one row: a row that divides
-    // by the film count is tidy at 8 and unreadable at 30. The breakpoint
-    // classes are fixed, so they cannot depend on how many films there are.
+    // by the film count is tidy at 8 and unreadable at 30. The track rule is
+    // fixed, so it cannot depend on how many films there are.
     const { container: eight } = render(<RosterStrip films={films(8)} />);
     const eightClass = eight.querySelector('ul')?.className;
 
     const { container: thirty } = render(<RosterStrip films={films(30)} />);
     expect(thirty.querySelector('ul')?.className).toBe(eightClass);
+  });
+
+  it('🔴 sizes columns by a minimum readable width, not a column count', () => {
+    // The fix for the 1440px clipping the E2E caught: eight fixed columns left
+    // each frame too narrow for a two-line title. A width floor lets the count
+    // fall out of the available space instead.
+    const { container } = render(<RosterStrip films={films(8)} />);
+    expect(container.querySelector('ul')?.className).toContain('minmax(10rem,1fr)');
   });
 });

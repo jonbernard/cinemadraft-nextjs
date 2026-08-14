@@ -26,9 +26,17 @@ export type RosterFilm = {
  * That is why the grid **wraps** rather than fitting everything on one line.
  * A single row that divides by the film count looks tidy at eight and becomes
  * unreadable slivers at thirty; wrapping keeps every poster the same legible
- * size and spends vertical space instead, which a page has more of. The
- * breakpoints are fixed (2 / 4 / 8 across) precisely so they do not depend on
- * how many films there are.
+ * size and spends vertical space instead, which a page has more of.
+ *
+ * The column count comes from a **minimum frame width**, not from
+ * breakpoints. §6.7 asks for 8 across on desktop and a two-line title clamp,
+ * and those two rules conflict: at 1440px, eight columns leave each frame
+ * around 130px, which is not enough for a 24-character title in two lines —
+ * "One Battle After Another" clipped, which is the exact defect this redesign
+ * exists to fix. `auto-fill` with a 10rem floor fits as many frames as will
+ * stay readable and no more, so the strip honours the intent of the spec (as
+ * many as fit) rather than its arithmetic. Caught by the E2E gate at 1440px;
+ * 375 and 768 already passed, which is why a fixed rule looked fine.
  *
  * Ordering is the caller's: the service sorts by draft round, and this must
  * not re-sort. Snake order is real information — round 1 cost more than the
@@ -51,7 +59,10 @@ export function RosterStrip({
 
   return (
     <ul
-      className={cn('grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8', className)}
+      className={cn(
+        'grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-4',
+        className,
+      )}
       // The list is ordered by draft round, and that order carries meaning,
       // so it is announced as a list rather than a bag of figures.
       aria-label="Drafted films, in draft order"
