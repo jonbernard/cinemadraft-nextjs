@@ -17,9 +17,10 @@
     "db:up": "docker compose -f docker-compose.local.yml up -d --wait",
     "db:down": "docker compose -f docker-compose.local.yml down",
     "db:psql": "\"$(brew --prefix libpq)\"/bin/psql postgresql://cinemadraft:local@localhost:5433/cinemadraft",
-    "lock": "docker run --rm -v \"$PWD\":/repo -w /repo node:24 npm install --package-lock-only --no-audit --no-fund",
+    "lock": "docker run --rm -v \"$PWD\":/repo -w /repo node:24 npm install --package-lock-only --ignore-scripts --no-audit --no-fund",
     "typegen": "next typegen",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:ci": "vitest run --config vitest.ci.config.mts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.5",

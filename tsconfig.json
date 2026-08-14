@@ -6,6 +6,10 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    // vitest.ci.config.mts imports vitest.config.mts by its real filename.
+    // Safe because this project only ever typechecks (noEmit above) — nothing
+    // is emitted that could carry an unresolvable .mts specifier.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

@@ -15,6 +15,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # The schema, not the data. CI gets a real Postgres and the real
+    # migrations, so anything that depends on a column, a constraint or an
+    # index is genuinely exercised. The restored production database — 60 real
+    # people's names, emails and leagues — stays off the runner, which is why
+    # the contract tests are excluded from `test:ci` rather than run against a
+    # hollow copy. Same major as production (17).
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: cinemadraft
+          POSTGRES_PASSWORD: local
+          POSTGRES_DB: cinemadraft
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://cinemadraft:local@localhost:5432/cinemadraft
+
     steps:
       - uses: actions/checkout@v5
 
@@ -37,20 +61,44 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Create the schema the tests run against. `migrate deploy` applies the
+      # committed migrations exactly as production will receive them, so a
+      # migration that is broken fails here rather than at cutover.
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      # The subset that can run without the production data — see
+      # vitest.ci.config.mts. This still covers every security test in the
+      # project: the claim rules, session resolution, webhook signature
+      # verification and the admin relink guard.
       - name: Unit tests
-        run: npm run test
+        run: npm run test:ci
 
       - name: Build
         run: npm run build
 
+      # E2E needs a running Clerk instance: the proxy resolves a session on
+      # every non-public route, and the auth spec drives a real sign-up. Both
+      # keys have to be present as repository secrets for this to mean
+      # anything — without them the specs skip themselves, which is a green
+      # run that proved nothing, so the steps are skipped visibly instead.
       - name: Install Playwright browsers
+        if: env.CLERK_SECRET_KEY != ''
         run: npx playwright install --with-deps chromium
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
       # Playwright's webServer builds and starts the app itself. The build
       # above is not redundant: it fails fast with a readable error before
       # the browser download, rather than surfacing as a webServer timeout.
       - name: E2E tests
+        if: env.CLERK_SECRET_KEY != ''
         run: npm run test:e2e
+        env:
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
 
       - uses: actions/upload-artifact@v5
         if: failure()
@@ -196,7 +244,12 @@ jobs:
       - name: Lockfile matches what Linux npm resolves
         run: |
           cp package-lock.json /tmp/committed.json
-          npm install --package-lock-only --no-audit --no-fund >/dev/null 2>&1
+          # --ignore-scripts is required, not tidiness. This job never runs
+          # `npm ci`, so there is no node_modules — and package.json's
+          # postinstall is `prisma generate`, whose binary is therefore
+          # missing. Without this the step dies with exit 127 before ever
+          # comparing the lockfile, and the redirect below hides the reason.
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           if ! diff -q /tmp/committed.json package-lock.json >/dev/null; then
             echo "::error::package-lock.json differs from what npm resolves on Linux."
             echo "It was probably regenerated on macOS. Run: npm run lock"
