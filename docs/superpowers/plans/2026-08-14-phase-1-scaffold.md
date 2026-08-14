@@ -6,7 +6,7 @@
 
 **Architecture:** Next 16 App Router at the repository root (no `src/`), matching spec §5. MUI supplies components and Tailwind supplies custom styling; they coexist because `AppRouterCacheProvider` emits emotion output into a `mui` cascade layer that sits above Tailwind's `base` and below its `utilities`. Nothing in this phase touches the database, auth, or design tokens — those are Phases 2, 4 and 3.
 
-**Tech Stack:** Next 16.3.1 · React 19.2.8 · TypeScript strict · MUI 9.3.1 · Tailwind 4.3.3 · Vitest · Playwright · GitHub Actions · Docker Postgres 17
+**Tech Stack:** Next 16.3.1 · React 19.2.8 · TypeScript strict · MUI 9.3.1 · Tailwind 4.3.3 · Biome 2.5.8 · Vitest · Playwright · GitHub Actions · Docker Postgres 17
 
 ## Global Constraints
 
@@ -37,11 +37,10 @@ Every task inherits these, from `docs/PLAN.md` and the spec.
 | `app/globals.css` | Cascade layer declaration + Tailwind import |
 | `app/page.tsx` | Placeholder home, replaced in Phase 5 |
 | `theme/index.ts` | Minimal MUI theme; real tokens land in Phase 3 |
-| `eslint.config.mjs` | Flat ESLint config |
-| `.prettierrc` | Prettier config |
+| `biome.json` | Lint + format + import assist, one config |
 | `vitest.config.ts` | Unit test runner |
 | `playwright.config.ts` | E2E runner, boots `next dev` |
-| `.github/workflows/ci.yml` | lint · typecheck · unit · build |
+| `.github/workflows/ci.yml` | lint · typecheck · unit · build · e2e |
 | `docker-compose.local.yml` | Local Postgres 17 |
 
 The `lib/`, `actions/`, `components/` trees are created in T7 with `.gitkeep` placeholders so the skeleton is visible from the first commit.
@@ -51,7 +50,7 @@ The `lib/`, `actions/`, `components/` trees are created in T7 with `.gitkeep` pl
 ## Task 1: Scaffold Next.js at the repository root
 
 **Files:**
-- Create: `package.json`, `tsconfig.json`, `next.config.ts`, `app/layout.tsx`, `app/page.tsx`, `app/globals.css`, `eslint.config.mjs`, `.nvmrc`, `AGENTS.md`
+- Create: `package.json`, `tsconfig.json`, `next.config.ts`, `app/layout.tsx`, `app/page.tsx`, `app/globals.css`, `.nvmrc`, `AGENTS.md`
 - Modify: `.gitignore`
 
 **Interfaces:**
@@ -259,70 +258,141 @@ git commit -m "P1.T2: MUI and Tailwind coexisting via cascade layers"
 
 ---
 
-## Task 3: ESLint and Prettier
+## Task 3: Biome
 
 **Files:**
-- Create: `.prettierrc`, `.prettierignore`
-- Modify: `eslint.config.mjs`, `package.json`
+- Create: `biome.json`
+- Delete: `eslint.config.mjs`
+- Modify: `package.json`
 
 **Interfaces:**
-- Produces: `npm run lint`, `npm run format`, `npm run typecheck`.
+- Produces: `npm run lint`, `npm run lint:fix`, `npm run format`, `npm run format:check`, `npm run typecheck`.
 
-- [ ] **Step 1: Install**
+Biome replaces ESLint and Prettier with a single tool — one config, one pass, no plugin resolution. Version 2.5.8 ships **rule domains**, which is what makes this a real upgrade rather than a swap: enabling the `next`, `react`, and `tailwind` domains turns on framework-aware rules that would otherwise need three separate ESLint plugins kept in version lockstep.
+
+What Biome does **not** replace: `tsc`. Biome does not typecheck, so `npm run typecheck` remains a separate command and a separate CI step.
+
+- [ ] **Step 1: Remove ESLint**
 
 ```bash
-npm i -D prettier eslint-config-prettier
+npm uninstall eslint eslint-config-next
+rm -f eslint.config.mjs
 ```
 
-- [ ] **Step 2: Prettier config**
+- [ ] **Step 2: Install Biome**
 
-`.prettierrc`:
+```bash
+npm i -D --save-exact @biomejs/biome@latest
+```
+
+Pinned exactly, not with a caret. Biome's lint rules evolve between minors, and a floating range means CI can start failing on a commit that changed no code.
+
+- [ ] **Step 3: Write `biome.json`**
 
 ```json
 {
-  "singleQuote": true,
-  "semi": true,
-  "trailingComma": "all",
-  "printWidth": 90
+  "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!fixtures/**", "!.next/**", "!next-env.d.ts"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 90
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "next": "all",
+      "react": "all",
+      "tailwind": "recommended",
+      "test": "recommended",
+      "project": "recommended"
+    },
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "error",
+        "useConst": "error",
+        "useImportType": "error",
+        "noParameterAssign": "error"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsole": { "level": "error", "options": { "allow": ["warn", "error"] } }
+      }
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
 }
 ```
 
-`.prettierignore`:
+Three of these choices are deliberate and worth not undoing:
 
-```
-.next
-node_modules
-fixtures
-.local
-package-lock.json
-```
+- `fixtures/**` is excluded. It is generated output from `scripts/scrub-fixtures.mjs`, and reformatting it would break that script's byte-identical determinism check.
+- `noExplicitAny` and `noNonNullAssertion` are errors, not warnings, matching the global TypeScript-strict constraint. A warning in CI is a warning nobody reads.
+- `noConsole` allows `warn` and `error` only. Server Components log to the platform; stray `console.log` in a Server Action leaks into Vercel's function logs.
 
-`fixtures/` is excluded deliberately: it is generated output from `scripts/scrub-fixtures.mjs`, and reformatting it would break that script's byte-identical determinism check.
-
-- [ ] **Step 3: Turn off rules Prettier owns**
-
-Append `eslint-config-prettier` last in `eslint.config.mjs` so formatting rules do not fight Prettier.
+`vcs.useIgnoreFile` means Biome honours `.gitignore`, so `.local/` and `.env*` are skipped without being restated.
 
 - [ ] **Step 4: Scripts**
 
 ```bash
+npm pkg set scripts.lint="biome check"
+npm pkg set scripts.lint:fix="biome check --write"
+npm pkg set scripts.format="biome format --write"
+npm pkg set scripts.format:check="biome format"
 npm pkg set scripts.typecheck="tsc --noEmit"
-npm pkg set scripts.format="prettier --write ."
-npm pkg set scripts.format:check="prettier --check ."
 ```
 
-- [ ] **Step 5: Run them**
+`biome check` runs the formatter, linter, and import assist together — it is the single command CI needs.
+
+- [ ] **Step 5: Apply it to the existing code**
 
 ```bash
-npm run format && npm run lint && npm run typecheck
+npm run lint:fix
 ```
 
-Expected: all three exit 0.
+The scaffold was written with double quotes; this rewrites it. Read the diff rather than accepting it blind — this is the one moment where a formatter touches every file, and it is the cheapest time to notice it doing something unwanted.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Verify everything is clean**
 
 ```bash
-git add -A && git commit -m "P1.T3: ESLint and Prettier"
+npm run lint && npm run typecheck && npm run build
+```
+
+Expected: all three exit 0. If a domain rule flags real code, fix the code — do not disable the rule to make the command pass. If a rule is genuinely wrong for this project, disable it in `biome.json` with a comment saying why.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -A && git commit -m "P1.T3: Biome replacing ESLint and Prettier"
 ```
 
 ---

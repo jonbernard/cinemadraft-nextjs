@@ -73,7 +73,7 @@ Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Direc
 
 - T1: `create-next-app` with TS, App Router; pin Node 24 in `package.json` `engines` and `.nvmrc`, matching the Vercel project setting
 - T2: MUI (latest) + `@mui/material-nextjs` + emotion; App Router cache provider wired in `app/layout.tsx`
-- T3: ESLint + Prettier config; `npm run lint` green
+- T3: **Biome** (replaces ESLint + Prettier) with the `next`, `react` and `tailwind` rule domains; `npm run lint` green
 - T4: Vitest config + one passing smoke test
 - T5: Playwright config + one passing smoke test against `next dev`
 - T6: GitHub Actions CI running lint, typecheck, unit, build
@@ -81,7 +81,7 @@ Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Direc
 - T8: `docker-compose.local.yml` — Postgres container matching Neon's major version; `npm run db:up` / `db:down` scripts
 - T9: First Vercel preview deploy succeeds
 
-**Gate:** `npm run lint && npm run typecheck && npm run test && npm run build` all green locally and in CI; `npm run db:up` brings up a reachable local Postgres container; preview URL loads.
+**Gate:** `npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e` all green locally and in CI; `npm run db:up` brings up a reachable local Postgres container; preview URL loads.
 
 ---
 
