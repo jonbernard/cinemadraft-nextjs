@@ -66,6 +66,13 @@ Carry these into Phase 7. Do **not** reproduce them in the port.
 - **`GET /draft/users/:id` takes a *league* id, not a draft id.** The handler calls `Drafts.getUsersByLeagueId`. Passing a draft id returns `[]` rather than erroring, so the bug is silent. Rename the concept in the port
 - **`GET /watchlist/:page?/:columnName?/:direction` only accepts `createdAt` and `releaseDate`.** `columnName` is passed straight into the Sequelize `order` array and only `releaseDate` is special-cased onto the joined `movie` table, so `title` / `sortTitle` raise Postgres `42703 errorMissingColumn`. Sortable columns must be a validated allowlist in the port
 - 🔴 **The error handler leaks schema.** That 42703 response returns the full failing SQL, column list, and Postgres internals (`parse_relation.c`) to the client. The port must return an opaque error and log the detail server-side. See the typed error classes in P2.T10
+- **`GET /points/league/:type(total|event)/:id/:year?` ignores `:type` entirely.** `getPointsByLeagueId` never reads `req.params.type`, so `total` and `event` return byte-identical responses — verified by diffing the two fixtures. The frontend only ever calls `total` (`components/Points/LeaguePointTotals.js:59`, `pages/league/viewPanel/panelLeague.js:56`), so `event` is **dead route surface**: declared, never implemented, never called. Drop it in the port — do not build a per-event leaderboard on the assumption it once existed
+- **`GET /movie/:id/details` is `GET /movie/:id` plus exactly three OMDB fields** — `box_office_gross`, `omdb_mpaa`, `rt_link`. Both fixtures are ~184 KB and differ only in those keys. Two endpoints returning a 184 KB payload to vary by three fields is the wrong shape; the port should have one movie read path with optional enrichment. The payload size itself deserves scrutiny in Phase 8
+
+### Legacy fields to consider dropping
+
+- **`fbId` appears across `Events`, `Leagues`, `Winners`, and others** — Firebase-era identifiers from before the Postgres migration. Out of scope for D27 (which dropped only `password`/`salt`), but Phase 7 should decide whether these carry forward. They are dead weight if nothing reads them; check before dropping, since some may still be joined against
+- Some user records have unnormalized display data (e.g. `firstName: "seth"`, lowercase). Not a blocker, but the port should not assume `firstName`/`lastName` are presentation-ready — build the display name through a single formatter
 
 ---
 
