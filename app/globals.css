@@ -21,3 +21,45 @@
 @layer theme, base, mui, components, utilities;
 
 @import "tailwindcss";
+
+/* Tokens, mirrored from theme/tokens.ts.
+ *
+ * Tailwind 4 reads its theme from CSS and MUI reads its from JS, so this block
+ * duplicates tokens.ts by necessity. theme/tokens.test.ts parses this file and
+ * asserts the two agree — edit one and you must edit the other, or CI fails.
+ *
+ * Dark is the default (D15): its values live in @theme, and light overrides
+ * them under MUI's own attribute.
+ */
+@theme {
+  --color-bg-base: #0B0D10;
+  --color-bg-surface: #14171C;
+  --color-bg-raised: #1D2127;
+  --color-border-rule: #2A2F38;
+  --color-text-primary: #E8E6E1;
+  --color-text-secondary: #8A9099;
+  --color-text-dim: #828993;
+  --color-accent-fill: #A8323E;
+  --color-accent-text: #DA707C;
+  --color-beam: #7FA6B8;
+}
+
+/* MUI's cssVariables plugin stamps data-mui-color-scheme on <html>. Binding
+ * Tailwind's `dark:` variant to the same attribute means one toggle drives
+ * both systems — no second theme context, and no component reading a hook to
+ * decide which class to render.
+ */
+@custom-variant dark (&:where([data-mui-color-scheme="dark"], [data-mui-color-scheme="dark"] *));
+
+[data-mui-color-scheme="light"] {
+  --color-bg-base: #F5F3EF;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-raised: #EDEAE3;
+  --color-border-rule: #DED9CF;
+  --color-text-primary: #14171C;
+  --color-text-secondary: #5F636C;
+  --color-text-dim: #5F636C;
+  --color-accent-fill: #8C2F39;
+  --color-accent-text: #8C2F39;
+  --color-beam: #3F6273;
+}
