@@ -59,10 +59,19 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # The repository layer is the only code allowed to import Prisma (spec §5).
+  # The repository layer is the only code allowed to touch Prisma (spec §5).
   # It is an architectural rule that nothing else enforces: an import from a
   # component compiles, passes tests, and quietly leaks Prisma types into the
   # UI, which is exactly what this port is trying to avoid.
+  #
+  # The boundary is drawn in two places rather than one, because the two kinds
+  # of import have different costs:
+  #
+  #   - A *type* import is erased at compile time. Repositories use it to
+  #     derive their DTOs from the generated models, so the field types cannot
+  #     drift from the schema. That is cheap and desirable, and allowed there.
+  #   - A *value* import drags the Prisma runtime into whatever bundle imports
+  #     it. Only lib/db.ts may do that.
   layering:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -70,17 +79,45 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Prisma is imported only by lib/db.ts
+      - name: The UI layers never reference Prisma, even for types
         run: |
           set -uo pipefail
-          offenders=$(grep -rln "generated/prisma" app lib actions components 2>/dev/null \
-            | grep -v '^lib/db.ts$' || true)
+          offenders=$(grep -rlE "from ['\"][^'\"]*generated/prisma" app actions components 2>/dev/null || true)
           if [ -n "$offenders" ]; then
-            echo "::error::the generated Prisma client may only be imported by lib/db.ts"
+            echo "::error::app, actions and components must consume repository DTOs, never Prisma types"
             echo "$offenders"
             exit 1
           fi
-          echo "Prisma import boundary intact"
+          echo "UI layers are Prisma-free"
+
+      - name: Under lib, only db.ts and repositories reference Prisma
+        run: |
+          set -uo pipefail
+          offenders=$(grep -rlE "from ['\"][^'\"]*generated/prisma" lib 2>/dev/null \
+            | grep -v -e '^lib/db\.ts$' -e '^lib/repositories/' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::only lib/db.ts and lib/repositories/ may reference the generated client"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "Prisma reference boundary intact"
+
+      - name: Only lib/db.ts imports Prisma as a value
+        run: |
+          set -uo pipefail
+          # A type import is erased; a value import pulls in the runtime. Our
+          # style puts each import on one line, so a line that mentions the
+          # generated client without opening with `import type` is a value
+          # import.
+          offenders=$(grep -rnE "from ['\"][^'\"]*generated/prisma" app lib actions components 2>/dev/null \
+            | grep -v '^lib/db\.ts:' \
+            | grep -vE ':[0-9]+:[[:space:]]*import type ' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::only lib/db.ts may import Prisma as a value; everywhere else must use 'import type'"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "no stray Prisma value imports"
 
       - name: Only repositories import the db client
         run: |

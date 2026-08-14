@@ -42,6 +42,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 
 | D32 | **Two driver adapters, chosen at runtime.** `@prisma/adapter-neon` for Neon (Preview/Production) and `@prisma/adapter-pg` for the local Docker database (development and tests). This is not a preference: `@neondatabase/serverless` speaks Neon's WebSocket/HTTP protocol, not the Postgres wire protocol, so it cannot connect to local Postgres at all. Verified — the same query fails inside `@neondatabase/serverless` and passes through `@prisma/adapter-pg` |
 
+| D33 | **Repository DTOs are derived from the generated Prisma models, not retyped by hand.** `export type Movie = Pick<MovieModel, 'id' \| 'title' \| …>`, with `Omit` plus a restated field wherever a column is normalized (bigint → number, Decimal → number). The field *list* stays explicit, so a new column cannot silently widen what components receive; the field *types* come from the schema, so they cannot drift from it. Enums are imported from `generated/prisma/enums` and re-exported by the owning repository rather than hand-written as string-literal unions. **Every such import is `import type`** — TypeScript erases it, so no Prisma runtime crosses the boundary; a value import would pull the client into whatever bundle imports it. `app/`, `actions/` and `components/` may not reference `generated/prisma` at all, even for types: they consume repository DTOs. The `layering` CI job enforces all three rules |
+
 ## Explicitly rejected
 
 - **Supabase** for database or realtime — rejected by the owner.
@@ -61,6 +63,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Upstash Redis via the Vercel Marketplace** — no longer has a free tier; smallest plan is pay-as-you-go and requires a credit card, which violates the free-only constraint.
 - **Vercel Edge Config for the active year** — right tool for middleware-latency flags, wrong tool for domain data that belongs beside the years table.
 - **Greying out zero-point films in the roster** — the strip is ordered by draft position, not performance. A last pick may be the best pick.
+- **Hand-writing repository DTO fields to keep the boundary "real"** — the original reading, applied to `movies.ts`. Reversed by the owner: it duplicates every column's type and guarantees drift the moment the schema moves. `Pick` from the generated model keeps the explicit field list that made the boundary real, without the duplication. Superseded by D33.
+- **Deriving DTOs with `Prisma.<Model>GetPayload<{ select: typeof SELECT }>`** — tighter coupling to the query than to the schema, and it forces the DTO to change shape whenever `SELECT` is edited for an unrelated reason. `Pick` says what the layer promises; `GetPayload` says what one query happens to return.
 
 ## Confirmed scoring rule
 

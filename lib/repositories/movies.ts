@@ -1,38 +1,45 @@
+import type { MovieModel } from '@/generated/prisma/models';
 import { db } from '@/lib/db';
 import { NotFoundError } from '@/lib/errors';
 
 /**
  * A movie, shaped as the source API returned it.
  *
- * Declared explicitly rather than derived from the Prisma model so the
- * repository boundary is real: adding a column to the database does not
- * silently widen what every component receives, and Prisma types never leak
- * past this layer.
+ * Picked from the generated model rather than retyped by hand. The field list
+ * stays explicit, so adding a column to the database still cannot silently
+ * widen what every component receives — but the field *types* come from the
+ * schema and cannot drift out of sync with it.
+ *
+ * The import is `import type`, which TypeScript erases at compile time. No
+ * Prisma runtime crosses this boundary; a value import would drag the client
+ * into every component that touches a Movie.
+ *
+ * `poster` and `backdrop` are bare TMDB paths, e.g.
+ * `/4Iu5f2nv7huqvuYkmZvSPOtbFjs.jpg` — NOT full URLs. The source API returned
+ * absolute URLs, built per request by prepending a base fetched from TMDB's
+ * /configuration endpoint (see `server/config/movieImages.js`). That base and
+ * the chosen size can change without our data changing, so it is a
+ * presentation concern and lives in `lib/external/tmdb.ts`, not here.
+ * Repositories return database truth.
+ *
+ * `accentHex` is a poster-derived accent, populated lazily. It is ours; the
+ * source API had no such field.
  */
-export type Movie = {
-  id: number;
-  title: string | null;
-  sortTitle: string | null;
-  fbId: string | null;
-  imdbId: string | null;
-  tmdbId: string | null;
-  /**
-   * Bare TMDB paths, e.g. `/4Iu5f2nv7huqvuYkmZvSPOtbFjs.jpg` — NOT full URLs.
-   *
-   * The source API returned absolute URLs, built per request by prepending a
-   * base fetched from TMDB's /configuration endpoint (see
-   * `server/config/movieImages.js`). That base and the chosen size can change
-   * without our data changing, so it is a presentation concern and lives in
-   * `lib/external/tmdb.ts`, not here. Repositories return database truth.
-   */
-  poster: string | null;
-  backdrop: string | null;
-  releaseDate: Date | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-  /** Poster-derived accent, populated lazily. Not present in the source API. */
-  accentHex: string | null;
-};
+export type Movie = Pick<
+  MovieModel,
+  | 'id'
+  | 'title'
+  | 'sortTitle'
+  | 'fbId'
+  | 'imdbId'
+  | 'tmdbId'
+  | 'poster'
+  | 'backdrop'
+  | 'releaseDate'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'accentHex'
+>;
 
 const SELECT = {
   id: true,
