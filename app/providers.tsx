@@ -1,5 +1,6 @@
 'use client';
 
+import { ClerkProvider } from '@clerk/nextjs';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { ThemeProvider } from '@mui/material/styles';
@@ -19,21 +20,46 @@ import { theme } from '@/theme';
  * dark ground first, which on this palette is a black flash. It is also why
  * layout.tsx needs suppressHydrationWarning — the attribute it writes makes
  * the server markup and first client render legitimately differ.
+ *
+ * Clerk's `appearance` is expressed entirely as design tokens, so its inputs
+ * and buttons follow the theme toggle along with everything else and no colour
+ * is written here (D37). Clerk reads the CSS custom properties at render, so
+ * this needs no theme branch — the same one-attribute switch drives it (D36).
  */
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-      <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="dark" />
-      {/* `defaultMode` must be set here as well as on the script above, and
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorBackground: 'var(--color-bg-surface)',
+          colorPrimary: 'var(--color-accent-fill)',
+          // White on carmine is 6.58:1; carmine as text on the ground is
+          // 2.96:1 and fails, which is why accent.fill is fill-only.
+          colorPrimaryForeground: 'var(--color-text-primary)',
+          colorForeground: 'var(--color-text-primary)',
+          colorMutedForeground: 'var(--color-text-secondary)',
+          colorInput: 'var(--color-bg-raised)',
+          colorInputForeground: 'var(--color-text-primary)',
+          colorBorder: 'var(--color-border-rule)',
+          colorDanger: 'var(--color-accent-text)',
+          borderRadius: '2px',
+          fontFamily: 'var(--font-archivo)',
+        },
+      }}
+    >
+      <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+        <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="dark" />
+        {/* `defaultMode` must be set here as well as on the script above, and
           must match it. The theme's `defaultColorScheme` only names which
           palette CSS falls back to — the *mode* defaults to "system", so
           without this a first-time visitor whose OS is set to light gets the
           light theme. D15 makes dark the default regardless of the OS; the
           visitor can still choose, and their choice is what gets stored. */}
-      <ThemeProvider theme={theme} defaultMode="dark">
-        <CssBaseline />
-        {children}
-      </ThemeProvider>
-    </AppRouterCacheProvider>
+        <ThemeProvider theme={theme} defaultMode="dark">
+          <CssBaseline />
+          {children}
+        </ThemeProvider>
+      </AppRouterCacheProvider>
+    </ClerkProvider>
   );
 }
