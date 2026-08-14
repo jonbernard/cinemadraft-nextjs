@@ -42,6 +42,23 @@
   --color-accent-fill: #A8323E;
   --color-accent-text: #DA707C;
   --color-beam: #7FA6B8;
+
+  /* Faces are registered here rather than in tokens.ts: their values are
+   * next/font-generated custom properties that only exist at runtime, so
+   * there is nothing for the anti-drift test to compare. It matches
+   * --color-* only, so these are outside its scope by design.
+   */
+  --font-display: var(--font-archivo);
+  --font-sans: var(--font-archivo);
+  --font-mono: var(--font-plex-mono);
+}
+
+/* Every number in this product sits in a column — points, standings, dates,
+ * countdowns. Proportional figures make those columns jitter as values change,
+ * which on a live scoreboard reads as the layout breaking. (§6.5)
+ */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }
 
 /* MUI's cssVariables plugin stamps data-mui-color-scheme on <html>. Binding
