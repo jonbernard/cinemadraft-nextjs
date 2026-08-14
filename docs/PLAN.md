@@ -31,11 +31,12 @@ This document is the **index**. Each phase has its own detail plan under `docs/s
 Every task inherits these. Values copied verbatim from the spec.
 
 - **Node 24** (current LTS), set in the Vercel project. Package manager: npm.
+- **Latest stable, always** (D28). Check the npm registry before writing a version into a plan or a `package.json` — do not infer versions from memory. Recorded at Phase 1: Next 16.3.1, React 19.2.8, MUI 9.3.1, Prisma 7.9.1.
 - **All local databases run in Docker.** No native Postgres server on the dev machine. Local Postgres binaries are client-only (`libpq`: `psql`, `pg_dump`, `pg_restore`). Local dev and test databases are containers defined in `docker-compose.local.yml`, pinned to the same major version Neon provisions.
 - **TypeScript strict.** No `any` in committed code without an inline justification comment.
 - **Next.js 16 App Router**, React 19. No Pages Router.
-- **MUI v7** with `@mui/material-nextjs`. No Tailwind, no shadcn (D3).
-- **Prisma 6** with `@prisma/adapter-neon`. `lib/repositories/` is the **only** layer that may import `@prisma/client` (§5).
+- **MUI (latest stable)** with `@mui/material-nextjs`. No Tailwind, no shadcn (D3).
+- **Prisma (latest stable)** with `@prisma/adapter-neon` at the matching major. `lib/repositories/` is the **only** layer that may import the Prisma client (§5).
 - **Repositories return plain DTOs**, never Prisma model instances.
 - **No general `/api` layer** (D8). `/api` is permitted only for: `webhooks/clerk`, `live/[event]/stream`, `ical/[...]`.
 - **Server Actions never throw across the boundary.** They return `{ ok: true; data: T } | { ok: false; error: string; field?: string }`.
@@ -70,7 +71,7 @@ Provision Vercel, Neon, Vercel Blob, Clerk and an Auth0 Management application. 
 Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Directory skeleton per §5. Deploys to a Vercel preview.
 
 - T1: `create-next-app` with TS, App Router; pin Node 24 in `package.json` `engines` and `.nvmrc`, matching the Vercel project setting
-- T2: MUI v7 + `@mui/material-nextjs` + emotion; App Router cache provider wired in `app/layout.tsx`
+- T2: MUI (latest) + `@mui/material-nextjs` + emotion; App Router cache provider wired in `app/layout.tsx`
 - T3: ESLint + Prettier config; `npm run lint` green
 - T4: Vitest config + one passing smoke test
 - T5: Playwright config + one passing smoke test against `next dev`

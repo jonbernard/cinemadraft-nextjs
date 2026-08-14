@@ -35,8 +35,8 @@ Each was decided explicitly during design. A future session must not re-litigate
 |---|---|---|
 | D1 | **Next.js 16 App Router**, React 19 | Target platform |
 | D2 | **Full TypeScript conversion** | Prisma's generated types are most of its value over Sequelize |
-| D3 | **MUI v7** as component substrate; visual identity delivered through the theme layer | Avoids rebuilding 25k LOC while still replacing the look entirely |
-| D4 | **Prisma 6** + `@prisma/adapter-neon` | Chosen ORM |
+| D3 | **MUI (latest stable)** as component substrate; visual identity delivered through the theme layer | Avoids rebuilding 25k LOC while still replacing the look entirely |
+| D4 | **Prisma (latest stable)** + `@prisma/adapter-neon` at the matching major | Chosen ORM |
 | D5 | **Neon Postgres** via Vercel Marketplace (free) | Vercel's default Postgres partner. Supabase explicitly rejected |
 | D6 | ~~Upstash Redis for caching and pub/sub~~ — **superseded by D23** | Upstash no longer offers a free tier through the Vercel Marketplace; the smallest plan is pay-as-you-go and requires a card |
 | D23 | **Vercel Runtime Cache** for caching. Realtime transport **deferred to phase 14** | Runtime Cache is included with the platform — no card, no extra vendor — and Next.js 16 targets it natively via `'use cache: remote'`. Pub/sub is only needed post-cutover, so the choice is made when it is built, not months early |
@@ -46,6 +46,7 @@ Each was decided explicitly during design. A future session must not re-litigate
 | D9 | **Vercel Blob** replaces Cloudinary | One less vendor |
 | D24 | Blob uploads are **public** | The only stored content is user avatars, already served unsigned by Cloudinary and displayed to other league members by design. Private would require signing a URL per avatar on pages that render dozens, defeating CDN caching and `next/image` |
 | D10 | **Data replicated exactly**, then **identifiers normalized**, then introspected | Restoring as-is preserves fidelity; renames are catalog-only so no data is rewritten |
+| D28 | **Always latest stable** — verify versions against the npm registry, never from memory. Versions at Phase 1: Next 16.3.1, React 19.2.8, MUI 9.3.1, Prisma 7.9.1 | The versions first written into this spec (MUI 7, Prisma 6) were remembered, not checked, and were stale by two majors and one |
 | D27 | **snake_case normalization** — plural snake_case tables, snake_case columns and enums; drop the 100%-NULL `password`/`salt` columns and `SequelizeMeta`. **No primary-key type changes** | The production schema is quoted PascalCase tables with camelCase columns (~81 of 132), so every query needs double quotes. Renames are lossless; PK type changes would rewrite every foreign key for no user-visible benefit |
 | D11 | **Parallel run, then DNS swap** | Safe rollback |
 | D12 | Contract tests at the **repository layer** + Playwright E2E on critical flows | See §13 — the HTTP seam disappears under D8, so contracts move to the data layer |
@@ -69,8 +70,8 @@ Each was decided explicitly during design. A future session must not re-litigate
 |---|---|---|
 | Framework | CRA 4 + Express | Next.js 16 App Router |
 | Language | JavaScript | TypeScript (strict) |
-| UI | MUI v5 | MUI v7 + `@mui/material-nextjs` |
-| ORM | Sequelize 6 | Prisma 6 + Neon adapter |
+| UI | MUI v5 | MUI 9 + `@mui/material-nextjs` |
+| ORM | Sequelize 6 | Prisma 7 + Neon adapter |
 | Database | Heroku Postgres | Neon |
 | Auth | Auth0 SPA SDK | Clerk (`@clerk/nextjs`) |
 | Data fetching | SWR (client) | Server Components |
@@ -502,7 +503,7 @@ No component unit tests.
 | # | Phase | Gate |
 |---|---|---|
 | 0 | **Owner setup** — provision Vercel, Neon, Blob, Clerk (§15) | All required keys present in `vercel env ls` (Sensitive values cannot be pulled back) |
-| 1 | Scaffold: Next 16, TS strict, MUI v7, lint, CI | `npm run build` green; deploys to a Vercel preview |
+| 1 | Scaffold: Next 16, TS strict, MUI 9, lint, CI | `npm run build` green; deploys to a Vercel preview |
 | 2 | Data layer: dump → Neon, introspect, baseline, repositories, contract fixtures | All contract tests green |
 | 3 | Design system: tokens, both themes, typography, contrast + clamping tests | Design tests green |
 | 4 | **Auth** — Clerk, user import script, webhook, guards | Sign in as a migrated production user |
@@ -567,7 +568,7 @@ This effort spans more sessions than one context window. State lives in files, n
 | **Search regresses the draft experience** — TMDB rate limits or slow typeahead during a live draft | Local-first search, Runtime Cache-backed TMDB calls, debounce + cancellation; load-tested in phase 8 |
 | Neon free tier limits under real traffic | Measure during the phase 12 parallel run, before cutover |
 | Poster accents produce unreadable UI | Luminance clamping with a unit test; raw poster color never trusted |
-| MUI v7 API drift from v5 during the component port | Port shared components first (phase 3) to surface breakage early |
+| MUI 9 API drift from v5 during the component port — four majors, not two | Port shared components first (phase 3) to surface breakage early; check the current docs rather than relying on remembered v5/v7 APIs |
 | Vercel function duration limits break SSE | Deferred to phase 14; polling ships at cutover |
 | **Cutover with hidden feature gaps** | Phase 7 parity audit produces `docs/PARITY.md`; cutover is blocked while the matrix has open rows |
 | Scope creep from new features into the migration | D14 — features are phase 15, after cutover |

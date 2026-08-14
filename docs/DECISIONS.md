@@ -7,8 +7,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 |---|---|
 | D1 | Next.js 16 App Router, React 19 |
 | D2 | Full TypeScript conversion (strict) |
-| D3 | MUI v7 as component substrate; new identity delivered through the theme layer |
-| D4 | Prisma 6 + `@prisma/adapter-neon` |
+| D3 | **MUI (latest stable)** as component substrate; new identity delivered through the theme layer |
+| D4 | **Prisma (latest stable)** + `@prisma/adapter-neon` at the matching major |
 | D5 | Neon Postgres via Vercel Marketplace (free tier) |
 | D6 | ~~Upstash Redis~~ — **superseded by D23** |
 | D7 | Clerk for auth, replacing Auth0 |
@@ -33,6 +33,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D26 | **Passwordless.** Clerk offers email verification code + Google only; password is disabled. Every sign-in is email-verified by construction, and no user ever migrates or resets a password |
 | D24 | **Blob uploads are `access: 'public'`.** Content is avatars, already public via Cloudinary and shown to other league members by design |
 
+| D28 | **Always latest stable.** Every dependency is pinned to the newest stable release at the time it is introduced — never a pre-release, never an older major for familiarity. Verify against the npm registry rather than assuming a version from memory |
+
 ## Explicitly rejected
 
 - **Supabase** for database or realtime — rejected by the owner.
@@ -41,6 +43,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Keeping Auth0 as a Clerk OAuth connection** — no migration risk, but retains the vendor being removed.
 - **Bulk-importing users from Auth0 into Clerk** — superseded by D25. Auth0 does not export password hashes without a support request, and all 51 users are email+password. Claiming needs only the webhook that already existed.
 - **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI.
+- **Building on MUI 7 / Prisma 6** — the versions originally written into the spec. Both were taken from memory rather than the registry and were stale: MUI shipped 9.x and Prisma 7.x. Superseded by D28.
 - **Unifying primary key types** — `Users.id` is an int, `Awards.id` a UUID. Unifying rewrites every PK and FK for no user-visible benefit.
 - **Transforming the dump file before restore** — restore as-is then rename in SQL; catalog renames cannot mismap data, dump rewrites can.
 - **Upstash Redis via the Vercel Marketplace** — no longer has a free tier; smallest plan is pay-as-you-go and requires a credit card, which violates the free-only constraint.
