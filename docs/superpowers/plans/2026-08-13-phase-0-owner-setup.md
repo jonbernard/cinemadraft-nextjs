@@ -343,16 +343,26 @@ git check-ignore .local/prod-dump.dump
 
 Expected: the path prints, meaning it's ignored. **The dump contains every user's personal data and must never be committed.**
 
-- [ ] **Step 4: Record row counts for later verification**
+- [x] **Step 4: Record row counts for later verification**
 
-```bash
-heroku pg:psql --app <your-heroku-app-name> -c "
-select relname as table, n_live_tup as rows
-from pg_stat_user_tables
-order by n_live_tup desc;" | tee .local/prod-row-counts.txt
+Run this in TablePlus against production (or via `heroku pg:psql --app <app> -c "..."`) and save the result to `.local/prod-row-counts.txt`:
+
+```sql
+select table_name,
+       (xpath('/row/cnt/text()',
+              query_to_xml(format('select count(*) as cnt from %I.%I', table_schema, table_name),
+                           false, true, '')))[1]::text::bigint as exact_rows
+from information_schema.tables
+where table_schema = 'public'
+  and table_type = 'BASE TABLE'
+order by table_name;
 ```
 
-Phase 2 restores into Neon and compares against this file. A restore that silently drops rows is otherwise very hard to notice.
+**Do not use `pg_stat_user_tables.n_live_tup`.** It is a statistics estimate that goes stale until `ANALYZE` runs, and it reported counts far below the truth on this database. `query_to_xml` runs a real `count(*)` per table without needing to hand-write 17 queries.
+
+Phase 2 restores into Neon and runs the identical query twice — once after the restore (P2.T2) and once after normalization (P2.T4) — comparing both against this file. A restore that silently drops rows is otherwise very hard to notice.
+
+**Captured 2026-08-14.** 17 tables. Two findings worth carrying forward: `Reviews` has **0 rows** (the feature was never used — Phase 7 decides whether it ships), and `SequelizeMeta` is dropped by `normalize.sql`, so the P2.T4 comparison covers 16 tables, not 17.
 
 - [ ] **Step 5: Capture the API contract fixtures**
 

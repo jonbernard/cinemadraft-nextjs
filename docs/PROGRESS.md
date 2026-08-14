@@ -51,6 +51,10 @@ _Fill these in as you go — later phases read them._
 - **Dead models — do NOT build repositories for these:** `session` and `moviesstats`. **Confirmed from the production dump** — it contains 17 tables and neither appears
 - Dump contents: `AvailableYears Awards DraftPicks Drafts Events Leagues Lists Movies Nominations Notifications Points ProfileFeeds Reviews SequelizeMeta Users Watchlists Winners` — quoted **PascalCase**, plus 4 enum types and the `pg_stat_statements` extension
 - Restore needs `--no-owner --no-privileges`: the dump's owner role `ub7c7u1vm0346s` does not exist in Neon
+- **Row counts captured** to `.local/prod-row-counts.txt` (2026-08-14). Use **exact** `count(*)` via `query_to_xml` — never `pg_stat_user_tables.n_live_tup`, which is a stale statistics estimate and was badly wrong here. Query is in the Phase 0 runbook, Task 7 Step 4; run the identical query against Neon at P2.T2 and again at P2.T4
+- Production row counts: `AvailableYears 10 · Awards 100 · DraftPicks 1025 · Drafts 156 · Events 12 · Leagues 13 · Lists 155 · Movies 1355 · Nominations 4559 · Notifications 2124 · Points 12 · ProfileFeeds 125 · Reviews 0 · SequelizeMeta 18 · Users 60 · Watchlists 2363 · Winners 734`
+- **`Reviews` is empty in production** — 0 rows. Table and Sequelize model exist; the feature was never used. Phase 7 decides whether it ships at all — do not assume parity requires it
+- P2.T4 note: `normalize.sql` **drops `SequelizeMeta`** (D27), so the post-normalization comparison covers the remaining 16 tables. Every one must match exactly
 
 ---
 
