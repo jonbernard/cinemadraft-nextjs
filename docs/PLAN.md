@@ -87,27 +87,30 @@ Next 16 + TS strict + MUI v7 + ESLint/Prettier + Vitest + Playwright + CI. Direc
 
 ### Phase 2 — Data layer
 
+**Plan:** `docs/superpowers/plans/2026-08-14-phase-2-data-layer.md` ✅ written
+
 Restore production data, normalize identifiers, introspect, then build repositories against the captured fixtures.
 
-- T1: Restore into Neon **exactly as dumped** — `--no-owner --no-privileges` (the dump's owner role `ub7c7u1vm0346s` does not exist in Neon), over `DATABASE_URL_UNPOOLED` (`pg_restore` does not work through a pooler). A `pg_stat_statements` warning is expected:
-  ```bash
-  pg_restore --no-owner --no-privileges --dbname "$DATABASE_URL_UNPOOLED" .local/prod-dump.dump
-  ```
-- T2: Verify row counts against `.local/prod-row-counts.txt` — **must match exactly** before anything else happens
-- T3: Write `prisma/normalize.sql` (D27) — renames 17 tables to plural snake_case, ~132 columns to snake_case, 4 enum types; drops `users.password`, `users.salt` and `SequelizeMeta`. Committed and repeatable: cutover re-dumps from Heroku's original schema and must apply the identical transformation
+- T1: Restore into Neon **exactly as dumped** — `--no-owner --no-privileges` (the dump's owner role does not exist in Neon), over `DATABASE_URL_UNPOOLED` (`pg_restore` does not work through a pooler), using the **libpq 18.4** binary (the system `pg_restore` is 15 and cannot read a 17.9 dump)
+- T2: Verify row counts against `.local/dump-row-counts.tsv` — counts derived **from the dump itself**, not from live production, which keeps taking writes
+- T3: `prisma/normalize.sql`, **generated** by `scripts/generate-normalize-sql.mjs` (D27): plural snake_case tables, columns, enums, indexes, constraints and sequences; drops `users.password`, `users.salt` and `SequelizeMeta`. Committed and re-runnable — cutover re-dumps from Heroku's original schema and must apply the identical transformation
 - T4: Apply it, then **verify row counts again**. Renames are catalog-only, so any difference is a bug
-- T5: `prisma db pull` → `schema.prisma`. Review every model in TablePlus. Expect 16 tables, plural snake_case, with 4 introspected enums
-- T6: Add `@@map` / `@map` so Prisma models stay PascalCase singular and fields camelCase over snake_case columns
-- T7: Baseline — `prisma migrate diff` → `prisma migrate resolve --applied 0_init`
-- T8: `lib/db.ts` — Prisma singleton with `@prisma/adapter-neon`
-- T9: Migration adding `Movie.accentHex`, `User.clerkId` (unique, nullable), and `AvailableYear.isActive` (bool, default false) with the partial unique index `available_years_one_active` (D22)
+- T11: Load the normalized data into the **local Docker** database — what repository contract tests run against, never Neon. Done early, as the rehearsal for the Neon apply
+- T5: Install Prisma 7; hand-write `prisma.config.ts` and the schema header (**no `prisma init`** — it writes agent-skill directories into the repo root, D31); `prisma db pull` against Docker
+- T6: `scripts/pascalize-schema.mjs` — PascalCase singular models and camelCase fields over snake_case, via `@@map`/`@map`. Proven lossless by an empty `prisma migrate diff`
+- T7: Baseline `0_init`, resolved as applied on both Docker and Neon
+- T8: `lib/db.ts` — Prisma client singleton with `@prisma/adapter-neon`
+- T9: Migration adding `movies.accent_hex`, `users.clerk_id` (unique, nullable) and `available_years.is_active`, with the partial unique index `available_years_one_active` enforcing at most one active year (D22)
 - T10: Typed error classes (`NotFoundError`, `ForbiddenError`, `ConflictError`)
-- T11: Load the normalized data into the **local Docker** database — this is what repository contract tests run against, never Neon
-- T12–T27: One repository per live table, each TDD'd against its captured fixture — availableYears, awards, draft, draftPicks, events, leagues, lists, movies, nominations, notifications, points, profileFeeds, reviews, users, watchlist, winners (**16 total**)
+- T12–T27: One repository per live table, each TDD'd against its captured fixture, in dependency order: movies, users, events, awards, nominations, winners, points, leagues, drafts, draft_picks, lists, watchlists, notifications, profile_feeds, available_years, reviews (**16 total**)
 
-> **Do not create repositories for `session` or `moviesstats`.** Both are dead Sequelize models. Confirmed from the production dump, which contains 17 tables and neither of these.
+> **Do not create repositories for `session` or `moviesstats`.** Both are dead Sequelize models, confirmed absent from the production dump.
+>
+> **`reviews` has 0 rows in production.** Build it last, and let Phase 7 decide whether it ships at all.
 
-**Gate:** row counts identical before and after normalization; every repository contract test passes against the fixtures captured in phase 0.
+**Never** run `prisma db pull --force` (it discards the `@@map` attributes the naming strategy depends on) or `prisma migrate dev`/`reset` against Neon (it holds the only restored copy of production data).
+
+**Gate:** row counts identical before and after normalization; `migrate diff` between schema and database empty; every repository contract test passing; Prisma imported only in `lib/db.ts` and `lib/repositories/`.
 
 ---
 
