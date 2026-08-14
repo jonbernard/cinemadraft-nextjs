@@ -81,7 +81,7 @@ Carry these into Phase 7. Do **not** reproduce them in the port.
 
 ## Phase 1 — Scaffold
 
-Plan: _not yet written_
+Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 - [ ] P1.T1 `create-next-app`, TS strict, Node 24 pinned
 - [ ] P1.T2 MUI v7 + `@mui/material-nextjs` + emotion cache provider
@@ -97,7 +97,7 @@ Plan: _not yet written_
 
 ## Phase 2 — Data layer
 
-Plan: _not yet written_
+Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 - [ ] P2.T1 Restore dump into Neon as-is (`--no-owner --no-privileges`, unpooled URL)
 - [ ] P2.T2 🔴 Verify row counts against `.local/prod-row-counts.txt`
@@ -114,7 +114,7 @@ Plan: _not yet written_
 
 ## Phase 3 — Design system
 
-Plan: _not yet written_
+Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 - [ ] P3.T1 Token types + dark palette
 - [ ] P3.T2 Light palette
@@ -129,7 +129,7 @@ Plan: _not yet written_
 
 ## Phase 4 — Auth 🔴 priority trio
 
-Plan: _not yet written_
+Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 - [ ] P4.T0 🔴 Confirm **account linking** is enabled in the Clerk dashboard — without it one email can produce two Clerk identities, which breaks the D25 claim flow
 - [ ] P4.T1 Clerk installed, middleware on `(app)` segment
@@ -145,7 +145,7 @@ Plan: _not yet written_
 
 ## Phase 5 — Dashboard 🔴 priority trio
 
-Plan: _not yet written_
+Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 - [ ] P5.T0 `lib/services/season.ts` — `getActiveYear()`, retires `NEXT_PUBLIC_ACTIVE_YEAR`
 - [ ] P5.T1 `lib/services/dashboard.ts`
@@ -160,7 +160,7 @@ Plan: _not yet written_
 
 ## Phase 6 — Draft 🔴 priority trio
 
-Plan: _not yet written_
+Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 - [ ] P6.T1 `lib/services/draft.ts` — snake order, pick validation
 - [ ] P6.T2 Snake board with poster thumbnails
@@ -173,7 +173,7 @@ Plan: _not yet written_
 
 ## Phase 7 — Parity audit 🔴 gates cutover
 
-Plan: _not yet written_
+Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 - [ ] P7.T1 Enumerate 18 source route files
 - [ ] P7.T2 Enumerate 17 source controllers
