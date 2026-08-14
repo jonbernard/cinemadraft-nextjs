@@ -20,7 +20,7 @@ This document is the **index**. Each phase has its own detail plan under `docs/s
 
 1. Read `docs/PROGRESS.md`. Find the first unchecked task.
 2. Open that task's phase plan in `docs/superpowers/plans/`.
-3. If the phase plan does not exist yet, write it first using `superpowers:writing-plans`, from this index and the spec.
+3. **If the phase plan does not exist yet, write it first** using `superpowers:writing-plans`, from this index and the spec. This is a hard rule — do not start a phase's first task because it looks mechanical. See the warning at the top of `docs/PROGRESS.md`.
 4. Work the task. One commit per task, message referencing the task ID (`P4.T3: ...`).
 5. Tick the box in `PROGRESS.md` as the final step of the task.
 

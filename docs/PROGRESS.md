@@ -1,6 +1,17 @@
 # Progress
 
-**Read this first in a new session.** Find the first unchecked task, open its phase plan in `docs/superpowers/plans/`, and continue. If the phase plan doesn't exist yet, write it first from `docs/PLAN.md` and the spec.
+**Read this first in a new session.** Find the first unchecked task, open its phase plan in `docs/superpowers/plans/`, and continue.
+
+> 🔴 **Write the phase plan before executing any task in that phase. No exceptions.**
+> Not when the first task looks obvious, not when it is "just" a restore or a config file.
+> If the plan is missing, write it from `docs/PLAN.md` and the spec — using
+> `superpowers:writing-plans` — and only then start work.
+>
+> This was violated once: P2.T1–T4 were executed before the Phase 2 plan existed. The
+> restore looked mechanical and wasn't — the row-count gate was comparing against live
+> production rather than the dump, which a plan would have caught before touching the
+> database rather than after. If work has already begun before a plan exists, record what
+> actually happened rather than rewriting it as though it had been planned.
 
 One commit per task. Commit message starts with the task ID (`P4.T3: ...`).
 Tick the box as the **final step** of each task.
@@ -114,7 +125,7 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 ## Phase 2 — Data layer
 
-Plan: _not yet written_
+Plan: `docs/superpowers/plans/2026-08-14-phase-2-data-layer.md`
 
 - [x] P2.T1 Restore dump into Neon as-is (`--no-owner --no-privileges`, unpooled URL)
 - [x] P2.T2 🔴 Row counts verified against `.local/dump-row-counts.tsv` (derived from the dump, not live production)
