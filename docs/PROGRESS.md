@@ -84,11 +84,15 @@ Carry these into Phase 7. Do **not** reproduce them in the port.
 - **`GET /watchlist/:page?/:columnName?/:direction` only accepts `createdAt` and `releaseDate`.** `columnName` is passed straight into the Sequelize `order` array and only `releaseDate` is special-cased onto the joined `movie` table, so `title` / `sortTitle` raise Postgres `42703 errorMissingColumn`. Sortable columns must be a validated allowlist in the port
 - 🔴 **The error handler leaks schema.** That 42703 response returns the full failing SQL, column list, and Postgres internals (`parse_relation.c`) to the client. The port must return an opaque error and log the detail server-side. See the typed error classes in P2.T10
 - **`GET /points/league/:type(total|event)/:id/:year?` ignores `:type` entirely.** `getPointsByLeagueId` never reads `req.params.type`, so `total` and `event` return byte-identical responses — verified by diffing the two fixtures. The frontend only ever calls `total` (`components/Points/LeaguePointTotals.js:59`, `pages/league/viewPanel/panelLeague.js:56`), so `event` is **dead route surface**: declared, never implemented, never called. Drop it in the port — do not build a per-event leaderboard on the assumption it once existed
+- **`GET /events` builds a graph it then throws away.** The controller eager-loads every event's awards, their points, their nominations for the requested year, and each nominated movie — and the route `R.omit`s the whole `awards` tree before responding. `event-by-abbr` keeps it, so the two routes differ only in whether the work was wasted. The port composes that in a service, on the read path that actually needs it
+- **`Users.getByIds` asks for `displayName` and never gets it.** It lists the VIRTUAL `displayName` in `attributes` while also setting `raw: true`, and Sequelize computes VIRTUAL columns on the model instance that `raw` skips. That is why `draft-users` has no `displayName` and `profile-feed.user` — same virtual, no `raw` — does. Not carried over: display formatting goes through one formatter (see legacy fields below)
+
 - **`GET /movie/:id/details` is `GET /movie/:id` plus exactly three OMDB fields** — `box_office_gross`, `omdb_mpaa`, `rt_link`. Both fixtures are ~184 KB and differ only in those keys. Two endpoints returning a 184 KB payload to vary by three fields is the wrong shape; the port should have one movie read path with optional enrichment. The payload size itself deserves scrutiny in Phase 8
 
 ### Legacy fields to consider dropping
 
 - **`fbId` appears across `Events`, `Leagues`, `Winners`, and others** — Firebase-era identifiers from before the Postgres migration. Out of scope for D27 (which dropped only `password`/`salt`), but Phase 7 should decide whether these carry forward. They are dead weight if nothing reads them; check before dropping, since some may still be joined against
+- 🔴 **One restored account's email is stored mixed-case**, and there are zero case-insensitive duplicates across the table. Clerk returns a lower-cased address on a verified identity, so an exact-match claim would leave that person permanently locked out of their own account. `userRepository.findByEmail` and `.claim` fold case; `claim` throws `ConflictError` rather than guessing if the folded address ever stops being unique. Phase 4 must not reintroduce an exact match
 - Some user records have unnormalized display data (e.g. `firstName: "seth"`, lowercase). Not a blocker, but the port should not assume `firstName`/`lastName` are presentation-ready — build the display name through a single formatter
 
 ---
@@ -155,8 +159,8 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-2-data-layer.md`
 One per live table, in this order. Each: contract test first against `fixtures/`, watch it fail, implement returning plain DTOs, watch it pass, commit.
 
 - [x] P2.T12 `movies` — template repository, 17 tests
-- [ ] P2.T13 `users` — claim-on-signin depends on this (D25)
-- [ ] P2.T14 `events` — award shows
+- [x] P2.T13 `users` — claim-on-signin depends on this (D25); 24 tests
+- [x] P2.T14 `events` — award shows; 24 tests
 - [ ] P2.T15 `awards` — carries the per-award point value
 - [ ] P2.T16 `nominations` — 4559 rows, the scoring input
 - [ ] P2.T17 `winners` — a win scores P a second time
@@ -170,6 +174,8 @@ One per live table, in this order. Each: contract test first against `fixtures/`
 - [ ] P2.T25 `profile_feeds` — `message` is free text containing user names
 - [ ] P2.T26 `available_years` — active-year read path (D22)
 - [ ] P2.T27 `reviews` — 🔴 **0 rows in production** — Phase 7 decides whether it ships at all; do not assume parity requires it
+
+**Careful which fixture fields you assert.** `scripts/scrub-fixtures.mjs` rewrites *every* key named `image`, so `events.json` shows `https://example.test/avatar/<hash>.png` where the real column holds `/images/awards/sag.jpg` — a path into the app's own `/public`, nothing to do with avatars or TMDB. Names, emails, uuids and avatars are scrubbed everywhere they appear. Ids survive. A test asserting a scrubbed value is asserting the scrubber; assert shape from the fixture and values from `db.$queryRaw`.
 
 **The fixtures are the contract.** Where a repository disagrees with a fixture, the fixture wins — unless it encodes one of the source-app bugs recorded above, in which case the correct behaviour wins and the deviation is documented in the test.
 ## Phase 3 — Design system
