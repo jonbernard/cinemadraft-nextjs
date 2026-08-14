@@ -23,8 +23,8 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 - [x] P0.T5 Clerk app created — **passwordless** (email code + Google, D26), webhook at `next.cinemadraft.com`, three keys in Vercel
 - [x] P0.T6 ~~Auth0 Management app~~ — **removed**. No bulk import under D25; Auth0 needs nothing
 - [x] P0.T7 🔴 Production dump + row counts + API contract fixtures captured
-- [ ] P0.T8 TMDB / OMDB / remaining env keys carried over
-- [ ] P0 completion checklist fully ticked
+- [x] P0.T8 TMDB / OMDB / remaining env keys carried over
+- [x] **Phase 0 complete.** Two follow-ups were moved to the phases that need them rather than held here: the Blob public hostname (Phase 11) and confirming Clerk account linking (Phase 4)
 
 ### Phase 0 notes
 
@@ -131,6 +131,7 @@ Plan: _not yet written_
 
 Plan: _not yet written_
 
+- [ ] P4.T0 🔴 Confirm **account linking** is enabled in the Clerk dashboard — without it one email can produce two Clerk identities, which breaks the D25 claim flow
 - [ ] P4.T1 Clerk installed, middleware on `(app)` segment
 - [ ] P4.T2 `lib/auth.ts` — session → `User` resolution
 - [ ] P4.T3 Clerk webhook with signature verification
@@ -210,6 +211,7 @@ Plan: _written after phase 7, driven by `docs/PARITY.md`_
 
 ## Phase 11 — Media → Vercel Blob
 
+- [ ] P11.T0 Record the Blob **public hostname** — needed for `next/image` `remotePatterns`. Read it off the first uploaded blob's URL
 - [ ] P11 not started
 
 ## Phase 12 — Parallel run
@@ -232,7 +234,9 @@ Plan: _written after phase 7, driven by `docs/PARITY.md`_
 
 ## Open questions carried forward
 
-- **`NEXT_PUBLIC_ACTIVE_YEAR` still set in Vercel.** Delete it once P5.T0 ships the database-backed read path (D22).
+- **`NEXT_PUBLIC_ACTIVE_YEAR` still set in Vercel.** Delete it once P5.T0 ships the database-backed read path (D22). It was last touched 510 days ago — this is the variable that forces an annual rebuild.
+- **Neon injected unused auth variables.** `NEON_AUTH_BASE_URL` and `VITE_NEON_AUTH_URL` are Neon Auth (Stack Auth), which this project does not use — auth is Clerk (D7). Delete them so no one later infers a second auth system. The `VITE_` prefix is also wrong for a Next app.
+- **`BLOB_WEBHOOK_PUBLIC_KEY` is not set in Development**, only Production/Preview. Only matters if Blob webhooks are handled locally; Phase 11 already routes around the OIDC environment constraint.
 - **Clerk keys are Development instance (`pk_test_`) in all environments.** Correct for the build — the Production instance needs a verified domain. At release, create it, swap Production to `pk_live_`/`sk_live_`, and recreate the webhook (endpoints and signing secrets are per-instance).
 - **Realtime transport undecided** — deferred to phase 14 by D23. Not on the cutover path.
 - **Logo mark undecided.** Wordmark-only until resolved. See `docs/DECISIONS.md` → Still open.
