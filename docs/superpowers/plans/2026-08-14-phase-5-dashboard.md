@@ -241,8 +241,22 @@ export type DashboardView = {
     standings: { userId: number; name: string; total: number; position: number }[];
     position: number | null;
   }[];
-  /** The season's shows, for the rail. */
-  events: { id: number; name: string; abbreviation: string; date: Date | null; complete: boolean }[];
+  /**
+   * The season's shows, for the rail.
+   *
+   * `date` is epoch MILLISECONDS, not a Date, and both strings are nullable.
+   * The events repository normalizes six bigint schedule columns that way —
+   * a bigint DTO throws on JSON.stringify the first time it crosses the RSC
+   * boundary. Any date formatting must pin a time zone (UTC), or the rail
+   * hydration-mismatches for every viewer west of the server.
+   */
+  events: {
+    id: number;
+    name: string | null;
+    abbreviation: string | null;
+    date: number | null;
+    complete: boolean;
+  }[];
 };
 ```
 
@@ -262,7 +276,7 @@ Every repository already has a `findManyByIds`. Use them: a per-movie or per-use
 
 - [ ] **Step 1: Build it** — a horizontal rail of the season's shows with dates; completed filled, next in carmine with a countdown. Built from data the app already has and currently buries inside one event's detail card (§6.7).
 
-- [ ] **Step 2: Test the states** — completed, next, and future; and that a season with no upcoming show renders without a countdown rather than a negative one.
+- [ ] **Step 2: Test the states** — completed, next, and future; a season with no upcoming show renders without a countdown rather than a negative one; **an empty `events` array**; and **a past-dated show nobody marked complete**, which is still "next" and must not render "in -12 days".
 
 - [ ] **Step 3: Commit**
 
