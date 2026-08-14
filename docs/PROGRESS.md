@@ -91,7 +91,21 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 - [x] P1.T6 GitHub Actions CI — lint, typecheck, test, build, e2e, plus a fixtures PII guard
 - [x] P1.T7 Directory skeleton per spec §5 — 13 `.gitkeep` placeholders, route list unchanged
 - [x] P1.T8 `docker-compose.local.yml` — Postgres 17.11 on port 5433, `db:up` / `db:down` / `db:psql`
-- [ ] P1.T9 First Vercel preview deploy green
+- [x] P1.T9 First Vercel preview deploy green; CI green on `main`
+- [x] **Phase 1 complete.** Gate verified by running it: lint, typecheck, unit, build, e2e, and a reachable local Postgres
+
+### Phase 1 notes
+
+- Versions pinned: **Next 16.3.1 · React 19.2.8 · MUI 9.3.1 · Tailwind 4.3.3 · Biome 2.5.8 · Vitest 4.1.10 · Playwright 1.62.1 · Postgres 17.11 (Docker)**. Node 24 in `.nvmrc` and `engines`
+- **Biome replaces ESLint and Prettier** (owner decision during T3). Domains enabled: `next`, `react`, `tailwind`, `test`, `project`. Biome does **not** typecheck — `npm run typecheck` is separate and runs `next typegen` first
+- Folder exclusion in `biome.json` must be written `"!fixtures"`. `"!fixtures/**"` works but trips `useBiomeIgnoreFolder`; `"!fixtures/"` satisfies that rule but **silently fails to exclude**. Formatting `fixtures/` would break the scrubber's byte-identical check
+- `useComponentExportOnlyModules` needs `allowExportNames` for Next's route exports (`metadata`, `revalidate`, `dynamic`, …) or every layout errors
+- 🔴 **Never regenerate `package-lock.json` on macOS — run `npm run lock`.** `lightningcss` (Tailwind 4, Vite) declares optional per-platform binaries. A macOS-generated lockfile breaks on Linux two different ways: npm 11.13 writes `lightningcss-darwin-x64` entries with **no `version` field** (npm 11.17 then rejects the file with `Invalid Version:`), and npm 11.17 **omits them entirely** (`npm ci` fails with `Missing: lightningcss-darwin-x64@1.32.0`). Both install fine locally and fail only in CI and on Vercel. A CI job now catches both by name
+- `npm run typecheck` runs `next typegen` first. `LayoutProps`/`PageProps` are Next-generated; a bare `tsc` on a clean tree fails with `Cannot find name 'LayoutProps'` and passes only if a build already ran
+- **GitHub Actions runs steps under `bash -e`.** Any `grep` that exits non-zero on no-match — the passing case for a guard — aborts the step silently. Guard each with `|| true`
+- Playwright runs against the **production build**, not `next dev`: dev injects extra styling and does not exercise the same CSS pipeline. Production filenames are content-hashed, so the layer test scans all same-origin sheets rather than matching on `globals`
+- Local Postgres is on **port 5433**, not 5432, to avoid colliding with anything on the default port. `db:psql` invokes the libpq client explicitly — this machine's `PATH` resolves `psql` to a postgresql@15 client, and an older client against a newer server is the mismatch that broke `pg_restore` in Phase 0
+- Vercel preview URLs are behind **Deployment Protection** (302 to Vercel SSO). Expected; rendering is covered by the e2e suite against the production build
 
 ---
 
