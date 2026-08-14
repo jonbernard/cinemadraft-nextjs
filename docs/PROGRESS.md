@@ -87,7 +87,7 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 - [x] P1.T2 MUI + Tailwind coexisting via cascade layers, verified in-browser
 - [x] P1.T3 Biome (replaces ESLint + Prettier) with next/react/tailwind rule domains
 - [x] P1.T4 Vitest + the cn class helper, TDD
-- [ ] P1.T5 Playwright config + smoke test
+- [x] P1.T5 Playwright asserting the MUI/Tailwind layer contract
 - [ ] P1.T6 GitHub Actions CI — lint, typecheck, test, build
 - [ ] P1.T7 Directory skeleton per spec §5
 - [ ] P1.T8 `docker-compose.local.yml` — local Postgres container + `db:up` / `db:down` scripts
