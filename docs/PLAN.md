@@ -134,7 +134,7 @@ Tokens, both themes, typography, and the tests that keep them honest.
 ### Phase 4 — Auth 🔴 priority trio
 
 - T1: `@clerk/nextjs` installed; middleware protecting the `(app)` segment
-- T2: `lib/auth.ts` — `getCurrentUser`, `requireUser`, `requireAdmin`; resolves Clerk session → `User` via `clerkId`
+- T2: `lib/auth.ts` — `getCurrentUser`, `requireUser`, `requireAdmin`; resolves Clerk session → `User` via `clerkId`, and **syncs lazily when the webhook has not landed** — both paths share one `syncClerkIdentity` so the safety rules cannot diverge
 - T3: `/api/webhooks/clerk` — signature verification (reject unsigned requests)
 - T4: **Claim logic** — on `user.created` / `user.updated`, for each **verified** email match `lower(email)` against `User`; on match set `clerkId`, otherwise create a row (D25)
 - T5: **Claim safety test suite** — (a) an unverified email must never claim an existing row; (b) a second Clerk identity must never overwrite a `clerkId` already set on a matched row. These are the security-critical tests in the project

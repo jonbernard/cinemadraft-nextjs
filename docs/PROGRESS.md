@@ -215,7 +215,9 @@ The plan groups the eight items below into seven executable tasks — T1+T2 are 
 
 ## Phase 4 — Auth 🔴 priority trio
 
-Plan: _not yet written_
+Plan: [`docs/superpowers/plans/2026-08-14-phase-4-auth.md`](superpowers/plans/2026-08-14-phase-4-auth.md)
+
+The plan adds one item the task list did not have: a **lazy sync in `getCurrentUser`**. A webhook is asynchronous, so a member can reach the dashboard before it lands — and Clerk can drop a delivery outright. Both paths call the same `syncClerkIdentity`, so the safety rules cannot hold on one and be forgotten on the other.
 
 - [ ] P4.T0 🔴 Confirm **account linking** is enabled in the Clerk dashboard — without it one email can produce two Clerk identities, which breaks the D25 claim flow
 - [ ] P4.T1 Clerk installed, middleware on `(app)` segment
