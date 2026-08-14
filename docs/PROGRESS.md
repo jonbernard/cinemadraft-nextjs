@@ -249,9 +249,12 @@ The plan adds one item the task list did not have: a **lazy sync in `getCurrentU
 
 ## Phase 5 — Dashboard 🔴 priority trio
 
-Plan: _not yet written_
+Plan: [`docs/superpowers/plans/2026-08-14-phase-5-dashboard.md`](superpowers/plans/2026-08-14-phase-5-dashboard.md)
+
+Two reconciliations the plan makes explicit: `PLAN.md` said the roster strip is "8 frames", which **D34 supersedes** — it renders whatever the seat drafted; and the **pure scoring rule ships in this phase** rather than Phase 9, because standings cannot exist without it (D41).
 
 - [ ] P5.T0 `lib/services/season.ts` — `getActiveYear()`, retires `NEXT_PUBLIC_ACTIVE_YEAR`
+- [ ] P5.T1a `lib/services/scoring.ts` — the pure rule (D41)
 - [ ] P5.T1 `lib/services/dashboard.ts`
 - [ ] P5.T2 Dashboard RSC page
 - [ ] P5.T3 Season rail component

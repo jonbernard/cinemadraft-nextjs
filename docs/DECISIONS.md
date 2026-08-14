@@ -54,6 +54,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D39 | **Auth pages live at `/auth/sign-in` and `/auth/sign-up`** — a real path segment, not a route group. The proxy's public matcher is `/auth/(.*)`, and `NEXT_PUBLIC_CLERK_SIGN_IN_URL` points there so a protected route redirects to the app's own page rather than Clerk's hosted `accounts.dev` screen. The first thing a returning member sees is the app's identity and the "your leagues come with you" copy, not a stranger's domain |
 | D40 | **The proxy enumerates public routes, never protected ones.** A page added under `(app)` is protected by default, and forgetting to list it fails closed. The reverse leaks a page the first time someone forgets — and silently, because the page renders perfectly well to a stranger |
 
+| D41 | **The pure scoring rule ships in Phase 5, not Phase 9.** Standings are the dashboard's whole point and cannot be computed without it, and deferring would mean writing a throwaway calculation now and a real one later — two definitions of the rule, differing quietly. `lib/services/scoring.ts` is pure and synchronous with no I/O; Phase 9 keeps its actual scope (materialized results, bounded event-driven recompute) and calls this same function, so the materialized copy cannot drift from what the tests pin. Consistent with D19, which asks for a pure unit-tested rule *and* materialization — this splits the two across the phases that need them |
+
 ## Explicitly rejected
 
 - **Supabase** for database or realtime — rejected by the owner.

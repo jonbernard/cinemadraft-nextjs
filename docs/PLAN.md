@@ -154,9 +154,10 @@ Replaces the welcome-card home with state: standings position, next deadline, re
 
 - T0: `lib/services/season.ts` — `getActiveYear()`, cached and tagged `active-year`; replaces `NEXT_PUBLIC_ACTIVE_YEAR` (D22)
 - T1: `lib/services/dashboard.ts` composing existing repositories
+- T1a: `lib/services/scoring.ts` — **the pure rule ships here**, because standings cannot exist without it. Phase 9 keeps its scope: materialized results and bounded recompute, calling this same function (D41)
 - T2: Dashboard RSC page
 - T3: Season rail component (§6.7) — shows, dates, completed/next, countdown
-- T4: Roster strip component (§6.7) — 8 frames, numbered by draft round, caption below, contribution bar, seal states, responsive 8→4→2
+- T4: Roster strip component (§6.7) — **however many frames the seat drafted (D34; the original "8 frames" is superseded)**, numbered by draft round, caption below, contribution bar, seal states; wraps 8→4→2 rather than compressing
 - T5: League standings panel with tabular figures
 - T6: Empty states (no league, no draft yet)
 - T7: E2E: dashboard renders for a user with a league
