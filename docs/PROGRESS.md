@@ -219,15 +219,31 @@ Plan: [`docs/superpowers/plans/2026-08-14-phase-4-auth.md`](superpowers/plans/20
 
 The plan adds one item the task list did not have: a **lazy sync in `getCurrentUser`**. A webhook is asynchronous, so a member can reach the dashboard before it lands — and Clerk can drop a delivery outright. Both paths call the same `syncClerkIdentity`, so the safety rules cannot hold on one and be forgotten on the other.
 
-- [ ] P4.T0 🔴 Confirm **account linking** is enabled in the Clerk dashboard — without it one email can produce two Clerk identities, which breaks the D25 claim flow
-- [ ] P4.T1 Clerk installed, middleware on `(app)` segment
-- [ ] P4.T2 `lib/auth.ts` — session → `User` resolution
-- [ ] P4.T3 Clerk webhook with signature verification
-- [ ] P4.T4 Claim logic — verified-email match sets `clerkId`, else create (D25)
-- [ ] P4.T5 🔴 Claim safety tests — unverified email can't claim; a second Clerk identity can't overwrite an existing `clerkId`
-- [ ] P4.T6 Sign-in / sign-up pages, with returning-user copy
-- [ ] P4.T7 E2E: claim a real production account, leagues intact
-- [ ] P4.T8 Admin relink path for mismatched emails
+- [ ] P4.T0 🔴 **OWNER ACTION — the only open item in this phase.** Confirm **account linking** is enabled in the Clerk dashboard (Configure → Account linking). Without it one email can produce two Clerk identities. The claim guard means the second identity does *not* steal the account — it is refused and logged — but the member is then locked out of their own history until an admin relinks them. Linking prevents the situation rather than containing it. Nothing else blocks on this; the guard is what protects the data and it is tested regardless
+- [x] P4.T1 Clerk installed, `proxy.ts` protecting the `(app)` segment
+- [x] P4.T2 `lib/auth.ts` — session → `User` resolution, **with lazy claim**; 11 tests
+- [x] P4.T3 Clerk webhook with signature verification — 10 tests, real svix signatures
+- [x] P4.T4 Claim logic — `lib/services/clerk-identity.ts`, the single path (D25)
+- [x] P4.T5 🔴 Claim safety tests — 10 tests, mutation-verified
+- [x] P4.T6 Sign-in / sign-up at `/auth/*`, with returning-user copy
+- [x] P4.T7 E2E: real production account claimed, history intact — 5 data-layer + 4 browser tests
+- [x] P4.T8 Admin relink path for mismatched emails — 5 tests
+
+**Phase 4 complete** apart from the owner action above. 569 unit tests across 31 files, plus 4 Playwright specs. Typecheck, Biome, build and all five layering checks clean.
+
+### Phase 4 notes
+
+- 🔴 **The two rules the whole phase exists for**, both in `lib/services/clerk-identity.ts`: only a **verified** address may claim, and a **claimed row is never reassigned**. Do not weaken their tests — if one fails, the implementation is wrong. Mutation-tested: accepting unverified addresses fails the suite immediately.
+- **The collision guard is deliberately duplicated.** Deleting the service-level check leaves every test green, because `claim()` independently refuses via a conditional write. It stays because it names both ids for the admin who repairs the collision, and because the guarantee should not rest on one implementation. Each layer has its own test.
+- **`getCurrentUser` claims lazily, and that is load-bearing.** The webhook posts to the deployed host, so a developer signing in locally never receives one. Without a page that resolves the session, no account is ever provisioned — this is exactly how the browser E2E first passed while creating no row at all.
+- **Next 16 renamed `middleware.ts` to `proxy.ts`.** The old name still resolves but logs a deprecation warning, and having both files is a hard build error (E900). Clerk is unaffected — it detects itself via a request header, not the filename.
+- **Clerk 7 renamed its appearance variables.** `colorText` → `colorForeground`, `colorTextSecondary` → `colorMutedForeground`, `colorInputBackground` → `colorInput`. The old names are a type error, not a silent no-op.
+- **Playwright does not read `.env`.** Before `playwright.config.mts` loaded it, all four auth specs skipped themselves on missing Clerk keys — a green run that proved nothing. It also cannot resolve the `@/` alias into `generated/prisma`, so the teardown uses `pg` directly rather than the Prisma client.
+- **Clerk test addresses need the subaddress to be exactly `+clerk_test`.** `e2e+clerk_test_1786…@example.com` is *not* recognised — Clerk tries to deliver a real email, no code is sent, and the form reports "You need to send a verification code before attempting to verify". Put the uniqueness before the `+`.
+- **Wait on `prepare_verification`, not on the UI.** The OTP field submits as soon as it is full, so filling it when it appears races the send. Waiting for the resend countdown looked right and still failed about one run in three.
+- **The E2E writes to the restored production database** and cleans up after itself. If that teardown is ever removed, test accounts accumulate against the 60 genuine users and any later assertion about that population silently starts measuring debris.
+- One production account (`jon@jonbernard.net`, id 3) is used by `clerk-identity.production.test.ts` as the gate fixture: 10 drafts, 67 picks. It is restored to `clerk_id = null` in `afterAll`.
+- `NEXT_PUBLIC_ACTIVE_YEAR` is **still in `.env`**. D22 deletes it once Phase 5 ships the active-year read path. Do not build against it.
 
 ---
 

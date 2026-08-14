@@ -142,7 +142,7 @@ Tokens, both themes, typography, and the tests that keep them honest.
 - T7: E2E: claim a real production account and confirm its leagues are intact
 - T8: Admin relink path — for a user whose Clerk email differs from their historical one, and for resolving logged claim collisions
 
-**Gate:** a real production account is claimed via a verified email and resolves with leagues intact; an unverified email provably cannot claim.
+**Gate:** a real production account is claimed via a verified email and resolves with leagues intact; an unverified email provably cannot claim. ✅ **Met** — `lib/services/clerk-identity.production.test.ts` claims a genuine restored row (10 drafts, 67 picks) and asserts every count unchanged, that an unverified address cannot claim it, and that a second identity cannot take it afterwards; `e2e/auth.spec.ts` proves the browser flow.
 
 > **No bulk import, no Auth0 Management API, no password handling** (D25). All 51 Auth0 users are email+password and Auth0 does not export hashes without a support request.
 
