@@ -34,6 +34,10 @@ export default mergeConfig(base, {
       'lib/repositories/**',
       'lib/schema.test.ts',
       'lib/services/clerk-identity.production.test.ts',
+      // Asserts the local Docker connection string (port 5433) and the
+      // restored row counts — it is a check on the developer's environment,
+      // which is exactly what CI is not.
+      'lib/db.test.ts',
     ],
   },
 });
