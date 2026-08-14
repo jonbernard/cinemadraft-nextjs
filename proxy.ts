@@ -19,13 +19,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
  * The webhook must stay public: Clerk posts to it without a session, and it
  * authenticates by svix signature instead (see its route handler).
  */
-const isPublic = createRouteMatcher([
-  '/',
-  '/tokens',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/webhooks/(.*)',
-]);
+const isPublic = createRouteMatcher(['/', '/tokens', '/auth/(.*)', '/api/webhooks/(.*)']);
 
 export default clerkMiddleware(async (auth, request) => {
   if (!isPublic(request)) await auth.protect();
