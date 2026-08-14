@@ -137,7 +137,7 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-2-data-layer.md`
 - [x] P2.T7 Baseline `0_init` resolved as applied on both Docker and Neon; `migrate status` clean on both
 - [x] P2.T8 `lib/db.ts` — client singleton; adapter chosen by connection target (D32); 6 tests
 - [x] P2.T9 Migration: `movies.accent_hex`, `users.clerk_id` (unique), `available_years.is_active` + partial unique index; applied to Docker and Neon; 6 constraint tests
-- [ ] P2.T10 Typed error classes — `NotFoundError`, `ForbiddenError`, `ConflictError`
+- [x] P2.T10 Typed error classes — `AppError` base, `NotFoundError`, `ForbiddenError`, `ConflictError`, plus `isAppError` for the serialization boundary
 
 ### Phase 2 notes
 
