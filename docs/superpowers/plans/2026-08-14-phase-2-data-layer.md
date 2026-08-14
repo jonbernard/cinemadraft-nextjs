@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn the restored production database into a typed, tested data access layer — Prisma schema mapped over snake_case identifiers, a Neon-backed client, typed errors, and one repository per live table, each TDD'd against the captured API fixtures.
+**Goal:** Turn the restored production database into a typed, tested data access layer — Prisma schema mapped over snake_case identifiers, a client that works against both Neon and local Docker, typed errors, and one repository per live table, each TDD'd against the captured API fixtures.
 
 **Architecture:** `lib/repositories/` is the only code that imports the Prisma client, and it returns plain DTOs so Prisma types never reach a component. Services compose repositories; Server Components and Server Actions call services. This preserves the source app's `routes → controllers → models` seams while removing the HTTP hop.
 
-**Tech Stack:** Prisma 7.9.1 · `@prisma/adapter-neon` 7.9.1 · Neon Postgres 17.10 · Postgres 17 in Docker for tests · Vitest · TypeScript 5.9.3
+**Tech Stack:** Prisma 7.9.1 · `@prisma/adapter-neon` for Neon and `@prisma/adapter-pg` for local Docker (D32) · Neon Postgres 17.10 · Postgres 17 in Docker for development and tests · Vitest · TypeScript 5.9.3
 
 > **Note on process.** T1–T4 and T11 were executed before this plan was written, which inverts the documented order. They are recorded below as completed, with what actually happened, rather than rewritten as if planned. Everything from T5 on follows the normal write-then-execute flow.
 
@@ -35,7 +35,7 @@ Every task inherits these, from `docs/PLAN.md` and the spec.
 | `prisma/migrations/` | `0_init` baseline, then forward migrations |
 | `scripts/generate-normalize-sql.mjs` | ✅ Generates `normalize.sql` from a live schema |
 | `scripts/pascalize-schema.mjs` | Post-processes introspection: PascalCase models, camelCase fields, `@@map`/`@map` |
-| `lib/db.ts` | Prisma client singleton + Neon adapter |
+| `lib/db.ts` | Prisma client singleton; driver adapter chosen by connection target (D32) |
 | `lib/errors.ts` | `NotFoundError`, `ForbiddenError`, `ConflictError` |
 | `lib/repositories/*.ts` | One per table; the only Prisma importers |
 | `lib/repositories/*.test.ts` | Contract tests against `fixtures/` |
