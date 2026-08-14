@@ -59,6 +59,40 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  # The repository layer is the only code allowed to import Prisma (spec §5).
+  # It is an architectural rule that nothing else enforces: an import from a
+  # component compiles, passes tests, and quietly leaks Prisma types into the
+  # UI, which is exactly what this port is trying to avoid.
+  layering:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Prisma is imported only by lib/db.ts
+        run: |
+          set -uo pipefail
+          offenders=$(grep -rln "generated/prisma" app lib actions components 2>/dev/null \
+            | grep -v '^lib/db.ts$' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::the generated Prisma client may only be imported by lib/db.ts"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "Prisma import boundary intact"
+
+      - name: Only repositories import the db client
+        run: |
+          set -uo pipefail
+          offenders=$(grep -rln "from '@/lib/db'" app actions components 2>/dev/null || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::only lib/repositories/ may import the db client"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "db client boundary intact"
+
   # package-lock.json must be generated on Linux.
   #
   # lightningcss (via Tailwind 4 and Vite) declares optional per-platform
