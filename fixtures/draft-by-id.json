@@ -1,0 +1,200 @@
+{
+  "id": 124,
+  "leagueId": 1,
+  "year": 2025,
+  "group": 1,
+  "order": 3,
+  "createdAt": "2024-11-30T22:25:37.750Z",
+  "updatedAt": "2024-12-01T00:09:48.656Z",
+  "picks": [
+    {
+      "id": 803,
+      "draftId": 124,
+      "movieId": 1054,
+      "order": 1,
+      "createdAt": "2024-12-01T00:13:51.678Z",
+      "updatedAt": "2024-12-01T00:13:51.678Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/hmZnqijPaaACjenDkrbWcCmcADI.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/vP7Yd6couiAaw9jgMd5cjMRj3hQ.jpg",
+        "id": 1054,
+        "title": "The Brutalist",
+        "sortTitle": "Brutalist",
+        "fbId": null,
+        "imdbId": "8999762",
+        "tmdbId": "549509",
+        "releaseDate": "2024-09-28T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:13:51.675Z",
+        "updatedAt": "2025-01-23T23:52:57.860Z"
+      }
+    },
+    {
+      "id": 804,
+      "draftId": 124,
+      "movieId": 1055,
+      "order": 2,
+      "createdAt": "2024-12-01T00:14:21.553Z",
+      "updatedAt": "2024-12-01T00:14:21.553Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/uKb22E0nlzr914bA9KyA5CVCOlV.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/2E1x1qcHqGZcYuYi4PzVZjzg8IV.jpg",
+        "id": 1055,
+        "title": "Wicked",
+        "sortTitle": "Wicked",
+        "fbId": null,
+        "imdbId": "1262426",
+        "tmdbId": "402431",
+        "releaseDate": "2024-11-09T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:14:21.550Z",
+        "updatedAt": "2025-03-23T01:36:13.010Z"
+      }
+    },
+    {
+      "id": 809,
+      "draftId": 124,
+      "movieId": 1060,
+      "order": 3,
+      "createdAt": "2024-12-01T00:16:02.337Z",
+      "updatedAt": "2024-12-01T00:16:02.337Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/bqmzHFcvXAiu9z9OKac5A0HrhNB.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/s0TPyI8QlMiktEiq3JVhea0zFhM.jpg",
+        "id": 1060,
+        "title": "Sing Sing",
+        "sortTitle": "Sing Sing",
+        "fbId": null,
+        "imdbId": "28479262",
+        "tmdbId": "1155828",
+        "releaseDate": "2024-03-08T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:16:02.334Z",
+        "updatedAt": "2025-01-23T23:55:32.085Z"
+      }
+    },
+    {
+      "id": 810,
+      "draftId": 124,
+      "movieId": 1061,
+      "order": 4,
+      "createdAt": "2024-12-01T00:16:13.535Z",
+      "updatedAt": "2024-12-01T00:16:13.535Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/hctfNoMpQGfn3VXdBYb9p0P5bT5.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/A8HbTd0FemZyFCh5qvJFpHGiwF8.jpg",
+        "id": 1061,
+        "title": "Babygirl",
+        "sortTitle": "Babygirl",
+        "fbId": null,
+        "imdbId": "30057084",
+        "tmdbId": "1097549",
+        "releaseDate": "2024-12-25T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:16:13.532Z",
+        "updatedAt": "2025-01-16T19:16:04.686Z"
+      }
+    },
+    {
+      "id": 815,
+      "draftId": 124,
+      "movieId": 1064,
+      "order": 5,
+      "createdAt": "2024-12-01T00:23:01.054Z",
+      "updatedAt": "2024-12-01T00:23:01.054Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/fViElUGfdoZjtnVxvSpJX8TwxY6.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/yaTFjMNh8D78dDHrglivOTv5YOx.jpg",
+        "id": 1064,
+        "title": "A Real Pain",
+        "sortTitle": "Real Pain",
+        "fbId": null,
+        "imdbId": "21823606",
+        "tmdbId": "1013850",
+        "releaseDate": "2024-01-20T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:23:01.051Z",
+        "updatedAt": "2025-01-23T23:57:22.754Z"
+      }
+    },
+    {
+      "id": 816,
+      "draftId": 124,
+      "movieId": 1065,
+      "order": 6,
+      "createdAt": "2024-12-01T00:23:09.328Z",
+      "updatedAt": "2024-12-01T00:23:09.328Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/7bUYzlDz8eel1BVL1Y0YcF9NQmd.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/xe4b2TMciLKA1C0JlhWxb4ENLln.jpg",
+        "id": 1065,
+        "title": "Queer",
+        "sortTitle": "Queer",
+        "fbId": null,
+        "imdbId": "24176060",
+        "tmdbId": "1059128",
+        "releaseDate": "2024-10-06T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:23:09.326Z",
+        "updatedAt": "2025-03-01T21:45:40.686Z"
+      }
+    },
+    {
+      "id": 821,
+      "draftId": 124,
+      "movieId": 1070,
+      "order": 7,
+      "createdAt": "2024-12-01T00:32:12.206Z",
+      "updatedAt": "2024-12-01T00:32:12.206Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/sy7Q8ttHlw4yMRoBarPlNSzlhxf.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/lu2vmmtStmTNMmSZl2LgrrQpLZo.jpg",
+        "id": 1070,
+        "title": "Nickel Boys",
+        "sortTitle": "Nickel Boys",
+        "fbId": null,
+        "imdbId": "23055660",
+        "tmdbId": "1028196",
+        "releaseDate": "2024-09-27T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:32:12.203Z",
+        "updatedAt": "2025-01-08T22:45:18.750Z"
+      }
+    },
+    {
+      "id": 822,
+      "draftId": 124,
+      "movieId": 1071,
+      "order": 8,
+      "createdAt": "2024-12-01T00:32:23.405Z",
+      "updatedAt": "2024-12-01T00:32:23.405Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/kv9xVrxfLpudBLyYf1QvLCpUQuy.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/5icMlNq4rx6XJ9luWAR1Nr3M9rZ.jpg",
+        "id": 1071,
+        "title": "The Apprentice",
+        "sortTitle": "Apprentice",
+        "fbId": null,
+        "imdbId": "8368368",
+        "tmdbId": "1182047",
+        "releaseDate": "2024-08-31T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:32:23.402Z",
+        "updatedAt": "2025-01-23T23:55:47.777Z"
+      }
+    },
+    {
+      "id": 827,
+      "draftId": 124,
+      "movieId": 1076,
+      "order": 9,
+      "createdAt": "2024-12-01T00:35:21.591Z",
+      "updatedAt": "2024-12-01T00:35:21.591Z",
+      "movie": {
+        "backdrop": "https://image.tmdb.org/t/p/w1280/4CcUgdiGe83MeqJW1NyJVmZqRrF.jpg",
+        "poster": "https://image.tmdb.org/t/p/w780/H6vke7zGiuLsz4v4RPeReb9rsv.jpg",
+        "id": 1076,
+        "title": "Challengers",
+        "sortTitle": "Challengers",
+        "fbId": null,
+        "imdbId": "16426418",
+        "tmdbId": "937287",
+        "releaseDate": "2024-04-16T00:00:00.000Z",
+        "createdAt": "2024-12-01T00:35:21.588Z",
+        "updatedAt": "2024-12-10T00:06:17.262Z"
+      }
+    }
+  ]
+}

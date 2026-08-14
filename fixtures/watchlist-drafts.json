@@ -1,0 +1,277 @@
+{
+  "Racso award": [
+    {
+      "id": 886,
+      "title": "Anora",
+      "sortTitle": "Anora",
+      "movieId": 1053,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 822,
+      "title": "The Apprentice",
+      "sortTitle": "Apprentice",
+      "movieId": 1071,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 906,
+      "title": "Babygirl",
+      "sortTitle": "Babygirl",
+      "movieId": 1061,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 813,
+      "title": "Blitz",
+      "sortTitle": "Blitz",
+      "movieId": 1046,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 882,
+      "title": "The Brutalist",
+      "sortTitle": "Brutalist",
+      "movieId": 1054,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 827,
+      "title": "Challengers",
+      "sortTitle": "Challengers",
+      "movieId": 1076,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 862,
+      "title": "A Complete Unknown",
+      "sortTitle": "Complete Unknown",
+      "movieId": 1058,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 883,
+      "title": "Conclave",
+      "sortTitle": "Conclave",
+      "movieId": 1052,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 854,
+      "title": "Dahomey",
+      "sortTitle": "Dahomey",
+      "movieId": 1079,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 826,
+      "title": "Daughters",
+      "sortTitle": "Daughters",
+      "movieId": 1075,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 901,
+      "title": "A Different Man",
+      "sortTitle": "Different Man",
+      "movieId": 1083,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 888,
+      "title": "Dune: Part Two",
+      "sortTitle": "Dune: Part Two",
+      "movieId": 1059,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 884,
+      "title": "Emilia Pérez",
+      "sortTitle": "Emilia Pérez",
+      "movieId": 1056,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 859,
+      "title": "Gladiator II",
+      "sortTitle": "Gladiator II",
+      "movieId": 1057,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 872,
+      "title": "Hard Truths",
+      "sortTitle": "Hard Truths",
+      "movieId": 1078,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 880,
+      "title": "Inside Out 2",
+      "sortTitle": "Inside Out 2",
+      "movieId": 1050,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 853,
+      "title": "I’m Still Here",
+      "sortTitle": "I’m Still Here",
+      "movieId": 1067,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 844,
+      "title": "Maria",
+      "sortTitle": "Maria",
+      "movieId": 1066,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 814,
+      "title": "Megalopolis",
+      "sortTitle": "Megalopolis",
+      "movieId": 1048,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 821,
+      "title": "Nickel Boys",
+      "sortTitle": "Nickel Boys",
+      "movieId": 1070,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 900,
+      "title": "Nosferatu",
+      "sortTitle": "Nosferatu",
+      "movieId": 1069,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 899,
+      "title": "The Piano Lesson",
+      "sortTitle": "Piano Lesson",
+      "movieId": 1062,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 905,
+      "title": "Queer",
+      "sortTitle": "Queer",
+      "movieId": 1065,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 893,
+      "title": "A Real Pain",
+      "sortTitle": "Real Pain",
+      "movieId": 1064,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 868,
+      "title": "The Room Next Door",
+      "sortTitle": "Room Next Door",
+      "movieId": 1063,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 877,
+      "title": "Saturday Night",
+      "sortTitle": "Saturday Night",
+      "movieId": 1073,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 850,
+      "title": "The Seed of the Sacred Fig",
+      "sortTitle": "Seed of the Sacred Fig",
+      "movieId": 1074,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 894,
+      "title": "September 5",
+      "sortTitle": "September 5",
+      "movieId": 1068,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 835,
+      "title": "Sing Sing",
+      "sortTitle": "Sing Sing",
+      "movieId": 1060,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 841,
+      "title": "The Substance",
+      "sortTitle": "Substance",
+      "movieId": 1077,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 879,
+      "title": "Twisters",
+      "sortTitle": "Twisters",
+      "movieId": 1082,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 887,
+      "title": "Wicked",
+      "sortTitle": "Wicked",
+      "movieId": 1055,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "watchlistId": 3041
+    },
+    {
+      "id": 865,
+      "title": "The Wild Robot",
+      "sortTitle": "Wild Robot",
+      "movieId": 1072,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    },
+    {
+      "id": 874,
+      "title": "Will & Harper",
+      "sortTitle": "Will & Harper",
+      "movieId": 1081,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026"
+    }
+  ]
+}

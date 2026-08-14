@@ -1,0 +1,195 @@
+{
+  "nowPlaying": [
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/qeQJx07rK2xm8SD2sJxFKhE7gs0.jpg",
+      "genre_ids": [
+        878,
+        28,
+        12
+      ],
+      "id": 969681,
+      "title": "Spider-Man: Brand New Day",
+      "original_language": "en",
+      "original_title": "Spider-Man: Brand New Day",
+      "overview": "Fighting crime full-time as Spider-Man in a world that doesn't remember him—and the pressure of seeing his old friends move on without him—sparks a change in Peter Parker he may not have the power to control. But that transformation might also be the only thing that can stop a shocking new threat to the city and those he loves - a powerful villain no one can even see.",
+      "popularity": 1006.0211,
+      "poster_path": "https://image.tmdb.org/t/p/w780/iPOn6DinuVyLY17YM9mKuPofV08.jpg",
+      "release_date": "2026-07-29",
+      "softcore": null,
+      "video": null,
+      "vote_average": 7.875,
+      "vote_count": 1665
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/RMXG8myu1aGlNUsRjtxzmpdMK0.jpg",
+      "genre_ids": [
+        12,
+        28,
+        14
+      ],
+      "id": 1368337,
+      "title": "The Odyssey",
+      "original_language": "en",
+      "original_title": "The Odyssey",
+      "overview": "Odysseus, the legendary King of Ithaca, embarks on a long and perilous journey home following the Trojan War. Throughout his voyage, he is forced to confront the whims of gods, mythological monsters, and trials that stretch both his cunning and his humanity to the breaking point.",
+      "popularity": 817.7806,
+      "poster_path": "https://image.tmdb.org/t/p/w780/5rhTDKUhPYvpdQIijFIs5VoWsON.jpg",
+      "release_date": "2026-07-15",
+      "softcore": null,
+      "video": null,
+      "vote_average": 7.998,
+      "vote_count": 2713
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/2mPmccLg8QCD4ZF6v8kSsUijPPW.jpg",
+      "genre_ids": [
+        27,
+        878,
+        53
+      ],
+      "id": 1284041,
+      "title": "The Last House",
+      "original_language": "en",
+      "original_title": "The Last House",
+      "overview": "A family suddenly sealed inside their home must work together to survive against dwindling resources and the ominous threat keeping them trapped.",
+      "popularity": 375.692,
+      "poster_path": "https://image.tmdb.org/t/p/w780/6JU7E8Vv2M11egkctWVOScxWR75.jpg",
+      "release_date": "2026-08-06",
+      "softcore": null,
+      "video": null,
+      "vote_average": 6.924,
+      "vote_count": 573
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/kkcwhgSFd81QDlXo8ytrpHPQjhy.jpg",
+      "genre_ids": [
+        12,
+        16,
+        35,
+        10751,
+        14
+      ],
+      "id": 1315772,
+      "title": "Minions & Monsters",
+      "original_language": "en",
+      "original_title": "Minions & Monsters",
+      "overview": "This is the rambunctious, ridiculous and totally true story of how the Minions conquered Hollywood, became movie stars, lost everything, unleashed monsters onto the world and then banded together to try and save the planet from the mayhem they had just created.",
+      "popularity": 332.7628,
+      "poster_path": "https://image.tmdb.org/t/p/w780/nz7i42yhLIJ4ve9JKgM6NthoLHO.jpg",
+      "release_date": "2026-06-24",
+      "softcore": null,
+      "video": null,
+      "vote_average": 7.306,
+      "vote_count": 526
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/jDvxsBemt2Iyslg7qn2WMzgxz23.jpg",
+      "genre_ids": [
+        28,
+        27,
+        878
+      ],
+      "id": 1375646,
+      "title": "Colony",
+      "original_language": "ko",
+      "original_title": "군체",
+      "overview": "Professor Se-jeong is thrust into a bloody nightmare when a rapidly mutating virus is released during a biotech conference causing authorities to seal the facility. Trapped inside with no escape, Se-jeong along with a small group of survivors must fight to stay alive while the infected undergo horrific transformations.",
+      "popularity": 298.044,
+      "poster_path": "https://image.tmdb.org/t/p/w780/tN799oUR0f1gUKDYdMNrDaY7I51.jpg",
+      "release_date": "2026-05-21",
+      "softcore": null,
+      "video": null,
+      "vote_average": 8.119,
+      "vote_count": 478
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/rZfmzpixLKLR3Hg2u0WgC7XLFl8.jpg",
+      "genre_ids": [
+        27,
+        53
+      ],
+      "id": 1339713,
+      "title": "Obsession",
+      "original_language": "en",
+      "original_title": "Obsession",
+      "overview": "After breaking the mysterious \"One Wish Willow\" to win his crush's heart, a hopeless romantic finds himself getting exactly what he asked for but soon discovers that some desires come at a dark, sinister price.",
+      "popularity": 248.3267,
+      "poster_path": "https://image.tmdb.org/t/p/w780/bRwnj8WEKBCvmfeUNOukJPwB43K.jpg",
+      "release_date": "2026-05-13",
+      "softcore": null,
+      "video": null,
+      "vote_average": 8.2,
+      "vote_count": 4628
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/8sSKdEmlmqF4kJUd28SqthXC4yZ.jpg",
+      "genre_ids": [
+        16,
+        10751,
+        35,
+        12
+      ],
+      "id": 1084244,
+      "title": "Toy Story 5",
+      "original_language": "en",
+      "original_title": "Toy Story 5",
+      "overview": "When Bonnie receives a Lilypad tablet as a gift and becomes obsessed, Buzz, Woody, Jessie and the rest of the gang's jobs become exponentially harder when they have to go head to head with the all-new threat to playtime.",
+      "popularity": 259.2934,
+      "poster_path": "https://image.tmdb.org/t/p/w780/sfQtVlIHljToOwYjhe21KPGzZWK.jpg",
+      "release_date": "2026-06-17",
+      "softcore": null,
+      "video": null,
+      "vote_average": 7.413,
+      "vote_count": 817
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/o0jkkpcN81QqSl8DMLScBCXyUH9.jpg",
+      "genre_ids": [
+        27
+      ],
+      "id": 1212763,
+      "title": "Evil Dead Burn",
+      "original_language": "en",
+      "original_title": "Evil Dead Burn",
+      "overview": "After her husband's abrupt death, Alice seeks solace with his remaining family — descendants of a leading researcher on demonic possession. As her in-laws transform one by one into creatures that feed on fear, she comes to discover that the vows she took in life survive even in death.",
+      "popularity": 226.54,
+      "poster_path": "https://image.tmdb.org/t/p/w780/uRxrNXQWkHoENm3nwVOZDYSCx2F.jpg",
+      "release_date": "2026-07-07",
+      "softcore": null,
+      "video": null,
+      "vote_average": 7.924,
+      "vote_count": 1020
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/lh3BDkmWJh998n4fQcHYcVi7dpm.jpg",
+      "genre_ids": [
+        12,
+        18,
+        28
+      ],
+      "id": 1284465,
+      "title": "The Death of Robin Hood",
+      "original_language": "en",
+      "original_title": "The Death of Robin Hood",
+      "overview": "Grappling with his past after a life of crime and murder, Robin Hood finds himself gravely injured after a battle he thought would be his last. In the hands of a mysterious woman, he is offered a chance at salvation.",
+      "popularity": 246.4583,
+      "poster_path": "https://image.tmdb.org/t/p/w780/92Tsfx7SFafOqWsotvrlJbHyehd.jpg",
+      "release_date": "2026-06-18",
+      "softcore": null,
+      "video": null,
+      "vote_average": 6.321,
+      "vote_count": 207
+    }
+  ],
+  "activeEvents": [],
+  "events": []
+}

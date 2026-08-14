@@ -1,0 +1,5051 @@
+{
+  "Art Directors Guild": {
+    "awards": [
+      {
+        "name": "Animated Film",
+        "nominees": [
+          {
+            "id": 3979,
+            "title": "Flow",
+            "sortTitle": "Flow",
+            "movieId": 1120,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3980,
+            "title": "Inside Out 2",
+            "sortTitle": "Inside Out 2",
+            "movieId": 1050,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3981,
+            "title": "Moana 2",
+            "sortTitle": "Moana 2",
+            "movieId": 1084,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3040
+          },
+          {
+            "id": 3983,
+            "title": "Wallace & Gromit: Vengeance Most Fowl",
+            "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+            "movieId": 1122,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3982,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Contemporary Film",
+        "nominees": [
+          {
+            "id": 3974,
+            "title": "Civil War",
+            "sortTitle": "Civil War",
+            "movieId": 1190,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3975,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3976,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3977,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3978,
+            "title": "Twisters",
+            "sortTitle": "Twisters",
+            "movieId": 1082,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Fantasy Film",
+        "nominees": [
+          {
+            "id": 3969,
+            "title": "Alien: Romulus",
+            "sortTitle": "Alien: Romulus",
+            "movieId": 1131,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3970,
+            "title": "Beetlejuice Beetlejuice",
+            "sortTitle": "Beetlejuice Beetlejuice",
+            "movieId": 1132,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3971,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3972,
+            "title": "Furiosa: A Mad Max Saga",
+            "sortTitle": "Furiosa: A Mad Max Saga",
+            "movieId": 1185,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3973,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Period Film",
+        "nominees": [
+          {
+            "id": 3968,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3964,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3965,
+            "title": "Gladiator II",
+            "sortTitle": "Gladiator II",
+            "movieId": 1057,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3966,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3967,
+            "title": "Saturday Night",
+            "sortTitle": "Saturday Night",
+            "movieId": 1073,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 2,
+        "total": 20
+      },
+      "movies": {
+        "count": 2,
+        "total": 20
+      }
+    }
+  },
+  "Producers Guild of America": {
+    "awards": [
+      {
+        "name": "Outstanding Producer of Animated Theatrical Motion Pictures",
+        "nominees": [
+          {
+            "id": 3953,
+            "title": "Flow",
+            "sortTitle": "Flow",
+            "movieId": 1120,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3954,
+            "title": "Inside Out 2",
+            "sortTitle": "Inside Out 2",
+            "movieId": 1050,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3955,
+            "title": "Moana 2",
+            "sortTitle": "Moana 2",
+            "movieId": 1084,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3040
+          },
+          {
+            "id": 3956,
+            "title": "Wallace & Gromit: Vengeance Most Fowl",
+            "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+            "movieId": 1122,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3957,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Outstanding Producer of Documentary Theatrical Motion Pictures",
+        "nominees": [
+          {
+            "id": 3958,
+            "title": "Gaucho Gaucho",
+            "sortTitle": "Gaucho Gaucho",
+            "movieId": 1437,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3959,
+            "title": "Mediha",
+            "sortTitle": "Mediha",
+            "movieId": 1438,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3960,
+            "title": "Mountain Queen: The Summits of Lhakpa Sherpa",
+            "sortTitle": "Mountain Queen: The Summits of Lhakpa Sherpa",
+            "movieId": 1439,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3961,
+            "title": "Porcelain War",
+            "sortTitle": "Porcelain War",
+            "movieId": 1382,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3962,
+            "title": "Super/Man: The Christopher Reeve Story",
+            "sortTitle": "Super/Man: The Christopher Reeve Story",
+            "movieId": 1352,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3963,
+            "title": "We Will Dance Again",
+            "sortTitle": "We Will Dance Again",
+            "movieId": 1440,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Outstanding Producer of Theatrical Motion Pictures",
+        "nominees": [
+          {
+            "id": 3943,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3944,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3945,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3946,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3947,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3948,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3949,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3950,
+            "title": "September 5",
+            "sortTitle": "September 5",
+            "movieId": 1068,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3951,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3952,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 2,
+        "total": 21
+      },
+      "movies": {
+        "count": 2,
+        "total": 21
+      }
+    }
+  },
+  "American Cinema Editors": {
+    "awards": [
+      {
+        "name": "Best Edited Animated Feature Film",
+        "nominees": [
+          {
+            "id": 3699,
+            "title": "Flow",
+            "sortTitle": "Flow",
+            "movieId": 1120,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3700,
+            "title": "Inside Out 2",
+            "sortTitle": "Inside Out 2",
+            "movieId": 1050,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3701,
+            "title": "Moana 2",
+            "sortTitle": "Moana 2",
+            "movieId": 1084,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3040
+          },
+          {
+            "id": 3702,
+            "title": "Wallace & Gromit: Vengeance Most Fowl",
+            "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+            "movieId": 1122,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3703,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Edited Documentary Feature",
+        "nominees": [
+          {
+            "id": 3704,
+            "title": "Beatles '64",
+            "sortTitle": "Beatles '64",
+            "movieId": 1349,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3706,
+            "title": "Her Name Was Moviola",
+            "sortTitle": "Her Name Was Moviola",
+            "movieId": 1351,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3705,
+            "title": "Jim Henson Idea Man",
+            "sortTitle": "Jim Henson Idea Man",
+            "movieId": 1350,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3707,
+            "title": "Super/Man: The Christopher Reeve Story",
+            "sortTitle": "Super/Man: The Christopher Reeve Story",
+            "movieId": 1352,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3708,
+            "title": "Will & Harper",
+            "sortTitle": "Will & Harper",
+            "movieId": 1081,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Edited Feature Film - Comedy or Musical",
+        "nominees": [
+          {
+            "id": 3709,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3710,
+            "title": "Challengers",
+            "sortTitle": "Challengers",
+            "movieId": 1076,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3711,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3712,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3713,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Best Edited Feature Film - Dramatic",
+        "nominees": [
+          {
+            "id": 3714,
+            "title": "Civil War",
+            "sortTitle": "Civil War",
+            "movieId": 1190,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3715,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3716,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3717,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3718,
+            "title": "Furiosa: A Mad Max Saga",
+            "sortTitle": "Furiosa: A Mad Max Saga",
+            "movieId": 1185,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 2,
+        "total": 20
+      },
+      "movies": {
+        "count": 2,
+        "total": 20
+      }
+    }
+  },
+  "Golden Globes": {
+    "awards": [
+      {
+        "name": "Best Director - Motion Picture",
+        "nominees": [
+          {
+            "id": 3647,
+            "title": "All We Imagine as Light",
+            "sortTitle": "All We Imagine as Light",
+            "movieId": 1123,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Payal Kapadia"
+          },
+          {
+            "id": 3648,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Sean Baker"
+          },
+          {
+            "id": 3643,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Brady Corbet"
+          },
+          {
+            "id": 3645,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Edward Berger"
+          },
+          {
+            "id": 3646,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jacques Audiard"
+          },
+          {
+            "id": 3644,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Coralie Fargeat"
+          }
+        ]
+      },
+      {
+        "name": "Best Female Actor in a Motion Picture, Drama",
+        "nominees": [
+          {
+            "id": 3604,
+            "title": "Babygirl",
+            "sortTitle": "Babygirl",
+            "movieId": 1061,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Nicole Kidman"
+          },
+          {
+            "id": 3602,
+            "title": "I’m Still Here",
+            "sortTitle": "I’m Still Here",
+            "movieId": 1067,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Fernanda Torres"
+          },
+          {
+            "id": 3605,
+            "title": "The Last Showgirl",
+            "sortTitle": "Last Showgirl",
+            "movieId": 1127,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Pamela Anderson"
+          },
+          {
+            "id": 3603,
+            "title": "Lee",
+            "sortTitle": "Lee",
+            "movieId": 1126,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Kate Winslet"
+          },
+          {
+            "id": 3601,
+            "title": "Maria",
+            "sortTitle": "Maria",
+            "movieId": 1066,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Angelina Jolie"
+          },
+          {
+            "id": 3606,
+            "title": "The Room Next Door",
+            "sortTitle": "Room Next Door",
+            "movieId": 1063,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Tilda Swinton"
+          }
+        ]
+      },
+      {
+        "name": "Best Female Actor in a Motion Picture, Musical or Comedy",
+        "nominees": [
+          {
+            "id": 3617,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Mikey Madison"
+          },
+          {
+            "id": 3618,
+            "title": "Challengers",
+            "sortTitle": "Challengers",
+            "movieId": 1076,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Zendaya"
+          },
+          {
+            "id": 3616,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Karla Sofía Gascón"
+          },
+          {
+            "id": 3613,
+            "title": "Nightbitch",
+            "sortTitle": "Nightbitch",
+            "movieId": 1128,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Amy Adams"
+          },
+          {
+            "id": 3615,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Demi Moore"
+          },
+          {
+            "id": 3614,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Cynthia Erivo"
+          }
+        ]
+      },
+      {
+        "name": "Best Female Actor in a Supporting Role",
+        "nominees": [
+          {
+            "id": 3632,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Felicity Jones"
+          },
+          {
+            "id": 3633,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Isabella Rossellini"
+          },
+          {
+            "id": 3636,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Zoe Saldaña"
+          },
+          {
+            "id": 3635,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Selena Gomez"
+          },
+          {
+            "id": 3634,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Margaret Qualley"
+          },
+          {
+            "id": 3631,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Ariana Grande"
+          }
+        ]
+      },
+      {
+        "name": "Best Male Actor in a Motion Picture, Drama",
+        "nominees": [
+          {
+            "id": 3611,
+            "title": "The Apprentice",
+            "sortTitle": "Apprentice",
+            "movieId": 1071,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Sebastian Stan"
+          },
+          {
+            "id": 3607,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Adrien Brody"
+          },
+          {
+            "id": 3612,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Timothée Chalamet"
+          },
+          {
+            "id": 3610,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Ralph Fiennes"
+          },
+          {
+            "id": 3609,
+            "title": "Queer",
+            "sortTitle": "Queer",
+            "movieId": 1065,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Daniel Craig"
+          },
+          {
+            "id": 3608,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Colman Domingo"
+          }
+        ]
+      },
+      {
+        "name": "Best Male Actor in a Motion Picture, Musical or Comedy",
+        "nominees": [
+          {
+            "id": 3624,
+            "title": "A Different Man",
+            "sortTitle": "Different Man",
+            "movieId": 1083,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Sebastian Stan"
+          },
+          {
+            "id": 3621,
+            "title": "Heretic",
+            "sortTitle": "Heretic",
+            "movieId": 1129,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Hugh Grant"
+          },
+          {
+            "id": 3620,
+            "title": "Hit Man",
+            "sortTitle": "Hit Man",
+            "movieId": 1118,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Glen Powell"
+          },
+          {
+            "id": 3623,
+            "title": "Kinds of Kindness",
+            "sortTitle": "Kinds of Kindness",
+            "movieId": 1049,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jesse Plemons"
+          },
+          {
+            "id": 3622,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jesse Eisenberg"
+          },
+          {
+            "id": 3619,
+            "title": "Saturday Night",
+            "sortTitle": "Saturday Night",
+            "movieId": 1073,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Gabriel LaBelle"
+          }
+        ]
+      },
+      {
+        "name": "Best Male Actor in a Supporting Role",
+        "nominees": [
+          {
+            "id": 3642,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Yura Borisov"
+          },
+          {
+            "id": 3640,
+            "title": "The Apprentice",
+            "sortTitle": "Apprentice",
+            "movieId": 1071,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jeremy Strong"
+          },
+          {
+            "id": 3639,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Guy Pearce"
+          },
+          {
+            "id": 3638,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Edward Norton"
+          },
+          {
+            "id": 3637,
+            "title": "Gladiator II",
+            "sortTitle": "Gladiator II",
+            "movieId": 1057,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Denzel Washington"
+          },
+          {
+            "id": 3641,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Kieran Culkin"
+          }
+        ]
+      },
+      {
+        "name": "Best Motion Picture, Animated",
+        "nominees": [
+          {
+            "id": 3589,
+            "title": "Flow",
+            "sortTitle": "Flow",
+            "movieId": 1120,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3590,
+            "title": "Inside Out 2",
+            "sortTitle": "Inside Out 2",
+            "movieId": 1050,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3591,
+            "title": "Memoir of a Snail",
+            "sortTitle": "Memoir of a Snail",
+            "movieId": 1121,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3592,
+            "title": "Moana 2",
+            "sortTitle": "Moana 2",
+            "movieId": 1084,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3040
+          },
+          {
+            "id": 3594,
+            "title": "Wallace & Gromit: Vengeance Most Fowl",
+            "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+            "movieId": 1122,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3593,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Motion Picture, Drama",
+        "nominees": [
+          {
+            "id": 3582,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3577,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3578,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3579,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3580,
+            "title": "Nickel Boys",
+            "sortTitle": "Nickel Boys",
+            "movieId": 1070,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3581,
+            "title": "September 5",
+            "sortTitle": "September 5",
+            "movieId": 1068,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Motion Picture, Musical or Comedy",
+        "nominees": [
+          {
+            "id": 3584,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3585,
+            "title": "Challengers",
+            "sortTitle": "Challengers",
+            "movieId": 1076,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3586,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3583,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3587,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3588,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Best Motion Picture, Non-English language",
+        "nominees": [
+          {
+            "id": 3595,
+            "title": "All We Imagine as Light",
+            "sortTitle": "All We Imagine as Light",
+            "movieId": 1123,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3596,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3598,
+            "title": "The Girl with the Needle",
+            "sortTitle": "Girl with the Needle",
+            "movieId": 1124,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3597,
+            "title": "I’m Still Here",
+            "sortTitle": "I’m Still Here",
+            "movieId": 1067,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3599,
+            "title": "The Seed of the Sacred Fig",
+            "sortTitle": "Seed of the Sacred Fig",
+            "movieId": 1074,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3600,
+            "title": "Vermiglio",
+            "sortTitle": "Vermiglio",
+            "movieId": 1125,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Original Score - Motion Picture",
+        "nominees": [
+          {
+            "id": 3656,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3659,
+            "title": "Challengers",
+            "sortTitle": "Challengers",
+            "movieId": 1076,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3660,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3657,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3655,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3658,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Original Song - Motion Picture",
+        "nominees": [
+          {
+            "id": 3664,
+            "title": "Better Man",
+            "sortTitle": "Better Man",
+            "movieId": 1130,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3662,
+            "title": "Challengers",
+            "sortTitle": "Challengers",
+            "movieId": 1076,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3666,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3663,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3661,
+            "title": "The Last Showgirl",
+            "sortTitle": "Last Showgirl",
+            "movieId": 1127,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3665,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Screenplay - Motion Picture",
+        "nominees": [
+          {
+            "id": 3654,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3649,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3653,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3651,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3652,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3650,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Cinematic and Box Office Achievement",
+        "nominees": [
+          {
+            "id": 3667,
+            "title": "Alien: Romulus",
+            "sortTitle": "Alien: Romulus",
+            "movieId": 1131,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3668,
+            "title": "Beetlejuice Beetlejuice",
+            "sortTitle": "Beetlejuice Beetlejuice",
+            "movieId": 1132,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3669,
+            "title": "Deadpool & Wolverine",
+            "sortTitle": "Deadpool & Wolverine",
+            "movieId": 1085,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3042
+          },
+          {
+            "id": 3670,
+            "title": "Gladiator II",
+            "sortTitle": "Gladiator II",
+            "movieId": 1057,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3671,
+            "title": "Inside Out 2",
+            "sortTitle": "Inside Out 2",
+            "movieId": 1050,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3673,
+            "title": "Twisters",
+            "sortTitle": "Twisters",
+            "movieId": 1082,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3674,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          },
+          {
+            "id": 3672,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 6,
+        "total": 92
+      },
+      "movies": {
+        "count": 3,
+        "total": 43
+      }
+    }
+  },
+  "Academy of Motion Picture Arts and Sciences": {
+    "awards": [
+      {
+        "name": "Actor in a Leading Role",
+        "nominees": [
+          {
+            "id": 4064,
+            "title": "The Apprentice",
+            "sortTitle": "Apprentice",
+            "movieId": 1071,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Sebastian Stan"
+          },
+          {
+            "id": 4060,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Adrien Brody"
+          },
+          {
+            "id": 4061,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Timothée Chalamet"
+          },
+          {
+            "id": 4063,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Ralph Fiennes"
+          },
+          {
+            "id": 4062,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Colman Domingo"
+          }
+        ]
+      },
+      {
+        "name": "Actor in a Supporting Role",
+        "nominees": [
+          {
+            "id": 4070,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Yura Borisov"
+          },
+          {
+            "id": 4074,
+            "title": "The Apprentice",
+            "sortTitle": "Apprentice",
+            "movieId": 1071,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jeremy Strong"
+          },
+          {
+            "id": 4073,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Guy Pearce"
+          },
+          {
+            "id": 4072,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Edward Norton"
+          },
+          {
+            "id": 4071,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Kieran Culkin"
+          }
+        ]
+      },
+      {
+        "name": "Actress in a Leading Role",
+        "nominees": [
+          {
+            "id": 4067,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Mikey Madison"
+          },
+          {
+            "id": 4066,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Karla Sofía Gascón"
+          },
+          {
+            "id": 4069,
+            "title": "I’m Still Here",
+            "sortTitle": "I’m Still Here",
+            "movieId": 1067,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Fernanda Torres"
+          },
+          {
+            "id": 4068,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Demi Moore"
+          },
+          {
+            "id": 4065,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Cynthia Erivo"
+          }
+        ]
+      },
+      {
+        "name": "Actress in a Supporting Role",
+        "nominees": [
+          {
+            "id": 4077,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Felicity Jones"
+          },
+          {
+            "id": 4075,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Monica Barbaro"
+          },
+          {
+            "id": 4078,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Isabella Rossellini"
+          },
+          {
+            "id": 4079,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Zoe Saldaña"
+          },
+          {
+            "id": 4076,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Ariana Grande"
+          }
+        ]
+      },
+      {
+        "name": "Animated Feature Film",
+        "nominees": [
+          {
+            "id": 4115,
+            "title": "Flow",
+            "sortTitle": "Flow",
+            "movieId": 1120,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4116,
+            "title": "Inside Out 2",
+            "sortTitle": "Inside Out 2",
+            "movieId": 1050,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4117,
+            "title": "Memoir of a Snail",
+            "sortTitle": "Memoir of a Snail",
+            "movieId": 1121,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4118,
+            "title": "Wallace & Gromit: Vengeance Most Fowl",
+            "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+            "movieId": 1122,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4119,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Picture",
+        "nominees": [
+          {
+            "id": 4045,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4046,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4047,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4048,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4049,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4050,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4051,
+            "title": "I’m Still Here",
+            "sortTitle": "I’m Still Here",
+            "movieId": 1067,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4052,
+            "title": "Nickel Boys",
+            "sortTitle": "Nickel Boys",
+            "movieId": 1070,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4053,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4054,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Cinematography",
+        "nominees": [
+          {
+            "id": 4120,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4121,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4122,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4123,
+            "title": "Maria",
+            "sortTitle": "Maria",
+            "movieId": 1066,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4124,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Costume Design",
+        "nominees": [
+          {
+            "id": 4095,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4096,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4097,
+            "title": "Gladiator II",
+            "sortTitle": "Gladiator II",
+            "movieId": 1057,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4098,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4099,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Directing",
+        "nominees": [
+          {
+            "id": 4055,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Sean Baker"
+          },
+          {
+            "id": 4056,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Brady Corbet"
+          },
+          {
+            "id": 4057,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "James Mangold"
+          },
+          {
+            "id": 4058,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jacques Audiard"
+          },
+          {
+            "id": 4059,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Coralie Fargeat"
+          }
+        ]
+      },
+      {
+        "name": "Documentary Feature",
+        "nominees": [
+          {
+            "id": 4125,
+            "title": "Black Box Diaries",
+            "sortTitle": "Black Box Diaries",
+            "movieId": 1422,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4126,
+            "title": "No Other Land",
+            "sortTitle": "No Other Land",
+            "movieId": 1423,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4127,
+            "title": "Porcelain War",
+            "sortTitle": "Porcelain War",
+            "movieId": 1382,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4128,
+            "title": "Soundtrack to a Coup d'État",
+            "sortTitle": "Soundtrack to a Coup d'État",
+            "movieId": 1384,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4129,
+            "title": "Sugarcane",
+            "sortTitle": "Sugarcane",
+            "movieId": 1383,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Documentary Short Subject",
+        "nominees": [
+          {
+            "id": 4130,
+            "title": "Death by Numbers",
+            "sortTitle": "Death by Numbers",
+            "movieId": 1472,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4131,
+            "title": "I Am Ready, Warden",
+            "sortTitle": "I Am Ready, Warden",
+            "movieId": 1473,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4132,
+            "title": "Incident",
+            "sortTitle": "Incident",
+            "movieId": 1474,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4133,
+            "title": "Instruments of a Beating Heart",
+            "sortTitle": "Instruments of a Beating Heart",
+            "movieId": 1475,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4134,
+            "title": "The Only Girl in the Orchestra",
+            "sortTitle": "Only Girl in the Orchestra",
+            "movieId": 1476,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Film Editing",
+        "nominees": [
+          {
+            "id": 4135,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4136,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4137,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4138,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4139,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "International Feature Film",
+        "nominees": [
+          {
+            "id": 4142,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4144,
+            "title": "Flow",
+            "sortTitle": "Flow",
+            "movieId": 1120,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4141,
+            "title": "The Girl with the Needle",
+            "sortTitle": "Girl with the Needle",
+            "movieId": 1124,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4140,
+            "title": "I’m Still Here",
+            "sortTitle": "I’m Still Here",
+            "movieId": 1067,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4143,
+            "title": "The Seed of the Sacred Fig",
+            "sortTitle": "Seed of the Sacred Fig",
+            "movieId": 1074,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Makeup and Hairstyling",
+        "nominees": [
+          {
+            "id": 4105,
+            "title": "A Different Man",
+            "sortTitle": "Different Man",
+            "movieId": 1083,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4106,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4107,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4108,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4109,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Music - Original Score",
+        "nominees": [
+          {
+            "id": 4110,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4111,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4112,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4113,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          },
+          {
+            "id": 4114,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Music - Original Song",
+        "nominees": [
+          {
+            "id": 4149,
+            "title": "Elton John: Never Too Late",
+            "sortTitle": "Elton John: Never Too Late",
+            "movieId": 1478,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4148,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4145,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4147,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4146,
+            "title": "The Six Triple Eight",
+            "sortTitle": "Six Triple Eight",
+            "movieId": 1477,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Production Design",
+        "nominees": [
+          {
+            "id": 4150,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4151,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4152,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4153,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4154,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Short Film - Animated",
+        "nominees": [
+          {
+            "id": 4090,
+            "title": "Beautiful Men",
+            "sortTitle": "Beautiful Men",
+            "movieId": 1463,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4091,
+            "title": "In the Shadow of the Cypress",
+            "sortTitle": "In the Shadow of the Cypress",
+            "movieId": 1464,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4092,
+            "title": "Magic Candies",
+            "sortTitle": "Magic Candies",
+            "movieId": 1465,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4093,
+            "title": "Wander to Wonder",
+            "sortTitle": "Wander to Wonder",
+            "movieId": 1433,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4094,
+            "title": "Yuck!",
+            "sortTitle": "Yuck!",
+            "movieId": 1466,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Short Film - Live Action",
+        "nominees": [
+          {
+            "id": 4101,
+            "title": "Anuja",
+            "sortTitle": "Anuja",
+            "movieId": 1468,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4102,
+            "title": "I'm Not a Robot",
+            "sortTitle": "I'm Not a Robot",
+            "movieId": 1469,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4103,
+            "title": "The Last Ranger",
+            "sortTitle": "Last Ranger",
+            "movieId": 1470,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4100,
+            "title": "A Lien",
+            "sortTitle": "Lien",
+            "movieId": 1467,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4104,
+            "title": "The Man Who Could Not Remain Silent",
+            "sortTitle": "Man Who Could Not Remain Silent",
+            "movieId": 1471,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Sound",
+        "nominees": [
+          {
+            "id": 4155,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4156,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4157,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4158,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          },
+          {
+            "id": 4159,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Visual Effects",
+        "nominees": [
+          {
+            "id": 4160,
+            "title": "Alien: Romulus",
+            "sortTitle": "Alien: Romulus",
+            "movieId": 1131,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4161,
+            "title": "Better Man",
+            "sortTitle": "Better Man",
+            "movieId": 1130,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4162,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4163,
+            "title": "Kingdom of the Planet of the Apes",
+            "sortTitle": "Kingdom of the Planet of the Apes",
+            "movieId": 1425,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4164,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Writing Adapted Screenplay",
+        "nominees": [
+          {
+            "id": 4080,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4081,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4082,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4083,
+            "title": "Nickel Boys",
+            "sortTitle": "Nickel Boys",
+            "movieId": 1070,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4084,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Writing Original Screenplay",
+        "nominees": [
+          {
+            "id": 4085,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4086,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4087,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4088,
+            "title": "September 5",
+            "sortTitle": "September 5",
+            "movieId": 1068,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4089,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 10,
+        "total": 120
+      },
+      "movies": {
+        "count": 1,
+        "total": 50
+      }
+    }
+  },
+  "American Society of Cinematographers": {
+    "awards": [
+      {
+        "name": "Outstanding Achievement in Cinematography",
+        "nominees": [
+          {
+            "id": 3986,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3990,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3987,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3988,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3989,
+            "title": "Maria",
+            "sortTitle": "Maria",
+            "movieId": 1066,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3984,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3985,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 1,
+        "total": 7
+      },
+      "movies": {
+        "count": 1,
+        "total": 7
+      }
+    }
+  },
+  "Writers Guild of America": {
+    "awards": [
+      {
+        "name": "Adapted Screenplay",
+        "nominees": [
+          {
+            "id": 3934,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3935,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3936,
+            "title": "Hit Man",
+            "sortTitle": "Hit Man",
+            "movieId": 1118,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3937,
+            "title": "Nickel Boys",
+            "sortTitle": "Nickel Boys",
+            "movieId": 1070,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3938,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Documentary Screenplay",
+        "nominees": [
+          {
+            "id": 3939,
+            "title": "Jim Henson Idea Man",
+            "sortTitle": "Jim Henson Idea Man",
+            "movieId": 1350,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3940,
+            "title": "Kiss the Future",
+            "sortTitle": "Kiss the Future",
+            "movieId": 1434,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3941,
+            "title": "Martha",
+            "sortTitle": "Martha",
+            "movieId": 1435,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3942,
+            "title": "War Game",
+            "sortTitle": "War Game",
+            "movieId": 1436,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Original Screenplay",
+        "nominees": [
+          {
+            "id": 3930,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3931,
+            "title": "Challengers",
+            "sortTitle": "Challengers",
+            "movieId": 1076,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3932,
+            "title": "Civil War",
+            "sortTitle": "Civil War",
+            "movieId": 1190,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3933,
+            "title": "My Old Ass",
+            "sortTitle": "My Old Ass",
+            "movieId": 1386,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3929,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 1,
+        "total": 14
+      },
+      "movies": {
+        "count": 1,
+        "total": 14
+      }
+    }
+  },
+  "British Academy of Film and Television Arts": {
+    "awards": [
+      {
+        "name": "Best Actor in a Leading Role",
+        "nominees": [
+          {
+            "id": 3824,
+            "title": "The Apprentice",
+            "sortTitle": "Apprentice",
+            "movieId": 1071,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Sebastian Stan"
+          },
+          {
+            "id": 3819,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Adrien Brody"
+          },
+          {
+            "id": 3820,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Timothée Chalamet"
+          },
+          {
+            "id": 3822,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Ralph Fiennes"
+          },
+          {
+            "id": 3823,
+            "title": "Heretic",
+            "sortTitle": "Heretic",
+            "movieId": 1129,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Hugh Grant"
+          },
+          {
+            "id": 3821,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Colman Domingo"
+          }
+        ]
+      },
+      {
+        "name": "Best Actor in a Supporting Role",
+        "nominees": [
+          {
+            "id": 3831,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Yura Borisov"
+          },
+          {
+            "id": 3836,
+            "title": "The Apprentice",
+            "sortTitle": "Apprentice",
+            "movieId": 1071,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jeremy Strong"
+          },
+          {
+            "id": 3835,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Guy Pearce"
+          },
+          {
+            "id": 3834,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Edward Norton"
+          },
+          {
+            "id": 3832,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Kieran Culkin"
+          },
+          {
+            "id": 3833,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Clarence Maclin"
+          }
+        ]
+      },
+      {
+        "name": "Best Actress in a Leading Role",
+        "nominees": [
+          {
+            "id": 3816,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Mikey Madison"
+          },
+          {
+            "id": 3814,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Karla Sofía Gascón"
+          },
+          {
+            "id": 3815,
+            "title": "Hard Truths",
+            "sortTitle": "Hard Truths",
+            "movieId": 1078,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Marianne Jean-Baptiste"
+          },
+          {
+            "id": 3818,
+            "title": "The Outrun",
+            "sortTitle": "Outrun",
+            "movieId": 1417,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Saoirse Ronan"
+          },
+          {
+            "id": 3817,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Demi Moore"
+          },
+          {
+            "id": 3813,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Cynthia Erivo"
+          }
+        ]
+      },
+      {
+        "name": "Best Actress in a Supporting Role",
+        "nominees": [
+          {
+            "id": 3827,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Felicity Jones"
+          },
+          {
+            "id": 3829,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Isabella Rossellini"
+          },
+          {
+            "id": 3830,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Zoe Saldaña"
+          },
+          {
+            "id": 3825,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Selena Gomez"
+          },
+          {
+            "id": 3828,
+            "title": "The Last Showgirl",
+            "sortTitle": "Last Showgirl",
+            "movieId": 1127,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jamie Lee Curtis"
+          },
+          {
+            "id": 3826,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Ariana Grande"
+          }
+        ]
+      },
+      {
+        "name": "Best Adapted Screenplay",
+        "nominees": [
+          {
+            "id": 3871,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3872,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3873,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3874,
+            "title": "Nickel Boys",
+            "sortTitle": "Nickel Boys",
+            "movieId": 1070,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3875,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Animated Film",
+        "nominees": [
+          {
+            "id": 3858,
+            "title": "Flow",
+            "sortTitle": "Flow",
+            "movieId": 1120,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3859,
+            "title": "Inside Out 2",
+            "sortTitle": "Inside Out 2",
+            "movieId": 1050,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3860,
+            "title": "Wallace & Gromit: Vengeance Most Fowl",
+            "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+            "movieId": 1122,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3861,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best British Film",
+        "nominees": [
+          {
+            "id": 3803,
+            "title": "Bird",
+            "sortTitle": "Bird",
+            "movieId": 1415,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3804,
+            "title": "Blitz",
+            "sortTitle": "Blitz",
+            "movieId": 1046,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3805,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3806,
+            "title": "Gladiator II",
+            "sortTitle": "Gladiator II",
+            "movieId": 1057,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3807,
+            "title": "Hard Truths",
+            "sortTitle": "Hard Truths",
+            "movieId": 1078,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3808,
+            "title": "Kneecap",
+            "sortTitle": "Kneecap",
+            "movieId": 1416,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3809,
+            "title": "Lee",
+            "sortTitle": "Lee",
+            "movieId": 1126,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3810,
+            "title": "Love Lies Bleeding",
+            "sortTitle": "Love Lies Bleeding",
+            "movieId": 1184,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3811,
+            "title": "The Outrun",
+            "sortTitle": "Outrun",
+            "movieId": 1417,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3812,
+            "title": "Wallace & Gromit: Vengeance Most Fowl",
+            "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+            "movieId": 1122,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Casting",
+        "nominees": [
+          {
+            "id": 3881,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3882,
+            "title": "The Apprentice",
+            "sortTitle": "Apprentice",
+            "movieId": 1071,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3883,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3884,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3885,
+            "title": "Kneecap",
+            "sortTitle": "Kneecap",
+            "movieId": 1416,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Children's and family film",
+        "nominees": [
+          {
+            "id": 3862,
+            "title": "Flow",
+            "sortTitle": "Flow",
+            "movieId": 1120,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3863,
+            "title": "Kensuke's Kingdom",
+            "sortTitle": "Kensuke's Kingdom",
+            "movieId": 1424,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3864,
+            "title": "Wallace & Gromit: Vengeance Most Fowl",
+            "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+            "movieId": 1122,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3865,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Cinematography",
+        "nominees": [
+          {
+            "id": 3886,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3887,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3888,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3889,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3890,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Costume Design",
+        "nominees": [
+          {
+            "id": 3891,
+            "title": "Blitz",
+            "sortTitle": "Blitz",
+            "movieId": 1046,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3892,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3893,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3894,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3895,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Best Direction",
+        "nominees": [
+          {
+            "id": 3837,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3838,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3839,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3840,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3841,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3842,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Documentary",
+        "nominees": [
+          {
+            "id": 3853,
+            "title": "Black Box Diaries",
+            "sortTitle": "Black Box Diaries",
+            "movieId": 1422,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3854,
+            "title": "Daughters",
+            "sortTitle": "Daughters",
+            "movieId": 1075,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3855,
+            "title": "No Other Land",
+            "sortTitle": "No Other Land",
+            "movieId": 1423,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3856,
+            "title": "Super/Man: The Christopher Reeve Story",
+            "sortTitle": "Super/Man: The Christopher Reeve Story",
+            "movieId": 1352,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3857,
+            "title": "Will & Harper",
+            "sortTitle": "Will & Harper",
+            "movieId": 1081,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Editing",
+        "nominees": [
+          {
+            "id": 3896,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3897,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3898,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3899,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3900,
+            "title": "Kneecap",
+            "sortTitle": "Kneecap",
+            "movieId": 1416,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Film",
+        "nominees": [
+          {
+            "id": 3798,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3799,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3800,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3801,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3802,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Film Not In The English Language",
+        "nominees": [
+          {
+            "id": 3848,
+            "title": "All We Imagine as Light",
+            "sortTitle": "All We Imagine as Light",
+            "movieId": 1123,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3849,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3850,
+            "title": "I’m Still Here",
+            "sortTitle": "I’m Still Here",
+            "movieId": 1067,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3851,
+            "title": "Kneecap",
+            "sortTitle": "Kneecap",
+            "movieId": 1416,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3852,
+            "title": "The Seed of the Sacred Fig",
+            "sortTitle": "Seed of the Sacred Fig",
+            "movieId": 1074,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Make Up and Hair",
+        "nominees": [
+          {
+            "id": 3906,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3907,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3908,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3909,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3910,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Best Original Score",
+        "nominees": [
+          {
+            "id": 3876,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3877,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3878,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3879,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3880,
+            "title": "The Wild Robot",
+            "sortTitle": "Wild Robot",
+            "movieId": 1072,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Original Screenplay",
+        "nominees": [
+          {
+            "id": 3866,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3867,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3868,
+            "title": "Kneecap",
+            "sortTitle": "Kneecap",
+            "movieId": 1416,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3869,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3870,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Production Design",
+        "nominees": [
+          {
+            "id": 3901,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3902,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3903,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3904,
+            "title": "Nosferatu",
+            "sortTitle": "Nosferatu",
+            "movieId": 1069,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3905,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Best Short Animation",
+        "nominees": [
+          {
+            "id": 3926,
+            "title": "Adiós",
+            "sortTitle": "Adiós",
+            "movieId": 1431,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3927,
+            "title": "Mog's Christmas",
+            "sortTitle": "Mog's Christmas",
+            "movieId": 1432,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3928,
+            "title": "Wander to Wonder",
+            "sortTitle": "Wander to Wonder",
+            "movieId": 1433,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Short Film",
+        "nominees": [
+          {
+            "id": 3921,
+            "title": "The Flowers Stand, Silently Witnessing",
+            "sortTitle": "Flowers Stand, Silently Witnessing",
+            "movieId": 1426,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3922,
+            "title": "Marion",
+            "sortTitle": "Marion",
+            "movieId": 1427,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3923,
+            "title": "Milk",
+            "sortTitle": "Milk",
+            "movieId": 1428,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3924,
+            "title": "Rock Paper Scissors",
+            "sortTitle": "Rock Paper Scissors",
+            "movieId": 1429,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3925,
+            "title": "Stomach Bug",
+            "sortTitle": "Stomach Bug",
+            "movieId": 1430,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Best Sound",
+        "nominees": [
+          {
+            "id": 3911,
+            "title": "Blitz",
+            "sortTitle": "Blitz",
+            "movieId": 1046,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3912,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3913,
+            "title": "Gladiator II",
+            "sortTitle": "Gladiator II",
+            "movieId": 1057,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3914,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3915,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Best Special Visual Effects",
+        "nominees": [
+          {
+            "id": 3916,
+            "title": "Better Man",
+            "sortTitle": "Better Man",
+            "movieId": 1130,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3917,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3918,
+            "title": "Gladiator II",
+            "sortTitle": "Gladiator II",
+            "movieId": 1057,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3919,
+            "title": "Kingdom of the Planet of the Apes",
+            "sortTitle": "Kingdom of the Planet of the Apes",
+            "movieId": 1425,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3920,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Outstanding Debut by a British Writer, Director or Producer",
+        "nominees": [
+          {
+            "id": 3843,
+            "title": "Hoard",
+            "sortTitle": "Hoard",
+            "movieId": 1418,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3844,
+            "title": "Kneecap",
+            "sortTitle": "Kneecap",
+            "movieId": 1416,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3845,
+            "title": "Monkey Man",
+            "sortTitle": "Monkey Man",
+            "movieId": 1419,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3846,
+            "title": "Santosh",
+            "sortTitle": "Santosh",
+            "movieId": 1420,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3847,
+            "title": "Sister Midnight",
+            "sortTitle": "Sister Midnight",
+            "movieId": 1421,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 7,
+        "total": 131
+      },
+      "movies": {
+        "count": 1,
+        "total": 50
+      }
+    }
+  },
+  "Screen Actors' Guild": {
+    "awards": [
+      {
+        "name": "Performance by a female actor in a leading role",
+        "nominees": [
+          {
+            "id": 3740,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Mikey Madison"
+          },
+          {
+            "id": 3739,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Karla Sofía Gascón"
+          },
+          {
+            "id": 3737,
+            "title": "The Last Showgirl",
+            "sortTitle": "Last Showgirl",
+            "movieId": 1127,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Pamela Anderson"
+          },
+          {
+            "id": 3741,
+            "title": "The Substance",
+            "sortTitle": "Substance",
+            "movieId": 1077,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Demi Moore"
+          },
+          {
+            "id": 3738,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Cynthia Erivo"
+          }
+        ]
+      },
+      {
+        "name": "Performance by a female actor in a supporting role",
+        "nominees": [
+          {
+            "id": 3750,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Monica Barbaro"
+          },
+          {
+            "id": 3754,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Zoe Saldaña"
+          },
+          {
+            "id": 3751,
+            "title": "The Last Showgirl",
+            "sortTitle": "Last Showgirl",
+            "movieId": 1127,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jamie Lee Curtis"
+          },
+          {
+            "id": 3752,
+            "title": "The Piano Lesson",
+            "sortTitle": "Piano Lesson",
+            "movieId": 1062,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Danielle Deadwyler"
+          },
+          {
+            "id": 3753,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Ariana Grande"
+          }
+        ]
+      },
+      {
+        "name": "Performance by a male actor in a leading role",
+        "nominees": [
+          {
+            "id": 3732,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Adrien Brody"
+          },
+          {
+            "id": 3733,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Timothée Chalamet"
+          },
+          {
+            "id": 3736,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Ralph Fiennes"
+          },
+          {
+            "id": 3734,
+            "title": "Queer",
+            "sortTitle": "Queer",
+            "movieId": 1065,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Daniel Craig"
+          },
+          {
+            "id": 3735,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Colman Domingo"
+          }
+        ]
+      },
+      {
+        "name": "Performance by a male actor in a supporting role",
+        "nominees": [
+          {
+            "id": 3743,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Yura Borisov"
+          },
+          {
+            "id": 3746,
+            "title": "The Apprentice",
+            "sortTitle": "Apprentice",
+            "movieId": 1071,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jeremy Strong"
+          },
+          {
+            "id": 3745,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Edward Norton"
+          },
+          {
+            "id": 3744,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Kieran Culkin"
+          },
+          {
+            "id": 3742,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041,
+            "detailName": "Jonathan Bailey"
+          }
+        ]
+      },
+      {
+        "name": "Performance by an Ensemble in a Motion Picture",
+        "nominees": [
+          {
+            "id": 3755,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3756,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3757,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3758,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3759,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      },
+      {
+        "name": "Stunt Ensemble in a Motion Picture",
+        "nominees": [
+          {
+            "id": 3760,
+            "title": "Deadpool & Wolverine",
+            "sortTitle": "Deadpool & Wolverine",
+            "movieId": 1085,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3042
+          },
+          {
+            "id": 3761,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3762,
+            "title": "The Fall Guy",
+            "sortTitle": "Fall Guy",
+            "movieId": 1217,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3763,
+            "title": "Gladiator II",
+            "sortTitle": "Gladiator II",
+            "movieId": 1057,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3764,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 6,
+        "total": 30
+      },
+      "movies": {
+        "count": 2,
+        "total": 17
+      }
+    }
+  },
+  "American Film Institute": {
+    "awards": [
+      {
+        "name": "Movies of the Year",
+        "nominees": [
+          {
+            "id": 3567,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3568,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3569,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3570,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3571,
+            "title": "Dune: Part Two",
+            "sortTitle": "Dune: Part Two",
+            "movieId": 1059,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3572,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3573,
+            "title": "Nickel Boys",
+            "sortTitle": "Nickel Boys",
+            "movieId": 1070,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3574,
+            "title": "A Real Pain",
+            "sortTitle": "Real Pain",
+            "movieId": 1064,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3575,
+            "title": "Sing Sing",
+            "sortTitle": "Sing Sing",
+            "movieId": 1060,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3576,
+            "title": "Wicked",
+            "sortTitle": "Wicked",
+            "movieId": 1055,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "watchlistId": 3041
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 1,
+        "total": 10
+      },
+      "movies": {
+        "count": 1,
+        "total": 10
+      }
+    }
+  },
+  "Directors Guild of America": {
+    "awards": [
+      {
+        "name": "Outstanding Directorial Achievement in Documentary",
+        "nominees": [
+          {
+            "id": 3769,
+            "title": "Daughters",
+            "sortTitle": "Daughters",
+            "movieId": 1075,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Natalie Rae"
+          },
+          {
+            "id": 3768,
+            "title": "Hollywoodgate",
+            "sortTitle": "Hollywoodgate",
+            "movieId": 1385,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Ibrahim Nash'at"
+          },
+          {
+            "id": 3765,
+            "title": "Porcelain War",
+            "sortTitle": "Porcelain War",
+            "movieId": 1382,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Brendan Bellomo"
+          },
+          {
+            "id": 3767,
+            "title": "Soundtrack to a Coup d'État",
+            "sortTitle": "Soundtrack to a Coup d'État",
+            "movieId": 1384,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Johan Grimonprez"
+          },
+          {
+            "id": 3766,
+            "title": "Sugarcane",
+            "sortTitle": "Sugarcane",
+            "movieId": 1383,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Julian Brave NoiseCat"
+          }
+        ]
+      },
+      {
+        "name": "Outstanding Directorial Achievement in Feature Film",
+        "nominees": [
+          {
+            "id": 3771,
+            "title": "Anora",
+            "sortTitle": "Anora",
+            "movieId": 1053,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Sean Baker"
+          },
+          {
+            "id": 3773,
+            "title": "The Brutalist",
+            "sortTitle": "Brutalist",
+            "movieId": 1054,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Brady Corbet"
+          },
+          {
+            "id": 3774,
+            "title": "A Complete Unknown",
+            "sortTitle": "Complete Unknown",
+            "movieId": 1058,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "James Mangold"
+          },
+          {
+            "id": 3772,
+            "title": "Conclave",
+            "sortTitle": "Conclave",
+            "movieId": 1052,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Edward Berger"
+          },
+          {
+            "id": 3770,
+            "title": "Emilia Pérez",
+            "sortTitle": "Emilia Pérez",
+            "movieId": 1056,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Jacques Audiard"
+          }
+        ]
+      },
+      {
+        "name": "Outstanding Directorial Achievement in First-Time Feature Film",
+        "nominees": [
+          {
+            "id": 3775,
+            "title": "All We Imagine as Light",
+            "sortTitle": "All We Imagine as Light",
+            "movieId": 1123,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Payal Kapadia"
+          },
+          {
+            "id": 3778,
+            "title": "Armand",
+            "sortTitle": "Armand",
+            "movieId": 1387,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Halfdan Ullmann Tøndel"
+          },
+          {
+            "id": 3779,
+            "title": "Dìdi (弟弟)",
+            "sortTitle": "Dìdi (弟弟)",
+            "movieId": 1388,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Sean Wang"
+          },
+          {
+            "id": 3776,
+            "title": "My Old Ass",
+            "sortTitle": "My Old Ass",
+            "movieId": 1386,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "Megan Park"
+          },
+          {
+            "id": 3777,
+            "title": "Nickel Boys",
+            "sortTitle": "Nickel Boys",
+            "movieId": 1070,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026",
+            "detailName": "RaMell Ross"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 0,
+        "total": 15
+      },
+      "movies": {
+        "count": 0,
+        "total": 15
+      }
+    }
+  },
+  "RAZZIE": {
+    "awards": [
+      {
+        "name": "Worst Actor",
+        "nominees": [
+          {
+            "id": 4001,
+            "title": "Dear Santa",
+            "sortTitle": "Dear Santa",
+            "movieId": 1451,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4002,
+            "title": "Harold and the Purple Crayon",
+            "sortTitle": "Harold and the Purple Crayon",
+            "movieId": 1452,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4003,
+            "title": "Joker: Folie à Deux",
+            "sortTitle": "Joker: Folie à Deux",
+            "movieId": 1051,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4004,
+            "title": "Reagan",
+            "sortTitle": "Reagan",
+            "movieId": 1450,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4005,
+            "title": "Unfrosted",
+            "sortTitle": "Unfrosted",
+            "movieId": 1453,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Worst Actress",
+        "nominees": [
+          {
+            "id": 4008,
+            "title": "Argylle",
+            "sortTitle": "Argylle",
+            "movieId": 1454,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4010,
+            "title": "Atlas",
+            "sortTitle": "Atlas",
+            "movieId": 1455,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4006,
+            "title": "Borderlands",
+            "sortTitle": "Borderlands",
+            "movieId": 1448,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4007,
+            "title": "Joker: Folie à Deux",
+            "sortTitle": "Joker: Folie à Deux",
+            "movieId": 1051,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4009,
+            "title": "Madame Web",
+            "sortTitle": "Madame Web",
+            "movieId": 1449,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Worst Director",
+        "nominees": [
+          {
+            "id": 4028,
+            "title": "Borderlands",
+            "sortTitle": "Borderlands",
+            "movieId": 1448,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4027,
+            "title": "Joker: Folie à Deux",
+            "sortTitle": "Joker: Folie à Deux",
+            "movieId": 1051,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4025,
+            "title": "Madame Web",
+            "sortTitle": "Madame Web",
+            "movieId": 1449,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4026,
+            "title": "Megalopolis",
+            "sortTitle": "Megalopolis",
+            "movieId": 1048,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4029,
+            "title": "Unfrosted",
+            "sortTitle": "Unfrosted",
+            "movieId": 1453,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Worst Picture",
+        "nominees": [
+          {
+            "id": 3996,
+            "title": "Borderlands",
+            "sortTitle": "Borderlands",
+            "movieId": 1448,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3997,
+            "title": "Joker: Folie à Deux",
+            "sortTitle": "Joker: Folie à Deux",
+            "movieId": 1051,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3998,
+            "title": "Madame Web",
+            "sortTitle": "Madame Web",
+            "movieId": 1449,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 3999,
+            "title": "Megalopolis",
+            "sortTitle": "Megalopolis",
+            "movieId": 1048,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4000,
+            "title": "Reagan",
+            "sortTitle": "Reagan",
+            "movieId": 1450,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Worst Prequel, Remake, Rip-off or Sequel",
+        "nominees": [
+          {
+            "id": 4035,
+            "title": "The Crow",
+            "sortTitle": "Crow",
+            "movieId": 1460,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4036,
+            "title": "Joker: Folie à Deux",
+            "sortTitle": "Joker: Folie à Deux",
+            "movieId": 1051,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4037,
+            "title": "Kraven the Hunter",
+            "sortTitle": "Kraven the Hunter",
+            "movieId": 1458,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4038,
+            "title": "Mufasa: The Lion King",
+            "sortTitle": "Mufasa: The Lion King",
+            "movieId": 1461,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4039,
+            "title": "Rebel Moon - Part Two: The Scargiver",
+            "sortTitle": "Rebel Moon - Part Two: The Scargiver",
+            "movieId": 1462,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Worst Screen Combo",
+        "nominees": [
+          {
+            "id": 4030,
+            "title": "Borderlands",
+            "sortTitle": "Borderlands",
+            "movieId": 1448,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4033,
+            "title": "Joker: Folie à Deux",
+            "sortTitle": "Joker: Folie à Deux",
+            "movieId": 1051,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4032,
+            "title": "Megalopolis",
+            "sortTitle": "Megalopolis",
+            "movieId": 1048,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4034,
+            "title": "Reagan",
+            "sortTitle": "Reagan",
+            "movieId": 1450,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4031,
+            "title": "Unfrosted",
+            "sortTitle": "Unfrosted",
+            "movieId": 1453,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Worst Screenplay",
+        "nominees": [
+          {
+            "id": 4040,
+            "title": "Joker: Folie à Deux",
+            "sortTitle": "Joker: Folie à Deux",
+            "movieId": 1051,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4041,
+            "title": "Kraven the Hunter",
+            "sortTitle": "Kraven the Hunter",
+            "movieId": 1458,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4042,
+            "title": "Madame Web",
+            "sortTitle": "Madame Web",
+            "movieId": 1449,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4043,
+            "title": "Megalopolis",
+            "sortTitle": "Megalopolis",
+            "movieId": 1048,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4044,
+            "title": "Reagan",
+            "sortTitle": "Reagan",
+            "movieId": 1450,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Worst Supporting Actor",
+        "nominees": [
+          {
+            "id": 4012,
+            "title": "Borderlands",
+            "sortTitle": "Borderlands",
+            "movieId": 1448,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4011,
+            "title": "Borderlands",
+            "sortTitle": "Borderlands",
+            "movieId": 1448,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4014,
+            "title": "Madame Web",
+            "sortTitle": "Madame Web",
+            "movieId": 1449,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4015,
+            "title": "Megalopolis",
+            "sortTitle": "Megalopolis",
+            "movieId": 1048,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4013,
+            "title": "Megalopolis",
+            "sortTitle": "Megalopolis",
+            "movieId": 1048,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4016,
+            "title": "Reagan",
+            "sortTitle": "Reagan",
+            "movieId": 1450,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4017,
+            "title": "Shadow Land",
+            "sortTitle": "Shadow Land",
+            "movieId": 1456,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4018,
+            "title": "Strangers",
+            "sortTitle": "Strangers",
+            "movieId": 1457,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      },
+      {
+        "name": "Worst Supporting Actress",
+        "nominees": [
+          {
+            "id": 4019,
+            "title": "Argylle",
+            "sortTitle": "Argylle",
+            "movieId": 1454,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4024,
+            "title": "The Crow",
+            "sortTitle": "Crow",
+            "movieId": 1460,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4020,
+            "title": "Kraven the Hunter",
+            "sortTitle": "Kraven the Hunter",
+            "movieId": 1458,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4022,
+            "title": "Madame Web",
+            "sortTitle": "Madame Web",
+            "movieId": 1449,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4021,
+            "title": "Remembering Reagan at His Ranch",
+            "sortTitle": "Remembering Reagan at His Ranch",
+            "movieId": 1459,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          },
+          {
+            "id": 4023,
+            "title": "Unfrosted",
+            "sortTitle": "Unfrosted",
+            "movieId": 1453,
+            "createdAt": "08/14/2026",
+            "releaseDate": "08/14/2026"
+          }
+        ]
+      }
+    ],
+    "totals": {
+      "nominations": {
+        "count": 0,
+        "total": 49
+      },
+      "movies": {
+        "count": 0,
+        "total": 17
+      }
+    }
+  }
+}

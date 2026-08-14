@@ -6,7 +6,7 @@
 
 **Time:** roughly 60–90 minutes. Clerk (Task 5) is the longest and the only one with a real decision embedded in it.
 
-**Gate:** `vercel env ls` shows every key in the checklist at the end, and `.local/prod-dump.dump` plus `fixtures/` exist locally.
+**Gate:** `vercel env ls` shows every key in the checklist at the end; `.local/prod-dump.dump`, `.local/prod-row-counts.txt`, and `.local/fixtures/` all exist locally; and `fixtures/` holds the scrubbed, committed copy. Everything irreplaceable lives under `.local/`, which is gitignored.
 
 > **Sensitive variables cannot be pulled.** Vercel's Sensitive type is write-only. Verification is by _presence_ in `vercel env ls`, not by reading values. Connection strings needed locally come from each provider's own console and live in the gitignored `.local/`.
 
@@ -356,95 +356,71 @@ Phase 2 restores into Neon and compares against this file. A restore that silent
 
 - [x] **Step 5: Capture the API contract fixtures**
 
-These are the golden responses that every ported repository is tested against (spec §13). Create `.local/capture-fixtures.sh`:
+These are the golden responses every ported repository is tested against (spec §13). The capture script is committed at `scripts/capture-fixtures.sh`. It reads the bearer token from `$TOKEN` so the token is never written to disk, and issues **GET requests only** — nothing in it mutates production.
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-BASE="https://cinemadraft.com/api"
-TOKEN="${CINEMADRAFT_TOKEN:?set CINEMADRAFT_TOKEN to a valid bearer token}"
-OUT="fixtures"
-mkdir -p "$OUT"
-
-# Public endpoints
-declare -a PUBLIC=(
-  "health"
-  "years"
-  "awards"
-  "events"
-  "movie/now-playing"
-)
-
-# Authenticated endpoints
-declare -a AUTHED=(
-  "dashboard"
-  "league"
-  "user"
-  "watchlist"
-  "lists"
-  "reviews"
-  "notifications"
-  "profile/feed"
-  "draft"
-  "draftpicks"
-  "points"
-  "nominations"
-  "winners"
-)
-
-for ep in "${PUBLIC[@]}"; do
-  name="${ep//\//_}"
-  echo "GET /$ep"
-  curl -sS "$BASE/$ep" > "$OUT/$name.json"
-done
-
-for ep in "${AUTHED[@]}"; do
-  name="${ep//\//_}"
-  echo "GET /$ep (auth)"
-  curl -sS -H "Authorization: Bearer $TOKEN" "$BASE/$ep" > "$OUT/$name.json"
-done
-
-echo "Captured $(ls "$OUT" | wc -l | tr -d ' ') fixtures"
-```
+The route table was built by enumerating `router.get(...)` across all 18 files in `server/routes/` of the source app, then resolving real ids from the production database. Those ids are constants at the top of the script; change them there, not inline.
 
 - [x] **Step 6: Get a bearer token**
 
-Sign in to cinemadraft.com in your browser, open DevTools → **Network**, click any `/api/` request, and copy the `Authorization: Bearer …` header value.
+Sign in to cinemadraft.com, open DevTools → **Network**, click any `/api/` request, and copy the `Authorization` header value **without** the leading `Bearer `. Auth0 access tokens last 24 hours, so capture in one sitting.
 
 - [x] **Step 7: Run the capture**
 
 ```bash
-chmod +x .local/capture-fixtures.sh
-CINEMADRAFT_TOKEN='<paste token>' .local/capture-fixtures.sh
+TOKEN='<paste token>' ./scripts/capture-fixtures.sh
 ```
 
-- [ ] **Step 8: Verify the fixtures are real responses, not errors**
+Output goes to `.local/fixtures/` — 32 files, each with a sibling `.path` recording the URL it came from. The API rate-limits to 60 requests/minute, so run the script once rather than re-running it piecemeal.
+
+- [x] **Step 8: Verify the fixtures are real responses, not errors**
 
 ```bash
-for f in fixtures/*.json; do
-  printf '%-28s %s\n' "$(basename "$f")" "$(head -c 90 "$f")"
-done
+cd .local/fixtures
+for f in *.json; do python3 -c "import json;json.load(open('$f'))" || echo "INVALID: $f"; done
+grep -l '"error"' *.json || echo "no error payloads"
 ```
 
-Check every file. Any containing `{"error":"unauthorized"}` or an empty body means that endpoint didn't capture — fix the token or the path and re-run before moving on.
+Every file must parse and none may contain an `error` key. An endpoint returning `[]` or `{}` is only acceptable if the emptiness is genuine — check the database before accepting it, because an empty fixture constrains nothing in the contract tests. Two of ours were empty for the wrong reason and had their parameters corrected; a third (`review-by-tmdb`) is genuinely `{}` because `Reviews` has no rows.
 
-- [ ] **Step 9: Commit the fixtures**
+**Captured 2026-08-14.** 32 endpoints, all HTTP 200, all valid JSON, 1.5 MB. Captured as user id 3 (`jon@jonbernard.net`, `admin`).
 
-Fixtures are committed (unlike the dump) because they're the test baseline and contain only your own account's data.
+- [x] **Step 9: Scrub the fixtures — do NOT commit the raw capture**
+
+An earlier version of this step said to commit the fixtures directly, assuming they held only your own account's data. That was wrong. League and draft endpoints return every member, so the raw responses carry **18 distinct real users' names**, plus `provider`, `providerId` (Auth0 subject ids), and Gravatar URLs whose path is an MD5 of the email.
+
+CI still needs them, though — fixtures that live only on one laptop cannot gate anything. So the raw capture stays in gitignored `.local/fixtures/`, and a scrubbed copy is committed to `fixtures/`:
 
 ```bash
-git add fixtures
-git commit -m "P0.T7: capture API contract fixtures from production
-
-Golden responses from the live Heroku API. These are the baseline every
-ported repository is tested against and cannot be recaptured after
-Heroku is retired.
-
-Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
+node scripts/scrub-fixtures.mjs
 ```
 
-> If any fixture contains another user's personal data, scrub it before committing, or move `fixtures/` into `.local/` and note the location in `PROGRESS.md` instead.
+The scrubber replaces personal data with deterministic fakes and holds four properties, each enforced by a check that fails the run rather than warning:
+
+1. **Nothing personal survives.** Emails, avatar URLs, uuids, and Auth0 subject ids are substring-searched across every emitted file, `.path` sidecars included.
+2. **Nothing else changes.** Both sides are masked on the scrubbed fields and compared; any difference outside them fails. This is the half that matters for test value — an over-eager scrubber that rewrites movie titles would satisfy (1) while destroying the fixtures.
+3. **Referential integrity holds.** One person maps to one identity everywhere, so a uuid in `points-league-total` still resolves to the same user in `user-drafts`, and `displayName` still equals `firstName + lastName`.
+4. **It is deterministic.** Re-running produces byte-identical output, so the committed diff never churns.
+
+Two subtleties worth knowing before editing it. Name replacement is word-bounded and confined to fields that describe people plus the `message` prose field — a global substring replace was tried first and turned `Billy Lynn's Long Halftime Walk` into `Silasy Lynn's`, `Jackie` into `Irisie`, and rewrote `Indiana Jones and the Dial of Destiny` because a user's `dummyName` is "Indiana Jones". And the fake-name pools are filtered against every real name in the data, because a generated surname colliding with a real one would quietly reintroduce it.
+
+A first name shared between a league member and a TMDB cast member is **not** a leak, and the checks are scoped so they don't flag it. Award names, event names, cast names, titles, and all scoring numbers pass through untouched.
+
+```bash
+git add scripts fixtures
+git commit -m "P0.T7: scrubbed API contract fixtures"
+```
+
+> **Back up `.local/` outside the repo before Heroku is retired.** The dump, row counts, and raw fixtures all live there, all gitignored, and none can be recaptured afterwards.
+
+### Bugs found in the source app during capture
+
+Recorded in `PROGRESS.md` and carried into Phase 7. Do not reproduce them in the port.
+
+- `GET /draft/users/:id` takes a **league** id despite the path, and returns `[]` for a valid draft id instead of erroring.
+- `GET /watchlist/:page?/:columnName?/:direction` accepts only `createdAt` and `releaseDate`; `title` and `sortTitle` raise Postgres `42703`. Sortable columns must be a validated allowlist.
+- `GET /points/league/:type(total|event)/:id/:year?` ignores `:type` entirely — both variants return byte-identical responses. The frontend only calls `total`, so `event` is dead route surface. Drop it.
+- `GET /movie/:id/details` is `GET /movie/:id` plus three OMDB fields. Both are ~184 KB.
+- 🔴 The error handler returns the **full failing SQL, column list, and Postgres internals** to the client. The port returns opaque errors and logs detail server-side (P2.T10).
 
 ---
 
@@ -477,21 +453,22 @@ Cloudinary keys are deliberately **not** carried over — phase 11 replaces it w
 
 ## Completion checklist
 
-- [ ] `vercel env ls` lists all of the following (values are Sensitive and cannot be read back):
-  - [ ] `DATABASE_URL`
-  - [ ] `UPSTASH_REDIS_REST_URL`
-  - [ ] `UPSTASH_REDIS_REST_TOKEN`
-  - [ ] `BLOB_READ_WRITE_TOKEN`
-  - [ ] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-  - [ ] `CLERK_SECRET_KEY`
-  - [ ] `CLERK_WEBHOOK_SIGNING_SECRET`
-  - [ ] `TMDB_API_KEY`, `OMDB_KEY`
-  - [ ] `NEXT_PUBLIC_ACTIVE_YEAR`
-- [ ] `.local/prod-dump.dump` exists, `pg_restore --list` shows the expected tables, and `.local/` is gitignored
-- [ ] `.local/prod-row-counts.txt` exists
-- [ ] `fixtures/` contains a valid JSON response per endpoint, none of them errors
-- [ ] Clerk is passwordless with email verification required (Task 5, Step 3) — this is what makes account claiming safe
-- [ ] Blob public hostname recorded in `docs/PROGRESS.md`
-- [ ] `next.cinemadraft.com` resolves to Vercel; `cinemadraft.com` **not yet added to Vercel**, still served by Heroku
+- [x] `vercel env ls` lists all of the following (values are Sensitive and cannot be read back):
+  - [x] `DATABASE_URL` / `DATABASE_URL_UNPOOLED` — Production + Preview only; Development uses Docker
+  - [x] `BLOB_STORE_ID`, `BLOB_WEBHOOK_PUBLIC_KEY` — Blob authenticates via **OIDC**, not a read-write token
+  - [x] `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+  - [x] `CLERK_SECRET_KEY`
+  - [x] `CLERK_WEBHOOK_SIGNING_SECRET` — our name for the `whsec_` value Clerk labels "Signing Secret"
+  - [ ] `TMDB_API_KEY`, `OMDB_KEY`, `CACHE_DURATION_IN_MINUTES`, `NEXT_PUBLIC_GA_MEASUREMENT_ID` (Task 8)
+  - [ ] ~~`UPSTASH_REDIS_REST_URL` / `_TOKEN`~~ — removed by D23, nothing to provision
+  - [ ] ~~`NEXT_PUBLIC_ACTIVE_YEAR`~~ — carried over for now, **deleted at P5.T0** when the database-backed read path ships (D22)
+- [x] `.local/prod-dump.dump` exists, `pg_restore --list` shows the expected tables, and `.local/` is gitignored
+- [x] `.local/prod-row-counts.txt` exists — **exact** `count(*)` per table, not `n_live_tup`
+- [x] `.local/fixtures/` holds 32 valid JSON responses, none of them errors — gitignored, real user data
+- [x] `fixtures/` holds the scrubbed copy, committed, `node scripts/scrub-fixtures.mjs` passing
+- [x] Clerk is passwordless with email verification required (Task 5, Step 3) — this is what makes account claiming safe
+- [ ] Blob public hostname recorded in `docs/PROGRESS.md` — needed for `next/image` `remotePatterns` in Phase 11
+- [ ] Clerk **account linking** confirmed enabled, so one email cannot produce two Clerk identities
+- [x] `next.cinemadraft.com` resolves to Vercel; `cinemadraft.com` **not yet added to Vercel**, still served by Heroku
 
 Tick Phase 0 in `docs/PROGRESS.md`, then phase 1 can begin.

@@ -1,0 +1,130 @@
+{
+  "Oscars": {
+    "1": [
+      {
+        "id": 9,
+        "level": "Oscars",
+        "tier": 1,
+        "points": 20,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ],
+    "2": [
+      {
+        "id": 8,
+        "level": "Oscars",
+        "tier": 2,
+        "points": 15,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ],
+    "3": [
+      {
+        "id": 7,
+        "level": "Oscars",
+        "tier": 3,
+        "points": 10,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ]
+  },
+  "Golden Globes": {
+    "1": [
+      {
+        "id": 6,
+        "level": "Golden Globes",
+        "tier": 1,
+        "points": 15,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ],
+    "2": [
+      {
+        "id": 5,
+        "level": "Golden Globes",
+        "tier": 2,
+        "points": 10,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ],
+    "3": [
+      {
+        "id": 4,
+        "level": "Golden Globes",
+        "tier": 3,
+        "points": 5,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ]
+  },
+  "Alphabet": {
+    "1": [
+      {
+        "id": 3,
+        "level": "Alphabet",
+        "tier": 1,
+        "points": 5,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ],
+    "2": [
+      {
+        "id": 2,
+        "level": "Alphabet",
+        "tier": 2,
+        "points": 5,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ],
+    "3": [
+      {
+        "id": 1,
+        "level": "Alphabet",
+        "tier": 3,
+        "points": 5,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ]
+  },
+  "Razzies": {
+    "1": [
+      {
+        "id": 12,
+        "level": "Razzies",
+        "tier": 1,
+        "points": -20,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ],
+    "2": [
+      {
+        "id": 11,
+        "level": "Razzies",
+        "tier": 2,
+        "points": -15,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ],
+    "3": [
+      {
+        "id": 10,
+        "level": "Razzies",
+        "tier": 3,
+        "points": -10,
+        "createdAt": "2023-01-24T15:31:54.000Z",
+        "updatedAt": "2023-01-24T15:31:54.000Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1882 @@
+{
+  "1": [
+    {
+      "id": 136,
+      "userId": 10,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 1,
+      "order": 1,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:29:27.073Z",
+      "updatedAt": "2024-12-01T00:09:48.641Z",
+      "picks": [
+        {
+          "id": 801,
+          "draftId": 136,
+          "movieId": 1052,
+          "order": 1,
+          "createdAt": "2024-12-01T00:11:19.324Z",
+          "updatedAt": "2024-12-01T00:11:19.324Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/m5x8D0bZ3eKqIVWZ5y7TnZ2oTVg.jpg",
+            "id": 1052,
+            "sortTitle": "Conclave",
+            "title": "Conclave",
+            "tmdbId": "974576"
+          }
+        },
+        {
+          "id": 806,
+          "draftId": 136,
+          "movieId": 1057,
+          "order": 2,
+          "createdAt": "2024-12-01T00:15:05.788Z",
+          "updatedAt": "2024-12-01T00:15:05.788Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg",
+            "id": 1057,
+            "sortTitle": "Gladiator II",
+            "title": "Gladiator II",
+            "tmdbId": "558449"
+          }
+        },
+        {
+          "id": 807,
+          "draftId": 136,
+          "movieId": 1058,
+          "order": 3,
+          "createdAt": "2024-12-01T00:15:20.121Z",
+          "updatedAt": "2024-12-01T00:15:20.121Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/llWl3GtNoXosbvYboelmoT459NM.jpg",
+            "id": 1058,
+            "sortTitle": "Complete Unknown",
+            "title": "A Complete Unknown",
+            "tmdbId": "661539"
+          }
+        },
+        {
+          "id": 812,
+          "draftId": 136,
+          "movieId": 1063,
+          "order": 4,
+          "createdAt": "2024-12-01T00:17:09.861Z",
+          "updatedAt": "2024-12-01T00:17:09.861Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qMibLyArrlBJ87AoqQBeVaFeRXp.jpg",
+            "id": 1063,
+            "sortTitle": "Room Next Door",
+            "title": "The Room Next Door",
+            "tmdbId": "1088514"
+          }
+        },
+        {
+          "id": 813,
+          "draftId": 136,
+          "movieId": 1046,
+          "order": 5,
+          "createdAt": "2024-12-01T00:17:43.134Z",
+          "updatedAt": "2024-12-01T00:17:43.134Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/e9tyjbF2rugENtBolTtEhHOXgzD.jpg",
+            "id": 1046,
+            "sortTitle": "Blitz",
+            "title": "Blitz",
+            "tmdbId": "896151"
+          }
+        },
+        {
+          "id": 818,
+          "draftId": 136,
+          "movieId": 1067,
+          "order": 6,
+          "createdAt": "2024-12-01T00:30:15.685Z",
+          "updatedAt": "2024-12-01T00:30:15.685Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qNLMPY3KLrYgTX2QZ5iEwwOqyRz.jpg",
+            "id": 1067,
+            "sortTitle": "I’m Still Here",
+            "title": "I’m Still Here",
+            "tmdbId": "1000837"
+          }
+        },
+        {
+          "id": 819,
+          "draftId": 136,
+          "movieId": 1068,
+          "order": 7,
+          "createdAt": "2024-12-01T00:30:29.941Z",
+          "updatedAt": "2024-12-01T00:30:29.941Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/3kcQOLwYKGPwyjiynFsvP8vHvRn.jpg",
+            "id": 1068,
+            "sortTitle": "September 5",
+            "title": "September 5",
+            "tmdbId": "1211472"
+          }
+        },
+        {
+          "id": 824,
+          "draftId": 136,
+          "movieId": 1073,
+          "order": 8,
+          "createdAt": "2024-12-01T00:34:11.167Z",
+          "updatedAt": "2024-12-01T00:34:11.167Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/oCf5O6uxooTvRwKVnLHwGqZUifq.jpg",
+            "id": 1073,
+            "sortTitle": "Saturday Night",
+            "title": "Saturday Night",
+            "tmdbId": "1120911"
+          }
+        },
+        {
+          "id": 825,
+          "draftId": 136,
+          "movieId": 1074,
+          "order": 9,
+          "createdAt": "2024-12-01T00:34:34.302Z",
+          "updatedAt": "2024-12-01T00:34:34.302Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/d6chGhHP6vzo2VJPivLvZuwnq7j.jpg",
+            "id": 1074,
+            "sortTitle": "Seed of the Sacred Fig",
+            "title": "The Seed of the Sacred Fig",
+            "tmdbId": "1278263"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Miles Lund",
+        "firstName": "Miles",
+        "lastName": "Lund",
+        "image": "https://example.test/avatar/bf5885f1ced028d0db110bc899ce2839.png",
+        "uuid": "6b9b25a1-baa4-494e-9cca-b47ef3e1363d"
+      }
+    },
+    {
+      "id": 135,
+      "userId": 15,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 1,
+      "order": 2,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:29:21.644Z",
+      "updatedAt": "2024-12-01T00:09:48.644Z",
+      "picks": [
+        {
+          "id": 802,
+          "draftId": 135,
+          "movieId": 1053,
+          "order": 1,
+          "createdAt": "2024-12-01T00:13:34.103Z",
+          "updatedAt": "2024-12-01T00:13:34.103Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qh8m8Udz0sCa5gy9VaqfHPh0yPM.jpg",
+            "id": 1053,
+            "sortTitle": "Anora",
+            "title": "Anora",
+            "tmdbId": "1064213"
+          }
+        },
+        {
+          "id": 805,
+          "draftId": 135,
+          "movieId": 1056,
+          "order": 2,
+          "createdAt": "2024-12-01T00:14:52.493Z",
+          "updatedAt": "2024-12-01T00:14:52.493Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/fko8fTfL6BcAqOUh6BZYUjt4SQP.jpg",
+            "id": 1056,
+            "sortTitle": "Emilia Pérez",
+            "title": "Emilia Pérez",
+            "tmdbId": "974950"
+          }
+        },
+        {
+          "id": 808,
+          "draftId": 135,
+          "movieId": 1059,
+          "order": 3,
+          "createdAt": "2024-12-01T00:15:38.403Z",
+          "updatedAt": "2024-12-01T00:15:38.403Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+            "id": 1059,
+            "sortTitle": "Dune: Part Two",
+            "title": "Dune: Part Two",
+            "tmdbId": "693134"
+          }
+        },
+        {
+          "id": 811,
+          "draftId": 135,
+          "movieId": 1062,
+          "order": 4,
+          "createdAt": "2024-12-01T00:16:52.804Z",
+          "updatedAt": "2024-12-01T00:16:52.804Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/wDwJLIJh1zlcu5Op0QQzm0h97z0.jpg",
+            "id": 1062,
+            "sortTitle": "Piano Lesson",
+            "title": "The Piano Lesson",
+            "tmdbId": "804406"
+          }
+        },
+        {
+          "id": 814,
+          "draftId": 135,
+          "movieId": 1048,
+          "order": 5,
+          "createdAt": "2024-12-01T00:22:51.039Z",
+          "updatedAt": "2024-12-01T00:22:51.039Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/6CFsSkGSbgboqgGD2M0B0eLMEyy.jpg",
+            "id": 1048,
+            "sortTitle": "Megalopolis",
+            "title": "Megalopolis",
+            "tmdbId": "592831"
+          }
+        },
+        {
+          "id": 817,
+          "draftId": 135,
+          "movieId": 1066,
+          "order": 6,
+          "createdAt": "2024-12-01T00:29:58.759Z",
+          "updatedAt": "2024-12-01T00:29:58.759Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/6xHKEYfrO1FpVZJJnKy5BhfWVCK.jpg",
+            "id": 1066,
+            "sortTitle": "Maria",
+            "title": "Maria",
+            "tmdbId": "1038263"
+          }
+        },
+        {
+          "id": 820,
+          "draftId": 135,
+          "movieId": 1069,
+          "order": 7,
+          "createdAt": "2024-12-01T00:32:00.765Z",
+          "updatedAt": "2024-12-01T00:32:00.765Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/5qGIxdEO841C0tdY8vOdLoRVrr0.jpg",
+            "id": 1069,
+            "sortTitle": "Nosferatu",
+            "title": "Nosferatu",
+            "tmdbId": "426063"
+          }
+        },
+        {
+          "id": 823,
+          "draftId": 135,
+          "movieId": 1072,
+          "order": 8,
+          "createdAt": "2024-12-01T00:33:47.142Z",
+          "updatedAt": "2024-12-01T00:33:47.142Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg",
+            "id": 1072,
+            "sortTitle": "Wild Robot",
+            "title": "The Wild Robot",
+            "tmdbId": "1184918"
+          }
+        },
+        {
+          "id": 826,
+          "draftId": 135,
+          "movieId": 1075,
+          "order": 9,
+          "createdAt": "2024-12-01T00:35:07.188Z",
+          "updatedAt": "2024-12-01T00:35:07.188Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/nPX9mJE3fe3WIRoLNQqJ0uhwUfU.jpg",
+            "id": 1075,
+            "sortTitle": "Daughters",
+            "title": "Daughters",
+            "tmdbId": "1214521"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Juno Alvi",
+        "firstName": "Juno",
+        "lastName": "Alvi",
+        "image": "https://example.test/avatar/9077e46be7d18e5a5e78dd8d76d3c2ec.png",
+        "uuid": "113a5393-6407-4e96-b101-2ad1708ec315"
+      }
+    },
+    {
+      "id": 124,
+      "userId": 3,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 1,
+      "order": 3,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:25:37.750Z",
+      "updatedAt": "2024-12-01T00:09:48.656Z",
+      "picks": [
+        {
+          "id": 803,
+          "draftId": 124,
+          "movieId": 1054,
+          "order": 1,
+          "createdAt": "2024-12-01T00:13:51.678Z",
+          "updatedAt": "2024-12-01T00:13:51.678Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/vP7Yd6couiAaw9jgMd5cjMRj3hQ.jpg",
+            "id": 1054,
+            "sortTitle": "Brutalist",
+            "title": "The Brutalist",
+            "tmdbId": "549509"
+          }
+        },
+        {
+          "id": 804,
+          "draftId": 124,
+          "movieId": 1055,
+          "order": 2,
+          "createdAt": "2024-12-01T00:14:21.553Z",
+          "updatedAt": "2024-12-01T00:14:21.553Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/2E1x1qcHqGZcYuYi4PzVZjzg8IV.jpg",
+            "id": 1055,
+            "sortTitle": "Wicked",
+            "title": "Wicked",
+            "tmdbId": "402431"
+          }
+        },
+        {
+          "id": 809,
+          "draftId": 124,
+          "movieId": 1060,
+          "order": 3,
+          "createdAt": "2024-12-01T00:16:02.337Z",
+          "updatedAt": "2024-12-01T00:16:02.337Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/s0TPyI8QlMiktEiq3JVhea0zFhM.jpg",
+            "id": 1060,
+            "sortTitle": "Sing Sing",
+            "title": "Sing Sing",
+            "tmdbId": "1155828"
+          }
+        },
+        {
+          "id": 810,
+          "draftId": 124,
+          "movieId": 1061,
+          "order": 4,
+          "createdAt": "2024-12-01T00:16:13.535Z",
+          "updatedAt": "2024-12-01T00:16:13.535Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/A8HbTd0FemZyFCh5qvJFpHGiwF8.jpg",
+            "id": 1061,
+            "sortTitle": "Babygirl",
+            "title": "Babygirl",
+            "tmdbId": "1097549"
+          }
+        },
+        {
+          "id": 815,
+          "draftId": 124,
+          "movieId": 1064,
+          "order": 5,
+          "createdAt": "2024-12-01T00:23:01.054Z",
+          "updatedAt": "2024-12-01T00:23:01.054Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/yaTFjMNh8D78dDHrglivOTv5YOx.jpg",
+            "id": 1064,
+            "sortTitle": "Real Pain",
+            "title": "A Real Pain",
+            "tmdbId": "1013850"
+          }
+        },
+        {
+          "id": 816,
+          "draftId": 124,
+          "movieId": 1065,
+          "order": 6,
+          "createdAt": "2024-12-01T00:23:09.328Z",
+          "updatedAt": "2024-12-01T00:23:09.328Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/xe4b2TMciLKA1C0JlhWxb4ENLln.jpg",
+            "id": 1065,
+            "sortTitle": "Queer",
+            "title": "Queer",
+            "tmdbId": "1059128"
+          }
+        },
+        {
+          "id": 821,
+          "draftId": 124,
+          "movieId": 1070,
+          "order": 7,
+          "createdAt": "2024-12-01T00:32:12.206Z",
+          "updatedAt": "2024-12-01T00:32:12.206Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/lu2vmmtStmTNMmSZl2LgrrQpLZo.jpg",
+            "id": 1070,
+            "sortTitle": "Nickel Boys",
+            "title": "Nickel Boys",
+            "tmdbId": "1028196"
+          }
+        },
+        {
+          "id": 822,
+          "draftId": 124,
+          "movieId": 1071,
+          "order": 8,
+          "createdAt": "2024-12-01T00:32:23.405Z",
+          "updatedAt": "2024-12-01T00:32:23.405Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/5icMlNq4rx6XJ9luWAR1Nr3M9rZ.jpg",
+            "id": 1071,
+            "sortTitle": "Apprentice",
+            "title": "The Apprentice",
+            "tmdbId": "1182047"
+          }
+        },
+        {
+          "id": 827,
+          "draftId": 124,
+          "movieId": 1076,
+          "order": 9,
+          "createdAt": "2024-12-01T00:35:21.591Z",
+          "updatedAt": "2024-12-01T00:35:21.591Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/H6vke7zGiuLsz4v4RPeReb9rsv.jpg",
+            "id": 1076,
+            "sortTitle": "Challengers",
+            "title": "Challengers",
+            "tmdbId": "937287"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Vera Holt",
+        "firstName": "Vera",
+        "lastName": "Holt",
+        "image": "https://example.test/avatar/08ac1399ceb71995ae8ec5fea877525a.png",
+        "uuid": "a319f9aa-1e06-4bbf-a475-7b31b607e32e"
+      }
+    }
+  ],
+  "2": [
+    {
+      "id": 134,
+      "userId": 2,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 2,
+      "order": 1,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:29:11.023Z",
+      "updatedAt": "2024-12-01T00:09:48.725Z",
+      "picks": [
+        {
+          "id": 828,
+          "draftId": 134,
+          "movieId": 1056,
+          "order": 1,
+          "createdAt": "2024-12-01T00:36:08.051Z",
+          "updatedAt": "2024-12-01T00:36:08.051Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/fko8fTfL6BcAqOUh6BZYUjt4SQP.jpg",
+            "id": 1056,
+            "sortTitle": "Emilia Pérez",
+            "title": "Emilia Pérez",
+            "tmdbId": "974950"
+          }
+        },
+        {
+          "id": 833,
+          "draftId": 134,
+          "movieId": 1057,
+          "order": 2,
+          "createdAt": "2024-12-01T00:37:29.475Z",
+          "updatedAt": "2024-12-01T00:37:29.475Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg",
+            "id": 1057,
+            "sortTitle": "Gladiator II",
+            "title": "Gladiator II",
+            "tmdbId": "558449"
+          }
+        },
+        {
+          "id": 834,
+          "draftId": 134,
+          "movieId": 1059,
+          "order": 3,
+          "createdAt": "2024-12-01T00:37:37.519Z",
+          "updatedAt": "2024-12-01T00:37:37.519Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+            "id": 1059,
+            "sortTitle": "Dune: Part Two",
+            "title": "Dune: Part Two",
+            "tmdbId": "693134"
+          }
+        },
+        {
+          "id": 839,
+          "draftId": 134,
+          "movieId": 1070,
+          "order": 4,
+          "createdAt": "2024-12-01T00:38:38.603Z",
+          "updatedAt": "2024-12-01T00:38:38.603Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/lu2vmmtStmTNMmSZl2LgrrQpLZo.jpg",
+            "id": 1070,
+            "sortTitle": "Nickel Boys",
+            "title": "Nickel Boys",
+            "tmdbId": "1028196"
+          }
+        },
+        {
+          "id": 840,
+          "draftId": 134,
+          "movieId": 1046,
+          "order": 5,
+          "createdAt": "2024-12-01T00:38:44.908Z",
+          "updatedAt": "2024-12-01T00:38:44.908Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/e9tyjbF2rugENtBolTtEhHOXgzD.jpg",
+            "id": 1046,
+            "sortTitle": "Blitz",
+            "title": "Blitz",
+            "tmdbId": "896151"
+          }
+        },
+        {
+          "id": 845,
+          "draftId": 134,
+          "movieId": 1068,
+          "order": 6,
+          "createdAt": "2024-12-01T00:39:46.991Z",
+          "updatedAt": "2024-12-01T00:39:46.991Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/3kcQOLwYKGPwyjiynFsvP8vHvRn.jpg",
+            "id": 1068,
+            "sortTitle": "September 5",
+            "title": "September 5",
+            "tmdbId": "1211472"
+          }
+        },
+        {
+          "id": 846,
+          "draftId": 134,
+          "movieId": 1062,
+          "order": 7,
+          "createdAt": "2024-12-01T00:39:54.713Z",
+          "updatedAt": "2024-12-01T00:39:54.713Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/wDwJLIJh1zlcu5Op0QQzm0h97z0.jpg",
+            "id": 1062,
+            "sortTitle": "Piano Lesson",
+            "title": "The Piano Lesson",
+            "tmdbId": "804406"
+          }
+        },
+        {
+          "id": 851,
+          "draftId": 134,
+          "movieId": 1071,
+          "order": 8,
+          "createdAt": "2024-12-01T00:42:27.376Z",
+          "updatedAt": "2024-12-01T00:42:27.376Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/5icMlNq4rx6XJ9luWAR1Nr3M9rZ.jpg",
+            "id": 1071,
+            "sortTitle": "Apprentice",
+            "title": "The Apprentice",
+            "tmdbId": "1182047"
+          }
+        },
+        {
+          "id": 852,
+          "draftId": 134,
+          "movieId": 1076,
+          "order": 9,
+          "createdAt": "2024-12-01T00:42:34.651Z",
+          "updatedAt": "2024-12-01T00:42:34.651Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/H6vke7zGiuLsz4v4RPeReb9rsv.jpg",
+            "id": 1076,
+            "sortTitle": "Challengers",
+            "title": "Challengers",
+            "tmdbId": "937287"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Juno Bright",
+        "firstName": "Juno",
+        "lastName": "Bright",
+        "image": "https://example.test/avatar/69e35ab82f55fbc7e5a1a9ce88df4d52.png",
+        "uuid": "b2590d53-dea8-471f-970e-791b80a16d79"
+      }
+    },
+    {
+      "id": 137,
+      "userId": 5,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 2,
+      "order": 2,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-12-01T00:04:02.816Z",
+      "updatedAt": "2024-12-01T00:09:48.706Z",
+      "picks": [
+        {
+          "id": 829,
+          "draftId": 137,
+          "movieId": 1055,
+          "order": 1,
+          "createdAt": "2024-12-01T00:36:26.659Z",
+          "updatedAt": "2024-12-01T00:36:26.659Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/2E1x1qcHqGZcYuYi4PzVZjzg8IV.jpg",
+            "id": 1055,
+            "sortTitle": "Wicked",
+            "title": "Wicked",
+            "tmdbId": "402431"
+          }
+        },
+        {
+          "id": 832,
+          "draftId": 137,
+          "movieId": 1054,
+          "order": 2,
+          "createdAt": "2024-12-01T00:37:16.835Z",
+          "updatedAt": "2024-12-01T00:37:16.835Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/vP7Yd6couiAaw9jgMd5cjMRj3hQ.jpg",
+            "id": 1054,
+            "sortTitle": "Brutalist",
+            "title": "The Brutalist",
+            "tmdbId": "549509"
+          }
+        },
+        {
+          "id": 835,
+          "draftId": 137,
+          "movieId": 1060,
+          "order": 3,
+          "createdAt": "2024-12-01T00:37:52.842Z",
+          "updatedAt": "2024-12-01T00:37:52.842Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/s0TPyI8QlMiktEiq3JVhea0zFhM.jpg",
+            "id": 1060,
+            "sortTitle": "Sing Sing",
+            "title": "Sing Sing",
+            "tmdbId": "1155828"
+          }
+        },
+        {
+          "id": 838,
+          "draftId": 137,
+          "movieId": 1072,
+          "order": 4,
+          "createdAt": "2024-12-01T00:38:27.176Z",
+          "updatedAt": "2024-12-01T00:38:27.176Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg",
+            "id": 1072,
+            "sortTitle": "Wild Robot",
+            "title": "The Wild Robot",
+            "tmdbId": "1184918"
+          }
+        },
+        {
+          "id": 841,
+          "draftId": 137,
+          "movieId": 1077,
+          "order": 5,
+          "createdAt": "2024-12-01T00:38:55.506Z",
+          "updatedAt": "2024-12-01T00:38:55.506Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/lqoMzCcZYEFK729d6qzt349fB4o.jpg",
+            "id": 1077,
+            "sortTitle": "Substance",
+            "title": "The Substance",
+            "tmdbId": "933260"
+          }
+        },
+        {
+          "id": 844,
+          "draftId": 137,
+          "movieId": 1066,
+          "order": 6,
+          "createdAt": "2024-12-01T00:39:36.155Z",
+          "updatedAt": "2024-12-01T00:39:36.155Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/6xHKEYfrO1FpVZJJnKy5BhfWVCK.jpg",
+            "id": 1066,
+            "sortTitle": "Maria",
+            "title": "Maria",
+            "tmdbId": "1038263"
+          }
+        },
+        {
+          "id": 847,
+          "draftId": 137,
+          "movieId": 1061,
+          "order": 7,
+          "createdAt": "2024-12-01T00:41:15.296Z",
+          "updatedAt": "2024-12-01T00:41:15.296Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/A8HbTd0FemZyFCh5qvJFpHGiwF8.jpg",
+            "id": 1061,
+            "sortTitle": "Babygirl",
+            "title": "Babygirl",
+            "tmdbId": "1097549"
+          }
+        },
+        {
+          "id": 850,
+          "draftId": 137,
+          "movieId": 1074,
+          "order": 8,
+          "createdAt": "2024-12-01T00:41:53.799Z",
+          "updatedAt": "2024-12-01T00:41:53.799Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/d6chGhHP6vzo2VJPivLvZuwnq7j.jpg",
+            "id": 1074,
+            "sortTitle": "Seed of the Sacred Fig",
+            "title": "The Seed of the Sacred Fig",
+            "tmdbId": "1278263"
+          }
+        },
+        {
+          "id": 853,
+          "draftId": 137,
+          "movieId": 1067,
+          "order": 9,
+          "createdAt": "2024-12-01T00:42:58.393Z",
+          "updatedAt": "2024-12-01T00:42:58.393Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qNLMPY3KLrYgTX2QZ5iEwwOqyRz.jpg",
+            "id": 1067,
+            "sortTitle": "I’m Still Here",
+            "title": "I’m Still Here",
+            "tmdbId": "1000837"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Emmet Rivas",
+        "firstName": "Emmet",
+        "lastName": "Rivas",
+        "image": "https://example.test/avatar/f593eed340c94335d1be9ecf003b5491.png",
+        "uuid": "2620b701-aa93-42be-9231-2a781929fa9e"
+      }
+    },
+    {
+      "id": 127,
+      "userId": 6,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 2,
+      "order": 3,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:28:12.203Z",
+      "updatedAt": "2024-12-01T00:09:48.759Z",
+      "picks": [
+        {
+          "id": 830,
+          "draftId": 127,
+          "movieId": 1052,
+          "order": 1,
+          "createdAt": "2024-12-01T00:36:46.115Z",
+          "updatedAt": "2024-12-01T00:36:46.115Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/m5x8D0bZ3eKqIVWZ5y7TnZ2oTVg.jpg",
+            "id": 1052,
+            "sortTitle": "Conclave",
+            "title": "Conclave",
+            "tmdbId": "974576"
+          }
+        },
+        {
+          "id": 831,
+          "draftId": 127,
+          "movieId": 1053,
+          "order": 2,
+          "createdAt": "2024-12-01T00:36:53.676Z",
+          "updatedAt": "2024-12-01T00:36:53.676Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qh8m8Udz0sCa5gy9VaqfHPh0yPM.jpg",
+            "id": 1053,
+            "sortTitle": "Anora",
+            "title": "Anora",
+            "tmdbId": "1064213"
+          }
+        },
+        {
+          "id": 836,
+          "draftId": 127,
+          "movieId": 1058,
+          "order": 3,
+          "createdAt": "2024-12-01T00:38:05.462Z",
+          "updatedAt": "2024-12-01T00:38:05.462Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/llWl3GtNoXosbvYboelmoT459NM.jpg",
+            "id": 1058,
+            "sortTitle": "Complete Unknown",
+            "title": "A Complete Unknown",
+            "tmdbId": "661539"
+          }
+        },
+        {
+          "id": 837,
+          "draftId": 127,
+          "movieId": 1064,
+          "order": 4,
+          "createdAt": "2024-12-01T00:38:09.989Z",
+          "updatedAt": "2024-12-01T00:38:09.989Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/yaTFjMNh8D78dDHrglivOTv5YOx.jpg",
+            "id": 1064,
+            "sortTitle": "Real Pain",
+            "title": "A Real Pain",
+            "tmdbId": "1013850"
+          }
+        },
+        {
+          "id": 842,
+          "draftId": 127,
+          "movieId": 1063,
+          "order": 5,
+          "createdAt": "2024-12-01T00:39:12.920Z",
+          "updatedAt": "2024-12-01T00:39:12.920Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qMibLyArrlBJ87AoqQBeVaFeRXp.jpg",
+            "id": 1063,
+            "sortTitle": "Room Next Door",
+            "title": "The Room Next Door",
+            "tmdbId": "1088514"
+          }
+        },
+        {
+          "id": 843,
+          "draftId": 127,
+          "movieId": 1069,
+          "order": 6,
+          "createdAt": "2024-12-01T00:39:21.532Z",
+          "updatedAt": "2024-12-01T00:39:21.532Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/5qGIxdEO841C0tdY8vOdLoRVrr0.jpg",
+            "id": 1069,
+            "sortTitle": "Nosferatu",
+            "title": "Nosferatu",
+            "tmdbId": "426063"
+          }
+        },
+        {
+          "id": 848,
+          "draftId": 127,
+          "movieId": 1065,
+          "order": 7,
+          "createdAt": "2024-12-01T00:41:38.468Z",
+          "updatedAt": "2024-12-01T00:41:38.468Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/xe4b2TMciLKA1C0JlhWxb4ENLln.jpg",
+            "id": 1065,
+            "sortTitle": "Queer",
+            "title": "Queer",
+            "tmdbId": "1059128"
+          }
+        },
+        {
+          "id": 849,
+          "draftId": 127,
+          "movieId": 1078,
+          "order": 8,
+          "createdAt": "2024-12-01T00:41:43.722Z",
+          "updatedAt": "2024-12-01T00:41:43.722Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/eEj1TGrGc4IQ8bscFC17Ggdg6ft.jpg",
+            "id": 1078,
+            "sortTitle": "Hard Truths",
+            "title": "Hard Truths",
+            "tmdbId": "1013154"
+          }
+        },
+        {
+          "id": 854,
+          "draftId": 127,
+          "movieId": 1079,
+          "order": 9,
+          "createdAt": "2024-12-01T00:43:22.795Z",
+          "updatedAt": "2024-12-01T00:43:22.795Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/jbrO78BbO8p4v0Sq9E2AKK7fnLq.jpg",
+            "id": 1079,
+            "sortTitle": "Dahomey",
+            "title": "Dahomey",
+            "tmdbId": "1101256"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Greta Bright",
+        "firstName": "Greta",
+        "lastName": "Bright",
+        "image": "https://example.test/avatar/153c972555b3794110b22f1a52d16c4d.png",
+        "uuid": "a35aeb15-85be-4ec2-8bff-624dda99a6b1"
+      }
+    }
+  ],
+  "3": [
+    {
+      "id": 133,
+      "userId": 21,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 3,
+      "order": 1,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:29:00.596Z",
+      "updatedAt": "2024-12-01T00:09:48.755Z",
+      "picks": [
+        {
+          "id": 855,
+          "draftId": 133,
+          "movieId": 1052,
+          "order": 1,
+          "createdAt": "2024-12-01T00:43:59.060Z",
+          "updatedAt": "2024-12-01T00:43:59.060Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/m5x8D0bZ3eKqIVWZ5y7TnZ2oTVg.jpg",
+            "id": 1052,
+            "sortTitle": "Conclave",
+            "title": "Conclave",
+            "tmdbId": "974576"
+          }
+        },
+        {
+          "id": 860,
+          "draftId": 133,
+          "movieId": 1054,
+          "order": 2,
+          "createdAt": "2024-12-01T00:45:03.734Z",
+          "updatedAt": "2024-12-01T00:45:03.734Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/vP7Yd6couiAaw9jgMd5cjMRj3hQ.jpg",
+            "id": 1054,
+            "sortTitle": "Brutalist",
+            "title": "The Brutalist",
+            "tmdbId": "549509"
+          }
+        },
+        {
+          "id": 861,
+          "draftId": 133,
+          "movieId": 1059,
+          "order": 3,
+          "createdAt": "2024-12-01T00:45:10.345Z",
+          "updatedAt": "2024-12-01T00:45:10.345Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+            "id": 1059,
+            "sortTitle": "Dune: Part Two",
+            "title": "Dune: Part Two",
+            "tmdbId": "693134"
+          }
+        },
+        {
+          "id": 866,
+          "draftId": 133,
+          "movieId": 1070,
+          "order": 4,
+          "createdAt": "2024-12-01T00:46:45.754Z",
+          "updatedAt": "2024-12-01T00:46:45.754Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/lu2vmmtStmTNMmSZl2LgrrQpLZo.jpg",
+            "id": 1070,
+            "sortTitle": "Nickel Boys",
+            "title": "Nickel Boys",
+            "tmdbId": "1028196"
+          }
+        },
+        {
+          "id": 867,
+          "draftId": 133,
+          "movieId": 1068,
+          "order": 5,
+          "createdAt": "2024-12-01T00:47:27.969Z",
+          "updatedAt": "2024-12-01T00:47:27.969Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/3kcQOLwYKGPwyjiynFsvP8vHvRn.jpg",
+            "id": 1068,
+            "sortTitle": "September 5",
+            "title": "September 5",
+            "tmdbId": "1211472"
+          }
+        },
+        {
+          "id": 872,
+          "draftId": 133,
+          "movieId": 1078,
+          "order": 6,
+          "createdAt": "2024-12-01T00:48:40.263Z",
+          "updatedAt": "2024-12-01T00:48:40.263Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/eEj1TGrGc4IQ8bscFC17Ggdg6ft.jpg",
+            "id": 1078,
+            "sortTitle": "Hard Truths",
+            "title": "Hard Truths",
+            "tmdbId": "1013154"
+          }
+        },
+        {
+          "id": 873,
+          "draftId": 133,
+          "movieId": 1077,
+          "order": 7,
+          "createdAt": "2024-12-01T00:48:45.600Z",
+          "updatedAt": "2024-12-01T00:48:45.600Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/lqoMzCcZYEFK729d6qzt349fB4o.jpg",
+            "id": 1077,
+            "sortTitle": "Substance",
+            "title": "The Substance",
+            "tmdbId": "933260"
+          }
+        },
+        {
+          "id": 878,
+          "draftId": 133,
+          "movieId": 1074,
+          "order": 8,
+          "createdAt": "2024-12-01T00:50:27.636Z",
+          "updatedAt": "2024-12-01T00:50:27.636Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/d6chGhHP6vzo2VJPivLvZuwnq7j.jpg",
+            "id": 1074,
+            "sortTitle": "Seed of the Sacred Fig",
+            "title": "The Seed of the Sacred Fig",
+            "tmdbId": "1278263"
+          }
+        },
+        {
+          "id": 879,
+          "draftId": 133,
+          "movieId": 1082,
+          "order": 9,
+          "createdAt": "2024-12-01T00:50:42.527Z",
+          "updatedAt": "2024-12-01T00:50:42.527Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/pjnD08FlMAIXsfOLKQbvmO0f0MD.jpg",
+            "id": 1082,
+            "sortTitle": "Twisters",
+            "title": "Twisters",
+            "tmdbId": "718821"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Ruth Lund",
+        "firstName": "Ruth",
+        "lastName": "Lund",
+        "image": "https://example.test/avatar/e24a0c43bf45ec0b561c1149ed4f210b.png",
+        "uuid": "b664d818-e73f-431b-bf9a-d8691ee25eda"
+      }
+    },
+    {
+      "id": 132,
+      "userId": 23,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 3,
+      "order": 2,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:28:55.023Z",
+      "updatedAt": "2024-12-01T00:09:48.771Z",
+      "picks": [
+        {
+          "id": 856,
+          "draftId": 132,
+          "movieId": 1055,
+          "order": 1,
+          "createdAt": "2024-12-01T00:44:21.182Z",
+          "updatedAt": "2024-12-01T00:44:21.182Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/2E1x1qcHqGZcYuYi4PzVZjzg8IV.jpg",
+            "id": 1055,
+            "sortTitle": "Wicked",
+            "title": "Wicked",
+            "tmdbId": "402431"
+          }
+        },
+        {
+          "id": 859,
+          "draftId": 132,
+          "movieId": 1057,
+          "order": 2,
+          "createdAt": "2024-12-01T00:44:53.564Z",
+          "updatedAt": "2024-12-01T00:44:53.564Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg",
+            "id": 1057,
+            "sortTitle": "Gladiator II",
+            "title": "Gladiator II",
+            "tmdbId": "558449"
+          }
+        },
+        {
+          "id": 862,
+          "draftId": 132,
+          "movieId": 1058,
+          "order": 3,
+          "createdAt": "2024-12-01T00:45:33.743Z",
+          "updatedAt": "2024-12-01T00:45:33.743Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/llWl3GtNoXosbvYboelmoT459NM.jpg",
+            "id": 1058,
+            "sortTitle": "Complete Unknown",
+            "title": "A Complete Unknown",
+            "tmdbId": "661539"
+          }
+        },
+        {
+          "id": 865,
+          "draftId": 132,
+          "movieId": 1072,
+          "order": 4,
+          "createdAt": "2024-12-01T00:46:35.956Z",
+          "updatedAt": "2024-12-01T00:46:35.956Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg",
+            "id": 1072,
+            "sortTitle": "Wild Robot",
+            "title": "The Wild Robot",
+            "tmdbId": "1184918"
+          }
+        },
+        {
+          "id": 868,
+          "draftId": 132,
+          "movieId": 1063,
+          "order": 5,
+          "createdAt": "2024-12-01T00:47:40.904Z",
+          "updatedAt": "2024-12-01T00:47:40.904Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qMibLyArrlBJ87AoqQBeVaFeRXp.jpg",
+            "id": 1063,
+            "sortTitle": "Room Next Door",
+            "title": "The Room Next Door",
+            "tmdbId": "1088514"
+          }
+        },
+        {
+          "id": 871,
+          "draftId": 132,
+          "movieId": 1069,
+          "order": 6,
+          "createdAt": "2024-12-01T00:48:27.343Z",
+          "updatedAt": "2024-12-01T00:48:27.343Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/5qGIxdEO841C0tdY8vOdLoRVrr0.jpg",
+            "id": 1069,
+            "sortTitle": "Nosferatu",
+            "title": "Nosferatu",
+            "tmdbId": "426063"
+          }
+        },
+        {
+          "id": 874,
+          "draftId": 132,
+          "movieId": 1081,
+          "order": 7,
+          "createdAt": "2024-12-01T00:49:17.343Z",
+          "updatedAt": "2024-12-01T00:49:17.343Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/1xbYcoEb9gqezNnLgjWcZI5Hlsl.jpg",
+            "id": 1081,
+            "sortTitle": "Will & Harper",
+            "title": "Will & Harper",
+            "tmdbId": "1214506"
+          }
+        },
+        {
+          "id": 877,
+          "draftId": 132,
+          "movieId": 1073,
+          "order": 8,
+          "createdAt": "2024-12-01T00:50:10.095Z",
+          "updatedAt": "2024-12-01T00:50:10.095Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/oCf5O6uxooTvRwKVnLHwGqZUifq.jpg",
+            "id": 1073,
+            "sortTitle": "Saturday Night",
+            "title": "Saturday Night",
+            "tmdbId": "1120911"
+          }
+        },
+        {
+          "id": 880,
+          "draftId": 132,
+          "movieId": 1050,
+          "order": 9,
+          "createdAt": "2024-12-01T00:51:07.571Z",
+          "updatedAt": "2024-12-01T00:51:07.571Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg",
+            "id": 1050,
+            "sortTitle": "Inside Out 2",
+            "title": "Inside Out 2",
+            "tmdbId": "1022789"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Silas Fenn",
+        "firstName": "Silas",
+        "lastName": "Fenn",
+        "image": "https://example.test/avatar/85e24ffa2fc3ff868e112f4e06b74b79.png",
+        "uuid": "26168b84-82ab-4415-a88e-d99ededc17d9"
+      }
+    },
+    {
+      "id": 128,
+      "userId": 16,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 3,
+      "order": 3,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:28:19.777Z",
+      "updatedAt": "2024-12-01T00:09:48.765Z",
+      "picks": [
+        {
+          "id": 857,
+          "draftId": 128,
+          "movieId": 1056,
+          "order": 1,
+          "createdAt": "2024-12-01T00:44:41.885Z",
+          "updatedAt": "2024-12-01T00:44:41.885Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/fko8fTfL6BcAqOUh6BZYUjt4SQP.jpg",
+            "id": 1056,
+            "sortTitle": "Emilia Pérez",
+            "title": "Emilia Pérez",
+            "tmdbId": "974950"
+          }
+        },
+        {
+          "id": 858,
+          "draftId": 128,
+          "movieId": 1053,
+          "order": 2,
+          "createdAt": "2024-12-01T00:44:45.806Z",
+          "updatedAt": "2024-12-01T00:44:45.806Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qh8m8Udz0sCa5gy9VaqfHPh0yPM.jpg",
+            "id": 1053,
+            "sortTitle": "Anora",
+            "title": "Anora",
+            "tmdbId": "1064213"
+          }
+        },
+        {
+          "id": 863,
+          "draftId": 128,
+          "movieId": 1046,
+          "order": 3,
+          "createdAt": "2024-12-01T00:46:18.325Z",
+          "updatedAt": "2024-12-01T00:46:18.325Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/e9tyjbF2rugENtBolTtEhHOXgzD.jpg",
+            "id": 1046,
+            "sortTitle": "Blitz",
+            "title": "Blitz",
+            "tmdbId": "896151"
+          }
+        },
+        {
+          "id": 864,
+          "draftId": 128,
+          "movieId": 1060,
+          "order": 4,
+          "createdAt": "2024-12-01T00:46:27.195Z",
+          "updatedAt": "2024-12-01T00:46:27.195Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/s0TPyI8QlMiktEiq3JVhea0zFhM.jpg",
+            "id": 1060,
+            "sortTitle": "Sing Sing",
+            "title": "Sing Sing",
+            "tmdbId": "1155828"
+          }
+        },
+        {
+          "id": 869,
+          "draftId": 128,
+          "movieId": 1066,
+          "order": 5,
+          "createdAt": "2024-12-01T00:47:56.704Z",
+          "updatedAt": "2024-12-01T00:47:56.704Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/6xHKEYfrO1FpVZJJnKy5BhfWVCK.jpg",
+            "id": 1066,
+            "sortTitle": "Maria",
+            "title": "Maria",
+            "tmdbId": "1038263"
+          }
+        },
+        {
+          "id": 870,
+          "draftId": 128,
+          "movieId": 1064,
+          "order": 6,
+          "createdAt": "2024-12-01T00:48:03.057Z",
+          "updatedAt": "2024-12-01T00:48:03.057Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/yaTFjMNh8D78dDHrglivOTv5YOx.jpg",
+            "id": 1064,
+            "sortTitle": "Real Pain",
+            "title": "A Real Pain",
+            "tmdbId": "1013850"
+          }
+        },
+        {
+          "id": 875,
+          "draftId": 128,
+          "movieId": 1062,
+          "order": 7,
+          "createdAt": "2024-12-01T00:49:29.381Z",
+          "updatedAt": "2024-12-01T00:49:29.381Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/wDwJLIJh1zlcu5Op0QQzm0h97z0.jpg",
+            "id": 1062,
+            "sortTitle": "Piano Lesson",
+            "title": "The Piano Lesson",
+            "tmdbId": "804406"
+          }
+        },
+        {
+          "id": 876,
+          "draftId": 128,
+          "movieId": 1076,
+          "order": 8,
+          "createdAt": "2024-12-01T00:49:57.988Z",
+          "updatedAt": "2024-12-01T00:49:57.988Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/H6vke7zGiuLsz4v4RPeReb9rsv.jpg",
+            "id": 1076,
+            "sortTitle": "Challengers",
+            "title": "Challengers",
+            "tmdbId": "937287"
+          }
+        },
+        {
+          "id": 881,
+          "draftId": 128,
+          "movieId": 1071,
+          "order": 9,
+          "createdAt": "2024-12-01T00:51:26.289Z",
+          "updatedAt": "2024-12-01T00:51:26.289Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/5icMlNq4rx6XJ9luWAR1Nr3M9rZ.jpg",
+            "id": 1071,
+            "sortTitle": "Apprentice",
+            "title": "The Apprentice",
+            "tmdbId": "1182047"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Rex Chan",
+        "firstName": "Rex",
+        "lastName": "Chan",
+        "image": "https://example.test/avatar/6eae503fd271491df152c7f205869e4c.png",
+        "uuid": "6e5cb693-9fc0-4260-9641-d31f8a50c948"
+      }
+    }
+  ],
+  "4": [
+    {
+      "id": 130,
+      "userId": 12,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 4,
+      "order": 1,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:28:37.270Z",
+      "updatedAt": "2024-12-01T00:09:48.762Z",
+      "picks": [
+        {
+          "id": 882,
+          "draftId": 130,
+          "movieId": 1054,
+          "order": 1,
+          "createdAt": "2024-12-01T00:56:50.383Z",
+          "updatedAt": "2024-12-01T00:56:50.383Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/vP7Yd6couiAaw9jgMd5cjMRj3hQ.jpg",
+            "id": 1054,
+            "sortTitle": "Brutalist",
+            "title": "The Brutalist",
+            "tmdbId": "549509"
+          }
+        },
+        {
+          "id": 887,
+          "draftId": 130,
+          "movieId": 1055,
+          "order": 2,
+          "createdAt": "2024-12-01T00:57:38.216Z",
+          "updatedAt": "2024-12-01T00:57:38.216Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/2E1x1qcHqGZcYuYi4PzVZjzg8IV.jpg",
+            "id": 1055,
+            "sortTitle": "Wicked",
+            "title": "Wicked",
+            "tmdbId": "402431"
+          }
+        },
+        {
+          "id": 888,
+          "draftId": 130,
+          "movieId": 1059,
+          "order": 3,
+          "createdAt": "2024-12-01T00:57:49.060Z",
+          "updatedAt": "2024-12-01T00:57:49.060Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg",
+            "id": 1059,
+            "sortTitle": "Dune: Part Two",
+            "title": "Dune: Part Two",
+            "tmdbId": "693134"
+          }
+        },
+        {
+          "id": 893,
+          "draftId": 130,
+          "movieId": 1064,
+          "order": 4,
+          "createdAt": "2024-12-01T00:59:26.520Z",
+          "updatedAt": "2024-12-01T00:59:26.520Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/yaTFjMNh8D78dDHrglivOTv5YOx.jpg",
+            "id": 1064,
+            "sortTitle": "Real Pain",
+            "title": "A Real Pain",
+            "tmdbId": "1013850"
+          }
+        },
+        {
+          "id": 894,
+          "draftId": 130,
+          "movieId": 1068,
+          "order": 5,
+          "createdAt": "2024-12-01T00:59:33.259Z",
+          "updatedAt": "2024-12-01T00:59:33.259Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/3kcQOLwYKGPwyjiynFsvP8vHvRn.jpg",
+            "id": 1068,
+            "sortTitle": "September 5",
+            "title": "September 5",
+            "tmdbId": "1211472"
+          }
+        },
+        {
+          "id": 899,
+          "draftId": 130,
+          "movieId": 1062,
+          "order": 6,
+          "createdAt": "2024-12-01T01:00:54.699Z",
+          "updatedAt": "2024-12-01T01:00:54.699Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/wDwJLIJh1zlcu5Op0QQzm0h97z0.jpg",
+            "id": 1062,
+            "sortTitle": "Piano Lesson",
+            "title": "The Piano Lesson",
+            "tmdbId": "804406"
+          }
+        },
+        {
+          "id": 900,
+          "draftId": 130,
+          "movieId": 1069,
+          "order": 7,
+          "createdAt": "2024-12-01T01:01:00.757Z",
+          "updatedAt": "2024-12-01T01:01:00.757Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/5qGIxdEO841C0tdY8vOdLoRVrr0.jpg",
+            "id": 1069,
+            "sortTitle": "Nosferatu",
+            "title": "Nosferatu",
+            "tmdbId": "426063"
+          }
+        },
+        {
+          "id": 905,
+          "draftId": 130,
+          "movieId": 1065,
+          "order": 8,
+          "createdAt": "2024-12-01T01:02:15.065Z",
+          "updatedAt": "2024-12-01T01:02:15.065Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/xe4b2TMciLKA1C0JlhWxb4ENLln.jpg",
+            "id": 1065,
+            "sortTitle": "Queer",
+            "title": "Queer",
+            "tmdbId": "1059128"
+          }
+        },
+        {
+          "id": 906,
+          "draftId": 130,
+          "movieId": 1061,
+          "order": 9,
+          "createdAt": "2024-12-01T01:02:19.067Z",
+          "updatedAt": "2024-12-01T01:02:19.067Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/A8HbTd0FemZyFCh5qvJFpHGiwF8.jpg",
+            "id": 1061,
+            "sortTitle": "Babygirl",
+            "title": "Babygirl",
+            "tmdbId": "1097549"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Iris Reed",
+        "firstName": "Iris",
+        "lastName": "Reed",
+        "image": "https://example.test/avatar/41f686e0bd5bbbc129769b1db80a47b4.png",
+        "uuid": "601de4d6-176d-4d0c-a92a-f89084ef5f33"
+      }
+    },
+    {
+      "id": 129,
+      "userId": 17,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 4,
+      "order": 2,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:28:25.849Z",
+      "updatedAt": "2024-12-01T00:09:48.769Z",
+      "picks": [
+        {
+          "id": 883,
+          "draftId": 129,
+          "movieId": 1052,
+          "order": 1,
+          "createdAt": "2024-12-01T00:57:00.957Z",
+          "updatedAt": "2024-12-01T00:57:00.957Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/m5x8D0bZ3eKqIVWZ5y7TnZ2oTVg.jpg",
+            "id": 1052,
+            "sortTitle": "Conclave",
+            "title": "Conclave",
+            "tmdbId": "974576"
+          }
+        },
+        {
+          "id": 886,
+          "draftId": 129,
+          "movieId": 1053,
+          "order": 2,
+          "createdAt": "2024-12-01T00:57:29.982Z",
+          "updatedAt": "2024-12-01T00:57:29.982Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qh8m8Udz0sCa5gy9VaqfHPh0yPM.jpg",
+            "id": 1053,
+            "sortTitle": "Anora",
+            "title": "Anora",
+            "tmdbId": "1064213"
+          }
+        },
+        {
+          "id": 889,
+          "draftId": 129,
+          "movieId": 1060,
+          "order": 3,
+          "createdAt": "2024-12-01T00:58:24.299Z",
+          "updatedAt": "2024-12-01T00:58:24.299Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/s0TPyI8QlMiktEiq3JVhea0zFhM.jpg",
+            "id": 1060,
+            "sortTitle": "Sing Sing",
+            "title": "Sing Sing",
+            "tmdbId": "1155828"
+          }
+        },
+        {
+          "id": 892,
+          "draftId": 129,
+          "movieId": 1063,
+          "order": 4,
+          "createdAt": "2024-12-01T00:59:14.663Z",
+          "updatedAt": "2024-12-01T00:59:14.663Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/qMibLyArrlBJ87AoqQBeVaFeRXp.jpg",
+            "id": 1063,
+            "sortTitle": "Room Next Door",
+            "title": "The Room Next Door",
+            "tmdbId": "1088514"
+          }
+        },
+        {
+          "id": 895,
+          "draftId": 129,
+          "movieId": 1077,
+          "order": 5,
+          "createdAt": "2024-12-01T00:59:45.433Z",
+          "updatedAt": "2024-12-01T00:59:45.433Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/lqoMzCcZYEFK729d6qzt349fB4o.jpg",
+            "id": 1077,
+            "sortTitle": "Substance",
+            "title": "The Substance",
+            "tmdbId": "933260"
+          }
+        },
+        {
+          "id": 898,
+          "draftId": 129,
+          "movieId": 1072,
+          "order": 6,
+          "createdAt": "2024-12-01T01:00:44.608Z",
+          "updatedAt": "2024-12-01T01:00:44.608Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg",
+            "id": 1072,
+            "sortTitle": "Wild Robot",
+            "title": "The Wild Robot",
+            "tmdbId": "1184918"
+          }
+        },
+        {
+          "id": 901,
+          "draftId": 129,
+          "movieId": 1083,
+          "order": 7,
+          "createdAt": "2024-12-01T01:01:20.983Z",
+          "updatedAt": "2024-12-01T01:01:20.983Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/lZZKTEvo92u1J5pm7QoEA5yN3du.jpg",
+            "id": 1083,
+            "sortTitle": "Different Man",
+            "title": "A Different Man",
+            "tmdbId": "989662"
+          }
+        },
+        {
+          "id": 904,
+          "draftId": 129,
+          "movieId": 1074,
+          "order": 8,
+          "createdAt": "2024-12-01T01:02:03.730Z",
+          "updatedAt": "2024-12-01T01:02:03.730Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/d6chGhHP6vzo2VJPivLvZuwnq7j.jpg",
+            "id": 1074,
+            "sortTitle": "Seed of the Sacred Fig",
+            "title": "The Seed of the Sacred Fig",
+            "tmdbId": "1278263"
+          }
+        },
+        {
+          "id": 907,
+          "draftId": 129,
+          "movieId": 1050,
+          "order": 9,
+          "createdAt": "2024-12-01T01:02:30.127Z",
+          "updatedAt": "2024-12-01T01:02:30.127Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg",
+            "id": 1050,
+            "sortTitle": "Inside Out 2",
+            "title": "Inside Out 2",
+            "tmdbId": "1022789"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Juno Reed",
+        "firstName": "Juno",
+        "lastName": "Reed",
+        "image": "https://example.test/avatar/fead1432670950f5b36ae2d9ef706c14.png",
+        "uuid": "90c09ece-a3cc-4196-b1bb-31fbfd37a934"
+      }
+    },
+    {
+      "id": 131,
+      "userId": 14,
+      "leagueId": 1,
+      "year": 2025,
+      "group": 4,
+      "order": 3,
+      "dummy": null,
+      "dummyName": null,
+      "createdAt": "2024-11-30T22:28:47.277Z",
+      "updatedAt": "2024-12-01T00:09:48.767Z",
+      "picks": [
+        {
+          "id": 884,
+          "draftId": 131,
+          "movieId": 1056,
+          "order": 1,
+          "createdAt": "2024-12-01T00:57:13.738Z",
+          "updatedAt": "2024-12-01T00:57:13.738Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/fko8fTfL6BcAqOUh6BZYUjt4SQP.jpg",
+            "id": 1056,
+            "sortTitle": "Emilia Pérez",
+            "title": "Emilia Pérez",
+            "tmdbId": "974950"
+          }
+        },
+        {
+          "id": 885,
+          "draftId": 131,
+          "movieId": 1057,
+          "order": 2,
+          "createdAt": "2024-12-01T00:57:18.248Z",
+          "updatedAt": "2024-12-01T00:57:18.248Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/2cxhvwyEwRlysAmRH4iodkvo0z5.jpg",
+            "id": 1057,
+            "sortTitle": "Gladiator II",
+            "title": "Gladiator II",
+            "tmdbId": "558449"
+          }
+        },
+        {
+          "id": 890,
+          "draftId": 131,
+          "movieId": 1046,
+          "order": 3,
+          "createdAt": "2024-12-01T00:58:37.725Z",
+          "updatedAt": "2024-12-01T00:58:37.725Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/e9tyjbF2rugENtBolTtEhHOXgzD.jpg",
+            "id": 1046,
+            "sortTitle": "Blitz",
+            "title": "Blitz",
+            "tmdbId": "896151"
+          }
+        },
+        {
+          "id": 891,
+          "draftId": 131,
+          "movieId": 1058,
+          "order": 4,
+          "createdAt": "2024-12-01T00:59:04.990Z",
+          "updatedAt": "2024-12-01T00:59:04.990Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/llWl3GtNoXosbvYboelmoT459NM.jpg",
+            "id": 1058,
+            "sortTitle": "Complete Unknown",
+            "title": "A Complete Unknown",
+            "tmdbId": "661539"
+          }
+        },
+        {
+          "id": 896,
+          "draftId": 131,
+          "movieId": 1066,
+          "order": 5,
+          "createdAt": "2024-12-01T00:59:55.262Z",
+          "updatedAt": "2024-12-01T00:59:55.262Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/6xHKEYfrO1FpVZJJnKy5BhfWVCK.jpg",
+            "id": 1066,
+            "sortTitle": "Maria",
+            "title": "Maria",
+            "tmdbId": "1038263"
+          }
+        },
+        {
+          "id": 897,
+          "draftId": 131,
+          "movieId": 1070,
+          "order": 6,
+          "createdAt": "2024-12-01T01:00:30.261Z",
+          "updatedAt": "2024-12-01T01:00:30.261Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/lu2vmmtStmTNMmSZl2LgrrQpLZo.jpg",
+            "id": 1070,
+            "sortTitle": "Nickel Boys",
+            "title": "Nickel Boys",
+            "tmdbId": "1028196"
+          }
+        },
+        {
+          "id": 902,
+          "draftId": 131,
+          "movieId": 1073,
+          "order": 7,
+          "createdAt": "2024-12-01T01:01:40.152Z",
+          "updatedAt": "2024-12-01T01:01:40.152Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/oCf5O6uxooTvRwKVnLHwGqZUifq.jpg",
+            "id": 1073,
+            "sortTitle": "Saturday Night",
+            "title": "Saturday Night",
+            "tmdbId": "1120911"
+          }
+        },
+        {
+          "id": 903,
+          "draftId": 131,
+          "movieId": 1076,
+          "order": 8,
+          "createdAt": "2024-12-01T01:01:47.805Z",
+          "updatedAt": "2024-12-01T01:01:47.805Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/H6vke7zGiuLsz4v4RPeReb9rsv.jpg",
+            "id": 1076,
+            "sortTitle": "Challengers",
+            "title": "Challengers",
+            "tmdbId": "937287"
+          }
+        },
+        {
+          "id": 908,
+          "draftId": 131,
+          "movieId": 1078,
+          "order": 9,
+          "createdAt": "2024-12-01T01:03:10.571Z",
+          "updatedAt": "2024-12-01T01:03:10.571Z",
+          "movie": {
+            "poster": "https://image.tmdb.org/t/p/w780/eEj1TGrGc4IQ8bscFC17Ggdg6ft.jpg",
+            "id": 1078,
+            "sortTitle": "Hard Truths",
+            "title": "Hard Truths",
+            "tmdbId": "1013154"
+          }
+        }
+      ],
+      "user": {
+        "displayName": "Opal Reed",
+        "firstName": "Opal",
+        "lastName": "Reed",
+        "image": "https://example.test/avatar/268e299e8ca7c96fb078407b57659f24.png",
+        "uuid": "52c7711d-2c1c-4565-994c-f3e6b37ed83e"
+      }
+    }
+  ]
+}

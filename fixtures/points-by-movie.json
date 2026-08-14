@@ -1,0 +1,62 @@
+{
+  "avgDraftPos": 1,
+  "events": [
+    {
+      "abbreviation": "oscars",
+      "name": "Academy of Motion Picture Arts and Sciences",
+      "total": 170
+    },
+    {
+      "abbreviation": "ace",
+      "name": "American Cinema Editors",
+      "total": 5
+    },
+    {
+      "abbreviation": "afi",
+      "name": "American Film Institute",
+      "total": 5
+    },
+    {
+      "abbreviation": "asc",
+      "name": "American Society of Cinematographers",
+      "total": 5
+    },
+    {
+      "abbreviation": "adg",
+      "name": "Art Directors Guild",
+      "total": 5
+    },
+    {
+      "abbreviation": "bafta",
+      "name": "British Academy of Film and Television Arts",
+      "total": 55
+    },
+    {
+      "abbreviation": "dga",
+      "name": "Directors Guild of America",
+      "total": 5
+    },
+    {
+      "abbreviation": "gg",
+      "name": "Golden Globes",
+      "total": 65
+    },
+    {
+      "abbreviation": "pga",
+      "name": "Producers Guild of America",
+      "total": 5
+    },
+    {
+      "abbreviation": "sag",
+      "name": "Screen Actors' Guild",
+      "total": 10
+    },
+    {
+      "abbreviation": "wga",
+      "name": "Writers Guild of America",
+      "total": 5
+    }
+  ],
+  "total": 335,
+  "year": "2017"
+}

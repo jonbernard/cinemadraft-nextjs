@@ -1,0 +1,1132 @@
+{
+  "movies": [
+    {
+      "id": 4157,
+      "title": "Emilia Pérez",
+      "sortTitle": "Emilia Pérez",
+      "movieId": 1056,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 42
+    },
+    {
+      "id": 4151,
+      "title": "Conclave",
+      "sortTitle": "Conclave",
+      "movieId": 1052,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 34
+    },
+    {
+      "id": 4164,
+      "title": "Wicked",
+      "sortTitle": "Wicked",
+      "movieId": 1055,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "watchlistId": 3041,
+      "count": 32
+    },
+    {
+      "id": 4150,
+      "title": "The Brutalist",
+      "sortTitle": "Brutalist",
+      "movieId": 1054,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 32
+    },
+    {
+      "id": 4155,
+      "title": "A Complete Unknown",
+      "sortTitle": "Complete Unknown",
+      "movieId": 1058,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 27
+    },
+    {
+      "id": 4135,
+      "title": "Anora",
+      "sortTitle": "Anora",
+      "movieId": 1053,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 26
+    },
+    {
+      "id": 4162,
+      "title": "Dune: Part Two",
+      "sortTitle": "Dune: Part Two",
+      "movieId": 1059,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 21
+    },
+    {
+      "id": 4108,
+      "title": "The Substance",
+      "sortTitle": "Substance",
+      "movieId": 1077,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 19
+    },
+    {
+      "id": 4159,
+      "title": "The Wild Robot",
+      "sortTitle": "Wild Robot",
+      "movieId": 1072,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 13
+    },
+    {
+      "id": 4087,
+      "title": "A Real Pain",
+      "sortTitle": "Real Pain",
+      "movieId": 1064,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 13
+    },
+    {
+      "id": 4153,
+      "title": "Nosferatu",
+      "sortTitle": "Nosferatu",
+      "movieId": 1069,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 11
+    },
+    {
+      "id": 4147,
+      "title": "Sing Sing",
+      "sortTitle": "Sing Sing",
+      "movieId": 1060,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 9
+    },
+    {
+      "id": 4118,
+      "title": "Wallace & Gromit: Vengeance Most Fowl",
+      "sortTitle": "Wallace & Gromit: Vengeance Most Fowl",
+      "movieId": 1122,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 8
+    },
+    {
+      "id": 4144,
+      "title": "Flow",
+      "sortTitle": "Flow",
+      "movieId": 1120,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 8
+    },
+    {
+      "id": 4074,
+      "title": "The Apprentice",
+      "sortTitle": "Apprentice",
+      "movieId": 1071,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Jeremy Strong",
+      "count": 8
+    },
+    {
+      "id": 4097,
+      "title": "Gladiator II",
+      "sortTitle": "Gladiator II",
+      "movieId": 1057,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 8
+    },
+    {
+      "id": 4083,
+      "title": "Nickel Boys",
+      "sortTitle": "Nickel Boys",
+      "movieId": 1070,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 7
+    },
+    {
+      "id": 4040,
+      "title": "Joker: Folie à Deux",
+      "sortTitle": "Joker: Folie à Deux",
+      "movieId": 1051,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 7
+    },
+    {
+      "id": 4116,
+      "title": "Inside Out 2",
+      "sortTitle": "Inside Out 2",
+      "movieId": 1050,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 7
+    },
+    {
+      "id": 4042,
+      "title": "Madame Web",
+      "sortTitle": "Madame Web",
+      "movieId": 1449,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 6
+    },
+    {
+      "id": 4030,
+      "title": "Borderlands",
+      "sortTitle": "Borderlands",
+      "movieId": 1448,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 6
+    },
+    {
+      "id": 3900,
+      "title": "Kneecap",
+      "sortTitle": "Kneecap",
+      "movieId": 1416,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 6
+    },
+    {
+      "id": 3931,
+      "title": "Challengers",
+      "sortTitle": "Challengers",
+      "movieId": 1076,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 6
+    },
+    {
+      "id": 4140,
+      "title": "I’m Still Here",
+      "sortTitle": "I’m Still Here",
+      "movieId": 1067,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 6
+    },
+    {
+      "id": 4043,
+      "title": "Megalopolis",
+      "sortTitle": "Megalopolis",
+      "movieId": 1048,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 6
+    },
+    {
+      "id": 4044,
+      "title": "Reagan",
+      "sortTitle": "Reagan",
+      "movieId": 1450,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 5
+    },
+    {
+      "id": 3828,
+      "title": "The Last Showgirl",
+      "sortTitle": "Last Showgirl",
+      "movieId": 1127,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Jamie Lee Curtis",
+      "count": 5
+    },
+    {
+      "id": 4031,
+      "title": "Unfrosted",
+      "sortTitle": "Unfrosted",
+      "movieId": 1453,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 4
+    },
+    {
+      "id": 3848,
+      "title": "All We Imagine as Light",
+      "sortTitle": "All We Imagine as Light",
+      "movieId": 1123,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 4
+    },
+    {
+      "id": 3981,
+      "title": "Moana 2",
+      "sortTitle": "Moana 2",
+      "movieId": 1084,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "watchlistId": 3040,
+      "count": 4
+    },
+    {
+      "id": 4041,
+      "title": "Kraven the Hunter",
+      "sortTitle": "Kraven the Hunter",
+      "movieId": 1458,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 4127,
+      "title": "Porcelain War",
+      "sortTitle": "Porcelain War",
+      "movieId": 1382,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 3962,
+      "title": "Super/Man: The Christopher Reeve Story",
+      "sortTitle": "Super/Man: The Christopher Reeve Story",
+      "movieId": 1352,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 3974,
+      "title": "Civil War",
+      "sortTitle": "Civil War",
+      "movieId": 1190,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 4160,
+      "title": "Alien: Romulus",
+      "sortTitle": "Alien: Romulus",
+      "movieId": 1131,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 4161,
+      "title": "Better Man",
+      "sortTitle": "Better Man",
+      "movieId": 1130,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 4143,
+      "title": "The Seed of the Sacred Fig",
+      "sortTitle": "Seed of the Sacred Fig",
+      "movieId": 1074,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 4088,
+      "title": "September 5",
+      "sortTitle": "September 5",
+      "movieId": 1068,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 4123,
+      "title": "Maria",
+      "sortTitle": "Maria",
+      "movieId": 1066,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 3911,
+      "title": "Blitz",
+      "sortTitle": "Blitz",
+      "movieId": 1046,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 3
+    },
+    {
+      "id": 4035,
+      "title": "The Crow",
+      "sortTitle": "Crow",
+      "movieId": 1460,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4019,
+      "title": "Argylle",
+      "sortTitle": "Argylle",
+      "movieId": 1454,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4093,
+      "title": "Wander to Wonder",
+      "sortTitle": "Wander to Wonder",
+      "movieId": 1433,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4163,
+      "title": "Kingdom of the Planet of the Apes",
+      "sortTitle": "Kingdom of the Planet of the Apes",
+      "movieId": 1425,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4126,
+      "title": "No Other Land",
+      "sortTitle": "No Other Land",
+      "movieId": 1423,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4125,
+      "title": "Black Box Diaries",
+      "sortTitle": "Black Box Diaries",
+      "movieId": 1422,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3818,
+      "title": "The Outrun",
+      "sortTitle": "Outrun",
+      "movieId": 1417,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Saoirse Ronan",
+      "count": 2
+    },
+    {
+      "id": 3933,
+      "title": "My Old Ass",
+      "sortTitle": "My Old Ass",
+      "movieId": 1386,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4128,
+      "title": "Soundtrack to a Coup d'État",
+      "sortTitle": "Soundtrack to a Coup d'État",
+      "movieId": 1384,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4129,
+      "title": "Sugarcane",
+      "sortTitle": "Sugarcane",
+      "movieId": 1383,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3939,
+      "title": "Jim Henson Idea Man",
+      "sortTitle": "Jim Henson Idea Man",
+      "movieId": 1350,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3972,
+      "title": "Furiosa: A Mad Max Saga",
+      "sortTitle": "Furiosa: A Mad Max Saga",
+      "movieId": 1185,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3970,
+      "title": "Beetlejuice Beetlejuice",
+      "sortTitle": "Beetlejuice Beetlejuice",
+      "movieId": 1132,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3823,
+      "title": "Heretic",
+      "sortTitle": "Heretic",
+      "movieId": 1129,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Hugh Grant",
+      "count": 2
+    },
+    {
+      "id": 3809,
+      "title": "Lee",
+      "sortTitle": "Lee",
+      "movieId": 1126,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4141,
+      "title": "The Girl with the Needle",
+      "sortTitle": "Girl with the Needle",
+      "movieId": 1124,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 4117,
+      "title": "Memoir of a Snail",
+      "sortTitle": "Memoir of a Snail",
+      "movieId": 1121,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3936,
+      "title": "Hit Man",
+      "sortTitle": "Hit Man",
+      "movieId": 1118,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3760,
+      "title": "Deadpool & Wolverine",
+      "sortTitle": "Deadpool & Wolverine",
+      "movieId": 1085,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "watchlistId": 3042,
+      "count": 2
+    },
+    {
+      "id": 4105,
+      "title": "A Different Man",
+      "sortTitle": "Different Man",
+      "movieId": 1083,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3978,
+      "title": "Twisters",
+      "sortTitle": "Twisters",
+      "movieId": 1082,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3857,
+      "title": "Will & Harper",
+      "sortTitle": "Will & Harper",
+      "movieId": 1081,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3815,
+      "title": "Hard Truths",
+      "sortTitle": "Hard Truths",
+      "movieId": 1078,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Marianne Jean-Baptiste",
+      "count": 2
+    },
+    {
+      "id": 3854,
+      "title": "Daughters",
+      "sortTitle": "Daughters",
+      "movieId": 1075,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3967,
+      "title": "Saturday Night",
+      "sortTitle": "Saturday Night",
+      "movieId": 1073,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 2
+    },
+    {
+      "id": 3734,
+      "title": "Queer",
+      "sortTitle": "Queer",
+      "movieId": 1065,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Daniel Craig",
+      "count": 2
+    },
+    {
+      "id": 4149,
+      "title": "Elton John: Never Too Late",
+      "sortTitle": "Elton John: Never Too Late",
+      "movieId": 1478,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4146,
+      "title": "The Six Triple Eight",
+      "sortTitle": "Six Triple Eight",
+      "movieId": 1477,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4134,
+      "title": "The Only Girl in the Orchestra",
+      "sortTitle": "Only Girl in the Orchestra",
+      "movieId": 1476,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4133,
+      "title": "Instruments of a Beating Heart",
+      "sortTitle": "Instruments of a Beating Heart",
+      "movieId": 1475,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4132,
+      "title": "Incident",
+      "sortTitle": "Incident",
+      "movieId": 1474,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4131,
+      "title": "I Am Ready, Warden",
+      "sortTitle": "I Am Ready, Warden",
+      "movieId": 1473,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4130,
+      "title": "Death by Numbers",
+      "sortTitle": "Death by Numbers",
+      "movieId": 1472,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4104,
+      "title": "The Man Who Could Not Remain Silent",
+      "sortTitle": "Man Who Could Not Remain Silent",
+      "movieId": 1471,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4103,
+      "title": "The Last Ranger",
+      "sortTitle": "Last Ranger",
+      "movieId": 1470,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4102,
+      "title": "I'm Not a Robot",
+      "sortTitle": "I'm Not a Robot",
+      "movieId": 1469,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4101,
+      "title": "Anuja",
+      "sortTitle": "Anuja",
+      "movieId": 1468,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4100,
+      "title": "A Lien",
+      "sortTitle": "Lien",
+      "movieId": 1467,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4094,
+      "title": "Yuck!",
+      "sortTitle": "Yuck!",
+      "movieId": 1466,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4092,
+      "title": "Magic Candies",
+      "sortTitle": "Magic Candies",
+      "movieId": 1465,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4091,
+      "title": "In the Shadow of the Cypress",
+      "sortTitle": "In the Shadow of the Cypress",
+      "movieId": 1464,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4090,
+      "title": "Beautiful Men",
+      "sortTitle": "Beautiful Men",
+      "movieId": 1463,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4039,
+      "title": "Rebel Moon - Part Two: The Scargiver",
+      "sortTitle": "Rebel Moon - Part Two: The Scargiver",
+      "movieId": 1462,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4038,
+      "title": "Mufasa: The Lion King",
+      "sortTitle": "Mufasa: The Lion King",
+      "movieId": 1461,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4021,
+      "title": "Remembering Reagan at His Ranch",
+      "sortTitle": "Remembering Reagan at His Ranch",
+      "movieId": 1459,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4018,
+      "title": "Strangers",
+      "sortTitle": "Strangers",
+      "movieId": 1457,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4017,
+      "title": "Shadow Land",
+      "sortTitle": "Shadow Land",
+      "movieId": 1456,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4010,
+      "title": "Atlas",
+      "sortTitle": "Atlas",
+      "movieId": 1455,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4002,
+      "title": "Harold and the Purple Crayon",
+      "sortTitle": "Harold and the Purple Crayon",
+      "movieId": 1452,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 4001,
+      "title": "Dear Santa",
+      "sortTitle": "Dear Santa",
+      "movieId": 1451,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3963,
+      "title": "We Will Dance Again",
+      "sortTitle": "We Will Dance Again",
+      "movieId": 1440,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3960,
+      "title": "Mountain Queen: The Summits of Lhakpa Sherpa",
+      "sortTitle": "Mountain Queen: The Summits of Lhakpa Sherpa",
+      "movieId": 1439,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3959,
+      "title": "Mediha",
+      "sortTitle": "Mediha",
+      "movieId": 1438,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3958,
+      "title": "Gaucho Gaucho",
+      "sortTitle": "Gaucho Gaucho",
+      "movieId": 1437,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3942,
+      "title": "War Game",
+      "sortTitle": "War Game",
+      "movieId": 1436,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3941,
+      "title": "Martha",
+      "sortTitle": "Martha",
+      "movieId": 1435,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3940,
+      "title": "Kiss the Future",
+      "sortTitle": "Kiss the Future",
+      "movieId": 1434,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3927,
+      "title": "Mog's Christmas",
+      "sortTitle": "Mog's Christmas",
+      "movieId": 1432,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3926,
+      "title": "Adiós",
+      "sortTitle": "Adiós",
+      "movieId": 1431,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3925,
+      "title": "Stomach Bug",
+      "sortTitle": "Stomach Bug",
+      "movieId": 1430,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3924,
+      "title": "Rock Paper Scissors",
+      "sortTitle": "Rock Paper Scissors",
+      "movieId": 1429,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3923,
+      "title": "Milk",
+      "sortTitle": "Milk",
+      "movieId": 1428,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3922,
+      "title": "Marion",
+      "sortTitle": "Marion",
+      "movieId": 1427,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3921,
+      "title": "The Flowers Stand, Silently Witnessing",
+      "sortTitle": "Flowers Stand, Silently Witnessing",
+      "movieId": 1426,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3863,
+      "title": "Kensuke's Kingdom",
+      "sortTitle": "Kensuke's Kingdom",
+      "movieId": 1424,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3847,
+      "title": "Sister Midnight",
+      "sortTitle": "Sister Midnight",
+      "movieId": 1421,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3846,
+      "title": "Santosh",
+      "sortTitle": "Santosh",
+      "movieId": 1420,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3845,
+      "title": "Monkey Man",
+      "sortTitle": "Monkey Man",
+      "movieId": 1419,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3843,
+      "title": "Hoard",
+      "sortTitle": "Hoard",
+      "movieId": 1418,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3803,
+      "title": "Bird",
+      "sortTitle": "Bird",
+      "movieId": 1415,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3779,
+      "title": "Dìdi (弟弟)",
+      "sortTitle": "Dìdi (弟弟)",
+      "movieId": 1388,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Sean Wang",
+      "count": 1
+    },
+    {
+      "id": 3778,
+      "title": "Armand",
+      "sortTitle": "Armand",
+      "movieId": 1387,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Halfdan Ullmann Tøndel",
+      "count": 1
+    },
+    {
+      "id": 3768,
+      "title": "Hollywoodgate",
+      "sortTitle": "Hollywoodgate",
+      "movieId": 1385,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Ibrahim Nash'at",
+      "count": 1
+    },
+    {
+      "id": 3706,
+      "title": "Her Name Was Moviola",
+      "sortTitle": "Her Name Was Moviola",
+      "movieId": 1351,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3704,
+      "title": "Beatles '64",
+      "sortTitle": "Beatles '64",
+      "movieId": 1349,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3762,
+      "title": "The Fall Guy",
+      "sortTitle": "Fall Guy",
+      "movieId": 1217,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3810,
+      "title": "Love Lies Bleeding",
+      "sortTitle": "Love Lies Bleeding",
+      "movieId": 1184,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3613,
+      "title": "Nightbitch",
+      "sortTitle": "Nightbitch",
+      "movieId": 1128,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Amy Adams",
+      "count": 1
+    },
+    {
+      "id": 3600,
+      "title": "Vermiglio",
+      "sortTitle": "Vermiglio",
+      "movieId": 1125,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "count": 1
+    },
+    {
+      "id": 3606,
+      "title": "The Room Next Door",
+      "sortTitle": "Room Next Door",
+      "movieId": 1063,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Tilda Swinton",
+      "count": 1
+    },
+    {
+      "id": 3752,
+      "title": "The Piano Lesson",
+      "sortTitle": "Piano Lesson",
+      "movieId": 1062,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Danielle Deadwyler",
+      "count": 1
+    },
+    {
+      "id": 3604,
+      "title": "Babygirl",
+      "sortTitle": "Babygirl",
+      "movieId": 1061,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Nicole Kidman",
+      "count": 1
+    },
+    {
+      "id": 3623,
+      "title": "Kinds of Kindness",
+      "sortTitle": "Kinds of Kindness",
+      "movieId": 1049,
+      "createdAt": "08/14/2026",
+      "releaseDate": "08/14/2026",
+      "detailName": "Jesse Plemons",
+      "count": 1
+    }
+  ],
+  "totals": {
+    "count": 3,
+    "total": 123
+  }
+}

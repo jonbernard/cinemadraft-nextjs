@@ -1,0 +1,164 @@
+[
+  {
+    "id": 1,
+    "fbId": "-KWpGmesi3XNxof_FOlC",
+    "draftingStatus": "complete",
+    "name": "Racso award",
+    "activeYear": 2026,
+    "uuid": "692072c7-c2f4-4483-88ca-0a90123b8cb5",
+    "type": "snake",
+    "createdAt": "2022-01-21T15:43:16.000Z",
+    "updatedAt": "2025-12-01T01:33:49.346Z",
+    "isOwner": true,
+    "selections": [
+      {
+        "id": 305,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2026,
+        "group": 2,
+        "order": 2,
+        "dummy": null,
+        "dummyName": null,
+        "createdAt": "2025-12-01T00:17:04.873Z",
+        "updatedAt": "2025-12-01T00:19:41.941Z"
+      },
+      {
+        "id": 124,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2025,
+        "group": 1,
+        "order": 3,
+        "dummy": null,
+        "dummyName": null,
+        "createdAt": "2024-11-30T22:25:37.750Z",
+        "updatedAt": "2024-12-01T00:09:48.656Z"
+      },
+      {
+        "id": 110,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2024,
+        "group": 1,
+        "order": 1,
+        "dummy": null,
+        "dummyName": null,
+        "createdAt": "2023-12-02T01:24:44.169Z",
+        "updatedAt": "2023-12-04T00:47:35.831Z"
+      },
+      {
+        "id": 9,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2022,
+        "group": 3,
+        "order": 1,
+        "dummy": false,
+        "dummyName": null,
+        "createdAt": "2021-11-01T04:00:00.000Z",
+        "updatedAt": "2022-01-21T15:43:16.000Z"
+      },
+      {
+        "id": 85,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2021,
+        "group": 4,
+        "order": 4,
+        "dummy": false,
+        "dummyName": null,
+        "createdAt": "2020-11-01T04:00:00.000Z",
+        "updatedAt": "2022-01-21T15:43:16.000Z"
+      },
+      {
+        "id": 69,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2020,
+        "group": 4,
+        "order": 2,
+        "dummy": false,
+        "dummyName": null,
+        "createdAt": "2019-11-01T04:00:00.000Z",
+        "updatedAt": "2022-01-21T15:43:16.000Z"
+      },
+      {
+        "id": 53,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2019,
+        "group": 2,
+        "order": 2,
+        "dummy": false,
+        "dummyName": null,
+        "createdAt": "2018-11-01T04:00:00.000Z",
+        "updatedAt": "2022-01-21T15:43:16.000Z"
+      },
+      {
+        "id": 49,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2018,
+        "group": 1,
+        "order": 3,
+        "dummy": false,
+        "dummyName": null,
+        "createdAt": "2017-11-01T04:00:00.000Z",
+        "updatedAt": "2022-01-21T15:43:16.000Z"
+      },
+      {
+        "id": 30,
+        "userId": 3,
+        "leagueId": 1,
+        "year": 2017,
+        "group": 4,
+        "order": 3,
+        "dummy": false,
+        "dummyName": null,
+        "createdAt": "2016-11-01T04:00:00.000Z",
+        "updatedAt": "2022-01-21T15:43:16.000Z"
+      }
+    ],
+    "years": [
+      2026,
+      2025,
+      2024,
+      2022,
+      2021,
+      2020,
+      2019,
+      2018,
+      2017
+    ]
+  },
+  {
+    "id": 70,
+    "fbId": null,
+    "draftingStatus": "active",
+    "name": "JB Draft Test",
+    "activeYear": 2026,
+    "uuid": "56868b8f-ab5b-4f47-8a1d-5d2eec3a0427",
+    "type": "snake",
+    "createdAt": "2025-11-30T17:38:32.935Z",
+    "updatedAt": "2025-11-30T17:39:48.114Z",
+    "isOwner": true,
+    "selections": [
+      {
+        "id": 256,
+        "userId": 3,
+        "leagueId": 70,
+        "year": 2026,
+        "group": 1,
+        "order": 1,
+        "dummy": null,
+        "dummyName": null,
+        "createdAt": "2025-11-30T17:38:32.956Z",
+        "updatedAt": "2025-11-30T17:39:18.224Z"
+      }
+    ],
+    "years": [
+      2026
+    ]
+  }
+]

@@ -1,0 +1,102 @@
+[
+  {
+    "id": 2309,
+    "message": "Award winner points are in for the 2026 American Society of Cinematographers",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/asc",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-03-15T21:04:27.247Z",
+    "updatedAt": "2026-03-15T21:04:41.825Z"
+  },
+  {
+    "id": 2272,
+    "message": "Award winner points are in for the 2026 Writers Guild of America",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/wga",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-03-15T21:02:45.438Z",
+    "updatedAt": "2026-03-15T21:04:39.844Z"
+  },
+  {
+    "id": 2214,
+    "message": "Award winner points are in for the 2026 American Cinema Editors",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/ace",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-03-06T20:48:47.989Z",
+    "updatedAt": "2026-03-06T20:48:52.422Z"
+  },
+  {
+    "id": 2177,
+    "message": "Award winner points are in for the 2026 Art Directors Guild",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/adg",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-03-06T20:46:59.758Z",
+    "updatedAt": "2026-03-06T20:48:52.422Z"
+  },
+  {
+    "id": 2140,
+    "message": "Award winner points are in for the 2026 Producers Guild of America",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/pga",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-03-06T20:44:37.423Z",
+    "updatedAt": "2026-03-06T20:48:52.422Z"
+  },
+  {
+    "id": 2103,
+    "message": "Award winner points are in for the 2026 Screen Actors' Guild",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/sag",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-03-06T20:43:21.147Z",
+    "updatedAt": "2026-03-06T20:48:52.422Z"
+  },
+  {
+    "id": 2042,
+    "message": "Award winner points are in for the 2026 British Academy of Film and Television Arts",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/bafta",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-02-27T02:49:13.140Z",
+    "updatedAt": "2026-03-06T20:48:52.422Z"
+  },
+  {
+    "id": 2005,
+    "message": "Award winner points are in for the 2026 Directors Guild of America",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/dga",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-02-27T02:41:25.810Z",
+    "updatedAt": "2026-03-06T20:48:52.422Z"
+  },
+  {
+    "id": 1942,
+    "message": "Points for nominations are in for the 2026 British Academy of Film and Television Arts",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/bafta",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-01-30T18:16:01.327Z",
+    "updatedAt": "2026-03-06T20:48:52.422Z"
+  },
+  {
+    "id": 1880,
+    "message": "Points for nominations are in for the 2026 Writers Guild of America",
+    "icon": "healthicons:award-trophy-outline",
+    "link": "/award-shows/wga",
+    "userId": 3,
+    "read": true,
+    "createdAt": "2026-01-30T17:49:10.328Z",
+    "updatedAt": "2026-03-06T20:48:52.422Z"
+  }
+]

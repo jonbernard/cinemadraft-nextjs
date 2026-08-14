@@ -1,0 +1,70 @@
+{
+  "page": 1,
+  "results": [
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/6TSxLmwT7j1ugtKi8NyMmdzWAGj.jpg",
+      "genre_ids": [
+        12,
+        16,
+        35,
+        10751
+      ],
+      "id": 1185806,
+      "title": "PAW Patrol: The Dino Movie",
+      "original_language": "en",
+      "original_title": "PAW Patrol: The Dino Movie",
+      "overview": "The Paw Patrol lands on a mysterious dinosaur island after a storm, where they meet Rex, a stranded pup. When Humdinger's reckless mining triggers a volcano, the team faces their biggest rescue mission yet to save the island.",
+      "popularity": 32.8773,
+      "poster_path": "https://image.tmdb.org/t/p/w780/qnin56Syy5rbG7KCaxWY7SPuy6p.jpg",
+      "release_date": "2026-08-14",
+      "softcore": null,
+      "video": null,
+      "vote_average": 7.4,
+      "vote_count": 24
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/b9q9VmbXDvJmTziRqkwdEmFdwhr.jpg",
+      "genre_ids": [
+        878,
+        9648,
+        53
+      ],
+      "id": 1101383,
+      "title": "The End of Oak Street",
+      "original_language": "en",
+      "original_title": "The End of Oak Street",
+      "overview": "After a mysterious cosmic event rips Oak Street from suburbia and transports their neighborhood to someplace unknown, the Platt family soon discovers that their very survival depends on them sticking together as they navigate their now unrecognizable surroundings.",
+      "popularity": 133.9196,
+      "poster_path": "https://image.tmdb.org/t/p/w780/fYXqpgPmHMphSF2W30GbTeJVIa5.jpg",
+      "release_date": "2026-08-14",
+      "softcore": null,
+      "video": null,
+      "vote_average": 6.98,
+      "vote_count": 75
+    },
+    {
+      "adult": null,
+      "backdrop_path": "https://image.tmdb.org/t/p/w1280/bOqTOVkHAL4z87P0Opf6q5mIeRy.jpg",
+      "genre_ids": [
+        18,
+        35
+      ],
+      "id": 1329016,
+      "title": "Tony",
+      "original_language": "en",
+      "original_title": "Tony",
+      "overview": "A 19-year-old Anthony Bourdain travels to Provincetown and stumbles into the chaotic world of a restaurant kitchen, setting off a summer that will shape the course of his life.",
+      "popularity": 19.0502,
+      "poster_path": "https://image.tmdb.org/t/p/w780/3WN0JWwRI7oGH7Ni2R6poVWej05.jpg",
+      "release_date": "2026-08-21",
+      "softcore": null,
+      "video": null,
+      "vote_average": 7.6,
+      "vote_count": 11
+    }
+  ],
+  "total_pages": 21,
+  "total_results": 409
+}
