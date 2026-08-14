@@ -51,3 +51,7 @@ next-env.d.ts
 
 # Prisma generated client — rebuilt from the schema by postinstall
 /generated
+
+# Playwright failure artifacts
+/test-results/
+/playwright-report/

@@ -1,4 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import { config as loadEnv } from 'dotenv';
+
+// Playwright does not read .env files the way Next does. Without this the
+// Clerk keys are absent in the test process and the auth specs skip
+// themselves — a green run that proved nothing.
+loadEnv({ path: '.env.local', quiet: true });
+loadEnv({ path: '.env', quiet: true });
 
 export default defineConfig({
   testDir: './e2e',
