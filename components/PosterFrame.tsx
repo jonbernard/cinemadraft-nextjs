@@ -55,10 +55,15 @@ export function PosterFrame({
 
   return (
     <figure className={cn('flex flex-col gap-2', className)}>
+      {/* The hairline border is required by §6.3 and is not decoration. The
+          dark theme is a room that contains a poster on its own; warm paper is
+          not, and without an edge the frame dissolves into the ground. It is a
+          token, so it swaps with the theme and no branch is needed (D15) — in
+          dark it reads as a barely-there seam, which is the intent. */}
       <div
         className={cn(
-          'bg-bg-raised relative aspect-[2/3] overflow-hidden',
-          status === 'nominated' && 'border-accent-fill border-t-2',
+          'bg-bg-raised border-border-rule relative aspect-[2/3] overflow-hidden border',
+          status === 'nominated' && 'border-t-accent-fill border-t-2',
         )}
       >
         {posterUrl ? (

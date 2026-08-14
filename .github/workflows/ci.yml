@@ -130,6 +130,25 @@ jobs:
           fi
           echo "db client boundary intact"
 
+      - name: Components carry no raw hex colours
+        run: |
+          set -uo pipefail
+          # Colour lives in theme/ and app/globals.css. A hex literal under
+          # components/ or app/ is a colour outside the token system: it cannot
+          # be themed, it does not swap between light and dark, and no contrast
+          # test covers it — which is how an unreadable value ships.
+          #
+          # theme/ is deliberately not scanned. That is where the hex values are
+          # supposed to be.
+          offenders=$(grep -rnE "#[0-9a-fA-F]{3,8}\\b" components app \
+            --include='*.tsx' --include='*.ts' 2>/dev/null || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::raw hex colours outside the token system; add the colour to theme/tokens.ts instead"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "no raw hex outside the token system"
+
   # package-lock.json must be generated on Linux.
   #
   # lightningcss (via Tailwind 4 and Vite) declares optional per-platform

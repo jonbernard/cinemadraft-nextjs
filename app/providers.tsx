@@ -24,7 +24,13 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
       <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="dark" />
-      <ThemeProvider theme={theme}>
+      {/* `defaultMode` must be set here as well as on the script above, and
+          must match it. The theme's `defaultColorScheme` only names which
+          palette CSS falls back to — the *mode* defaults to "system", so
+          without this a first-time visitor whose OS is set to light gets the
+          light theme. D15 makes dark the default regardless of the OS; the
+          visitor can still choose, and their choice is what gets stored. */}
+      <ThemeProvider theme={theme} defaultMode="dark">
         <CssBaseline />
         {children}
       </ThemeProvider>
