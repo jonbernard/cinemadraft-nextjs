@@ -1,0 +1,23 @@
+# Local development and test database. Neon is Preview/Production only —
+# local shells and tests must never point at it.
+services:
+  postgres:
+    image: postgres:17
+    container_name: cinemadraft-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cinemadraft
+      POSTGRES_PASSWORD: local
+      POSTGRES_DB: cinemadraft
+    ports:
+      - '5433:5432'
+    volumes:
+      - cinemadraft-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U cinemadraft -d cinemadraft']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cinemadraft-pgdata:

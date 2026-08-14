@@ -88,9 +88,9 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 - [x] P1.T3 Biome (replaces ESLint + Prettier) with next/react/tailwind rule domains
 - [x] P1.T4 Vitest + the cn class helper, TDD
 - [x] P1.T5 Playwright asserting the MUI/Tailwind layer contract
-- [ ] P1.T6 GitHub Actions CI — lint, typecheck, test, build
-- [ ] P1.T7 Directory skeleton per spec §5
-- [ ] P1.T8 `docker-compose.local.yml` — local Postgres container + `db:up` / `db:down` scripts
+- [x] P1.T6 GitHub Actions CI — lint, typecheck, test, build, e2e, plus a fixtures PII guard
+- [x] P1.T7 Directory skeleton per spec §5 — 13 `.gitkeep` placeholders, route list unchanged
+- [x] P1.T8 `docker-compose.local.yml` — Postgres 17.11 on port 5433, `db:up` / `db:down` / `db:psql`
 - [ ] P1.T9 First Vercel preview deploy green
 
 ---
