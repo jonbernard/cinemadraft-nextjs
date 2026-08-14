@@ -127,7 +127,7 @@ Tokens, both themes, typography, and the tests that keep them honest.
 - T7: Letterbox rule component (the signature device, §6.1)
 - T8: Poster frame component — 2:3, caption below, two-line clamp, seal and nominated states
 
-**Gate:** design tests green; a token-gallery page renders both themes with no raw hex anywhere in `components/`.
+**Gate:** design tests green; a token-gallery page renders both themes with no raw hex anywhere in `components/`. ✅ **Met** — `/tokens` renders both, and the `layering` CI job fails on a hex literal under `components/` or `app/` (D37).
 
 ---
 

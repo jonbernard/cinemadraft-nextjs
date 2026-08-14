@@ -191,14 +191,25 @@ Plan: [`docs/superpowers/plans/2026-08-14-phase-3-design-system.md`](superpowers
 
 The plan groups the eight items below into seven executable tasks — T1+T2 are one task (both palettes are one file), and the plan adds the token gallery and the no-raw-hex CI check that `PLAN.md` names as the phase gate but the task list omitted.
 
-- [ ] P3.T1 Token types + dark palette
-- [ ] P3.T2 Light palette
-- [ ] P3.T3 🔴 Contrast test — must exist before any component consumes tokens
-- [ ] P3.T4 Typography via `next/font`, tabular numerals
-- [ ] P3.T5 MUI theme assembly, dark default + light toggle
-- [ ] P3.T6 Poster accent luminance clamping + test
-- [ ] P3.T7 Letterbox rule component
-- [ ] P3.T8 Poster frame component
+- [x] P3.T1 Token types + dark palette — `theme/tokens.ts`; 3 tests
+- [x] P3.T2 Light palette — same file. Spec gave no light `text.dim` or `beam`; dim reuses secondary, and beam is darkened to `#3F6273` (5.91:1 on paper — the dark theme's `#7FA6B8` is 1.9:1 there)
+- [x] P3.T3 🔴 Contrast test — 34 assertions, both palettes. Computed values match the spec's own §6.4 table
+- [x] P3.T4 Typography via `next/font`, tabular numerals
+- [x] P3.T5 MUI theme assembly, dark default + light toggle; 8 tests
+- [x] P3.T6 Poster accent luminance clamping + test — 108 tests
+- [x] P3.T7 Letterbox rule component — 12 tests shared with T8
+- [x] P3.T8 Poster frame component
+- [x] P3.T9 Token gallery at `/tokens` + no-raw-hex CI check — the gate named in `PLAN.md`, which the task list had left unowned
+
+**Phase 3 complete.** 528 tests, 26 files. Typecheck, Biome, build and all five layering checks clean.
+
+### Phase 3 notes
+
+- **`--font-mono` is a name collision.** Tailwind's own theme key is `--font-mono`, so pointing it at a `next/font` variable of the same name is a CSS reference cycle. CSS resolves a cycle to the guaranteed-invalid value: the build passes, no warning is emitted, and every mono column silently falls back to the browser default. The font variable is `--font-plex-mono` for this reason.
+- **`defaultColorScheme` is not the default mode.** It only names which palette CSS falls back to. The *mode* defaults to `system`, so dark-by-default (D15) additionally requires `defaultMode="dark"` on **both** `ThemeProvider` and `InitColorSchemeScript`. Caught in a browser, not by a test: a first-time visitor on a light-set OS got the light theme.
+- **Testing Library was not cleaning up.** Auto-cleanup registers only when Vitest `globals` are enabled, and this project runs without them, so every `render` accumulated in one document. A test asserting *absence* found the previous test's element and failed; a test asserting *presence* would have passed for the wrong reason, silently. `afterEach(cleanup)` is now in `vitest.setup.ts` — required for every component test written from here on.
+- **`theme/mui.d.ts` is load-bearing.** `createTheme` is typed as returning a plain `Theme` (its source carries the comment "cast type to skip module augmentation test"), so without augmenting `CssThemeVariables` the compiler cannot see `colorSchemes` or `defaultColorScheme` despite them existing at runtime — pushing every consumer toward an `as any`.
+- Poster frames carry a hairline border in **both** themes. §6.3 requires it in light, where the frame otherwise dissolves into the paper ground; making it a token rather than a light-only rule keeps D15's "no component branches on theme" intact.
 
 ---
 
