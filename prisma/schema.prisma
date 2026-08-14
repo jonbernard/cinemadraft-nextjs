@@ -14,6 +14,11 @@ model AvailableYear {
   year      Int?      @unique
   createdAt DateTime? @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  /// The active season, settable from the running app rather than by rebuild
+  /// (D22). At most one row may be true; enforced by the partial unique index
+  /// available_years_one_active, which Prisma cannot express in the schema and
+  /// which therefore lives in the migration SQL.
+  isActive  Boolean   @default(false) @map("is_active")
 
   @@map("available_years")
 }
@@ -130,6 +135,9 @@ model Movie {
   releaseDate DateTime? @map("release_date") @db.Timestamptz(6)
   createdAt   DateTime? @map("created_at") @db.Timestamptz(6)
   updatedAt   DateTime? @map("updated_at") @db.Timestamptz(6)
+  /// Poster-derived accent colour, cached so the extraction runs once per
+  /// movie rather than on every render. Luminance-clamped at write time.
+  accentHex   String?   @map("accent_hex") @db.VarChar(7)
 
   @@index([tmdbId], map: "movies_tmdb_id")
   @@map("movies")
@@ -219,6 +227,11 @@ model User {
   lastLogin  DateTime? @map("last_login") @db.Timestamptz(6)
   createdAt  DateTime? @map("created_at") @db.Timestamptz(6)
   updatedAt  DateTime? @map("updated_at") @db.Timestamptz(6)
+  /// Set when a Clerk identity claims this account by verified email (D25).
+  /// Nullable: every existing user is unclaimed until they first sign in.
+  /// Unique so a second Clerk identity cannot attach to an already-claimed
+  /// account, which would be an account-takeover vector.
+  clerkId    String?   @unique @map("clerk_id")
 
   @@index([providerId], map: "users_provider_id")
   @@map("users")

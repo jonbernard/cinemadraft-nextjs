@@ -136,7 +136,7 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-2-data-layer.md`
 - [x] P2.T6 `scripts/pascalize-schema.mjs` — 16 PascalCase models, 81 field mappings, 20 block mappings; empty `migrate diff`; re-introspection verified byte-identical
 - [x] P2.T7 Baseline `0_init` resolved as applied on both Docker and Neon; `migrate status` clean on both
 - [x] P2.T8 `lib/db.ts` — client singleton; adapter chosen by connection target (D32); 6 tests
-- [ ] P2.T9 Migration: `movies.accent_hex`, `users.clerk_id`, `available_years.is_active` + the partial unique index enforcing at most one active year (D22)
+- [x] P2.T9 Migration: `movies.accent_hex`, `users.clerk_id` (unique), `available_years.is_active` + partial unique index; applied to Docker and Neon; 6 constraint tests
 - [ ] P2.T10 Typed error classes — `NotFoundError`, `ForbiddenError`, `ConflictError`
 
 ### Phase 2 notes
