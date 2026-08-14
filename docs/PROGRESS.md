@@ -134,7 +134,7 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-2-data-layer.md`
 - [x] P2.T11 Local Docker database restored and normalized — done early, as the rehearsal for the Neon apply
 - [x] P2.T5 Prisma 7 installed; `prisma.config.ts` and schema header hand-written (no `prisma init`, D31); `prisma db pull` against **Docker** produced 16 models and 4 enums
 - [x] P2.T6 `scripts/pascalize-schema.mjs` — 16 PascalCase models, 81 field mappings, 20 block mappings; empty `migrate diff`; re-introspection verified byte-identical
-- [ ] P2.T7 Baseline `0_init`, resolved as applied on both Docker and Neon; `migrate status` clean on both
+- [x] P2.T7 Baseline `0_init` resolved as applied on both Docker and Neon; `migrate status` clean on both
 - [ ] P2.T8 `lib/db.ts` — Prisma client singleton + Neon adapter
 - [ ] P2.T9 Migration: `movies.accent_hex`, `users.clerk_id`, `available_years.is_active` + the partial unique index enforcing at most one active year (D22)
 - [ ] P2.T10 Typed error classes — `NotFoundError`, `ForbiddenError`, `ConflictError`
