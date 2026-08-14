@@ -219,7 +219,7 @@ Plan: [`docs/superpowers/plans/2026-08-14-phase-4-auth.md`](superpowers/plans/20
 
 The plan adds one item the task list did not have: a **lazy sync in `getCurrentUser`**. A webhook is asynchronous, so a member can reach the dashboard before it lands — and Clerk can drop a delivery outright. Both paths call the same `syncClerkIdentity`, so the safety rules cannot hold on one and be forgotten on the other.
 
-- [ ] P4.T0 🔴 **OWNER ACTION — the only open item in this phase.** Confirm **account linking** is enabled in the Clerk dashboard (Configure → Account linking). Without it one email can produce two Clerk identities. The claim guard means the second identity does *not* steal the account — it is refused and logged — but the member is then locked out of their own history until an admin relinks them. Linking prevents the situation rather than containing it. Nothing else blocks on this; the guard is what protects the data and it is tested regardless
+- [x] P4.T0 ✅ **Confirmed by the owner 2026-08-14** — account linking is enabled in the Clerk dashboard (Configure → Account linking). Without it one email can produce two Clerk identities. The claim guard means the second identity does *not* steal the account — it is refused and logged — but the member is then locked out of their own history until an admin relinks them. Linking prevents the situation rather than containing it. Nothing else blocks on this; the guard is what protects the data and it is tested regardless
 - [x] P4.T1 Clerk installed, `proxy.ts` protecting the `(app)` segment
 - [x] P4.T2 `lib/auth.ts` — session → `User` resolution, **with lazy claim**; 11 tests
 - [x] P4.T3 Clerk webhook with signature verification — 10 tests, real svix signatures
@@ -229,7 +229,7 @@ The plan adds one item the task list did not have: a **lazy sync in `getCurrentU
 - [x] P4.T7 E2E: real production account claimed, history intact — 5 data-layer + 4 browser tests
 - [x] P4.T8 Admin relink path for mismatched emails — 5 tests
 
-**Phase 4 complete** apart from the owner action above. 569 unit tests across 31 files, plus 4 Playwright specs. Typecheck, Biome, build and all five layering checks clean.
+**Phase 4 complete.** 569 unit tests across 31 files, plus 4 Playwright specs. Typecheck, Biome, build and all five layering checks clean.
 
 ### Phase 4 notes
 
@@ -243,7 +243,8 @@ The plan adds one item the task list did not have: a **lazy sync in `getCurrentU
 - **Wait on `prepare_verification`, not on the UI.** The OTP field submits as soon as it is full, so filling it when it appears races the send. Waiting for the resend countdown looked right and still failed about one run in three.
 - **The E2E writes to the restored production database** and cleans up after itself. If that teardown is ever removed, test accounts accumulate against the 60 genuine users and any later assertion about that population silently starts measuring debris.
 - One production account (`jon@jonbernard.net`, id 3) is used by `clerk-identity.production.test.ts` as the gate fixture: 10 drafts, 67 picks. It is restored to `clerk_id = null` in `afterAll`.
-- `NEXT_PUBLIC_ACTIVE_YEAR` is **still in `.env`**. D22 deletes it once Phase 5 ships the active-year read path. Do not build against it.
+- 🔴 **E2E does not run in CI, by decision (D43).** The owner declined to put Clerk credentials in GitHub, and the app cannot render without them — `ClerkProvider` needs a publishable key and the proxy needs a secret key. The Playwright steps are therefore *skipped visibly* rather than run against absent keys, because a spec that skips itself is a green run that proved nothing. **`npm run test:e2e` is a local gate and part of the pre-cutover checklist (Phase 12), not something CI covers.** Run it before any release. The `smoke.spec.ts` cascade-layer assertions from Phase 1 are in the same boat.
+- `NEXT_PUBLIC_ACTIVE_YEAR` is **deleted** — from `.env` (P5.T0) and from Vercel (owner, 2026-08-14). D22 is fully discharged; nothing may reintroduce it.
 
 ---
 

@@ -77,11 +77,17 @@ jobs:
       - name: Build
         run: npm run build
 
-      # E2E needs a running Clerk instance: the proxy resolves a session on
-      # every non-public route, and the auth spec drives a real sign-up. Both
-      # keys have to be present as repository secrets for this to mean
-      # anything — without them the specs skip themselves, which is a green
-      # run that proved nothing, so the steps are skipped visibly instead.
+      # E2E does not run here, by decision (D43). The owner declined to store
+      # Clerk credentials in GitHub, and the app cannot render without them:
+      # ClerkProvider needs a publishable key and the proxy needs a secret key.
+      #
+      # The steps stay, guarded, so the absence is visible in the job list
+      # rather than silently missing — and so this turns on the day the keys
+      # exist. A spec that skips itself reports green while proving nothing.
+      #
+      # 🔴 `npm run test:e2e` is therefore a LOCAL gate. Run it before any
+      # release; it is on the pre-cutover checklist (Phase 12) and covers both
+      # the auth flow and the Phase 1 cascade-layer assertions.
       - name: Install Playwright browsers
         if: env.CLERK_SECRET_KEY != ''
         run: npx playwright install --with-deps chromium
