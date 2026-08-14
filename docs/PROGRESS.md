@@ -154,7 +154,7 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-2-data-layer.md`
 
 One per live table, in this order. Each: contract test first against `fixtures/`, watch it fail, implement returning plain DTOs, watch it pass, commit.
 
-- [ ] P2.T12 `movies` — richest fixture; written first and reviewed, then becomes the template
+- [x] P2.T12 `movies` — template repository, 17 tests
 - [ ] P2.T13 `users` — claim-on-signin depends on this (D25)
 - [ ] P2.T14 `events` — award shows
 - [ ] P2.T15 `awards` — carries the per-award point value
