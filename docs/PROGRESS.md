@@ -22,7 +22,7 @@ Plan: `docs/superpowers/plans/2026-08-13-phase-0-owner-setup.md` — executed by
 - [x] P0.T4 Vercel Blob store created; `BLOB_STORE_ID` + `BLOB_WEBHOOK_PUBLIC_KEY` attached; OIDC auth model understood; uploads will be **public** per D24
 - [x] P0.T5 Clerk app created — **passwordless** (email code + Google, D26), webhook at `next.cinemadraft.com`, three keys in Vercel
 - [x] P0.T6 ~~Auth0 Management app~~ — **removed**. No bulk import under D25; Auth0 needs nothing
-- [ ] P0.T7 🔴 Production dump + row counts + API contract fixtures captured
+- [x] P0.T7 🔴 Production dump + row counts + API contract fixtures captured
 - [ ] P0.T8 TMDB / OMDB / remaining env keys carried over
 - [ ] P0 completion checklist fully ticked
 
@@ -55,6 +55,17 @@ _Fill these in as you go — later phases read them._
 - Production row counts: `AvailableYears 10 · Awards 100 · DraftPicks 1025 · Drafts 156 · Events 12 · Leagues 13 · Lists 155 · Movies 1355 · Nominations 4559 · Notifications 2124 · Points 12 · ProfileFeeds 125 · Reviews 0 · SequelizeMeta 18 · Users 60 · Watchlists 2363 · Winners 734`
 - **`Reviews` is empty in production** — 0 rows. Table and Sequelize model exist; the feature was never used. Phase 7 decides whether it ships at all — do not assume parity requires it
 - P2.T4 note: `normalize.sql` **drops `SequelizeMeta`** (D27), so the post-normalization comparison covers the remaining 16 tables. Every one must match exactly
+- **Contract fixtures captured** 2026-08-14 — 32 GET endpoints, all HTTP 200, all valid JSON, 1.5 MB, in `.local/fixtures/` (gitignored: they contain real user emails). Each `<name>.json` has a sibling `<name>.path` recording the URL it came from. Capture script is committed at `scripts/capture-fixtures.sh` and reads the bearer token from `$TOKEN` — it is never written to disk
+- Fixtures were captured as **user id 3** (`jon@jonbernard.net`, role `admin`), uuid `19f25e89-6d1a-4b65-ad83-efb3b1a2fd46`. Params used: league `1`, draft `124` (2025), year `2025`, lists year `2024`, tmdbId `313369`, event `oscars`
+- `review-by-tmdb` fixture is `{}` — consistent with `Reviews` having 0 rows. Not a capture failure
+
+### Source-app bugs found while capturing fixtures
+
+Carry these into Phase 7. Do **not** reproduce them in the port.
+
+- **`GET /draft/users/:id` takes a *league* id, not a draft id.** The handler calls `Drafts.getUsersByLeagueId`. Passing a draft id returns `[]` rather than erroring, so the bug is silent. Rename the concept in the port
+- **`GET /watchlist/:page?/:columnName?/:direction` only accepts `createdAt` and `releaseDate`.** `columnName` is passed straight into the Sequelize `order` array and only `releaseDate` is special-cased onto the joined `movie` table, so `title` / `sortTitle` raise Postgres `42703 errorMissingColumn`. Sortable columns must be a validated allowlist in the port
+- 🔴 **The error handler leaks schema.** That 42703 response returns the full failing SQL, column list, and Postgres internals (`parse_relation.c`) to the client. The port must return an opaque error and log the detail server-side. See the typed error classes in P2.T10
 
 ---
 
