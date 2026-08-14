@@ -35,7 +35,8 @@ Every task inherits these. Values copied verbatim from the spec.
 - **All local databases run in Docker.** No native Postgres server on the dev machine. Local Postgres binaries are client-only (`libpq`: `psql`, `pg_dump`, `pg_restore`). Local dev and test databases are containers defined in `docker-compose.local.yml`, pinned to the same major version Neon provisions.
 - **TypeScript strict.** No `any` in committed code without an inline justification comment.
 - **Next.js 16 App Router**, React 19. No Pages Router.
-- **MUI (latest stable)** with `@mui/material-nextjs`. No Tailwind, no shadcn (D3).
+- **MUI (latest stable)** with `@mui/material-nextjs` for components; **Tailwind (latest stable) for custom styling** (D3, D29). No shadcn.
+- **Cascade layer order is `@layer theme, base, mui, components, utilities`** and `AppRouterCacheProvider` runs with `enableCssLayer: true`. Never reach for `!important` to make a Tailwind class beat MUI — if that seems necessary, the layer order is wrong.
 - **Prisma (latest stable)** with `@prisma/adapter-neon` at the matching major. `lib/repositories/` is the **only** layer that may import the Prisma client (§5).
 - **Repositories return plain DTOs**, never Prisma model instances.
 - **No general `/api` layer** (D8). `/api` is permitted only for: `webhooks/clerk`, `live/[event]/stream`, `ical/[...]`.

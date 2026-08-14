@@ -7,7 +7,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 |---|---|
 | D1 | Next.js 16 App Router, React 19 |
 | D2 | Full TypeScript conversion (strict) |
-| D3 | **MUI (latest stable)** as component substrate; new identity delivered through the theme layer |
+| D3 | **MUI (latest stable)** as component substrate; new identity delivered through the theme layer. **Tailwind (latest stable) is the styling system for custom work** — MUI supplies components, Tailwind supplies bespoke styling (D29) |
 | D4 | **Prisma (latest stable)** + `@prisma/adapter-neon` at the matching major |
 | D5 | Neon Postgres via Vercel Marketplace (free tier) |
 | D6 | ~~Upstash Redis~~ — **superseded by D23** |
@@ -35,6 +35,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 
 | D28 | **Always latest stable.** Every dependency is pinned to the newest stable release at the time it is introduced — never a pre-release, never an older major for familiarity. Verify against the npm registry rather than assuming a version from memory |
 
+| D29 | **MUI and Tailwind coexist via CSS cascade layers.** `AppRouterCacheProvider` runs with `enableCssLayer: true`, and the layer order is declared `@layer theme, base, mui, components, utilities`. `mui` sits above `base` so Tailwind preflight cannot strip MUI component styling, and below `utilities` so Tailwind classes win without `!important` or specificity hacks. Design tokens (§6) are defined once as CSS custom properties and consumed by both |
+
 ## Explicitly rejected
 
 - **Supabase** for database or realtime — rejected by the owner.
@@ -42,7 +44,9 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Reusing the prior scaffold's `schema.prisma`** — valuable, but D16 overrides.
 - **Keeping Auth0 as a Clerk OAuth connection** — no migration risk, but retains the vendor being removed.
 - **Bulk-importing users from Auth0 into Clerk** — superseded by D25. Auth0 does not export password hashes without a support request, and all 51 users are email+password. Claiming needs only the webhook that already existed.
-- **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI.
+- **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI for components. Tailwind is added for custom styling only (D29), not as a component library.
+- **Excluding Tailwind entirely** — the original reading of D3. Reversed by the owner: MUI for components, Tailwind for everything bespoke.
+- **`!important` or specificity overrides to make Tailwind beat MUI** — cascade layers solve this properly; escalating specificity does not compose.
 - **Building on MUI 7 / Prisma 6** — the versions originally written into the spec. Both were taken from memory rather than the registry and were stale: MUI shipped 9.x and Prisma 7.x. Superseded by D28.
 - **Unifying primary key types** — `Users.id` is an int, `Awards.id` a UUID. Unifying rewrites every PK and FK for no user-visible benefit.
 - **Transforming the dump file before restore** — restore as-is then rename in SQL; catalog renames cannot mismap data, dump rewrites can.
