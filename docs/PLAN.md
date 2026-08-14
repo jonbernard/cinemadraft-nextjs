@@ -122,8 +122,8 @@ Tokens, both themes, typography, and the tests that keep them honest.
 - T2: Light palette (§6.3)
 - T3: **Contrast test** — asserts every token pair in both themes meets its WCAG threshold. Must exist before any component consumes tokens
 - T4: Typography scale via `next/font` — Archivo (variable, width axis) + IBM Plex Mono, tabular numerals
-- T5: MUI v7 theme assembly from tokens; `ThemeProvider` with dark default and a light toggle
-- T6: Poster accent luminance clamping (`lib/external/color.ts`) + unit test proving clamped output always clears 4.5:1
+- T5: MUI theme assembly from tokens (MUI 9 per D28); `ThemeProvider` with dark default and a light toggle, switched by `data-mui-color-scheme` so Tailwind's `dark:` variant and MUI share one signal
+- T6: Poster accent luminance clamping (`theme/oklch.ts` — a pure theme function, not an external-service client) + unit test proving clamped output always clears 4.5:1
 - T7: Letterbox rule component (the signature device, §6.1)
 - T8: Poster frame component — 2:3, caption below, two-line clamp, seal and nominated states
 

@@ -187,7 +187,9 @@ One per live table, in this order. Each: contract test first against `fixtures/`
 **The fixtures are the contract.** Where a repository disagrees with a fixture, the fixture wins — unless it encodes one of the source-app bugs recorded above, in which case the correct behaviour wins and the deviation is documented in the test.
 ## Phase 3 — Design system
 
-Plan: _not yet written_
+Plan: [`docs/superpowers/plans/2026-08-14-phase-3-design-system.md`](superpowers/plans/2026-08-14-phase-3-design-system.md)
+
+The plan groups the eight items below into seven executable tasks — T1+T2 are one task (both palettes are one file), and the plan adds the token gallery and the no-raw-hex CI check that `PLAN.md` names as the phase gate but the task list omitted.
 
 - [ ] P3.T1 Token types + dark palette
 - [ ] P3.T2 Light palette
