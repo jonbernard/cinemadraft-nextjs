@@ -257,12 +257,25 @@ Two reconciliations the plan makes explicit: `PLAN.md` said the roster strip is 
 - [x] P5.T0 `lib/services/season.ts` — `getActiveYear()`; **`NEXT_PUBLIC_ACTIVE_YEAR` deleted** from `.env` and from Vercel. D22 discharged; 7 tests
 - [x] P5.T1a `lib/services/scoring.ts` — the pure rule (D41); 12 tests, reproduces the source API's totals for draft 124
 - [x] P5.T1 `lib/services/dashboard.ts` — 11 tests, verified against league 1
-- [ ] P5.T2 Dashboard RSC page
-- [ ] P5.T3 Season rail component
-- [x] P5.T4 Roster strip component — 11 tests at 1/6/7/8/9/30 films (D34)
-- [ ] P5.T5 League standings panel
+- [x] P5.T2 Dashboard RSC page — **with a public variant** (D44)
+- [x] P5.T3 Season rail component — 14 tests
+- [x] P5.T4 Roster strip component — 12 tests at 1/6/7/8/9/30 films (D34)
+- [x] P5.T5 League standings panel — 11 tests
 - [x] P5.T6 Empty states — 3 tests
-- [ ] P5.T7 E2E
+- [x] P5.T7 E2E — 5 dashboard specs; **gate met: no truncated titles at 375/768/1440**
+
+**Phase 5 complete.** 642 unit tests across 38 files (300 of them on CI), 13 Playwright specs. Typecheck, Biome, build and all five layering checks clean.
+
+### Phase 5 notes
+
+- 🔴 **Route visibility is now a per-page decision (D44), and the plan carries the inventory.** The source app was already public by default — `/`, browse, events, live, movie detail, rules, join-by-uuid **and league pages** were never guarded. Only pages about *you* were. Check `src/routes/index.js` before assuming a page should be private; treating league pages as private would have been a parity regression, not a hardening.
+- **A public variant renders for a null user and omits what is about a person.** `getDashboard(null)` does not query leagues at all rather than querying with a sentinel id, so there is no code path on which the public page can resolve someone else's team. Three tests assert it.
+- **The proxy still enumerates PUBLIC routes** (D45) even though most routes are public. Forgetting to list a public page makes it protected — visible and harmless. Enumerating protected routes instead means forgetting one exposes it silently.
+- 🔴 **§6.7's "8 across" and its two-line title clamp are in conflict**, and the E2E gate caught it at 1440px: eight columns leave each frame ~130px, too narrow for a 24-character title in two lines, so it clipped — the exact defect the redesign exists to fix. The roster grid now sizes columns by a **minimum readable width** (`auto-fill`, 10rem floor) rather than a fixed count. 375 and 768 passed the whole time, which is why the fixed rule looked correct.
+- **`getActiveYear` is deliberately uncached.** `PLAN.md` asked for cached-and-tagged, which in Next 16 means `'use cache'` and therefore `cacheComponents` — and that flag turns every uncached prerender read into a build error, so it needs Suspense boundaries around every session-dependent page. Verified: enabling it fails the build on `/leagues`. Revisit when those pages exist (D42 note in `season.ts`).
+- **The scoring rule lives in `lib/services/scoring.ts` and is pure** (D41). Phase 9 materializes it and must call this same function — do not write a second copy. Its fixture test reproduces the source API's own totals for draft 124, and mutation-testing confirms it catches the `awards.points` foreign-key trap (169 instead of 370).
+- **Seeing the signed-in dashboard in a browser requires attaching a throwaway Clerk identity to a real restored account** — a fresh sign-up has no leagues and only exercises the empty state. `e2e/dashboard.spec.ts` does this and restores the row in `afterAll`. If that teardown is ever removed, a test identity stays attached to real production data.
+- Posters render as initials placeholders. `Movie.poster` holds a TMDB path; the media migration is Phase 11.
 
 ---
 

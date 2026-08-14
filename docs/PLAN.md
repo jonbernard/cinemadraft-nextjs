@@ -162,7 +162,7 @@ Replaces the welcome-card home with state: standings position, next deadline, re
 - T6: Empty states (no league, no draft yet)
 - T7: E2E: dashboard renders for a user with a league
 
-**Gate:** E2E green; no truncated titles at any breakpoint.
+**Gate:** E2E green; no truncated titles at any breakpoint. ✅ **Met** — `e2e/dashboard.spec.ts` asserts the longest title on a real member's roster is complete in the DOM and unclipped at 375, 768 and 1440. It failed at 1440 on the first run, which is what forced the roster grid onto a minimum-frame-width rule instead of a fixed 8 columns.
 
 ---
 
