@@ -86,6 +86,7 @@ Carry these into Phase 7. Do **not** reproduce them in the port.
 - **`GET /points/league/:type(total|event)/:id/:year?` ignores `:type` entirely.** `getPointsByLeagueId` never reads `req.params.type`, so `total` and `event` return byte-identical responses — verified by diffing the two fixtures. The frontend only ever calls `total` (`components/Points/LeaguePointTotals.js:59`, `pages/league/viewPanel/panelLeague.js:56`), so `event` is **dead route surface**: declared, never implemented, never called. Drop it in the port — do not build a per-event leaderboard on the assumption it once existed
 - 🔴 **`GET /winners` nests the wrong movie.** `server/models/winners.js` declares `Winners.hasOne(Movies, { foreignKey: 'id' })` with no `sourceKey`, so Sequelize joins `movies.id = winners.id` — the winner's own primary key — instead of `winners.movie_id`. Verified against the restored data: of 734 winners, 12 nest `null` because the winner id runs past the end of `movies`, and exactly **1** nests the right film by coincidence. The rest are near-misses only because the two sequences ran roughly in step. The fixture shows it plainly: winner 1 has `movieId: 675` and nests `movie: { id: 1, "Arrival" }`. Not reproduced; three tests in `winners.test.ts` document it
 - **`GET /league/:id/:year?` ignores its year param.** The route calls `Drafts.getByLeagueId`, which filters on `leagueId` alone, so the fixture captured at `/league/1/2025` carries all 140 seats from 2017–2026. Same family as the `/draft/users/:id` bug. Split in the port into `findByLeagueId` (year-wide) and `findByLeagueIdAndYear`
+- 🔴 **Watchlist paging sorts only within a page.** `findAndCountAll` switches to a subquery once the hasMany `reviews` include is present, so LIMIT/OFFSET applied to `watchlists` alone and the ORDER BY then reordered only the 25 rows already chosen. Every page arrived sorted within itself, the sequence across pages was meaningless, and changing the sort could not move a movie between pages. The port sorts before paging and breaks ties on `w.id` so a row cannot land on two pages or none; `watchlists.test.ts` reproduces the old shape in SQL so the deviation from `watchlist-paged.json` is documented rather than silently asserted
 - **`GET /events` builds a graph it then throws away.** The controller eager-loads every event's awards, their points, their nominations for the requested year, and each nominated movie — and the route `R.omit`s the whole `awards` tree before responding. `event-by-abbr` keeps it, so the two routes differ only in whether the work was wasted. The port composes that in a service, on the read path that actually needs it
 - **`Users.getByIds` asks for `displayName` and never gets it.** It lists the VIRTUAL `displayName` in `attributes` while also setting `raw: true`, and Sequelize computes VIRTUAL columns on the model instance that `raw` skips. That is why `draft-users` has no `displayName` and `profile-feed.user` — same virtual, no `raw` — does. Not carried over: display formatting goes through one formatter (see legacy fields below)
 
@@ -171,12 +172,12 @@ One per live table, in this order. Each: contract test first against `fixtures/`
 - [x] P2.T19 `leagues` — `owner` is JSON text; parsed to `ownerIds`; 19 tests
 - [x] P2.T20 `drafts` — 26 tests
 - [x] P2.T21 `draft_picks` — 1025 rows; 24 tests
-- [ ] P2.T22 `lists`
-- [ ] P2.T23 `watchlists` — 2363 rows
-- [ ] P2.T24 `notifications`
-- [ ] P2.T25 `profile_feeds` — `message` is free text containing user names
-- [ ] P2.T26 `available_years` — active-year read path (D22)
-- [ ] P2.T27 `reviews` — 🔴 **0 rows in production** — Phase 7 decides whether it ships at all; do not assume parity requires it
+- [x] P2.T22 `lists`
+- [x] P2.T23 `watchlists` — 2363 rows; sortable columns are a closed union, killing the 42703 schema leak
+- [x] P2.T24 `notifications`
+- [x] P2.T25 `profile_feeds` — `message` is free text containing user names
+- [x] P2.T26 `available_years` — active-year read path **and** transactional `setActive` (D22)
+- [x] P2.T27 `reviews` — 🔴 **0 rows in production**, so the repository is unproven against real data — Phase 7 decides whether it ships at all; do not assume parity requires it
 
 🔴 **A roster is not always 8 movies.** Picks per seat by season, counted from `draft_picks`: 2017 **7**, 2018 **7**, 2019 **8**, 2020 **7**, 2021 **7**, 2022 **7**, 2024 **7**, 2025 **9**, 2026 **7** (in progress). No database constraint enforces any of it. The brief said "up to 8"; the data says the cap is a per-season rule that has been 7, 8 and 9. **P6.T1 must not hardcode 8** — and the owner needs to decide where the number comes from: a column on `available_years`, a league setting, or a constant that changes yearly. Pinned by a test in `draft-picks.test.ts`.
 
