@@ -254,14 +254,14 @@ Plan: [`docs/superpowers/plans/2026-08-14-phase-5-dashboard.md`](superpowers/pla
 
 Two reconciliations the plan makes explicit: `PLAN.md` said the roster strip is "8 frames", which **D34 supersedes** — it renders whatever the seat drafted; and the **pure scoring rule ships in this phase** rather than Phase 9, because standings cannot exist without it (D41).
 
-- [ ] P5.T0 `lib/services/season.ts` — `getActiveYear()`, retires `NEXT_PUBLIC_ACTIVE_YEAR`
-- [ ] P5.T1a `lib/services/scoring.ts` — the pure rule (D41)
-- [ ] P5.T1 `lib/services/dashboard.ts`
+- [x] P5.T0 `lib/services/season.ts` — `getActiveYear()`; **`NEXT_PUBLIC_ACTIVE_YEAR` deleted** from `.env` and from Vercel. D22 discharged; 7 tests
+- [x] P5.T1a `lib/services/scoring.ts` — the pure rule (D41); 12 tests, reproduces the source API's totals for draft 124
+- [x] P5.T1 `lib/services/dashboard.ts` — 11 tests, verified against league 1
 - [ ] P5.T2 Dashboard RSC page
 - [ ] P5.T3 Season rail component
-- [ ] P5.T4 Roster strip component
+- [x] P5.T4 Roster strip component — 11 tests at 1/6/7/8/9/30 films (D34)
 - [ ] P5.T5 League standings panel
-- [ ] P5.T6 Empty states
+- [x] P5.T6 Empty states — 3 tests
 - [ ] P5.T7 E2E
 
 ---
