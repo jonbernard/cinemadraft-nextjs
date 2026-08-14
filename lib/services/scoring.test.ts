@@ -1,22 +1,14 @@
-// @vitest-environment node
+import { describe, expect, it } from 'vitest';
 
-import { afterAll, describe, expect, it } from 'vitest';
-
-import { db } from '@/lib/db';
-import { draftPickRepository } from '@/lib/repositories/draft-picks';
-import { loadFixture } from '@/test/fixtures';
-import { pointsForMovieIds, scoreMovies, sumTotals } from './scoring';
-
-afterAll(async () => {
-  await db.$disconnect();
-});
+import { scoreMovies, sumTotals } from './scoring';
 
 /**
  * 🔴 The rule every number in this product depends on (D19, D41).
  *
- * The unit tests pin the arithmetic. The fixture test pins the *port*: it
- * reproduces the source API's own answer for a real draft, which is the only
- * evidence that this implementation agrees with the app being replaced.
+ * These pin the arithmetic and touch no database, so they run on every CI
+ * push. `scoring.production.test.ts` pins the *port* — it reproduces the
+ * source API's own answer for a real draft — and needs the restored data, so
+ * it runs locally.
  */
 const award = (id: number, movieId: number) => ({ movieId, awardId: id });
 
@@ -117,41 +109,5 @@ describe('sumTotals', () => {
 
   it('treats an unscored movie as zero rather than dropping the team', () => {
     expect(sumTotals(new Map([[1, 40]]), [1, 999])).toBe(40);
-  });
-});
-
-describe('pointsForMovieIds', () => {
-  it('🔴 reproduces the source API totals for draft 124', async () => {
-    // `fixtures/points-by-draft.json` is the old app's own answer for this
-    // draft, captured from production. Matching it is the evidence that the
-    // rule was ported rather than reinvented — and it is what would catch the
-    // awards.points foreign-key trap, since summing that column instead
-    // produces small, plausible-looking numbers that are all wrong.
-    const expected = loadFixture<Record<string, number>>('points-by-draft');
-    const picks = await draftPickRepository.findByDraftId(124);
-    const movieIds = picks.flatMap((pick) =>
-      pick.movieId == null ? [] : [pick.movieId],
-    );
-
-    const totals = await pointsForMovieIds(movieIds, 2025);
-
-    expect(Object.keys(expected).length).toBeGreaterThan(0);
-    for (const [movieId, points] of Object.entries(expected)) {
-      expect(totals.get(Number(movieId)) ?? 0).toBe(points);
-    }
-  });
-
-  it('returns an empty map for no movies rather than querying', async () => {
-    expect((await pointsForMovieIds([], 2025)).size).toBe(0);
-  });
-
-  it('scopes to the season — a film scores nothing in a year it was not nominated', async () => {
-    const picks = await draftPickRepository.findByDraftId(124);
-    const movieIds = picks.flatMap((pick) =>
-      pick.movieId == null ? [] : [pick.movieId],
-    );
-
-    // 1999 predates the data entirely.
-    expect((await pointsForMovieIds(movieIds, 1999)).size).toBe(0);
   });
 });

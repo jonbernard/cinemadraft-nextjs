@@ -38,6 +38,14 @@ export default mergeConfig(base, {
       // restored row counts — it is a check on the developer's environment,
       // which is exactly what CI is not.
       'lib/db.test.ts',
+      // Services that read the restored data: the active season (2026 is
+      // flagged in the real table) and the dashboard (league 1 is the only
+      // league that has ever existed). The *pure* scoring rule is deliberately
+      // NOT here — it was split into scoring.test.ts, which needs no database,
+      // so the most consequential logic in the app is covered on every push.
+      'lib/services/season.test.ts',
+      'lib/services/dashboard.test.ts',
+      'lib/services/scoring.production.test.ts',
     ],
   },
 });
