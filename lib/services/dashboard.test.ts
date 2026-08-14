@@ -135,3 +135,29 @@ describe('getDashboard', () => {
     }
   });
 });
+
+describe('the public dashboard (D44)', () => {
+  it('🔴 renders for a signed-out visitor without querying any leagues', async () => {
+    const view = await getDashboard(null);
+
+    expect(view.leagues).toEqual([]);
+    expect(view.year).toBe(2026);
+  });
+
+  it('🔴 still shows the season — that is the point of the public page', async () => {
+    // A login wall on the front page during awards season is the worst
+    // possible first impression, and `/` was never guarded in the source app.
+    const view = await getDashboard(null);
+    expect(view.events.length).toBeGreaterThan(0);
+  });
+
+  it('🔴 leaks no user-scoped data on the public path', async () => {
+    // The guarantee is structural, not incidental: with no user there is no
+    // roster and no standings anywhere in the payload, so there is no code
+    // path on which the public page can render somebody else's team.
+    const view = await getDashboard(null);
+
+    expect(view.leagues.flatMap((league) => league.roster)).toEqual([]);
+    expect(view.leagues.flatMap((league) => league.standings)).toEqual([]);
+  });
+});

@@ -19,7 +19,15 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
  * The webhook must stay public: Clerk posts to it without a session, and it
  * authenticates by svix signature instead (see its route handler).
  */
-const isPublic = createRouteMatcher(['/', '/tokens', '/auth/(.*)', '/api/webhooks/(.*)']);
+const isPublic = createRouteMatcher([
+  // Public by default (D44) — this list is the deliberate record of what is
+  // safe to expose. Forgetting to add a page makes it protected, which is
+  // visible and harmless; the reverse would leak it silently.
+  '/',
+  '/tokens',
+  '/auth/(.*)',
+  '/api/webhooks/(.*)',
+]);
 
 export default clerkMiddleware(async (auth, request) => {
   if (!isPublic(request)) await auth.protect();

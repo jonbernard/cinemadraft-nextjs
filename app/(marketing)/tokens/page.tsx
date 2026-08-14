@@ -1,3 +1,5 @@
+import Button from '@mui/material/Button';
+
 import { LetterboxRule } from '@/components/LetterboxRule';
 import { PosterFrame } from '@/components/PosterFrame';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -72,6 +74,25 @@ export default function TokensPage() {
             120 · 095 · 040 · 000 — tabular figures, so a column never jitters as scores
             change
           </p>
+        </div>
+
+        <LetterboxRule>Cascade layers</LetterboxRule>
+        {/* The probe for the MUI/Tailwind layer contract (D29), asserted by
+            e2e/smoke.spec.ts. It lives here rather than on the home page
+            because the home page is now the dashboard and requires a session
+            — a signed-out smoke run would only ever see a redirect.
+
+            This is also its natural home: the contract is part of the design
+            system, and this is the page that demonstrates the design system. */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* A themed background proves Tailwind preflight did not strip MUI. */}
+          <Button variant="contained" data-testid="mui-button">
+            MUI button
+          </Button>
+          {/* A black background proves a Tailwind utility overrides MUI. */}
+          <Button variant="contained" className="bg-black" data-testid="tailwind-wins">
+            Tailwind wins
+          </Button>
         </div>
 
         <LetterboxRule>Roster strip</LetterboxRule>

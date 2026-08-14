@@ -339,6 +339,33 @@ Three real cases, and the copy differs because the remedy differs:
 
 ---
 
+## Route visibility (D44) — decide this per page, every phase
+
+The source app was **public by default** and only guarded pages that are about
+you. This port keeps that. Verified against `src/routes/index.js`:
+
+| Route | Visibility | Signed-out variant |
+|---|---|---|
+| `/` dashboard | **public** | Season rail, and an invitation to sign up. No team, no standings. |
+| `/films` (browse) | **public** | Everything except watchlist markers. |
+| `/award-shows/[abbr]` | **public** | Full nominations and winners; no "your picks" highlighting. |
+| `/live/[abbr]` | **public** | The show as it happens. This is the page most worth being public. |
+| `/movies/[id]` | **public** | Detail and results; no watchlist or review controls. |
+| `/leagues/[id]` | **public** | Standings and rosters — **never guarded in the source app**. |
+| `/join/[uuid]` | **public** | The invite must work before you have an account. |
+| `/rules` | **public** | — |
+| `/leagues` (mine) | private | — |
+| `/leagues/create` | private | — |
+| `/films/list` (draft list) | private | — |
+| `/watchlist` | private | — |
+| `/reviews/[tmdbId]` | private | — |
+| `/users/[uuid]` (profile) | private | — |
+| `/settings`, admin | private | — |
+
+**The rule for a public variant:** render for a null user and omit what is
+about a person. Never fall back to somebody else's data, and never include
+user-scoped data on a public page even when a session happens to exist.
+
 ## Notes for the executor
 
 - **Do not hardcode 8 anywhere.** D34. The one number in this phase that looks like a constant is not one.

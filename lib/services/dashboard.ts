@@ -105,17 +105,23 @@ function rank(rows: { total: number }[]): number[] {
  *
  * Every lookup here is batched by id for the same reason.
  */
-export async function getDashboard(userId: number): Promise<DashboardView> {
+export async function getDashboard(userId: number | null): Promise<DashboardView> {
   const year = await getActiveYear();
 
   const [leagueIds, events] = await Promise.all([
-    draftRepository.findLeagueIdsByUserId(userId),
+    // A signed-out visitor has no leagues by definition. Skipping the query
+    // rather than passing a sentinel id keeps it impossible for the public
+    // page to accidentally resolve somebody else's leagues (D44).
+    userId == null ? Promise.resolve([]) : draftRepository.findLeagueIdsByUserId(userId),
     eventRepository.findAll(),
   ]);
 
-  const leagues = await Promise.all(
-    leagueIds.map((leagueId) => buildLeague(leagueId, userId, year)),
-  );
+  const leagues =
+    userId == null
+      ? []
+      : await Promise.all(
+          leagueIds.map((leagueId) => buildLeague(leagueId, userId, year)),
+        );
 
   return {
     year,

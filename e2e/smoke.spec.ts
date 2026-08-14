@@ -1,8 +1,16 @@
 import { expect, test } from '@playwright/test';
 
+/**
+ * These run against /tokens, not /.
+ *
+ * `/` is the dashboard and requires a session (Phase 5), so a signed-out
+ * smoke run would only ever see a redirect to sign-in. /tokens is public and
+ * renders the design system, which is what these assertions are actually
+ * about.
+ */
 test('the page renders', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Cinemadraft' })).toBeVisible();
+  await page.goto('/tokens');
+  await expect(page.getByText('Cinemadraft')).toBeVisible();
 });
 
 /**
@@ -17,7 +25,7 @@ test('the page renders', async ({ page }) => {
  */
 
 test('MUI component styling survives Tailwind preflight', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/tokens');
 
   const background = await page
     .getByTestId('mui-button')
@@ -30,7 +38,7 @@ test('MUI component styling survives Tailwind preflight', async ({ page }) => {
 });
 
 test('a Tailwind utility overrides MUI', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/tokens');
 
   const background = await page
     .getByTestId('tailwind-wins')
@@ -42,7 +50,7 @@ test('a Tailwind utility overrides MUI', async ({ page }) => {
 });
 
 test('the cascade layers resolve in the declared order', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/tokens');
 
   const order = await page.evaluate(() => {
     const seen = new Set<string>();
