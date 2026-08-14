@@ -34,9 +34,13 @@ const PSQL = (() => {
 })();
 
 const query = (sql) =>
-  execFileSync(PSQL, [conn, '--no-align', '--tuples-only', '--field-separator=\t', '-c', sql], {
-    encoding: 'utf8',
-  })
+  execFileSync(
+    PSQL,
+    [conn, '--no-align', '--tuples-only', '--field-separator=\t', '-c', sql],
+    {
+      encoding: 'utf8',
+    },
+  )
     .split('\n')
     .filter(Boolean)
     .map((line) => line.split('\t'));

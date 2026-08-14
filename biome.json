@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!fixtures", "!.next", "!next-env.d.ts"]
+    "includes": ["**", "!fixtures", "!.next", "!generated", "!next-env.d.ts"]
   },
   "formatter": {
     "enabled": true,
@@ -67,7 +67,12 @@
       },
       "suspicious": {
         "noExplicitAny": "error",
-        "noConsole": { "level": "error", "options": { "allow": ["warn", "error"] } }
+        "noConsole": {
+          "level": "error",
+          "options": {
+            "allow": ["warn", "error"]
+          }
+        }
       }
     }
   },
