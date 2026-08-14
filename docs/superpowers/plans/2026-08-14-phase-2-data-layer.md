@@ -293,23 +293,33 @@ Expected: "Database schema is up to date". Not "drift detected".
 **Files:**
 - Create: `lib/db.ts`
 
+The adapter is chosen by connection target, not by taste (D32). `@neondatabase/serverless` speaks Neon's WebSocket/HTTP protocol rather than the Postgres wire protocol, so it cannot reach the local Docker container — verified, the same query fails there and passes through `@prisma/adapter-pg`.
+
 ```ts
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@/generated/prisma/client';
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DATABASE_URL is not set');
 
+// Neon hostnames only exist for Preview and Production. Everything local —
+// development and every test — is plain Postgres in Docker, which the Neon
+// driver cannot speak to.
+const isNeon = /\.neon\.tech/.test(connectionString);
+const adapter = isNeon ? new PrismaNeon({ connectionString }) : new PrismaPg({ connectionString });
+
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 // The adapter is constructed inside the guard, not beside it: Prisma's own
 // example builds one per module evaluation, which leaks a connection pool on
 // every hot reload in development.
-export const db =
-  globalForPrisma.prisma ?? new PrismaClient({ adapter: new PrismaNeon({ connectionString }) });
+export const db = globalForPrisma.prisma ?? new PrismaClient({ adapter });
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
 ```
+
+Database tests must declare `// @vitest-environment node` — the Vitest default is jsdom, which is wrong for anything holding a socket.
 
 - [ ] **Step 1: Write it**
 - [ ] **Step 2: Prove it connects to Docker**, with a throwaway script that counts movies and expects 1355

@@ -8,7 +8,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D1 | Next.js 16 App Router, React 19 |
 | D2 | Full TypeScript conversion (strict) |
 | D3 | **MUI (latest stable)** as component substrate; new identity delivered through the theme layer. **Tailwind (latest stable) is the styling system for custom work** — MUI supplies components, Tailwind supplies bespoke styling (D29) |
-| D4 | **Prisma (latest stable)** + `@prisma/adapter-neon` at the matching major |
+| D4 | **Prisma (latest stable)**, with the driver adapter **selected by environment** (D32) |
 | D5 | Neon Postgres via Vercel Marketplace (free tier) |
 | D6 | ~~Upstash Redis~~ — **superseded by D23** |
 | D7 | Clerk for auth, replacing Auth0 |
@@ -40,6 +40,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 | D30 | **TypeScript stays on 5.x until after cutover** — an explicit exception to D28. TypeScript 7 is a ground-up native rewrite, and Next 16, Biome and Prisma all declare support against 5.x (Prisma's peer range is `>=5.4.0`). Adopting it during the data layer would mean debugging toolchain gaps alongside a Prisma major. `^5` cannot resolve to 7, so the pin is already safe. Revisit as its own task post-cutover |
 | D31 | **Prisma 7 config lives in `prisma.config.ts`, not the schema.** `datasource.url` is a hard error in 7 (P1012), env vars are no longer auto-loaded, a driver adapter is mandatory, and the generator is `prisma-client` with a required `output`. Generated client goes to `generated/prisma` — gitignored, regenerated at build, and deliberately not under `app/` where Next's route scan would reach it |
 
+| D32 | **Two driver adapters, chosen at runtime.** `@prisma/adapter-neon` for Neon (Preview/Production) and `@prisma/adapter-pg` for the local Docker database (development and tests). This is not a preference: `@neondatabase/serverless` speaks Neon's WebSocket/HTTP protocol, not the Postgres wire protocol, so it cannot connect to local Postgres at all. Verified — the same query fails inside `@neondatabase/serverless` and passes through `@prisma/adapter-pg` |
+
 ## Explicitly rejected
 
 - **Supabase** for database or realtime — rejected by the owner.
@@ -49,6 +51,7 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Bulk-importing users from Auth0 into Clerk** — superseded by D25. Auth0 does not export password hashes without a support request, and all 51 users are email+password. Claiming needs only the webhook that already existed.
 - **Running `prisma init`** — it writes `.claude/skills/`, `.windsurf/skills/`, `.agents/skills/` and `skills-lock.json` into the repo root uninvited. `schema.prisma` and `prisma.config.ts` are written by hand instead.
 - **`previewFeatures = ["driverAdapters"]`** — GA since Prisma 6.16; declaring it now emits a deprecation warning.
+- **Using `@prisma/adapter-neon` everywhere, including locally** — it cannot reach a plain Postgres server. The alternative, running a WebSocket proxy in front of local Postgres, adds a moving part to every developer machine and every CI run to avoid one conditional in `lib/db.ts`.
 - **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI for components. Tailwind is added for custom styling only (D29), not as a component library.
 - **Excluding Tailwind entirely** — the original reading of D3. Reversed by the owner: MUI for components, Tailwind for everything bespoke.
 - **`!important` or specificity overrides to make Tailwind beat MUI** — cascade layers solve this properly; escalating specificity does not compose.

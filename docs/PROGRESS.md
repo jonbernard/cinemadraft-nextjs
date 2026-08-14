@@ -144,6 +144,10 @@ Plan: `docs/superpowers/plans/2026-08-14-phase-2-data-layer.md`
 - **`.env` is for the Prisma CLI only** and points at the **local Docker** database. `prisma.config.ts` loads it via dotenv; the Next app reads `.env.local`. Neon operations pass `DATABASE_URL` explicitly on the command line, so reaching production data is always a deliberate act rather than whatever happened to be in a file
 - Prisma 7 no longer auto-loads `.env` — hence the explicit `import 'dotenv/config'` in `prisma.config.ts`
 - `generated/` is gitignored and rebuilt by the `postinstall` script, so CI and Vercel generate the client before building. It is also excluded from Biome — the generated TypeScript carries `@ts-nocheck` and is not ours to format
+- 🔴 **`@prisma/adapter-neon` cannot talk to local Postgres.** `@neondatabase/serverless` speaks Neon's WebSocket/HTTP protocol rather than the Postgres wire protocol, so it fails against the Docker container. `lib/db.ts` selects `@prisma/adapter-pg` for local development and tests, and `@prisma/adapter-neon` for Neon (D32). Verified: identical query, fails in the Neon driver, passes through adapter-pg
+- **Database tests must declare `// @vitest-environment node`.** The Vitest default is jsdom, which is wrong for anything holding a socket
+- The generated client's internal imports are extensionless (`importFileExtension = ""`), which a bundler resolves but **raw `node` cannot**. Anything touching Prisma runs through Next or Vitest, never bare `node`
+- `DATABASE_URL` now lives in **both** `.env` (Prisma CLI) and `.env.local` (Next app), both pointing at Docker, both gitignored
 - Introspection confirmed the normalization landed: no `password`/`salt`, and `nominations.year` typed `String?` because it is `text` in the database while every other year column is `integer`
 
 ### Repositories (T12–T27)
