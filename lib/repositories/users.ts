@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { UserRole } from '@/generated/prisma/enums';
 import type { UserModel } from '@/generated/prisma/models';
 import { db } from '@/lib/db';
@@ -182,5 +184,66 @@ export const userRepository = {
       throw new ConflictError(`user ${current.id} is already claimed`);
     }
     return current;
+  },
+
+  /**
+   * Create a row for a Clerk identity that has no legacy account (D25).
+   *
+   * `uuid`, `createdAt` and `updatedAt` are written explicitly because those
+   * columns are nullable with **no database default** — Sequelize populated
+   * them, and Prisma will happily insert nulls in its place. All 60 restored
+   * rows have them, so a null here produces a user that is subtly unlike every
+   * other one: no public profile URL, and no creation date to sort by. It
+   * fails much later and far from this function.
+   *
+   * `provider` records how the account came into being. Legacy rows say
+   * `auth0` or `google.com`; these say `clerk`, so the two populations stay
+   * distinguishable after Auth0 is decommissioned and `providerId` goes dead.
+   */
+  async createFromClerk(input: {
+    clerkId: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    image: string | null;
+  }): Promise<User> {
+    const now = new Date();
+    return db.user.create({
+      data: {
+        uuid: randomUUID(),
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        image: input.image,
+        clerkId: input.clerkId,
+        provider: 'clerk',
+        role: 'user',
+        createdAt: now,
+        updatedAt: now,
+        lastLogin: now,
+      },
+      select: SELECT,
+    });
+  },
+
+  /**
+   * Admin repair: move an account to a different Clerk identity, or detach it.
+   *
+   * Deliberately unconditional, unlike `claim`. This exists precisely for the
+   * cases the safety rules refuse — a member whose Clerk email differs from
+   * their historical one, and a logged collision — so it is the one function
+   * here that can transfer an account between people.
+   *
+   * That makes it the most dangerous function in this file. Every caller must
+   * be behind `requireAdmin`. Passing null detaches rather than deletes, so a
+   * mistaken relink is recoverable.
+   */
+  async relink(userId: number, clerkId: string | null): Promise<User> {
+    const existing = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundError('user', userId);
+    return db.user.update({ where: { id: userId }, data: { clerkId }, select: SELECT });
   },
 };
