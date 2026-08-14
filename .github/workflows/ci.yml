@@ -122,7 +122,13 @@ jobs:
       - name: Only repositories import the db client
         run: |
           set -uo pipefail
-          offenders=$(grep -rln "from '@/lib/db'" app actions components 2>/dev/null || true)
+          # Test files are exempt, and only test files. The rule exists so that
+          # shipped code cannot reach the database around the repository layer;
+          # a test asserting what a row actually contains has to read it
+          # directly, and that is the point of those tests. The exclusion is by
+          # filename suffix so a non-test file cannot claim it.
+          offenders=$(grep -rln "from '@/lib/db'" app actions components 2>/dev/null \
+            | grep -v -E '\.test\.tsx?$' || true)
           if [ -n "$offenders" ]; then
             echo "::error::only lib/repositories/ may import the db client"
             echo "$offenders"
