@@ -32,20 +32,64 @@ const DEST = join(ROOT, 'fixtures');
 
 // Keys holding user-identifying values. Exact match only — `name` is an award
 // name and must survive untouched.
-const PERSONA_KEYS = new Set(['firstName', 'lastName', 'displayName', 'dummyName', 'email', 'image']);
+const PERSONA_KEYS = new Set([
+  'firstName',
+  'lastName',
+  'displayName',
+  'dummyName',
+  'email',
+  'image',
+]);
 const ID_KEYS = new Set(['uuid', 'userUuid', 'providerId']);
 
 const FIRST_POOL = [
-  'Ava', 'Miles', 'Nora', 'Theo', 'Iris', 'Owen', 'Ruth', 'Cole', 'Vera', 'Emmet',
-  'Juno', 'Silas', 'Hazel', 'Rex', 'Opal', 'Dov', 'Wren', 'Abel', 'Greta', 'Cyrus',
+  'Ava',
+  'Miles',
+  'Nora',
+  'Theo',
+  'Iris',
+  'Owen',
+  'Ruth',
+  'Cole',
+  'Vera',
+  'Emmet',
+  'Juno',
+  'Silas',
+  'Hazel',
+  'Rex',
+  'Opal',
+  'Dov',
+  'Wren',
+  'Abel',
+  'Greta',
+  'Cyrus',
 ];
 const LAST_POOL = [
-  'Reed', 'Marsh', 'Vance', 'Okoye', 'Bright', 'Nakamura', 'Ellis', 'Duarte', 'Fenn', 'Alvi',
-  'Sloane', 'Petrov', 'Chan', 'Rivas', 'Holt', 'Ibarra', 'Quinn', 'Osei', 'Lund', 'Baqri',
+  'Reed',
+  'Marsh',
+  'Vance',
+  'Okoye',
+  'Bright',
+  'Nakamura',
+  'Ellis',
+  'Duarte',
+  'Fenn',
+  'Alvi',
+  'Sloane',
+  'Petrov',
+  'Chan',
+  'Rivas',
+  'Holt',
+  'Ibarra',
+  'Quinn',
+  'Osei',
+  'Lund',
+  'Baqri',
 ];
 
 const digest = (s) => createHash('sha256').update(String(s)).digest();
-const pick = (arr, seed, offset = 0) => arr[digest(seed).readUInt32BE(offset) % arr.length];
+const pick = (arr, seed, offset = 0) =>
+  arr[digest(seed).readUInt32BE(offset) % arr.length];
 
 // ------------------------------------------------------- load + pre-scan
 
@@ -60,7 +104,9 @@ if (files.length === 0) {
   console.error(`No .json files in ${SRC}`);
   process.exit(1);
 }
-const raw = new Map(files.map((f) => [f, JSON.parse(readFileSync(join(SRC, f), 'utf8'))]));
+const raw = new Map(
+  files.map((f) => [f, JSON.parse(readFileSync(join(SRC, f), 'utf8'))]),
+);
 
 // Collect every real personal-name token up front so the fake pools can be
 // made disjoint from them. Without this a generated surname can collide with
@@ -105,7 +151,9 @@ function persona(key) {
   // Probe deterministically until the full name is unused. Two real people
   // colliding on one fake identity would merge them in cross-fixture
   // assertions, which is exactly what referential integrity must prevent.
-  let first, last, salt = 0;
+  let first,
+    last,
+    salt = 0;
   do {
     first = pick(FIRST, `first:${k}:${salt}`);
     last = pick(LAST, `last:${k}:${salt}`, 4);
@@ -128,7 +176,8 @@ function persona(key) {
 function personaKeyFor(obj) {
   const first = obj.firstName;
   const last = obj.lastName;
-  if (typeof first === 'string' && first && typeof last === 'string' && last) return `${first} ${last}`;
+  if (typeof first === 'string' && first && typeof last === 'string' && last)
+    return `${first} ${last}`;
   for (const k of ['displayName', 'dummyName', 'email', 'firstName', 'lastName']) {
     if (typeof obj[k] === 'string' && obj[k]) return obj[k];
   }
@@ -183,7 +232,8 @@ const record = (from, to) => {
 // untouched — contract tests depend on them.
 const nameTokens = new Map();
 const recordToken = (from, to) => {
-  if (typeof from === 'string' && from.length > 2 && from !== to) nameTokens.set(from, to);
+  if (typeof from === 'string' && from.length > 2 && from !== to)
+    nameTokens.set(from, to);
 };
 
 // The only app-generated prose in the fixtures. Every other long string
@@ -222,7 +272,9 @@ function scrub(node) {
         const parts = v.split(/\s+/).filter((x) => x.length > 2);
         const repl = replacement.split(/\s+/);
         recordToken(v, replacement);
-        parts.forEach((part, i) => recordToken(part, repl[i] ?? repl[0]));
+        parts.forEach((part, i) => {
+          recordToken(part, repl[i] ?? repl[0]);
+        });
       }
       if (k === 'firstName' || k === 'lastName') recordToken(v, replacement);
       out[k] = replacement;
@@ -252,12 +304,15 @@ for (const [f, doc] of raw) scrubbed.set(f, scrub(doc));
 // Longest-first so "Jon Bernard" is consumed before "Jon", and word-bounded so
 // "Bill" cannot match inside "Billy".
 const tokens = [...nameTokens.entries()].sort((a, b) => b[0].length - a[0].length);
-const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function sweepProse(text) {
   let s = text;
   for (const [from, to] of tokens) {
-    s = s.replace(new RegExp(`(?<![\\p{L}\\p{N}])${escape(from)}(?![\\p{L}\\p{N}])`, 'giu'), to);
+    s = s.replace(
+      new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegex(from)}(?![\\p{L}\\p{N}])`, 'giu'),
+      to,
+    );
   }
   return s;
 }
@@ -277,7 +332,7 @@ rmSync(DEST, { recursive: true, force: true });
 mkdirSync(DEST, { recursive: true });
 
 for (const [f, data] of scrubbed) {
-  writeFileSync(join(DEST, f), JSON.stringify(applyProse(data), null, 2) + '\n');
+  writeFileSync(join(DEST, f), `${JSON.stringify(applyProse(data), null, 2)}\n`);
 }
 // .path sidecars embed identifiers in the URL (/profile/feed/user/<uuid>), so
 // copying them verbatim would leak. Only the id map applies here — these are
@@ -312,7 +367,7 @@ for (const f of readdirSync(DEST)) {
 // data, not a leak, and flagging it would make this check unusable.
 const PERSON_FIELDS = new Set([...PERSONA_KEYS, ...FREETEXT_KEYS]);
 const bounded = (needle) =>
-  new RegExp(`(?<![\\p{L}\\p{N}])${escape(needle)}(?![\\p{L}\\p{N}])`, 'iu');
+  new RegExp(`(?<![\\p{L}\\p{N}])${escapeRegex(needle)}(?![\\p{L}\\p{N}])`, 'iu');
 
 for (const f of files) {
   const walk = (n) => {
@@ -321,7 +376,8 @@ for (const f of files) {
     for (const [k, v] of Object.entries(n)) {
       if (PERSON_FIELDS.has(k) && typeof v === 'string') {
         for (const [orig] of nameTokens) {
-          if (bounded(orig).test(v)) failures.push(`${f}: ${k} still contains ${JSON.stringify(orig)}`);
+          if (bounded(orig).test(v))
+            failures.push(`${f}: ${k} still contains ${JSON.stringify(orig)}`);
         }
       }
       walk(v);
@@ -351,9 +407,11 @@ for (const f of files) {
 }
 
 if (failures.length) {
-  console.error('SCRUB FAILED\n' + failures.map((x) => '  ' + x).join('\n'));
+  console.error(`SCRUB FAILED\n${failures.map((x) => `  ${x}`).join('\n')}`);
   process.exit(1);
 }
 
 console.log(`Scrubbed ${files.length} fixtures → fixtures/`);
-console.log(`  ${personas.size} personas, ${ids.size} identifiers, ${secrets.size} distinct values replaced`);
+console.log(
+  `  ${personas.size} personas, ${ids.size} identifiers, ${secrets.size} distinct values replaced`,
+);

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["**", "!fixtures", "!.next", "!next-env.d.ts"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 90
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "next": "all",
+      "react": "all",
+      "tailwind": "recommended",
+      "test": "recommended",
+      "project": "recommended"
+    },
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "error"
+      },
+      "style": {
+        "noNonNullAssertion": "error",
+        "useConst": "error",
+        "useImportType": "error",
+        "noParameterAssign": "error",
+        "useComponentExportOnlyModules": {
+          "level": "error",
+          "options": {
+            "allowExportNames": [
+              "metadata",
+              "generateMetadata",
+              "viewport",
+              "generateViewport",
+              "generateStaticParams",
+              "dynamic",
+              "dynamicParams",
+              "revalidate",
+              "fetchCache",
+              "runtime",
+              "preferredRegion",
+              "maxDuration",
+              "experimental_ppr"
+            ]
+          }
+        }
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsole": { "level": "error", "options": { "allow": ["warn", "error"] } }
+      }
+    }
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["scripts/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ]
+}
