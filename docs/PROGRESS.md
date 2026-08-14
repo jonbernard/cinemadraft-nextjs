@@ -84,6 +84,8 @@ Carry these into Phase 7. Do **not** reproduce them in the port.
 - **`GET /watchlist/:page?/:columnName?/:direction` only accepts `createdAt` and `releaseDate`.** `columnName` is passed straight into the Sequelize `order` array and only `releaseDate` is special-cased onto the joined `movie` table, so `title` / `sortTitle` raise Postgres `42703 errorMissingColumn`. Sortable columns must be a validated allowlist in the port
 - 🔴 **The error handler leaks schema.** That 42703 response returns the full failing SQL, column list, and Postgres internals (`parse_relation.c`) to the client. The port must return an opaque error and log the detail server-side. See the typed error classes in P2.T10
 - **`GET /points/league/:type(total|event)/:id/:year?` ignores `:type` entirely.** `getPointsByLeagueId` never reads `req.params.type`, so `total` and `event` return byte-identical responses — verified by diffing the two fixtures. The frontend only ever calls `total` (`components/Points/LeaguePointTotals.js:59`, `pages/league/viewPanel/panelLeague.js:56`), so `event` is **dead route surface**: declared, never implemented, never called. Drop it in the port — do not build a per-event leaderboard on the assumption it once existed
+- 🔴 **`GET /winners` nests the wrong movie.** `server/models/winners.js` declares `Winners.hasOne(Movies, { foreignKey: 'id' })` with no `sourceKey`, so Sequelize joins `movies.id = winners.id` — the winner's own primary key — instead of `winners.movie_id`. Verified against the restored data: of 734 winners, 12 nest `null` because the winner id runs past the end of `movies`, and exactly **1** nests the right film by coincidence. The rest are near-misses only because the two sequences ran roughly in step. The fixture shows it plainly: winner 1 has `movieId: 675` and nests `movie: { id: 1, "Arrival" }`. Not reproduced; three tests in `winners.test.ts` document it
+- **`GET /league/:id/:year?` ignores its year param.** The route calls `Drafts.getByLeagueId`, which filters on `leagueId` alone, so the fixture captured at `/league/1/2025` carries all 140 seats from 2017–2026. Same family as the `/draft/users/:id` bug. Split in the port into `findByLeagueId` (year-wide) and `findByLeagueIdAndYear`
 - **`GET /events` builds a graph it then throws away.** The controller eager-loads every event's awards, their points, their nominations for the requested year, and each nominated movie — and the route `R.omit`s the whole `awards` tree before responding. `event-by-abbr` keeps it, so the two routes differ only in whether the work was wasted. The port composes that in a service, on the read path that actually needs it
 - **`Users.getByIds` asks for `displayName` and never gets it.** It lists the VIRTUAL `displayName` in `attributes` while also setting `raw: true`, and Sequelize computes VIRTUAL columns on the model instance that `raw` skips. That is why `draft-users` has no `displayName` and `profile-feed.user` — same virtual, no `raw` — does. Not carried over: display formatting goes through one formatter (see legacy fields below)
 
@@ -91,6 +93,7 @@ Carry these into Phase 7. Do **not** reproduce them in the port.
 
 ### Legacy fields to consider dropping
 
+- **`draft_picks.user_id` is a dead denormalized copy of `drafts.user_id`.** Populated 2017–2022, null for every row since 2024, and it never once disagrees with the owning draft (638 of 1025 rows populated, 0 conflicts). The source Sequelize model never declared it, so the API could not return it either. Kept in the DTO and documented; nothing should read it — use the owning draft
 - **`fbId` appears across `Events`, `Leagues`, `Winners`, and others** — Firebase-era identifiers from before the Postgres migration. Out of scope for D27 (which dropped only `password`/`salt`), but Phase 7 should decide whether these carry forward. They are dead weight if nothing reads them; check before dropping, since some may still be joined against
 - 🔴 **One restored account's email is stored mixed-case**, and there are zero case-insensitive duplicates across the table. Clerk returns a lower-cased address on a verified identity, so an exact-match claim would leave that person permanently locked out of their own account. `userRepository.findByEmail` and `.claim` fold case; `claim` throws `ConflictError` rather than guessing if the folded address ever stops being unique. Phase 4 must not reintroduce an exact match
 - Some user records have unnormalized display data (e.g. `firstName: "seth"`, lowercase). Not a blocker, but the port should not assume `firstName`/`lastName` are presentation-ready — build the display name through a single formatter
@@ -161,19 +164,21 @@ One per live table, in this order. Each: contract test first against `fixtures/`
 - [x] P2.T12 `movies` — template repository, 17 tests
 - [x] P2.T13 `users` — claim-on-signin depends on this (D25); 24 tests
 - [x] P2.T14 `events` — award shows; 24 tests
-- [ ] P2.T15 `awards` — carries the per-award point value
-- [ ] P2.T16 `nominations` — 4559 rows, the scoring input
-- [ ] P2.T17 `winners` — a win scores P a second time
-- [ ] P2.T18 `points` — the level/tier/points lookup
-- [ ] P2.T19 `leagues`
-- [ ] P2.T20 `drafts`
-- [ ] P2.T21 `draft_picks` — 1025 rows
+- [x] P2.T15 `awards` — 🔴 `points` is an **FK into `points.id`**, not a value; exposed as `pointsId`; 23 tests
+- [x] P2.T16 `nominations` — 4559 rows, the scoring input; 27 tests
+- [x] P2.T17 `winners` — a win scores P a second time; 30 tests
+- [x] P2.T18 `points` — the level/tier/points lookup; 23 tests
+- [x] P2.T19 `leagues` — `owner` is JSON text; parsed to `ownerIds`; 19 tests
+- [x] P2.T20 `drafts` — 26 tests
+- [x] P2.T21 `draft_picks` — 1025 rows; 24 tests
 - [ ] P2.T22 `lists`
 - [ ] P2.T23 `watchlists` — 2363 rows
 - [ ] P2.T24 `notifications`
 - [ ] P2.T25 `profile_feeds` — `message` is free text containing user names
 - [ ] P2.T26 `available_years` — active-year read path (D22)
 - [ ] P2.T27 `reviews` — 🔴 **0 rows in production** — Phase 7 decides whether it ships at all; do not assume parity requires it
+
+🔴 **A roster is not always 8 movies.** Picks per seat by season, counted from `draft_picks`: 2017 **7**, 2018 **7**, 2019 **8**, 2020 **7**, 2021 **7**, 2022 **7**, 2024 **7**, 2025 **9**, 2026 **7** (in progress). No database constraint enforces any of it. The brief said "up to 8"; the data says the cap is a per-season rule that has been 7, 8 and 9. **P6.T1 must not hardcode 8** — and the owner needs to decide where the number comes from: a column on `available_years`, a league setting, or a constant that changes yearly. Pinned by a test in `draft-picks.test.ts`.
 
 **Careful which fixture fields you assert.** `scripts/scrub-fixtures.mjs` rewrites *every* key named `image`, so `events.json` shows `https://example.test/avatar/<hash>.png` where the real column holds `/images/awards/sag.jpg` — a path into the app's own `/public`, nothing to do with avatars or TMDB. Names, emails, uuids and avatars are scrubbed everywhere they appear. Ids survive. A test asserting a scrubbed value is asserting the scrubber; assert shape from the fixture and values from `db.$queryRaw`.
 

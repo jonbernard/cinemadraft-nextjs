@@ -74,6 +74,10 @@ Extracted from the source app (`server/routes/points.js`, `sumPoints`) and prese
 - A **win** earns `P` a second time — so a win is worth **2P total**.
 - `team total = Σ movie totals`; `movie total = Σ per-award points`.
 
+🔴 **`P` is not `awards.points`.** That column is a **foreign key into `points.id`** — the source app declared `Awards.hasMany(Points, { sourceKey: 'points', foreignKey: 'id', as: 'pointsData' })` in `server/models/points.js`, and the API exposed the raw FK under the name `points` alongside a resolved `pointsData`. Verified against the restored data: `awards.points` holds values 1–12, all twelve resolve, and none is a point value. "Performance by an Ensemble" stores `1`, which is the Alphabet tier-3 row, worth **5**. A scoring service that summed `award.points` would score it 1 and corrupt every total in the app.
+
+The repository therefore exposes the column as **`Award.pointsId`**, and `P` is `pointRepository.findManyByIds([...pointsIds])`. This is the one place the port deliberately renames a captured API field; the name was actively dangerous.
+
 ## Still open
 
 - **Realtime transport for phase 14.** Needed only post-cutover. Candidates: Upstash direct (signed up outside the Marketplace, where a free tier may still exist), Pusher Channels free tier, Ably free tier, or Postgres `LISTEN`/`NOTIFY` over an unpooled Neon connection. Do not decide until phase 14 — pricing and free tiers will have moved.
