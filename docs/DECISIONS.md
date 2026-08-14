@@ -37,6 +37,9 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 
 | D29 | **MUI and Tailwind coexist via CSS cascade layers.** `AppRouterCacheProvider` runs with `enableCssLayer: true`, and the layer order is declared `@layer theme, base, mui, components, utilities`. `mui` sits above `base` so Tailwind preflight cannot strip MUI component styling, and below `utilities` so Tailwind classes win without `!important` or specificity hacks. Design tokens (§6) are defined once as CSS custom properties and consumed by both |
 
+| D30 | **TypeScript stays on 5.x until after cutover** — an explicit exception to D28. TypeScript 7 is a ground-up native rewrite, and Next 16, Biome and Prisma all declare support against 5.x (Prisma's peer range is `>=5.4.0`). Adopting it during the data layer would mean debugging toolchain gaps alongside a Prisma major. `^5` cannot resolve to 7, so the pin is already safe. Revisit as its own task post-cutover |
+| D31 | **Prisma 7 config lives in `prisma.config.ts`, not the schema.** `datasource.url` is a hard error in 7 (P1012), env vars are no longer auto-loaded, a driver adapter is mandatory, and the generator is `prisma-client` with a required `output`. Generated client goes to `generated/prisma` — gitignored, regenerated at build, and deliberately not under `app/` where Next's route scan would reach it |
+
 ## Explicitly rejected
 
 - **Supabase** for database or realtime — rejected by the owner.
@@ -44,6 +47,8 @@ Full rationale lives in `docs/superpowers/specs/2026-08-13-cinemadraft-nextjs-co
 - **Reusing the prior scaffold's `schema.prisma`** — valuable, but D16 overrides.
 - **Keeping Auth0 as a Clerk OAuth connection** — no migration risk, but retains the vendor being removed.
 - **Bulk-importing users from Auth0 into Clerk** — superseded by D25. Auth0 does not export password hashes without a support request, and all 51 users are email+password. Claiming needs only the webhook that already existed.
+- **Running `prisma init`** — it writes `.claude/skills/`, `.windsurf/skills/`, `.agents/skills/` and `skills-lock.json` into the repo root uninvited. `schema.prisma` and `prisma.config.ts` are written by hand instead.
+- **`previewFeatures = ["driverAdapters"]`** — GA since Prisma 6.16; declaring it now emits a deprecation warning.
 - **Rewriting UI to shadcn/Tailwind** — D3 keeps MUI for components. Tailwind is added for custom styling only (D29), not as a component library.
 - **Excluding Tailwind entirely** — the original reading of D3. Reversed by the owner: MUI for components, Tailwind for everything bespoke.
 - **`!important` or specificity overrides to make Tailwind beat MUI** — cascade layers solve this properly; escalating specificity does not compose.
