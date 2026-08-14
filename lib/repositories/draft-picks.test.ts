@@ -60,13 +60,17 @@ describe('draftPickRepository.findByDraftId', () => {
     expect(picks.map((p) => p.order)).toEqual(draftById.picks.map((p) => p.order));
   });
 
-  it('returns nine picks, not the eight the domain notes describe', async () => {
+  it('returns every pick a seat holds, however many that is', async () => {
     // Worth pinning: a seat was documented as eight movies, and every 2025 seat
-    // in league 1 holds nine (`order` runs 1..9 across all 1025 rows). The
-    // limit is enforced by the app, has changed between seasons, and is not a
-    // database constraint — so lib/services/draft.ts must own it as a
-    // per-season rule rather than a hardcoded 8, and this layer must never
-    // truncate.
+    // in league 1 holds nine (`order` runs 1..9 across all 1025 rows). Counts
+    // across seasons run 7, 8 and 9, and no database constraint enforces any
+    // of them.
+    //
+    // Per D34 there is no roster size anywhere in this app — not a column, not
+    // a setting, not a constant. Each league picks its own number each season
+    // and the app never learns it: a roster is whatever `draft_picks` holds,
+    // whether that is 6, 8 or 30. This layer must never truncate, and no layer
+    // above it may impose a cap.
     const picks = await draftPickRepository.findByDraftId(draftById.id);
     expect(picks).toHaveLength(9);
   });

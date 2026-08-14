@@ -11,7 +11,7 @@
 
 Replace the production Cinemadraft app — a Create React App SPA with an Express/Sequelize API on Heroku — with a Next.js application on Vercel using only free-tier services, backed by Prisma. The replacement ships a new visual identity rather than a port of the current MUI Minimal template look. `cinemadraft.com` cuts over to Vercel; Heroku is retired.
 
-Cinemadraft is a fantasy movie award league. Members draft a team of up to 8 films before awards season. As nominations and wins are announced across the season's award shows, each film accrues points; a film's points sum to a team total, and teams are ranked within a league.
+Cinemadraft is a fantasy movie award league. Members draft a team of films before awards season. How many films is decided per league, per season, and is never fixed (D34). As nominations and wins are announced across the season's award shows, each film accrues points; a film's points sum to a team total, and teams are ranked within a league.
 
 ## 2. Current system
 
@@ -210,9 +210,9 @@ Cost: one column plus one ingest step. Effect: every roster and league board loo
 
 ### 6.7 Component specifications
 
-**Roster strip** — the core object. Up to 8 films.
+**Roster strip** — the core object. However many films the seat drafted (D34) — 6, 8, 30. The strip lays out from the rows it is handed and never assumes a count, so it has to stay legible as the number grows: the layout wraps rather than compressing frames toward illegibility.
 
-- Frames are 2:3, numbered `01`–`08` by **draft round**. Snake order is real information: round 1 cost more than round 8.
+- Frames are 2:3, numbered from `01` by **draft round**. Snake order is real information: round 1 cost more than the last round.
 - Title sits **below** the frame — full width, two-line clamp. This fixes the current truncation ("One Ba…", "Is This …", "Wake …") caused by overlaying titles on artwork.
 - Points render in tabular mono beneath the title.
 - A thin bar shows that film's share of the team total, colored by its poster accent — hierarchy without resizing frames.
