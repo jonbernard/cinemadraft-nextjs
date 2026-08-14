@@ -1,1 +1,23 @@
+/* Cascade layer order is load-bearing (D29).
+ *
+ * `mui` sits ABOVE `base` so Tailwind's preflight reset cannot strip MUI
+ * component styling, and BELOW `utilities` so a Tailwind class overrides MUI
+ * without !important or specificity escalation.
+ *
+ * This statement must come before the Tailwind import: the first @layer
+ * declaration wins, and Tailwind's own statement would otherwise set the
+ * order without `mui` in it.
+ *
+ * Both properties are asserted in e2e/smoke.spec.ts. If those tests fail,
+ * fix this line — do not weaken the tests.
+ *
+ * Note that the compiled output does NOT contain this statement verbatim.
+ * Tailwind folds it into its own emission — you will see `@layer theme {}`
+ * and `@layer base {}` inline, then a residual `@layer mui, components;`.
+ * That is expected: a layer's position is fixed by its first occurrence, so
+ * the relative order declared here survives. Verified in the browser as
+ * properties, theme, base, mui, components, utilities.
+ */
+@layer theme, base, mui, components, utilities;
+
 @import "tailwindcss";

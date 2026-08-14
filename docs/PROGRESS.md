@@ -84,7 +84,7 @@ Carry these into Phase 7. Do **not** reproduce them in the port.
 Plan: `docs/superpowers/plans/2026-08-14-phase-1-scaffold.md`
 
 - [x] P1.T1 `create-next-app`, TS strict, Node 24 pinned
-- [ ] P1.T2 MUI v7 + `@mui/material-nextjs` + emotion cache provider
+- [x] P1.T2 MUI + Tailwind coexisting via cascade layers, verified in-browser
 - [ ] P1.T3 ESLint + Prettier, `npm run lint` green
 - [ ] P1.T4 Vitest config + smoke test
 - [ ] P1.T5 Playwright config + smoke test
