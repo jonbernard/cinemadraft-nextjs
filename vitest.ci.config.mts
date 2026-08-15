@@ -46,6 +46,13 @@ export default mergeConfig(base, {
       'lib/services/season.test.ts',
       'lib/services/dashboard.test.ts',
       'lib/services/scoring.production.test.ts',
+      // The draft board and the owner's console, both read against league 1's
+      // 2026 season — 4 groups of 4 seats, 3 of them dummies. The *rules* they
+      // are built on run here: `draft-order.test.ts` (the snake, and the seat
+      // that missed its turn) and `draft-actions.test.ts` (every refusal) seed
+      // their own rows and need no restored data.
+      'lib/services/draft.test.ts',
+      'lib/services/draft-console.test.ts',
     ],
   },
 });

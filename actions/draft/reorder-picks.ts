@@ -51,7 +51,11 @@ export async function reorderPicks(input: ReorderPicksInput): Promise<ActionResu
 
     await draftPickRepository.reorder(seat.id, parsed.data.pickIds);
 
-    revalidatePath(`/leagues/${leagueId}`);
+    // 'layout' so the owner's console at /leagues/:id/draft refreshes too,
+    // not only the public board. A Server Action called from a client
+    // component carries the revalidated tree back with its response, which is
+    // what makes the console advance without a manual refresh.
+    revalidatePath(`/leagues/${leagueId}`, 'layout');
     return ok();
   } catch (error) {
     return toActionResult(error);

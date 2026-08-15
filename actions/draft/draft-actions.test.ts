@@ -305,7 +305,13 @@ describe('addPick', () => {
 
     await addPick({ draftId: fixture.seatA.id, movieId: fixture.films[0]?.id as number });
 
-    expect(revalidatePath).toHaveBeenCalledWith(`/leagues/${fixture.league.id}`);
+    // 'layout' rather than the default: the console lives at
+    // /leagues/:id/draft, and revalidating only the board would leave the
+    // owner's own page showing the pick they just made as still available.
+    expect(revalidatePath).toHaveBeenCalledWith(
+      `/leagues/${fixture.league.id}`,
+      'layout',
+    );
   });
 });
 
