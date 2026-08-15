@@ -15,16 +15,20 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 18 |
-| **deficient** | 50 |
+| **ported** | 25 |
+| **deficient** | 43 |
 | **dropped** | 15 |
 | **total capabilities** | 83 |
 
+_Audited at the end of Phase 6 (18 ported). Phase 8 closed seven rows: film
+search and the whole award-show surface, including both admin writes the source
+left unauthenticated._
+
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
-outstanding. 50 open rows is not 50 phases of work: **26 of them already have
-their repository** and need only a page, while **22 need a repository written
-first** — those are the writes, and they are where the time goes.
+outstanding. The 43 open rows are not 43 phases of work: most already have
+their repository and need only a page; the rest need a repository written
+first, and those are almost all *writes*, which is where the time goes.
 The split is in the **Data** column, and it is the honest measure of what is
 left.
 
@@ -80,7 +84,7 @@ which is why so many rows are cheap and a few are not.
 | **A film's page** — synopsis, cast, crew, trailers, images, ratings, box office | **deficient** | `src/pages/movie/index.jsx`, `GET /movie/:id`, `/details` | **P10.T5** — TMDB + OMDb, Phase 8/11 | ✓ |
 | A film's points by award show, and its average draft position | **deficient** | `GET /points/movie/:tmdbId` | **P10.T6** | ✓ |
 | Browse upcoming and recent releases | **deficient** | `src/pages/browse/index.js`, `GET /movie/discovery/...` | **P10.T7** | — |
-| Search for a film by title | **deficient** | `GET /search` | **P10.T8** — Phase 8 makes this local-first + TMDB (§10). The console's `searchFilms` is local-only today | ✓ |
+| Search for a film by title | **ported** | `GET /search` | `lib/services/search.ts` — local-first, three ranked contexts (§10). TMDB is an optional second source and is unconfigured; the 1,355 local films answer it completely | ✓ |
 | Similar films | **deficient** | movie page "Similar Movies" grid | **P10.T9** | — |
 
 ## Leagues
@@ -119,15 +123,15 @@ which is why so many rows are cheap and a few are not.
 
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
-| Every award show | **deficient** | `/award-shows`, `GET /events` | **P10.T22** | ✓ |
-| **One show: its categories, point values, nominees and winners** | **deficient** | `/award-shows/:abbr`, `GET /events/:abbr[/:year]` | **P10.T23** | ✓ |
-| Past seasons of a show | **deficient** | year `<Select>` | **P10.T24** | ✓ |
+| Every award show | **ported** | `/award-shows`, `GET /events` | `app/(app)/award-shows/page.tsx` | ✓ |
+| **One show: its categories, point values, nominees and winners** | **ported** | `/award-shows/:abbr`, `GET /events/:abbr[/:year]` | `app/(app)/award-shows/[abbr]/page.tsx` — point values resolved through `pointsId` (D41) | ✓ |
+| Past seasons of a show | **ported** | year `<Select>` | Season nav on the show page | ✓ |
 | Subscribe to ceremony dates as a calendar | **deficient** | `GET /events/calendar.ics` | **P10.T25** — one of the three `/api` routes D8 permits | ✓ |
 | Admin: edit a show's dates and live flags | **deficient** | `PUT /events/:abbr` (`restrictToAdmin`) | **P10.T26** | — |
 | Admin: add or delete a category | **deficient** | `POST/DELETE /awards` (`restrictToAdmin`) | **P10.T27** | — |
-| Admin: enter nominations | **deficient** | `nominations` sub-view, `POST /nominations` | **P10.T28** — 🔴 ships admin-gated; see *Bugs* | — |
-| Admin: pick winners during the ceremony | **deficient** | `winner` sub-view, `POST /winners` | **P10.T29** — 🔴 ships admin-gated; see *Bugs* | — |
-| Admin: which shows still need entering | **deficient** | "Events needing updates" card | **P10.T30** | ✓ |
+| Admin: enter nominations | **ported** | `nominations` sub-view, `POST /nominations` | `actions/awards/attach-nominee.ts` — 🔴 admin-gated, closing bug 1 | ✓ |
+| Admin: pick winners during the ceremony | **ported** | `winner` sub-view, `POST /winners` | `actions/awards/set-winner.ts` — 🔴 admin-gated, closing bug 1. Correcting is the same action; live *broadcast* is phase 14 | ✓ |
+| Admin: which shows still need entering | **ported** | "Events needing updates" card | `app/(app)/award-shows/page.tsx`, from the source's own `nom_active` / `awards_active` flags | ✓ |
 
 ## Live ceremony
 
@@ -195,7 +199,7 @@ in the source and, where the data could settle it, measured.
 
 | # | Bug | Evidence | Port |
 |---|---|---|---|
-| 1 | **Six writes have no auth at all** — `POST/DELETE /nominations`, `POST/DELETE /winners`, `POST /movie`, `POST /years`. Nominations and winners are the scoring inputs, so anyone on the internet can change every league's standings | `routes/nominations.js:28-29`, `routes/winners.js:8-9`, `routes/movie/index.js:54`, `routes/index.js:59`. No global auth: `server/index.js:81` mounts the router with only a rate limiter, and `createResponse` (`controllers/index.js:18`) adds none. Sibling admin writes in `awards.js`/`events.js` *do* use `restrictToAdmin` | P10.T28/T29 ship these admin-gated. **Live on Heroku until cutover** — the owner has decided the source stays untouched |
+| 1 | ✅ *Closed in the port by Phase 8 for nominations and winners.* **Six writes have no auth at all** — `POST/DELETE /nominations`, `POST/DELETE /winners`, `POST /movie`, `POST /years`. Nominations and winners are the scoring inputs, so anyone on the internet can change every league's standings | `routes/nominations.js:28-29`, `routes/winners.js:8-9`, `routes/movie/index.js:54`, `routes/index.js:59`. No global auth: `server/index.js:81` mounts the router with only a rate limiter, and `createResponse` (`controllers/index.js:18`) adds none. Sibling admin writes in `awards.js`/`events.js` *do* use `restrictToAdmin` | P10.T28/T29 ship these admin-gated. **Live on Heroku until cutover** — the owner has decided the source stays untouched |
 | 2 | **`Winners.movie` joins on the wrong key.** `hasOne(Movies, { foreignKey: 'id' })` with no `sourceKey`, so it matches `Movies.id = Winners.id` instead of `Winners.movieId`. `Nominations` gets this right | `server/models/winners.js:11-14` vs `models/nominations.js:27-31`. **Measured: 733 of 734 winner rows resolve to the wrong film** — one is right by coincidence | `lib/repositories/winners.ts` selects `movieId` explicitly and declares no association |
 | 3 | **League ownership is a substring match** — `league.owner.includes(user.id)` against TEXT `"[3]"`, admitting strangers and locking out real owners | `routes/league.js:16`, `routes/draftpicks.js` | Fixed: `lib/services/league-access.ts` (D47). **Measured: 29 (league, stranger) pairs across 11 of 13 leagues** |
 | 4 | **`verifyLeagueOwner` is a no-op on `POST /draft/add`** — it guards on `req.params.leagueId`, and that route carries the id in the body, so any signed-in user can add a seat to any league | `routes/draft.js:9-23, 51` | P10.T15 goes through `canManageLeague` |

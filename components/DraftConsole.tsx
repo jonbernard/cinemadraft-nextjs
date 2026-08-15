@@ -112,7 +112,8 @@ export function DraftConsole({
   onSearch: (query: string) => Promise<ActionResult<ConsoleFilm[]>>;
   onAssign: (input: {
     draftId: number;
-    movieId: number;
+    movieId?: number;
+    tmdbId?: string;
   }) => Promise<ActionResult<{ pickId: number }>>;
   onReorder: (input: {
     draftId: number;

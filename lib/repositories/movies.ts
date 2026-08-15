@@ -154,4 +154,49 @@ export const movieRepository = {
       return movie ? [movie] : [];
     });
   },
+
+  /**
+   * Cache a film TMDB knows about.
+   *
+   * `movies` is a cache of TMDB, and this is the only way a row enters it: the
+   * first time somebody drafts or nominates a film. Every one of the 1,355
+   * restored rows arrived this way.
+   *
+   * The caller has already checked `findByTmdbId`; this races only against
+   * another request for the same film at the same moment — two admins entering
+   * the same nomination during a live ceremony. `create` would give the second
+   * one a duplicate row, and a duplicate film is two films as far as scoring
+   * is concerned, so the write is idempotent on `tmdbId` instead.
+   */
+  async upsertByTmdbId(input: {
+    tmdbId: string;
+    imdbId: string | null;
+    title: string;
+    sortTitle: string;
+    poster: string | null;
+    backdrop: string | null;
+    releaseDate: Date | null;
+  }): Promise<Movie> {
+    const existing = await db.movie.findFirst({
+      where: { tmdbId: input.tmdbId },
+      select: SELECT,
+    });
+    if (existing) return existing;
+
+    const now = new Date();
+    return db.movie.create({
+      data: {
+        tmdbId: input.tmdbId,
+        imdbId: input.imdbId,
+        title: input.title,
+        sortTitle: input.sortTitle,
+        poster: input.poster,
+        backdrop: input.backdrop,
+        releaseDate: input.releaseDate,
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: SELECT,
+    });
+  },
 };

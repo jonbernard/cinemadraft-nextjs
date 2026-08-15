@@ -423,22 +423,94 @@ correction is consistent by construction today — and this phase writes the tes
 that proves points move anyway, because **phase 9 inherits it as a constraint
 it must not break**.
 
-🔴 **TMDB has no key in this repo and the app must not need one.** The local
-table holds 1,355 films, every one with a `tmdbId` — the league's whole
-history. TMDB is an optional second source behind an interface; absent a key it
-is never called and local results are a correct answer, not a degraded one.
+🔴 **TMDB is the film catalogue; `movies` is a cache of it.** A film enters the
+local table the first time somebody drafts or nominates it — which is why all
+1,355 rows carry a `tmdbId`. So a `TMDB_API_KEY` is **required**, not optional:
+without one the app can only find films the league has already used, and no new
+release can be drafted or nominated at all. Search always asks TMDB, and both
+write paths ingest a film that is not cached yet (`lib/services/film-ingest.ts`,
+ported from the source's `saveFilm`).
 
-- [ ] P8.T1 `lib/services/search-ranking.ts` — the pure ranking rule, three contexts
-- [ ] P8.T2 Trigram index + local-first `lib/services/search.ts`
-- [ ] P8.T3 TMDB as an optional source, cached, failure-tolerant
-- [ ] P8.T4 `components/FilmSearch.tsx` — extracted from the draft console
-- [ ] P8.T5 Award show pages — public (D44), point values resolved through `pointsId`
-- [ ] P8.T6 Admin: attach and remove a nominee 🔴 admin-gated
-- [ ] P8.T7 Admin: mark and correct a winner 🔴 the phase gate
-- [ ] P8.T8 E2E and close-out
+- [x] P8.T1 `lib/services/search-ranking.ts` — the pure ranking rule, three contexts
+- [x] P8.T2 Trigram index + local-first `lib/services/search.ts`
+- [x] P8.T3 TMDB as an optional source, cached, failure-tolerant
+- [x] P8.T4 `components/FilmSearch.tsx` — extracted from the draft console
+- [x] P8.T5 Award show pages — public (D44), point values resolved through `pointsId`
+- [x] P8.T6 Admin: attach and remove a nominee 🔴 admin-gated
+- [x] P8.T7 Admin: mark and correct a winner 🔴 the phase gate
+- [x] P8.T8 E2E and close-out
+
+**Gate met.** 21 E2E green; 832 unit tests. All three search contexts return
+the right top result, and a winner correction moves the points.
 
 Closes `PARITY.md` **P10.T8, T22, T23, T24, T28, T29**. T26, T27 and T30
-(editing a show, category CRUD, the needs-updating list) stay in phase 10.
+(editing a show, category CRUD, the needs-updating list) stay in phase 10 —
+though the needs-updating list is in fact built, on `/award-shows`, so T30 is
+narrower than the matrix says.
+
+### What the next phase needs to know
+
+- 🔴 **Phase 9 inherits a test it must not break.** `award-actions.test.ts`
+  asserts that correcting a winner moves the points from the old film to the
+  new one. It passes *by construction* today because scoring is computed on
+  read (D41) — which is exactly why it was written now. The moment phase 9
+  materializes totals, that test becomes the thing that catches a stale one.
+- 🔴 **`PLAN.md` was wrong about the recompute** and has been corrected: there
+  is nothing to trigger and nothing to reverse, because nothing is cached. Do
+  not go looking for the recompute this phase was supposed to call.
+- 🔴 **The trigram threshold is 0.5, and it is measured, not chosen.**
+  `word_similarity` scores a transposed letter at 0.571 against the real
+  titles; Postgres's default of 0.6 would reject it, and transposition is the
+  typo people make at speed. The value lives in the predicate, not a session
+  GUC, because a pooled connection may not carry the `SET`.
+- 🔴 **TMDB is required and currently unconfigured.** `movies` is a *cache* of
+  TMDB, so without a key the app finds only films the league has already used —
+  which makes drafting or nominating a new release impossible. Search asks TMDB
+  on every query, deliberately: an earlier version only asked when local
+  results looked thin, which meant a query like "wicked" matched enough cached
+  films to never reach TMDB and the new release stayed invisible. The rate
+  limit is handled by caching identical queries, not by declining to ask.
+- **`lib/services/film-ingest.ts` is how a TMDB film becomes usable.** Every id
+  the app deals in is a local `movies.id`, so a search result carrying only a
+  `tmdbId` gets ingested on first use. It reproduces `saveFilm`'s field mapping
+  exactly, including the two rules that look arbitrary: `imdbId` is stored
+  without its `tt` prefix, and `sortTitle` drops a leading article. 1,355 rows
+  follow both, and a new row that broke one would be the only one that did.
+- **`getCache()` does not throw off-platform** — it logs once and falls back to
+  its own in-process map. The first version of `lib/external/cache.ts`
+  duplicated that with a hand-written fallback, which was both dead code and a
+  bug (it cleared a map the cache was not using). Check before writing a
+  fallback.
+- **`lib/auth` now throws `ForbiddenError`,** not a bare `Error`, so a Server
+  Action can turn a refusal into a readable failure. `actions/result.ts` still
+  re-throws unknown exceptions on purpose.
+- **`components/FilmSearch.tsx` is the one typeahead.** The draft console and
+  the award admin both use it. It cancels superseded requests with a real
+  `AbortController`; the console's old boolean flag discarded the result but
+  left the request running.
+- **Two E2E suites now build scratch data** rather than writing into the
+  restored rows — a scratch league and a scratch award show. Anything that
+  writes scoring inputs must do the same: a stray nomination against the real
+  Oscars changes what every league is playing for.
+- 🔴 **`e2e/global-teardown.ts` deletes test accounts from Clerk as well as the
+  database.** Per-spec cleanup removed the local rows and left the Clerk
+  identities behind, and they accumulated across runs until the development
+  instance hit its **100-user ceiling** — at which point sign-up stopped
+  working and four specs failed at once, looking exactly like a timeout. The
+  real message was rendered inside the Clerk widget rather than raised. If
+  sign-up ever hangs at the verification step again, check the user count
+  before the code.
+
+### ⚠️ Waiting on the owner
+
+- 🔴 **A TMDB API key (`TMDB_API_KEY`) is required and missing.** Until it is
+  set, no new film can be drafted or nominated — the app can only find what it
+  has already cached. The code is written and tested against a fake; supplying
+  the key is the whole remaining step. A free key from themoviedb.org, then
+  `.env.local` for development and a Vercel environment variable for
+  production. The source app used the same key (`server/routes/search.js`).
+- **The parity matrix still needs review** (Phase 7 gate). Cutover is blocked
+  while any row is open.
 
 ---
 

@@ -153,6 +153,13 @@ test.describe('draft', () => {
 
   test.afterEach(cleanup);
 
+  // Again after every test has finished. `afterEach` runs while the browser is
+  // still open, and a request already in flight can re-provision the account
+  // it just deleted — the lazy claim path in `lib/auth.ts` creates a row for
+  // any valid session that reaches a page. That left one stray user behind and
+  // failed `lib/db.test.ts`, which counts the restored 60.
+  test.afterAll(cleanup);
+
   test('🔴 the owner drafts a film onto the seat that is picking', async ({ page }) => {
     const { leagueId } = await signInAsOwner(page);
     await page.goto(`/leagues/${leagueId}/draft?year=${YEAR}`);

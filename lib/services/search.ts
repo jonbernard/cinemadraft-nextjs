@@ -24,16 +24,6 @@ export type FilmResult = {
   isLocal: boolean;
 };
 
-/**
- * How thin local results have to be before TMDB is worth asking (§10).
- *
- * The point is the rate limit: during a live draft the same handful of queries
- * are typed over and over, and every one of them already matches locally
- * because the league has been drafting these films for a decade. Asking TMDB
- * anyway would spend the budget on questions already answered.
- */
-const TMDB_THRESHOLD = 5;
-
 /** How many candidates the local query considers before ranking. */
 const LOCAL_LIMIT = 25;
 
@@ -60,15 +50,21 @@ function toCandidate(movie: Movie, nominatedYears: readonly number[]): Candidate
  * thought was popular, and the result the owner picked could be a film the app
  * did not have.
  *
- * The order here is the opposite. Local rows are the valuable ones — already
- * ingested, already scoreable, already carrying an accent — so they are found
- * first, and TMDB is asked only when there are too few of them to be a useful
- * answer.
+ * The order here is the opposite: local rows rank first because they are the
+ * ones that can be drafted, nominated and scored today.
+ *
+ * 🔴 **But TMDB is always asked.** `movies` is a *cache* of TMDB — a film
+ * enters it the first time somebody drafts or nominates it — so the local
+ * table can only ever answer with films the league has already used. Gating
+ * the remote call on "local results look thin" would mean a query like
+ * "wicked", which matches several cached films, never reaches TMDB, and the
+ * brand-new release nobody has drafted yet stays invisible at exactly the
+ * moment somebody is trying to draft it. Cheap answers are not the point;
+ * finding the film is. The rate limit is handled by caching identical queries
+ * (`lib/external/tmdb.ts`), not by declining to ask.
  *
  * `remote` defaults to TMDB and is overridable so this function is testable
- * without a network. It behaves identically whether TMDB is configured or not:
- * with no key `searchTmdb` returns nothing and this is a local search, which
- * is a correct answer rather than a degraded one.
+ * without a network.
  */
 export async function findFilms(
   query: string,
@@ -98,15 +94,12 @@ export async function findFilms(
     toCandidate(movie, yearsByMovie.get(movie.id) ?? []),
   );
 
-  let candidates = local;
-  if (local.length < TMDB_THRESHOLD) {
-    const year = context.kind === 'browse' ? null : context.year;
-    // 🔴 A TMDB failure must never fail the search. The owner is mid-draft and
-    // can see the film in the local list; an error where the results should be
-    // is strictly worse than a shorter list.
-    const fetched = await remote(trimmed, year).catch(() => [] as Candidate[]);
-    candidates = mergeCandidates(local, fetched);
-  }
+  const year = context.kind === 'browse' ? null : context.year;
+  // 🔴 A TMDB failure must never fail the search. Somebody is mid-draft and can
+  // see the local films in front of them; an error where the results should be
+  // is strictly worse than a shorter list.
+  const fetched = await remote(trimmed, year).catch(() => [] as Candidate[]);
+  const candidates = mergeCandidates(local, fetched);
 
   const taken =
     context.kind === 'draft' ? new Set(context.takenMovieIds) : new Set<number>();

@@ -203,17 +203,21 @@ Not a formality. After the priority trio the app is visibly incomplete and the g
 The award show page is the input to the entire scoring pipeline; errors here propagate to every league (§12).
 
 - T1: `lib/services/search.ts` — local-first `Movie` query with trigram/prefix index
-- T2: TMDB fill-in, deduped on `tmdbId`, local row wins
+- T2: TMDB always consulted, deduped on `tmdbId`, local row wins — 🔴 *not* a "fill-in" as originally written: gating the remote call on thin local results hides exactly the new releases search exists to find
 - T3: Vercel Runtime Cache for TMDB responses, keyed on query + year, tagged for invalidation
 - T4: Context-aware ranking — draft / browse / award-admin (§10)
 - T5: Typeahead client component — 250 ms debounce, request cancellation, poster-first results
 - T6: Award show page — categories, nominee grids
 - T7: Admin: attach a nominee (uses award-admin search context)
-- T8: Admin: mark a winner → triggers phase 9 recompute
-- T9: Admin: **correct** a winner → fully reverses the prior recompute
+- T8: Admin: mark a winner
+- T9: Admin: **correct** a winner — the same action as marking one, because winners are entered live from a stage announcement and getting one wrong is ordinary (§12)
 - T10: E2E: attach nominee, mark winner, correct winner
 
-**Gate:** all three search contexts return correct top results; a winner correction leaves no stale points.
+🔴 **T8 and T9 as originally written were wrong: there is no recompute.** Scoring is a pure function computed on read (D41) and nothing is materialized, so a correction is consistent by construction and there is nothing to reverse. The phase wrote the test that proves the points move anyway — **phase 9 inherits it as a constraint it must not break**, which is the whole value of writing it while it was still easy to pass.
+
+**Gate:** all three search contexts return correct top results; a winner correction leaves no stale points. ✅ **Met** — 21 E2E green, 832 unit tests. Ranking is a pure function with its own suite; the correction test asserts points move from the old winner to the new one.
+
+🔴 **TMDB is required.** `movies` is a cache of TMDB — a film enters it the first time somebody drafts or nominates it — so search always asks TMDB and both write paths ingest an uncached film (`lib/services/film-ingest.ts`, ported from the source's `saveFilm`). Without `TMDB_API_KEY` the app degrades to searching its own history and no new release can be drafted or nominated. **Owner action: supply the key.**
 
 ---
 

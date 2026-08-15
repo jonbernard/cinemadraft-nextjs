@@ -62,6 +62,9 @@ export default mergeConfig(base, {
       // what scoring awards. That check is only meaningful against real
       // `awards.points` foreign keys, which is why it lives here.
       'lib/services/award-show.test.ts',
+      // Film ingest, which reads film 1 from the restored data to prove a
+      // cached film is returned without asking TMDB.
+      'lib/services/film-ingest.test.ts',
     ],
   },
 });

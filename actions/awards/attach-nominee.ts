@@ -4,19 +4,29 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { ConflictError } from '@/lib/errors';
-import { movieRepository } from '@/lib/repositories/movies';
 import { nominationRepository } from '@/lib/repositories/nominations';
+import { resolveFilm } from '@/lib/services/film-ingest';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 import { authorizeAward } from './guard';
 
-const Input = z.object({
-  awardId: z.int().positive(),
-  movieId: z.int().positive(),
-  year: z.int().positive(),
-  /** The person, for categories that nominate one. */
-  detailName: z.string().trim().min(1).max(200).optional(),
-  detailCharacter: z.string().trim().min(1).max(200).optional(),
-});
+const Input = z
+  .object({
+    awardId: z.int().positive(),
+    /**
+     * A film already cached locally. Exactly one of `movieId` / `tmdbId` is
+     * given — search returns both kinds of result.
+     */
+    movieId: z.int().positive().optional(),
+    /** A film TMDB knows and this app has not cached yet; it gets ingested. */
+    tmdbId: z.string().trim().min(1).max(20).optional(),
+    year: z.int().positive(),
+    /** The person, for categories that nominate one. */
+    detailName: z.string().trim().min(1).max(200).optional(),
+    detailCharacter: z.string().trim().min(1).max(200).optional(),
+  })
+  .refine((input) => input.movieId != null || input.tmdbId != null, {
+    message: 'a film is required',
+  });
 
 export type AttachNomineeInput = z.infer<typeof Input>;
 
@@ -36,10 +46,13 @@ export async function attachNominee(
   try {
     const { award, abbreviation } = await authorizeAward(parsed.data.awardId);
 
-    // Throws NotFoundError when the film is unknown locally. A film TMDB knows
-    // and this app has not ingested must be saved first — Phase 10 adds that
-    // path (P10.T5), and until then the search offers only local films.
-    const movie = await movieRepository.findById(parsed.data.movieId);
+    // 🔴 Caches the film from TMDB if this is the first time anyone has used
+    // it. Nominations season is exactly when a brand-new release gets entered,
+    // so this is the common path in January, not an edge case.
+    const movie = await resolveFilm({
+      movieId: parsed.data.movieId,
+      tmdbId: parsed.data.tmdbId,
+    });
 
     // 🔴 `nominations.year` is TEXT, unlike every other year column.
     const year = String(parsed.data.year);

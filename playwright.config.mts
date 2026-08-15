@@ -9,6 +9,10 @@ loadEnv({ path: '.env', quiet: true });
 
 export default defineConfig({
   testDir: './e2e',
+  // Runs after every browser has closed. The specs create real accounts, and a
+  // request in flight can re-provision one after a spec's own teardown — see
+  // the file for what that broke.
+  globalTeardown: './e2e/global-teardown.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

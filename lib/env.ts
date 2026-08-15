@@ -23,3 +23,30 @@ export const clerkEnv = {
     return required('CLERK_WEBHOOK_SIGNING_SECRET');
   },
 };
+
+/**
+ * 🔴 TMDB is required, not optional.
+ *
+ * `movies` is a **cache** of TMDB — a film enters it the first time somebody
+ * drafts or nominates it — so without a key the app can only find films the
+ * league has already used, and no new release can be drafted or nominated at
+ * all. That is a broken install, not a reduced feature set.
+ *
+ * It is not `required()` at import time, though, and the difference matters:
+ * the missing webhook secret is a *security* failure, so it fails loudly at
+ * the first call. A missing TMDB key degrades a feature. Crashing every page
+ * that happens to import a search module — including the pages that render
+ * fine from cached data — would turn a misconfiguration into an outage.
+ *
+ * So `lib/external/tmdb.ts` returns nothing when this is absent, the local
+ * cache still answers, and attempting to use a film that is not cached refuses
+ * with a message rather than a stack trace.
+ */
+export const tmdbEnv = {
+  get apiKey(): string | null {
+    return process.env.TMDB_API_KEY ?? null;
+  },
+  get isConfigured(): boolean {
+    return Boolean(process.env.TMDB_API_KEY);
+  },
+};

@@ -6,14 +6,21 @@ import { z } from 'zod';
 import { ConflictError } from '@/lib/errors';
 import { draftPickRepository } from '@/lib/repositories/draft-picks';
 import { draftRepository } from '@/lib/repositories/drafts';
-import { movieRepository } from '@/lib/repositories/movies';
+import { resolveFilm } from '@/lib/services/film-ingest';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 import { authorizeSeat } from './guard';
 
-const Input = z.object({
-  draftId: z.int().positive(),
-  movieId: z.int().positive(),
-});
+const Input = z
+  .object({
+    draftId: z.int().positive(),
+    /** A film already cached locally. */
+    movieId: z.int().positive().optional(),
+    /** A film TMDB knows and this app has not cached yet; it gets ingested. */
+    tmdbId: z.string().trim().min(1).max(20).optional(),
+  })
+  .refine((input) => input.movieId != null || input.tmdbId != null, {
+    message: 'a film is required',
+  });
 
 export type AddPickInput = z.infer<typeof Input>;
 
@@ -47,10 +54,13 @@ export async function addPick(
   try {
     const { seat, leagueId } = await authorizeSeat(parsed.data.draftId);
 
-    // Throws NotFoundError if the film is unknown locally. Phase 8 turns this
-    // into a save-from-TMDB path (§10); until then the console only offers
-    // films that are already in the database.
-    const movie = await movieRepository.findById(parsed.data.movieId);
+    // 🔴 Caches the film from TMDB if nobody has drafted it before. `movies` is
+    // a cache of TMDB, so a film the league has never used simply is not there
+    // yet — and a draft is one of the two moments it gets added.
+    const movie = await resolveFilm({
+      movieId: parsed.data.movieId,
+      tmdbId: parsed.data.tmdbId,
+    });
 
     const groupSeats = (
       await draftRepository.findByLeagueIdAndYear(leagueId, seat.year ?? 0)

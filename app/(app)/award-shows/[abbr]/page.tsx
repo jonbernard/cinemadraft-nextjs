@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { CategoryAdmin } from '@/components/CategoryAdmin';
 import { LetterboxRule } from '@/components/LetterboxRule';
 import { NomineeGrid } from '@/components/NomineeGrid';
+import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { getAwardShow } from '@/lib/services/award-show';
 import { getActiveYear, getSeasons } from '@/lib/services/season';
@@ -42,7 +44,10 @@ export default async function AwardShowPage({
     throw error;
   }
 
-  const seasons = await getSeasons();
+  const [seasons, user] = await Promise.all([getSeasons(), getCurrentUser()]);
+  // Hidden from non-admins for tidiness, not for security — every action
+  // behind these controls checks the session itself.
+  const isAdmin = user?.role === 'admin';
 
   return (
     <main className="bg-bg-base text-text-primary min-h-dvh p-4 md:p-8">
@@ -98,6 +103,20 @@ export default async function AwardShowPage({
               </div>
 
               <NomineeGrid nominees={category.nominees} />
+
+              {isAdmin ? (
+                <CategoryAdmin
+                  awardId={category.awardId}
+                  year={show.year}
+                  requiresNomineeName={category.requiresNomineeName}
+                  nominees={category.nominees.map((nominee) => ({
+                    nominationId: nominee.nominationId,
+                    movieId: nominee.movieId,
+                    title: nominee.title,
+                    isWinner: nominee.isWinner,
+                  }))}
+                />
+              ) : null}
             </section>
           ))
         )}

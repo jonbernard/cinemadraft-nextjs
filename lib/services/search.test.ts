@@ -88,24 +88,19 @@ describe('findFilms — a draft in progress', () => {
   });
 });
 
-describe('findFilms — TMDB is optional', () => {
-  it('🔴 is a complete search with no remote source at all', async () => {
-    // The state the app is in today: no TMDB key. Local results are the
-    // answer, not a degraded one.
-    const results = await findFilms('oppenheim', browse);
-
-    expect(results.length).toBeGreaterThan(0);
-  });
-
-  it('🔴 does not ask TMDB when local results are plentiful', async () => {
-    // The rate limit is the constraint. During a live draft the same few
-    // queries are typed repeatedly and every one already matches locally,
-    // because the league has been drafting these films for a decade.
+describe('findFilms — TMDB is the catalogue', () => {
+  it('🔴 always asks TMDB, even when local results are plentiful', async () => {
+    // `movies` is a *cache* of TMDB: a film enters it the first time somebody
+    // drafts or nominates it. So the local table can only answer with films
+    // the league has already used, and a query like "the" — which matches
+    // plenty locally — would never surface the new release somebody is
+    // actually trying to draft. Cheap answers are not the point; finding the
+    // film is. The rate limit is handled by caching, not by declining to ask.
     const remote = vi.fn(async () => [] as Candidate[]);
 
     await findFilms('the', browse, remote);
 
-    expect(remote).not.toHaveBeenCalled();
+    expect(remote).toHaveBeenCalledWith('the', null);
   });
 
   it('asks TMDB when local results are thin', async () => {
@@ -114,6 +109,14 @@ describe('findFilms — TMDB is optional', () => {
     await findFilms('oppenheim', browse, remote);
 
     expect(remote).toHaveBeenCalledWith('oppenheim', null);
+  });
+
+  it('still answers from the cache when TMDB is unconfigured', async () => {
+    // Degraded, not broken: existing films stay findable, and only a film
+    // nobody has used before becomes unreachable.
+    const results = await findFilms('oppenheim', browse, async () => []);
+
+    expect(results.length).toBeGreaterThan(0);
   });
 
   it('passes the context year to TMDB when there is one', async () => {
