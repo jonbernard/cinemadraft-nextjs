@@ -53,6 +53,10 @@ export default mergeConfig(base, {
       // their own rows and need no restored data.
       'lib/services/draft.test.ts',
       'lib/services/draft-console.test.ts',
+      // Local film search, against the restored 1,355 titles. The ranking rule
+      // it rests on — every context, the dedupe, the stability guarantee — is
+      // `search-ranking.test.ts`, which needs no database and runs here.
+      'lib/services/search.test.ts',
     ],
   },
 });

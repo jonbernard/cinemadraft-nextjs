@@ -96,4 +96,62 @@ export const movieRepository = {
       take: limit,
     });
   },
+
+  /**
+   * Title search that tolerates a typo (§10).
+   *
+   * Two clauses, both served by the `movies_title_trgm` GIN index:
+   *
+   * - `ILIKE '%q%'` — the substring the person actually typed. This is the
+   *   common case and it is exact.
+   * - `word_similarity(q, title) >= 0.5` — the mistyped case. `word_similarity`
+   *   rather than `similarity` because the query is a fragment and the title is
+   *   long; comparing whole strings scores every real match near zero.
+   *
+   * The 0.5 threshold is measured, not guessed — see the migration. Postgres
+   * defaults to 0.6, which rejects transposed letters ("battel" scores 0.571),
+   * and transposition is the typo people make when typing at speed. It is
+   * written into the predicate rather than set as a session GUC because a
+   * pooled connection may not carry the SET.
+   *
+   * Raw SQL because Prisma has no `word_similarity`. The query is
+   * parameterised — `$queryRaw` is a tagged template and interpolations become
+   * bind parameters, so a film called `'; drop table movies; --` is searched
+   * for rather than executed.
+   *
+   * Ordering here is a *tiebreak for the LIMIT*, not the final order — the
+   * service ranks by context afterwards (`search-ranking.ts`). Without it the
+   * limit would truncate arbitrarily and the best match could be the row that
+   * fell off the end.
+   */
+  async searchFuzzy(query: string, limit = 20): Promise<Movie[]> {
+    const trimmed = query.trim();
+    if (trimmed === '') return [];
+
+    const rows = await db.$queryRaw<{ id: number }[]>`
+      SELECT id
+        FROM movies
+       WHERE title ILIKE '%' || ${trimmed} || '%'
+          OR word_similarity(${trimmed}, title) >= 0.5
+       ORDER BY word_similarity(${trimmed}, title) DESC, sort_title ASC
+       LIMIT ${limit}
+    `;
+    if (rows.length === 0) return [];
+
+    // A second round trip rather than selecting the columns in the raw query:
+    // `$queryRaw` returns snake_case straight from Postgres and bypasses
+    // Prisma's field mapping, so the DTO would have to be rebuilt by hand here
+    // and would drift from SELECT the moment a column is added.
+    const movies = await db.movie.findMany({
+      where: { id: { in: rows.map((row) => row.id) } },
+      select: SELECT,
+    });
+
+    // findMany does not preserve the IN order, and the order is the point.
+    const byId = new Map(movies.map((movie) => [movie.id, movie]));
+    return rows.flatMap((row) => {
+      const movie = byId.get(row.id);
+      return movie ? [movie] : [];
+    });
+  },
 };

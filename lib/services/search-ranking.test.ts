@@ -25,6 +25,7 @@ function film(title: string, over: Partial<Candidate> = {}): Candidate {
     releaseYear: over.releaseYear ?? null,
     isLocal: over.isLocal ?? true,
     nominatedYears: over.nominatedYears ?? [],
+    posterPath: over.posterPath ?? null,
   };
 }
 

@@ -1,0 +1,31 @@
+-- Title search for the film typeahead (§10).
+--
+-- The owner types what someone just said out loud during a draft call, so the
+-- query is a fragment and often a mistyped one. Two things follow.
+--
+-- 1. A GIN trigram index, which serves BOTH access paths this needs:
+--    `title ILIKE '%fragment%'` (which a btree cannot accelerate at all,
+--    because the pattern is unanchored) and `word_similarity()` for fuzzy
+--    matches. One index, two operators.
+--
+-- 2. `word_similarity`, not `similarity`. Plain similarity compares whole
+--    strings, so a short query against a long title always scores low:
+--    similarity('battel', 'One Battle After Another') is far under any usable
+--    threshold. word_similarity scores the query against the closest run of
+--    words instead, which is what a person typing part of a title is doing.
+--
+-- Measured against the real 1,355 titles before choosing a threshold:
+--
+--   'battl'     -> 0.833   truncated
+--   'oppenheim' -> 0.900   prefix of a long word
+--   'batle'     -> 0.625   dropped letter
+--   'battel'    -> 0.571   transposed letters
+--
+-- Postgres defaults `pg_trgm.word_similarity_threshold` to 0.6, which admits
+-- the dropped letter and rejects the transposition. Transposition is the most
+-- common typo there is when typing at speed, so the service queries with an
+-- explicit `>= 0.5` rather than relying on the operator and the GUC — a
+-- session-level SET would be unreliable across pooled connections anyway.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE INDEX IF NOT EXISTS movies_title_trgm ON movies USING gin (title gin_trgm_ops);

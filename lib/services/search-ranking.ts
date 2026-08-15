@@ -36,6 +36,15 @@ export type Candidate = {
   isLocal: boolean;
   /** Years this film has a nomination in. Empty for most films. */
   nominatedYears: readonly number[];
+  /**
+   * Bare TMDB poster path, from whichever source produced this candidate.
+   *
+   * Carried here rather than looked up afterwards because a TMDB-only result
+   * has no local row to look it up from, and §10 asks for poster-first results
+   * — this audience recognises films by artwork faster than by title, so a
+   * result with no image is a result that does not do its job.
+   */
+  posterPath: string | null;
 };
 
 /**
