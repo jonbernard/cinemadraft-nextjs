@@ -5,9 +5,15 @@ export type PosterStatus = 'none' | 'nominated' | 'won';
 export type PosterFrameProps = {
   title: string;
   posterUrl: string | null;
-  /** Draft round, rendered from 01. There is no roster size (D34). */
-  round: number;
-  points: number;
+  /**
+   * Draft round, rendered from 01. There is no roster size (D34).
+   *
+   * Optional because a poster is not always a pick: an award-show nominee has
+   * no draft position and no score of its own, and passing a placeholder `0`
+   * to satisfy the type would print `00` beside every nominee.
+   */
+  round?: number;
+  points?: number;
   /** This film's share of the team total, 0–1. Drives the contribution bar. */
   share?: number;
   /**
@@ -75,9 +81,11 @@ export function PosterFrame({
           </span>
         )}
 
-        <span className="text-text-dim tabular absolute left-1 top-1 font-mono text-xs">
-          {String(round).padStart(2, '0')}
-        </span>
+        {round == null ? null : (
+          <span className="text-text-dim tabular absolute left-1 top-1 font-mono text-xs">
+            {String(round).padStart(2, '0')}
+          </span>
+        )}
 
         {status === 'won' && (
           <span
@@ -92,18 +100,23 @@ export function PosterFrame({
         <span className="text-text-primary line-clamp-2 text-sm leading-tight">
           {title}
         </span>
-        <span className="text-text-secondary tabular font-mono text-xs">{points}</span>
+        {points == null ? null : (
+          <span className="text-text-secondary tabular font-mono text-xs">{points}</span>
+        )}
         {/* Hierarchy without resizing frames: every frame stays the same size,
-            so the grid holds, and the bar carries the magnitude. */}
-        <span className="bg-bg-raised block h-0.5 w-full" aria-hidden="true">
-          <span
-            className="block h-full"
-            style={{
-              width: `${width}%`,
-              backgroundColor: accent ?? 'var(--color-accent-fill)',
-            }}
-          />
-        </span>
+            so the grid holds, and the bar carries the magnitude. Omitted with
+            the score, because a bar showing a share of nothing is noise. */}
+        {points == null ? null : (
+          <span className="bg-bg-raised block h-0.5 w-full" aria-hidden="true">
+            <span
+              className="block h-full"
+              style={{
+                width: `${width}%`,
+                backgroundColor: accent ?? 'var(--color-accent-fill)',
+              }}
+            />
+          </span>
+        )}
       </figcaption>
     </figure>
   );

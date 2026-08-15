@@ -103,6 +103,7 @@ export default async function DraftConsolePage({
           seats={view.seats}
           suggestedSeatId={view.suggestedSeatId}
           takenMovieIds={view.takenMovieIds}
+          // biome-ignore lint/performance/noJsxPropsBind: a Server Action in a Server Component — this is not a client closure being rebuilt on render, it is compiled to a stable action reference
           onSearch={async (query: string) => {
             'use server';
             return findFilmsAction({

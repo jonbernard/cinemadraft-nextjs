@@ -38,6 +38,13 @@ const isPublic = createRouteMatcher([
   // bounce to sign-in would confirm the league exists and is mid-draft.
   // `/leagues` itself is not matched, so the index stays private.
   '/leagues/(.*)',
+  // Award shows, also public in the source (D44). These are the pages a member
+  // opens mid-ceremony to see what a film is up for; the admin controls on
+  // them are gated on the session, not on the route — which is what the source
+  // did too, and there the *writes* were left open (`PARITY.md` bug 1). Here
+  // the page is open and every write behind it requires an admin.
+  '/award-shows/(.*)',
+  '/award-shows',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {

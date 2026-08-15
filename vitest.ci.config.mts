@@ -57,6 +57,11 @@ export default mergeConfig(base, {
       // it rests on — every context, the dedupe, the stability guarantee — is
       // `search-ranking.test.ts`, which needs no database and runs here.
       'lib/services/search.test.ts',
+      // The award show page, read against the real 12 shows and 4,559
+      // nominations — including the assertion that its point values agree with
+      // what scoring awards. That check is only meaningful against real
+      // `awards.points` foreign keys, which is why it lives here.
+      'lib/services/award-show.test.ts',
     ],
   },
 });
