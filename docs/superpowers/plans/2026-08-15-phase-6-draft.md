@@ -8,23 +8,42 @@
 
 ---
 
-## 🔴 Read this before planning any work: the draft is not what the spec describes
+## 🔴 How the draft actually works (D46, confirmed by the owner)
 
-The spec (§6.7) designs a **snake draft board** where "the cell on the clock carries a carmine outline and label". I checked the source app before building it, and **there is no live draft in Cinemadraft.** There is no clock, no current-pick pointer, no turn timer, and no column in `drafts` or `draft_picks` that could express one.
+The draft runs on a **video call**. The owner keeps the selection on the right
+player; that player says their pick aloud; the owner searches for the film and
+assigns it to their seat. That is the intended workflow, not a limitation of
+the old app.
 
-What actually exists, verified in `server/routes/draftpicks.js` and `src/pages/league/`:
+So there is **no clock, no turn timer and no on-the-clock cell**, and none is
+missing — the schema has no column that could hold one. Spec §6.7's "cell on
+the clock" describes a mechanism this product deliberately does not have. A
+self-service timed draft is a *possible future enhancement*; build it only if
+the owner asks.
+
+**This changes what the UI must be good at.** The owner is running a live call
+with a dozen people waiting on every pick, so the draft console has to make
+three things fast:
+
+1. **Whose turn is it** — the running order, with the current seat obvious and
+   advancing automatically after each pick (and overridable, because calls do
+   not run in a straight line).
+2. **Find the film** — search that returns the right result on a partial title,
+   because the owner is typing what someone just said out loud.
+3. **Assign it** — one action, landing in the right seat, with the board
+   visibly updating so the room can see it happened.
+
+Everything else on this page is secondary to those three.
+
+What exists, verified in `server/routes/draftpicks.js` and `src/pages/league/`:
 
 | Reality | Evidence |
 |---|---|
-| **Only the league owner enters picks.** Members do not pick for themselves. | `addPick` rejects unless `league.owner.includes(req.user.id)` |
+| **Only the league owner enters picks.** | `addPick` rejects unless `league.owner.includes(req.user.id)` |
 | A league drafts in **groups**. League 1's 2026 season is 4 groups × 4 seats. | `drafts.group`, and `/league/:id/:view/:activeGroup` |
-| A **seat** is a `drafts` row: `user_id`, `group`, `order`, or `dummy` + `dummy_name`. | 17 dummy seats exist in production; 3 in league 1's 2026 season |
+| A **seat** is a `drafts` row: `user_id`, `group`, `order`, or `dummy` + `dummy_name`. | 17 dummy seats in production; 3 in league 1's 2026 season |
 | `draft_picks.order` is the seat's **own ordering**, 1..N, changed by dragging. | `POST /draftpicks/reorder` writes `{id, order}` pairs |
-| `leagues.draftingStatus` is `pending` → `active` → `complete`. `pending` shows the order-and-groups setup screen instead of the board. | `src/pages/league/index.js` |
-
-**Consequence.** The snake board with a live clock is a **new feature**, and D14 puts new features after cutover. This phase ports what exists and redesigns its presentation; the on-the-clock affordance is recorded for Phase 15. Building it now would mean inventing a data model mid-migration and having nothing to compare against in the Phase 7 parity audit.
-
-**What the redesign still delivers here:** the group board becomes a real grid — seats down, rounds across, poster thumbnails in filled cells — which is the §6.7 improvement that does not depend on a clock. The gate ("a taken film is unmistakable at a glance from artwork alone") is about the board, and it is met without live drafting.
+| `leagues.draftingStatus` is `pending` → `active` → `complete`. | `src/pages/league/index.js` |
 
 ## 🔴 The security bug this phase must fix
 
@@ -173,6 +192,32 @@ export type BoardView = {
 - [ ] **Step 4: `revalidatePath` the league** so the board reflects the change.
 
 - [ ] **Step 5: Commit.**
+
+---
+
+## Task 5a: The owner's draft console 🔴 the thing the phase is really for
+
+**Files:** `components/DraftConsole.tsx`, `app/(app)/leagues/[id]/draft/page.tsx`
+
+Owner-only, and the page the whole phase exists to make good. It is used once a
+year, live, with the league watching.
+
+- [ ] **Step 1: Show whose turn it is.** The running order for the group, with
+  the current seat unmistakable. It advances after each pick and can be moved
+  by hand — a call does not run in a straight line, and someone always misses
+  their turn.
+- [ ] **Step 2: Search, keyboard-first.** The owner is typing what someone just
+  said aloud, so partial titles must work and the field keeps focus after a
+  pick lands. Phase 8 builds real search (§10, local-first + TMDB); until then
+  this uses `movieRepository.search`, and Phase 8 swaps the source without
+  touching this component.
+- [ ] **Step 3: Assign in one action**, with the board visibly updating.
+- [ ] **Step 4: Show what is already gone.** The owner must not have to
+  remember, mid-call, whether a film was taken three seats ago.
+- [ ] **Step 5: Test** — the current seat advances after a pick; it can be
+  overridden; a taken film is marked as taken.
+
+- [ ] **Step 6: Commit.**
 
 ---
 
