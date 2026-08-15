@@ -168,12 +168,14 @@ Replaces the welcome-card home with state: standings position, next deadline, re
 
 ### Phase 6 — Draft 🔴 priority trio
 
-- T1: `lib/services/draft.ts` — snake order derivation, pick validation, on-the-clock resolution
-- T2: Snake board component — rounds down, owners across, reversal marker, poster thumbnails in filled cells (§6.7)
+> 🔴 **Rescoped against the source app (D46).** There is no live draft: no clock, no current-pick pointer, no timer, and no column that could hold one. The owner enters picks on behalf of seats, grouped, with `draft_picks.order` reorderable. The on-the-clock affordance is a **new feature** and moves to Phase 15 under D14.
+
+- T1: `lib/services/draft.ts` — league-year → groups → seats → picks; **`lib/services/league-access.ts` fixes the ownership check** (D47)
+- T2: Draft board component — seats down, rounds across, poster thumbnails in filled cells (§6.7), padded to the longest seat in the group (D34)
 - T3: Draft pick Server Action + Zod schema; `revalidateTag`
 - T4: Pick reordering with `@hello-pangea/dnd`
 - T5: Draft list / queue surface
-- T6: E2E: make a pick, verify it lands and the clock advances
+- T6: E2E: make a pick as the owner, verify it lands in the right seat and round; reorder and verify it persists; confirm a non-owner has no controls
 
 **Gate:** E2E green; a taken film is unmistakable at a glance from artwork alone.
 
@@ -292,6 +294,9 @@ Replaces the polling fallback (D13).
 ---
 
 ### Phase 15 — New features
+
+
+> Carries the **live snake draft** (clock, on-the-clock cell, turn order) — designed in spec §6.7 but absent from the source app, so it is a new feature under D14 rather than parity (D46).
 
 Per §7, all post-cutover.
 

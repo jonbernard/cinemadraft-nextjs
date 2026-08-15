@@ -281,7 +281,11 @@ Two reconciliations the plan makes explicit: `PLAN.md` said the roster strip is 
 
 ## Phase 6 — Draft 🔴 priority trio
 
-Plan: _not yet written_
+Plan: [`docs/superpowers/plans/2026-08-15-phase-6-draft.md`](superpowers/plans/2026-08-15-phase-6-draft.md)
+
+🔴 **Rescoped after checking the source (D46): there is no live draft.** No clock, no current-pick pointer, no timer, no column that could hold one. The owner enters picks on behalf of seats, grouped, reorderable by drag. Spec §6.7's on-the-clock cell is a new feature and moves to Phase 15 under D14. The board redesign that does not need a clock still ships here.
+
+🔴 **This phase fixes a real authorization bug (D47):** every pick, reorder and delete is guarded by `league.owner.includes(user.id)` against a TEXT column holding `[3]` — a substring match, so `"[31]".includes(3)` admits a stranger.
 
 - [ ] P6.T1 `lib/services/draft.ts` — snake order, pick validation
 - [ ] P6.T2 Snake board with poster thumbnails
