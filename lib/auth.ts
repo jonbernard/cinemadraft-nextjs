@@ -1,5 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server';
 
+import { ForbiddenError } from '@/lib/errors';
 import { type User, userRepository } from '@/lib/repositories/users';
 import { syncClerkIdentity } from '@/lib/services/clerk-identity';
 
@@ -65,10 +66,16 @@ export async function getCurrentUser(): Promise<User | null> {
  * Every page under `(app)` is already behind the proxy, so reaching here
  * without a session means the route escaped the matcher — a bug worth
  * surfacing rather than smoothing over with a redirect.
+ *
+ * Throws `ForbiddenError` rather than a bare `Error` so that a Server Action
+ * can convert it into a failure the caller can read (`actions/result.ts`). A
+ * plain Error is re-thrown by that converter — deliberately, since an unknown
+ * exception is a bug and belongs in the logs — and "you are not an admin" is
+ * not a bug, it is an answer.
  */
 export async function requireUser(): Promise<User> {
   const user = await getCurrentUser();
-  if (!user) throw new Error('not signed in');
+  if (!user) throw new ForbiddenError('not signed in');
   return user;
 }
 
@@ -81,6 +88,6 @@ export async function requireUser(): Promise<User> {
  */
 export async function requireAdmin(): Promise<User> {
   const user = await requireUser();
-  if (user.role !== 'admin') throw new Error('admin only');
+  if (user.role !== 'admin') throw new ForbiddenError('admin only');
   return user;
 }

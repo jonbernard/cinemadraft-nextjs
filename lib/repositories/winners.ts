@@ -175,4 +175,59 @@ export const winnerRepository = {
     });
     return rows.map(toWinner);
   },
+
+  /**
+   * Declare the winner of a category for a year, replacing any previous one.
+   *
+   * 🔴 **Replace, not insert.** A category has exactly one winner, and winners
+   * are entered live from a stage announcement, so getting one wrong and
+   * correcting it is ordinary rather than exceptional (§12). Inserting a second
+   * row would make two films the winner of one category, and since a win is
+   * worth the award's points a second time (D41), it would also hand out those
+   * points twice.
+   *
+   * Delete-then-insert in one transaction rather than an update, because there
+   * may be no row to update and the table has no unique constraint to upsert
+   * against — the source app's schema declares none.
+   */
+  async setForAward(input: {
+    awardId: number;
+    year: number;
+    movieId: number;
+    nominationId: number;
+  }): Promise<Winner> {
+    const now = new Date();
+    const [, created] = await db.$transaction([
+      db.winner.deleteMany({
+        where: { awardId: BigInt(input.awardId), year: input.year },
+      }),
+      db.winner.create({
+        data: {
+          awardId: BigInt(input.awardId),
+          year: input.year,
+          movieId: BigInt(input.movieId),
+          nominationId: BigInt(input.nominationId),
+          createdAt: now,
+          updatedAt: now,
+        },
+        select: SELECT,
+      }),
+    ]);
+    return toWinner(created);
+  },
+
+  /**
+   * Clear a category's winner for a year.
+   *
+   * A real state, not just an undo: an announcement is misheard, the wrong
+   * film is entered, and for a moment the truth is that nobody has won yet.
+   * Returns how many rows went so the caller can tell "cleared" from "there
+   * was nothing there".
+   */
+  async clearForAward(awardId: number, year: number): Promise<number> {
+    const deleted = await db.winner.deleteMany({
+      where: { awardId: BigInt(awardId), year },
+    });
+    return deleted.count;
+  },
 };

@@ -180,4 +180,63 @@ export const nominationRepository = {
       count: row._count._all,
     }));
   },
+
+  /**
+   * Record that a film is nominated for an award in a year.
+   *
+   * 🔴 `year` is a **string**, because `nominations.year` is TEXT while every
+   * other year column in the schema is an integer. That is the actual column
+   * type, not a quirk to smooth over: passing a number works today only
+   * because Postgres casts it, and the cast is silent right up until a query
+   * compares this column with one of the integer ones.
+   */
+  async create(input: {
+    movieId: number;
+    awardId: number;
+    year: string;
+    detailName?: string | null;
+    detailCharacter?: string | null;
+    detailId?: number | null;
+  }): Promise<Nomination> {
+    const now = new Date();
+    const row = await db.nomination.create({
+      data: {
+        movieId: BigInt(input.movieId),
+        awardId: BigInt(input.awardId),
+        year: input.year,
+        detailName: input.detailName ?? null,
+        detailCharacter: input.detailCharacter ?? null,
+        detailId: input.detailId == null ? null : BigInt(input.detailId),
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: SELECT,
+    });
+    return toNomination(row);
+  },
+
+  /** Removes a nomination. Throws NotFoundError if it is already gone. */
+  async deleteById(id: number): Promise<void> {
+    const deleted = await db.nomination.deleteMany({ where: { id } });
+    if (deleted.count === 0) throw new NotFoundError('nomination', id);
+  },
+
+  /**
+   * Is this film already nominated in this category this year?
+   *
+   * Its own method rather than a filter over `findManyByAwardIds`, because the
+   * caller is asking a yes/no question before a write and should not have to
+   * load a category's whole slate to answer it.
+   */
+  async findByAwardMovieYear(
+    awardId: number,
+    movieId: number,
+    year: string,
+  ): Promise<Nomination | null> {
+    const row = await db.nomination.findFirst({
+      where: { awardId: BigInt(awardId), movieId: BigInt(movieId), year },
+      select: SELECT,
+    });
+    return row ? toNomination(row) : null;
+  },
 };
