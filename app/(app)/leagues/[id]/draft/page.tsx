@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { addPick } from '@/actions/draft/add-pick';
 import { reorderPicks } from '@/actions/draft/reorder-picks';
-import { searchFilms } from '@/actions/draft/search-films';
+import { findFilmsAction } from '@/actions/search/find-films';
 import { DraftConsole } from '@/components/DraftConsole';
 import { LetterboxRule } from '@/components/LetterboxRule';
 import { getCurrentUser } from '@/lib/auth';
@@ -92,11 +92,28 @@ export default async function DraftConsolePage({
           ) : null}
         </header>
 
+        {/*
+          The search is bound to this draft's context — the year and the films
+          already gone — so ranking can sink a taken film and favour one
+          eligible this season (§10). An inline Server Action rather than a
+          prop on the component, because the context is server data and the
+          console must stay injectable for its tests.
+        */}
         <DraftConsole
           seats={view.seats}
           suggestedSeatId={view.suggestedSeatId}
           takenMovieIds={view.takenMovieIds}
-          onSearch={searchFilms}
+          onSearch={async (query: string) => {
+            'use server';
+            return findFilmsAction({
+              query,
+              context: {
+                kind: 'draft',
+                year: view.year,
+                takenMovieIds: view.takenMovieIds,
+              },
+            });
+          }}
           onAssign={addPick}
           onReorder={reorderPicks}
         />

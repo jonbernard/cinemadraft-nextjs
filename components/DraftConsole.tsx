@@ -1,17 +1,21 @@
 'use client';
 
-import { useCallback, useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useCallback, useId, useState, useTransition } from 'react';
 
 import type { ActionResult } from '@/actions/result';
+import { FilmSearch, type SearchedFilm } from '@/components/FilmSearch';
 import { PickList } from '@/components/PickList';
 import { cn } from '@/lib/utils/cn';
 
-export type ConsoleFilm = {
-  id: number;
-  title: string;
-  year: number | null;
-  posterUrl: string | null;
-};
+/**
+ * A search result the console can act on.
+ *
+ * `SearchedFilm` allows a null `id` — a film TMDB knows and this app has never
+ * ingested. The console cannot draft one of those, so `assign` refuses it
+ * rather than the type forbidding it: search returns what it finds, and
+ * whether a given result is usable is this component's judgement to make.
+ */
+export type ConsoleFilm = SearchedFilm;
 
 export type ConsoleSeatView = {
   draftId: number;
@@ -20,9 +24,6 @@ export type ConsoleSeatView = {
   order: number;
   picks: { pickId: number; round: number; title: string; posterUrl: string | null }[];
 };
-
-/** How long the field waits after a keystroke before asking the server. */
-const SEARCH_DEBOUNCE_MS = 180;
 
 /**
  * One seat in the running order, and the way the owner overrules it.
@@ -64,64 +65,6 @@ function SeatButton({
         <span className="text-text-secondary tabular font-mono text-xs">
           {seat.picks.length}
         </span>
-      </button>
-    </li>
-  );
-}
-
-/** One search result, assignable in a single click. */
-function ResultRow({
-  film,
-  index,
-  isTaken,
-  isHighlighted,
-  disabled,
-  onAssign,
-  onHighlight,
-}: {
-  film: ConsoleFilm;
-  index: number;
-  isTaken: boolean;
-  isHighlighted: boolean;
-  disabled: boolean;
-  onAssign: (film: ConsoleFilm) => void;
-  onHighlight: (index: number) => void;
-}) {
-  const assign = useCallback(() => onAssign(film), [onAssign, film]);
-  const highlight = useCallback(() => onHighlight(index), [onHighlight, index]);
-
-  return (
-    <li>
-      <button
-        type="button"
-        disabled={isTaken || disabled}
-        onClick={assign}
-        onMouseEnter={highlight}
-        className={cn(
-          'flex w-full items-center gap-3 px-2 py-2 text-left',
-          isHighlighted && 'bg-bg-raised',
-          isTaken && 'opacity-50',
-        )}
-      >
-        {film.posterUrl ? (
-          // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11 with the media migration
-          <img src={film.posterUrl} alt="" className="h-12 w-8 object-cover" />
-        ) : (
-          <span className="bg-bg-raised text-text-dim grid h-12 w-8 place-items-center font-mono text-[0.6rem]">
-            {film.title.slice(0, 2).toUpperCase()}
-          </span>
-        )}
-        <span className="text-text-primary flex-1 text-sm">
-          {film.title}
-          {film.year ? (
-            <span className="text-text-dim tabular font-mono"> {film.year}</span>
-          ) : null}
-        </span>
-        {/* Stated, not implied by dimming — the owner must not have to
-            remember what went three seats ago. */}
-        {isTaken ? (
-          <span className="text-text-dim text-xs uppercase tracking-wide">Taken</span>
-        ) : null}
       </button>
     </li>
   );
@@ -178,13 +121,10 @@ export function DraftConsole({
   className?: string;
 }) {
   const listId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<ConsoleFilm[]>([]);
-  const [highlighted, setHighlighted] = useState(0);
   const [override, setOverride] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
   const [pending, startTransition] = useTransition();
 
   // The override is the owner's, the suggestion is the snake's. Clearing the
@@ -193,60 +133,36 @@ export function DraftConsole({
   const currentSeat = seats.find((seat) => seat.draftId === currentSeatId) ?? null;
   const taken = new Set(takenMovieIds);
 
-  useEffect(() => {
-    const term = query.trim();
-    if (term === '') {
-      setResults([]);
-      return;
-    }
-
-    let live = true;
-    const timer = setTimeout(async () => {
-      const result = await onSearch(term);
-      // A slower earlier request must not overwrite a newer one — the owner is
-      // typing fast and the results would flicker backwards.
-      if (!live) return;
-      setResults(result.ok ? result.data : []);
-      setHighlighted(0);
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      live = false;
-      clearTimeout(timer);
-    };
-  }, [query, onSearch]);
-
   const assign = useCallback(
-    (film: ConsoleFilm) => {
-      if (!currentSeat || pending) return;
+    (film: SearchedFilm) => {
+      // A TMDB-only film has no local id and cannot be drafted until it is
+      // saved. Phase 8 leaves that path to the award admin; here it simply
+      // cannot be selected.
+      const movieId = film.id;
+      if (!currentSeat || pending || movieId == null) return;
       setMessage(null);
 
       startTransition(async () => {
-        const result = await onAssign({ draftId: currentSeat.draftId, movieId: film.id });
+        const result = await onAssign({ draftId: currentSeat.draftId, movieId });
 
         if (!result.ok) {
           setMessage(result.message);
           return;
         }
 
-        setQuery('');
-        setResults([]);
+        // Clears the field and returns focus to it — the next thing the owner
+        // does is type the next title.
+        setResetSignal((signal) => signal + 1);
         // Back to the snake's answer, which the refreshed props now reflect.
         setOverride(null);
         setMessage(`${film.title} → ${currentSeat.name}`);
         // Nothing refreshes the board by hand. `onAssign` is a Server Action,
         // and the revalidated tree comes back with its response, so the seats
         // and the suggestion arrive as new props.
-        // The next thing the owner does is type the next title.
-        inputRef.current?.focus();
       });
     },
     [currentSeat, onAssign, pending],
   );
-
-  const onQueryChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(event.target.value);
-  }, []);
 
   const reorderCurrentSeat = useCallback(
     async (pickIds: number[]) => {
@@ -261,31 +177,18 @@ export function DraftConsole({
     [currentSeat, onReorder],
   );
 
-  /**
-   * The whole console is drivable from the field: arrows move through the
-   * results, Enter takes the highlighted one. The owner is typing what someone
-   * said aloud and then confirming it — reaching for the mouse between every
-   * pick is the thing this avoids.
-   */
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (results.length === 0) return;
-
-      if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        setHighlighted((index) => Math.min(index + 1, results.length - 1));
-      } else if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        setHighlighted((index) => Math.max(index - 1, 0));
-      } else if (event.key === 'Enter') {
-        event.preventDefault();
-        const film = results[highlighted];
-        // A taken film is not assignable, and Enter must not be the one path
-        // that forgets that.
-        if (film && !takenMovieIds.includes(film.id)) assign(film);
-      }
+  /** Adapts the action's `ActionResult` to what `FilmSearch` consumes. */
+  const search = useCallback(
+    async (term: string): Promise<SearchedFilm[]> => {
+      const result = await onSearch(term);
+      return result.ok ? result.data : [];
     },
-    [results, highlighted, takenMovieIds, assign],
+    [onSearch],
+  );
+
+  const isTaken = useCallback(
+    (film: SearchedFilm) => film.id != null && taken.has(film.id),
+    [taken],
   );
 
   return (
@@ -317,26 +220,17 @@ export function DraftConsole({
           {currentSeat ? `Pick for ${currentSeat.name}` : 'Every seat is up to date'}
         </h2>
 
-        <label className="flex flex-col gap-2">
-          <span className="text-text-dim text-xs uppercase tracking-wide">
-            Find a film
-          </span>
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            disabled={!currentSeat}
-            // The owner types the moment the page loads; anything else is a
-            // click they should not have to make mid-call.
-            // biome-ignore lint/a11y/noAutofocus: single-purpose console, the field is the page
-            autoFocus
-            onChange={onQueryChange}
-            onKeyDown={onKeyDown}
-            placeholder="Part of the title is enough"
-            aria-describedby={`${listId}-status`}
-            className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill w-full border px-3 py-2 text-base focus-visible:outline-2"
-          />
-        </label>
+        <FilmSearch
+          onSearch={search}
+          onSelect={assign}
+          isUnavailable={isTaken}
+          disabled={!currentSeat}
+          busy={pending}
+          // The owner types the moment the page loads; anything else is a
+          // click they should not have to make mid-call.
+          autoFocus
+          resetSignal={resetSignal}
+        />
 
         <p
           id={`${listId}-status`}
@@ -346,21 +240,6 @@ export function DraftConsole({
         >
           {pending ? 'Saving…' : (message ?? '')}
         </p>
-
-        <ul className="flex flex-col gap-1">
-          {results.map((film, index) => (
-            <ResultRow
-              key={film.id}
-              film={film}
-              index={index}
-              isTaken={taken.has(film.id)}
-              isHighlighted={index === highlighted}
-              disabled={!currentSeat || pending}
-              onAssign={assign}
-              onHighlight={setHighlighted}
-            />
-          ))}
-        </ul>
 
         {currentSeat ? (
           <section className="flex flex-col gap-2">
