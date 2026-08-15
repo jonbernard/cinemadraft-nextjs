@@ -48,7 +48,11 @@ test.describe('auth', () => {
     const client = new Client({ connectionString: process.env.DATABASE_URL });
     await client.connect();
     try {
-      await client.query("delete from users where email like '%+clerk_test@%'");
+      // Scoped to this spec's own prefix. The specs run in parallel, and a
+      // blanket delete of every `+clerk_test` account removes the identity
+      // another file is mid-sign-up with — which fails as a broken auth flow
+      // rather than as the fixture collision it is.
+      await client.query("delete from users where email like 'e2e_auth_%+clerk_test@%'");
     } finally {
       await client.end();
     }
@@ -87,7 +91,7 @@ test.describe('auth', () => {
     // Clerk does not recognise — it then tries to deliver a real email, no
     // code is ever sent, and the form reports "You need to send a verification
     // code before attempting to verify".
-    const address = `e2e_${Date.now()}+clerk_test@example.com`;
+    const address = `e2e_auth_${Date.now()}+clerk_test@example.com`;
 
     await page.goto('/auth/sign-up');
     await page.getByLabel(/email address/i).fill(address);

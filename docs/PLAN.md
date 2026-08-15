@@ -172,12 +172,14 @@ Replaces the welcome-card home with state: standings position, next deadline, re
 
 - T1: `lib/services/draft.ts` — league-year → groups → seats → picks; **`lib/services/league-access.ts` fixes the ownership check** (D47)
 - T2: Draft board component — seats down, rounds across, poster thumbnails in filled cells (§6.7), padded to the longest seat in the group (D34)
-- T3: Draft pick Server Action + Zod schema; `revalidateTag`
+- T3: Draft pick Server Action + Zod schema; `revalidatePath(path, 'layout')` rather than `revalidateTag` — tags require `cacheComponents`, which is deferred (D42), and the console is a child route of the board so both must refresh together
 - T4: Pick reordering with `@hello-pangea/dnd`
 - T5: Draft list / queue surface
 - T6: E2E: make a pick as the owner, verify it lands in the right seat and round; reorder and verify it persists; confirm a non-owner has no controls
 
-**Gate:** E2E green; a taken film is unmistakable at a glance from artwork alone.
+**Gate:** E2E green; a taken film is unmistakable at a glance from artwork alone. ✅ **Met** — 17 E2E green, including the owner drafting onto the seat that is picking, a taken film refused, a pointer drag that survives a reload, and a signed-out stranger who sees the board and gets a 404 from the console.
+
+Delivered as T1 ownership, T2 service, T3 board, T4 actions, T5a console, T5 reordering, T6 public league page, T7 E2E — the console (T5a) was added once the owner confirmed the video-call workflow (D46), and "draft list / queue" turned out to be that console rather than a separate surface.
 
 ---
 

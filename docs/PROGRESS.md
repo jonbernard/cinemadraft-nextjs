@@ -287,12 +287,62 @@ Plan: [`docs/superpowers/plans/2026-08-15-phase-6-draft.md`](superpowers/plans/2
 
 🔴 **This phase fixes a real authorization bug (D47):** every pick, reorder and delete is guarded by `league.owner.includes(user.id)` against a TEXT column holding `[3]` — a substring match, so `"[31]".includes(3)` admits a stranger.
 
-- [ ] P6.T1 `lib/services/draft.ts` — snake order, pick validation
-- [ ] P6.T2 Snake board with poster thumbnails
-- [ ] P6.T3 Draft pick Server Action
-- [ ] P6.T4 Reordering with `@hello-pangea/dnd`
-- [ ] P6.T5 Draft list / queue
-- [ ] P6.T6 E2E
+- [x] P6.T1 `lib/services/league-access.ts` — 🔴 the parsed ownership check (D47)
+- [x] P6.T2 `lib/services/draft.ts` — league-year → groups → seats → picks
+- [x] P6.T3 `DraftBoard` / `PickCell` — two presentations from one set of props (D49)
+- [x] P6.T4 Server Actions: add, remove, reorder, all behind `canManageLeague`
+- [x] P6.T5a `DraftConsole` + `/leagues/[id]/draft` — the owner's page
+- [x] P6.T5 Reordering with `@hello-pangea/dnd`, keyboard included
+- [x] P6.T6 `/leagues/[id]` — the public board (D44), proxy updated (D45)
+- [x] P6.T7 E2E and close-out
+
+**Gate met.** 17 E2E green in a real browser; 739 unit tests; a taken film shows
+its artwork on the board and is labelled Taken in the console.
+
+### What the next phase needs to know
+
+- 🔴 **The draft order is a snake, and it was measured rather than assumed.**
+  Rebuilding every pick sequence from `draft_picks.created_at`: 2024 84/84,
+  2025 108/108, 2026 116/117 match a snake; 2017–2022 do not, and their
+  timestamps arrive in clumps that do not describe a live draft at all. The one
+  2026 exception is a pick taken out of sequence — the "someone missed their
+  turn" case — which is why `nextSeatId` derives the turn as *the seats behind
+  this round, in snake order* rather than counting, and why the owner can
+  overrule it. `lib/services/draft-order.ts`.
+- 🔴 **A film may be taken once per group, not once per league.** Measured
+  across all 1025 production picks: no film ever repeats inside a group, while
+  25 films in league 1's 2017 season were each taken five times across its
+  groups. Each group is its own draft. `addPick` enforces the group scope; the
+  source app enforced nothing.
+- 🔴 **`actions/draft/guard.ts` derives the league from the seat.** The source
+  route authorized against a client-supplied `leagueId` while writing to a
+  client-supplied `draftId` — two facts from the same untrusted body that
+  nothing checked agreed. Never accept both.
+- **Reordering takes an ordered list of pick ids, not `{id, order}` pairs.** A
+  duplicate or missing position is then not representable, and the action
+  checks the list is a permutation of the seat's own picks before writing them
+  in one transaction.
+- **Server Actions return `ActionResult`, they do not throw** (`actions/result.ts`).
+  An exception out of a Server Action reaches the client as an opaque digest,
+  and "you do not own this league" and "that film is gone" are both ordinary
+  outcomes the owner reads mid-call. Genuine bugs still throw.
+- **Actions revalidate with `revalidatePath(path, 'layout')`** so the console
+  and the public board refresh together — the console is a child route of the
+  board.
+- **`lib/utils/poster.ts` builds TMDB urls.** `movies.poster` is a bare path;
+  the host and size belong to the renderer. Phase 11 turns this into a
+  `next/image` loader.
+- **E2E specs are serial and clean up only their own prefix.** They sign up
+  real Clerk identities, and both a blanket `+clerk_test` delete and parallel
+  sign-ups fail as broken auth flows rather than as the fixture collisions they
+  are. `e2e/draft.spec.ts` builds a scratch league rather than writing into
+  league 1 — it makes picks, and league 1 is sixty people's real history.
+- **`lib/services/draft.test.ts` and `draft-console.test.ts` are excluded from
+  CI** (restored data). The rules they rest on — `draft-order.test.ts` and
+  every refusal in `actions/draft/draft-actions.test.ts` — seed their own rows
+  and run on every push.
+- Reordering is only reachable from the console, on the seat that is picking.
+  A seat's list is not editable from the public board, by design.
 
 ---
 

@@ -125,7 +125,11 @@ test.describe('dashboard', () => {
     // run assert against a state the restore never produced.
     await withDb(async (query) => {
       await query('update users set clerk_id = null where id = $1', [MEMBER_ID]);
-      await query("delete from users where email like '%+clerk_test@%'");
+      // Scoped to this spec's own prefix. The specs run in parallel, and a
+      // blanket delete of every `+clerk_test` account removes the identity
+      // another file is mid-sign-up with — which fails as a broken auth flow
+      // rather than as the fixture collision it is.
+      await query("delete from users where email like 'e2e_dash_%+clerk_test@%'");
     });
   });
 
@@ -148,6 +152,12 @@ test.describe('dashboard', () => {
 
   test.describe('signed in', () => {
     test.skip(!hasClerk, 'Clerk keys not configured');
+
+    // Serial. Every test here signs up a throwaway identity and moves it onto
+    // the same restored account; run side by side they queue behind Clerk's
+    // rate limit and stall on the verification step, which reads as a broken
+    // sign-up flow rather than as four tests competing for one account.
+    test.describe.configure({ mode: 'serial' });
 
     test('shows the member’s roster, total and standings', async ({ page }) => {
       await signInAsMember(page);
