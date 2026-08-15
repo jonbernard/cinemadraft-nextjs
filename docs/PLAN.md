@@ -194,7 +194,7 @@ Not a formality. After the priority trio the app is visibly incomplete and the g
 - T5: Write `docs/PARITY.md`
 - T6: Decompose every deficient row into phase 10 tasks appended to this index
 
-**Gate:** matrix complete and reviewed by the owner. **Cutover is blocked while any row is open.**
+**Gate:** matrix complete and reviewed by the owner. **Cutover is blocked while any row is open.** ⏳ **Matrix complete** — 83 capabilities, 18 ported, 50 deficient, 15 dropped, plus 10 source bugs deliberately not ported and 8 shape traps. **Awaiting owner review**, which is the gate itself.
 
 ---
 
@@ -235,7 +235,11 @@ Replaces per-request Ramda recomputation in a route file with a tested rule and 
 
 ### Phase 10 — Remaining features to parity
 
-Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index at that point. Expected surfaces: films (browse + watchlist + list, consolidated per §6.9), leagues, live event on polling, reviews, users, admin (**including the `setActiveYear` Server Action and its control — D22**), notifications, and the **ical calendar feed** (`/api/ical/[...]` — one of the three permitted `/api` routes under D8).
+Driven entirely by [`docs/PARITY.md`](PARITY.md). **P10.T1–T50**, listed in `docs/PROGRESS.md`.
+
+The audit confirmed the surfaces guessed here — films (browse + watchlist + list, consolidated per §6.9), leagues, live event, reviews, users, admin (**including the `setActiveYear` control — D22**), notifications and the **ical feed** (`/api/ical/[...]`, one of the three `/api` routes D8 permits) — and added ones this line did not name: **joining a league by invite link**, **creating a league**, **setting up groups before a draft**, **seating a placeholder player**, starting and completing a draft, the **rules and scoring page**, and an **error boundary**, which the port has no equivalent of at all.
+
+🔴 **The shape of the work is not what this line assumed.** 26 of the 50 open rows already have their repository and need only a page; 22 need a repository written first, and those are almost all *writes* — the port's data layer is nearly complete for reads and nearly empty for writes.
 
 **Gate:** every row in `PARITY.md` closed; E2E green per feature.
 

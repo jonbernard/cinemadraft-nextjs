@@ -364,13 +364,45 @@ tasks; a bug found here is filed, not fixed in an audit commit. The exception
 is a security finding on the live Heroku app, which goes to the owner the same
 day.
 
-- [ ] P7.T1 Enumerate 18 source route files
-- [ ] P7.T2 Enumerate 17 source controllers
-- [ ] P7.T3 Enumerate source pages
-- [ ] P7.T4 Classify ported / deficient / dropped
-- [ ] P7.T5 Write `docs/PARITY.md`
-- [ ] P7.T6 Decompose deficiencies into phase 10 tasks
-- [ ] P7 Owner review of the matrix
+- [x] P7.T1 Enumerate the source routes — 19 files, **71 endpoints**
+- [x] P7.T2 Enumerate the source controllers — 17 modules, **81 exported functions**
+- [x] P7.T3 Enumerate the source pages — **24 routes, 9 sub-views**
+- [x] P7.T4 Classify ported / deficient / dropped
+- [x] P7.T5 Write [`docs/PARITY.md`](PARITY.md)
+- [x] P7.T6 Decompose deficiencies into Phase 10 tasks — **P10.T1–T50**
+- [ ] 🔴 **P7 Owner review of the matrix — the gate. Cutover is blocked while any row is open.**
+
+**Result: 83 capabilities — 18 ported, 50 deficient, 15 dropped.**
+
+### What the next phase needs to know
+
+- 🔴 **26 of the 50 open rows already have their repository** and need only a
+  page; **22 need a repository written first.** That split is the `Data` column
+  in the matrix and it is the real measure of what is left — reads are broadly
+  covered, writes almost entirely are not.
+- 🔴 **Six writes on the live app have no authentication at all** — nominations
+  and winners create/delete, `POST /movie`, `POST /years`. Those are the
+  *scoring inputs*, so anyone with curl can change every league's standings.
+  Verified: no global auth middleware exists (`server/index.js:81` mounts the
+  router with only a rate limiter). The owner has decided the source stays
+  untouched, so this is closed by P10.T28/T29 shipping admin-gated, and the
+  exposure stands until cutover.
+- 🔴 **`Winners.movie` joins on the wrong key in the source** —
+  `hasOne(Movies, { foreignKey: 'id' })` with no `sourceKey`, so it matches
+  `Movies.id = Winners.id`. **Measured: 733 of 734 winner rows resolve to the
+  wrong film.** The port is unaffected; do not "restore parity" here.
+- **Ten source bugs are deliberately not ported**, listed with evidence in
+  `PARITY.md`. Read that section before closing any Phase 10 row, or one will
+  come back as a bug fix.
+- **Eight shape traps** are listed there too. The `awards.points` foreign key
+  is already handled (D41); `award.pointsData` being an array in one query and
+  an object in another is not, and Phase 10 must not "normalise" it blindly.
+- **39 of 71 endpoints have no captured fixture.** Where a task depends on a
+  response shape, capture it from Heroku *before* porting — the app is still
+  running, and after cutover that evidence is gone.
+- **The audit did not cover** the websocket layer, TMDB/OMDb field-by-field
+  shapes, or email. Named in `PARITY.md` so the gaps are known rather than
+  assumed.
 
 ---
 
@@ -392,9 +424,64 @@ Plan: _not yet written_ — 7 tasks, see `docs/PLAN.md`
 
 ## Phase 10 — Remaining features to parity
 
-Plan: _written after phase 7, driven by `docs/PARITY.md`_
+Plan: _written before execution, driven by [`docs/PARITY.md`](PARITY.md)_
 
-- [ ] P10 not started
+Every task below is one deficient row in the matrix, and the two lists are the
+same list seen twice — if they can disagree, they will. `repo ready` means the
+repository method exists and the work is a page; `needs repository` means the
+data layer comes first.
+
+- [ ] **P10.T1** Join a league from an invite link — _needs repository_
+- [ ] **P10.T2** Films in cinemas now — _needs repository_
+- [ ] **P10.T3** "Watch live" banner during a ceremony — _repo ready_
+- [ ] **P10.T4** Season leaderboard by year — _repo ready_
+- [ ] **P10.T5** A film's page — synopsis, cast, crew, trailers, images, ratings, box office — _repo ready_
+- [ ] **P10.T6** A film's points by award show, and its average draft position — _repo ready_
+- [ ] **P10.T7** Browse upcoming and recent releases — _needs repository_
+- [ ] **P10.T8** Search for a film by title — _repo ready_
+- [ ] **P10.T9** Similar films — _needs repository_
+- [ ] **P10.T10** A league's standings, on the league page — _repo ready_
+- [ ] **P10.T11** Create a league — _needs repository_
+- [ ] **P10.T12** Your leagues, and switching between them — _repo ready_
+- [ ] **P10.T13** Copy the invite link — _repo ready_
+- [ ] **P10.T14** Set up groups before a draft — drag members between groups, add a group, randomise the unassigned — _needs repository_
+- [ ] **P10.T15** Add a seat, including a placeholder for someone with no account — _needs repository_
+- [ ] **P10.T16** Remove or rename a seat — _needs repository_
+- [ ] **P10.T17** Start the draft / mark it complete — _needs repository_
+- [ ] **P10.T18** Stage next season's draft — _needs repository_
+- [ ] **P10.T19** League settings — _needs repository_
+- [ ] **P10.T20** A private ranked pre-draft list — add films, drag to rank, mark taken or unavailable — _needs repository_
+- [ ] **P10.T21** Live board updates while the draft runs — _repo ready_
+- [ ] **P10.T22** Every award show — _repo ready_
+- [ ] **P10.T23** One show: its categories, point values, nominees and winners — _repo ready_
+- [ ] **P10.T24** Past seasons of a show — _repo ready_
+- [ ] **P10.T25** Subscribe to ceremony dates as a calendar — _repo ready_
+- [ ] **P10.T26** Admin: edit a show's dates and live flags — _needs repository_
+- [ ] **P10.T27** Admin: add or delete a category — _needs repository_
+- [ ] **P10.T28** Admin: enter nominations — _needs repository_
+- [ ] **P10.T29** Admin: pick winners during the ceremony — _needs repository_
+- [ ] **P10.T30** Admin: which shows still need entering — _repo ready_
+- [ ] **P10.T31** Watch results land in real time, with league standings beside them — _repo ready_
+- [ ] **P10.T32** The admin's selection drives every watcher's screen — _repo ready_
+- [ ] **P10.T33** Your watched films, paged and sorted — _repo ready_
+- [ ] **P10.T34** Add or remove a film — _needs repository_
+- [ ] **P10.T35** Progress against this year's nominees, by show — _repo ready_
+- [ ] **P10.T36** Progress against the year's nominated films — _repo ready_
+- [ ] **P10.T37** Which drafted films you have seen — _repo ready_
+- [ ] **P10.T38** Rate and review a film — _needs repository_
+- [ ] **P10.T39** Read your own review — _repo ready_
+- [ ] **P10.T40** A member's profile and activity feed — _repo ready_
+- [ ] **P10.T41** Post to your feed — _needs repository_
+- [ ] **P10.T42** Delete a feed item — _needs repository_
+- [ ] **P10.T43** Your recent notifications — _repo ready_
+- [ ] **P10.T44** Mark as read — _needs repository_
+- [ ] **P10.T45** Admin: broadcast to everyone — _needs repository_
+- [ ] **P10.T46** Rules and scoring explained — _no data layer needed_
+- [ ] **P10.T47** The scoring rulebook by tier — _repo ready_
+- [ ] **P10.T48** Admin: set the active season — _repo ready_
+- [ ] **P10.T49** Admin: relink an account — _repo ready_
+- [ ] **P10.T50** A 500 page — _no data layer needed_
+
 
 ---
 

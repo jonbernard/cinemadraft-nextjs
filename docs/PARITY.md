@@ -1,0 +1,229 @@
+# Parity matrix
+
+**What the source app does, and whether the port does it.** Cutover is blocked
+while any row is open.
+
+| | |
+|---|---|
+| Audited | 2026-08-15 |
+| Source | `cinemadraft` @ `caa1e7f` (2023-12-12), read-only |
+| Port | `cinemadraft-nextjs` @ end of Phase 6 |
+| Source surface | 19 route files · **71 endpoints** · 17 controller modules · **81 exported functions** · 24 client routes · 9 sub-views · 80 page files |
+| Evidence | 32 captured API fixtures (`fixtures/*.path`); every row below cites a file read on both sides |
+
+## Where it stands
+
+| Verdict | Count |
+|---|---|
+| **ported** | 18 |
+| **deficient** | 50 |
+| **dropped** | 15 |
+| **total capabilities** | 83 |
+
+🔴 **Read this the right way round.** The port has the harder half done — auth,
+the data layer for every table, scoring, the draft — and the *broad* half
+outstanding. 50 open rows is not 50 phases of work: **26 of them already have
+their repository** and need only a page, while **22 need a repository written
+first** — those are the writes, and they are where the time goes.
+The split is in the **Data** column, and it is the honest measure of what is
+left.
+
+## How to read a row
+
+- **ported** — a person can do this in the new app today, cited by file.
+- **deficient** — they cannot, and they should be able to. Carries a `P10.Tn`.
+- **dropped** — they cannot, and that is intended. Carries a reason.
+
+🔴 **There is no "partial".** Something that half works is **deficient**, so
+that a green row can be read as "yes, that works" without qualification.
+
+The **unit is the capability, not the endpoint** (D53). D8 removed the HTTP
+layer, so an endpoint-for-endpoint audit would mark the whole application
+deficient while being true of nothing. Several endpoints plus a page often make
+one row.
+
+**Data** column: `✓` the repository method exists, `—` it does not and Phase 10
+must write it. Almost every *read* is covered and almost every *write* is not,
+which is why so many rows are cheap and a few are not.
+
+---
+
+## Auth and accounts
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| Register and sign in | **ported** | `src/pages/auth/Register.js`, `routes/auth.js:29` | `app/auth/sign-up`, `app/auth/sign-in` — Clerk replaces Auth0 (D6) | ✓ |
+| An existing member keeps their history on first sign-in | **ported** | Auth0 `user_id` on `users` | `lib/services/clerk-identity.ts` — claim by verified email (§9) | ✓ |
+| Sign out | **ported** | `src/pages/Logout.js` | Clerk `<UserButton>` | ✓ |
+| Admin repairs a mis-linked account | **ported** | — (no source equivalent) | `actions/admin/relink.ts` — needs a UI, see admin below | ✓ |
+| **Join a league from an invite link** | **deficient** | `src/pages/join.js`, `POST /draft/uuid/:uuid` (`routes/draft.js:50`) | **P10.T1** | — |
+| Last-login timestamp | **dropped** | `routes/auth.js:28` → `User.updateLastLogin` | Auth0 bookkeeping; nothing renders it, and Clerk records last sign-in itself | |
+| Change profile picture | **dropped** | `PUT /user/image` (`routes/user.js:8`) | Clerk owns the avatar now; a second store would disagree with it | |
+| `GET /token/generate` | **dropped** | `routes/index.js:61` | Returns 64 random bytes to anyone who asks. No caller in the client. Not a capability | |
+
+## Dashboard
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| Upcoming ceremony dates | **ported** | `GET /dashboard` (`routes/dashboard.js:62`) | `components/SeasonRail.tsx` | ✓ |
+| See your roster and league standings at a glance | **ported** | — (source put this on the league page only) | `lib/services/dashboard.ts` — a betterment, not parity | ✓ |
+| Signed-out visitors see the season | **ported** | Dashboard was public (`src/routes/index.js:66`) | `app/(app)/page.tsx`, `getDashboard(null)` (D44) | ✓ |
+| Films in cinemas now | **deficient** | `NowShowing` carousel, `GET /movie/now-playing` | **P10.T2** — needs TMDB (Phase 8) | — |
+| "Watch live" banner during a ceremony | **deficient** | `dashboard/components/LiveCTA.js:35-63` | **P10.T3** — the only route into the live page | ✓ |
+| Season leaderboard by year | **deficient** | `MovieResultsByLeague`, `GET /points/year/:year` | **P10.T4** | ✓ |
+| Welcome callout card | **dropped** | `HeadCallout` | MUI Minimal template chrome, not a feature (D3) | |
+
+## Films
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| **A film's page** — synopsis, cast, crew, trailers, images, ratings, box office | **deficient** | `src/pages/movie/index.jsx`, `GET /movie/:id`, `/details` | **P10.T5** — TMDB + OMDb, Phase 8/11 | ✓ |
+| A film's points by award show, and its average draft position | **deficient** | `GET /points/movie/:tmdbId` | **P10.T6** | ✓ |
+| Browse upcoming and recent releases | **deficient** | `src/pages/browse/index.js`, `GET /movie/discovery/...` | **P10.T7** | — |
+| Search for a film by title | **deficient** | `GET /search` | **P10.T8** — Phase 8 makes this local-first + TMDB (§10). The console's `searchFilms` is local-only today | ✓ |
+| Similar films | **deficient** | movie page "Similar Movies" grid | **P10.T9** | — |
+
+## Leagues
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| See a league's draft board | **ported** | `/leagues/:id/explore/:group` (`src/routes/index.js:106`) | `app/(app)/leagues/[id]/page.tsx` | ✓ |
+| The board is public | **ported** | Public in source — 🔴 the sibling `/leagues` routes are guarded, this one is not | `proxy.ts` lists `/leagues/(.*)` (D44/D45) | ✓ |
+| Switch season | **ported** | year `<Select>` on the league page | `app/(app)/leagues/[id]/page.tsx` | ✓ |
+| Groups | **ported** | `:activeGroup` segment | Every group renders; no pagination needed | ✓ |
+| **A league's standings, on the league page** | **deficient** | "League points" panel, `GET /points/league/...` | **P10.T10** — exists on the dashboard, but only for signed-in members, so a visitor on a shared link sees no scores | ✓ |
+| **Create a league** | **deficient** | `src/pages/league/create.js`, `POST /league/add` | **P10.T11** | — |
+| **Your leagues, and switching between them** | **deficient** | `src/pages/league/redirect.js`, `GET /league/user` | **P10.T12** — `/leagues` is still the Phase 4 placeholder | ✓ |
+| Copy the invite link | **deficient** | `JoinLink` on create + league panel | **P10.T13** | ✓ |
+| **Set up groups before a draft** — drag members between groups, add a group, randomise the unassigned | **deficient** | `league/orderAndGroups/`, `PUT /draft/:leagueId/:id` | **P10.T14** — the port shows this state read-only | — |
+| Add a seat, including a placeholder for someone with no account | **deficient** | `POST /draft/add` (`routes/draft.js:51`) | **P10.T15** — 17 dummy seats exist in production | — |
+| Remove or rename a seat | **deficient** | `DELETE /draft/:id`, `PUT /draft/:leagueId/:id` | **P10.T16** | — |
+| Start the draft / mark it complete | **deficient** | Start/Complete buttons, `PUT /league/:id`, `/status` | **P10.T17** — completing also posts each member's picks to their feed | — |
+| Stage next season's draft | **deficient** | "Stage next draft" adornment on the year select | **P10.T18** | — |
+| League settings | **deficient** | `PUT /league/:id` | **P10.T19** | — |
+
+## The draft
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| The owner assigns a pick to a seat | **ported** | `POST /draftpicks/add`, drag panel | `actions/draft/add-pick.ts`, `components/DraftConsole.tsx` (D46) | ✓ |
+| Remove a pick | **ported** | `DELETE /draftpicks/:id` | `actions/draft/remove-pick.ts` | ✓ |
+| Reorder a seat's picks by dragging | **ported** | `POST /draftpicks/reorder` | `components/PickList.tsx` — keyboard too, which the source lacked | ✓ |
+| Whose turn it is, advancing automatically | **ported** | "Auto-advance" checkbox, linear or snake | `lib/services/draft-order.ts` — snake confirmed against 309 of 310 live picks (D50) | ✓ |
+| Posters on the board | **ported** | pick strips | `components/PickCell.tsx` + `lib/utils/poster.ts` | ✓ |
+| Per-pick point totals on the board | **ported** | `POST /points/ids` | `lib/services/draft.ts` via `pointsForMovieIds` (D41) | ✓ |
+| **A private ranked pre-draft list** — add films, drag to rank, mark taken or unavailable | **deficient** | `/list`, `GET/POST /lists/:year`, `/order`, `/status`, `/delete` | **P10.T20** — a real feature people prepare with for weeks | — |
+| Live board updates while the draft runs | **deficient** | polling | **P10.T21** — Phase 14 with the live page (D48) | ✓ |
+
+## Award shows
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| Every award show | **deficient** | `/award-shows`, `GET /events` | **P10.T22** | ✓ |
+| **One show: its categories, point values, nominees and winners** | **deficient** | `/award-shows/:abbr`, `GET /events/:abbr[/:year]` | **P10.T23** | ✓ |
+| Past seasons of a show | **deficient** | year `<Select>` | **P10.T24** | ✓ |
+| Subscribe to ceremony dates as a calendar | **deficient** | `GET /events/calendar.ics` | **P10.T25** — one of the three `/api` routes D8 permits | ✓ |
+| Admin: edit a show's dates and live flags | **deficient** | `PUT /events/:abbr` (`restrictToAdmin`) | **P10.T26** | — |
+| Admin: add or delete a category | **deficient** | `POST/DELETE /awards` (`restrictToAdmin`) | **P10.T27** | — |
+| Admin: enter nominations | **deficient** | `nominations` sub-view, `POST /nominations` | **P10.T28** — 🔴 ships admin-gated; see *Bugs* | — |
+| Admin: pick winners during the ceremony | **deficient** | `winner` sub-view, `POST /winners` | **P10.T29** — 🔴 ships admin-gated; see *Bugs* | — |
+| Admin: which shows still need entering | **deficient** | "Events needing updates" card | **P10.T30** | ✓ |
+
+## Live ceremony
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| **Watch results land in real time, with league standings beside them** | **deficient** | `/live/:abbr`, socket.io `subscribeToLiveEvent` | **P10.T31** — Phase 14 (D13/D23/D48) | ✓ |
+| The admin's selection drives every watcher's screen | **deficient** | `sendSelectedAward` / `newWinner` | **P10.T32** | ✓ |
+
+## Watchlist
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| **Your watched films, paged and sorted** | **deficient** | `/watchlist`, `GET /watchlist/:page/:col/:dir` | **P10.T33** | ✓ |
+| Add or remove a film | **deficient** | `POST /watchlist/item`, `DELETE /watchlist/item/:id` | **P10.T34** | — |
+| Progress against this year's nominees, by show | **deficient** | Awards tab, `GET /watchlist/awards/:year` | **P10.T35** | ✓ |
+| Progress against the year's nominated films | **deficient** | Nominations tab, `GET /watchlist/noms/:year` | **P10.T36** | ✓ |
+| Which drafted films you have seen | **deficient** | Draft tab, `GET /watchlist/drafts/:year` | **P10.T37** | ✓ |
+| Deep-link a watchlist tab | **dropped** | Tabs are component state (`watchlist/index.js:25-41`) | Impossible in the source. The port should put the tab in the URL — a betterment, not a parity row | |
+
+## Reviews and profiles
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| Rate and review a film | **deficient** | `/reviews/:tmdbId`, `POST /reviews/tmdbId/:tmdbId` | **P10.T38** | — |
+| Read your own review | **deficient** | `GET /reviews/tmdbId/:tmdbId` | **P10.T39** | ✓ |
+| **A member's profile and activity feed** | **deficient** | `/user/profile/:uuid`, `GET /profile/feed/user/:uuid` | **P10.T40** | ✓ |
+| Post to your feed | **deficient** | `POST /profile/feed` | **P10.T41** | — |
+| Delete a feed item | **deficient** | `DELETE /profile/feed/:id` | **P10.T42** | — |
+| The profile tab strip | **dropped** | `users/UserProfile.js:109-117` | Every tab is commented out; it renders an empty strip. Reproducing a blank control is not parity | |
+
+## Notifications
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| Your recent notifications | **deficient** | `GET /notifications` | **P10.T43** | ✓ |
+| Mark as read | **deficient** | `PUT /notifications/read` | **P10.T44** | — |
+| Admin: broadcast to everyone | **deficient** | `POST /notifications/type/:type` | **P10.T45** — the `:type` segment is ignored; it always sends to all | — |
+| Dismiss one notification | **dropped** | `DELETE /notifications/:id` (`routes/notifications.js:30`) | 🔴 **Dead as written.** No auth middleware, so `req.user` is never set, and the controller's guard throws on every call. It has never once succeeded in production. Rebuild it in P10.T44 only if the owner wants it | |
+
+## Reference and admin
+
+| Capability | Verdict | Source | Port / task | Data |
+|---|---|---|---|---|
+| Rules and scoring explained | **deficient** | `/rules-and-scoring` — static copy | **P10.T46** — cheapest row here; it is two cards of prose | n/a |
+| The scoring rulebook by tier | **deficient** | `GET /points` | **P10.T47** | ✓ |
+| Admin: set the active season | **deficient** | — (source read an env var; changing seasons was a redeploy) | **P10.T48** — the action exists, the control does not (D22) | ✓ |
+| Admin: relink an account | **deficient** | — | **P10.T49** — action exists, no page | ✓ |
+| A 500 page | **deficient** | `/500` | **P10.T50** — needs `error.tsx`; today an unhandled error has no boundary | n/a |
+| A 404 page | **ported** | `/404` | `not-found` — Next's, styled by the app shell | n/a |
+| Maintenance page | **dropped** | `/maintenance` | Unreachable in the source; nothing links to it | |
+| `GET /health` | **dropped** | `routes/index.js:60` | Heroku dyno check. Vercel has its own | |
+| 401 on any unknown GET | **dropped** | `routes/index.js:65` | The source answered 401 to unmatched GETs, which is wrong — the port 404s | |
+| `/user` → `/dashboard/user/profile` | **dropped** | `src/routes/index.js:140` | The target does not exist in the route table; it lands on the catch-all and 404s. Dead as written | |
+| Terms and conditions | **dropped** | `src/pages/termsAndConditions.js` | Not in the route table; unreachable | |
+| `Watchlist.getByAwards` | **dropped** | `server/controllers/watchlist.js:69-87` | No route reaches it, and it filters only on `movieId != null` — porting it as written would return every user's rows | |
+| Login as its own page | **dropped** | `PATH_AUTH.login` links to a route that was never registered | The link 404s in the source. Clerk's sign-in page is the port's answer | |
+| 60 requests/minute/IP | **dropped** | `routes/index.js:30-36` | Express rate limiter. Vercel's platform limits replace it; revisit if abuse appears | |
+
+---
+
+## 🔴 Bugs found in the source, deliberately not ported
+
+Recorded so that nobody "restores parity" by reintroducing one. Each was read
+in the source and, where the data could settle it, measured.
+
+| # | Bug | Evidence | Port |
+|---|---|---|---|
+| 1 | **Six writes have no auth at all** — `POST/DELETE /nominations`, `POST/DELETE /winners`, `POST /movie`, `POST /years`. Nominations and winners are the scoring inputs, so anyone on the internet can change every league's standings | `routes/nominations.js:28-29`, `routes/winners.js:8-9`, `routes/movie/index.js:54`, `routes/index.js:59`. No global auth: `server/index.js:81` mounts the router with only a rate limiter, and `createResponse` (`controllers/index.js:18`) adds none. Sibling admin writes in `awards.js`/`events.js` *do* use `restrictToAdmin` | P10.T28/T29 ship these admin-gated. **Live on Heroku until cutover** — the owner has decided the source stays untouched |
+| 2 | **`Winners.movie` joins on the wrong key.** `hasOne(Movies, { foreignKey: 'id' })` with no `sourceKey`, so it matches `Movies.id = Winners.id` instead of `Winners.movieId`. `Nominations` gets this right | `server/models/winners.js:11-14` vs `models/nominations.js:27-31`. **Measured: 733 of 734 winner rows resolve to the wrong film** — one is right by coincidence | `lib/repositories/winners.ts` selects `movieId` explicitly and declares no association |
+| 3 | **League ownership is a substring match** — `league.owner.includes(user.id)` against TEXT `"[3]"`, admitting strangers and locking out real owners | `routes/league.js:16`, `routes/draftpicks.js` | Fixed: `lib/services/league-access.ts` (D47). **Measured: 29 (league, stranger) pairs across 11 of 13 leagues** |
+| 4 | **`verifyLeagueOwner` is a no-op on `POST /draft/add`** — it guards on `req.params.leagueId`, and that route carries the id in the body, so any signed-in user can add a seat to any league | `routes/draft.js:9-23, 51` | P10.T15 goes through `canManageLeague` |
+| 5 | **`DELETE /draft/:id` has authentication but no authorization** — any signed-in user can delete any seat in any league | `routes/draft.js:60` | P10.T16 goes through `canManageLeague` |
+| 6 | **`PUT /league/:id/status` writes the whole body and inserts a duplicate seat for the caller on every call**, rather than calling `Leagues.updateStatus` | `routes/league.js:49-61, 99` | P10.T17 writes only the status |
+| 7 | **Hardcoded `year: 2024`** when a league is marked complete, so feed announcements are built from the wrong season | `routes/league.js:68` | P10.T17 uses the active year (D22) |
+| 8 | **Reorder writes are never awaited** — `req.body.forEach(async …)`, so the response returns before the writes land and a failure is silent | `routes/draftpicks.js:28` | Fixed: one transaction, `lib/repositories/draft-picks.ts` |
+| 9 | **`:type` is ignored in two routes.** `/points/league/total/…` and `/points/league/event/…` return identical payloads; `POST /notifications/type/:type` always sends to everyone | `routes/points.js:195-198`, `routes/notifications.js:29` | P10.T10/T45 either honour the distinction or drop the segment |
+| 10 | **`POST /lists/:year` accepts any single segment as a year** and then ignores it in favour of the body | `routes/lists.js:12-14, 43` | P10.T20 validates |
+
+## 🔴 Traps to carry into Phase 10
+
+Shapes where the obvious port is the wrong one. The first cost real money once.
+
+1. **`awards.points` is a foreign key into `points.id`, not a point value.** Summing it scores "Performance by an Ensemble" as 1 instead of 5. Already handled — the repository exposes it as `pointsId` (D41) — and `controllers/nominations.js:69` makes it worse by selecting the FK *without* `pointsData`.
+2. **`award.pointsData` is an array in the events queries and an object in the nominations queries**, purely because of `raw + nest`. Normalising to one shape breaks one consumer. `controllers/events.js:15-19` vs `controllers/nominations.js:15-16`.
+3. **`Movies.poster` and `backdrop` are getters** that prefix a CDN base at runtime, so the field is a relative path in the database and an absolute URL in the response — and reverts under `raw: true`. `lib/utils/poster.ts` does this explicitly.
+4. **`User.displayName` is a VIRTUAL**, selected as an attribute in four places, one of them under `raw: true` where it never materialises. Derive it in code; never select it.
+5. **`Nominations.year` is TEXT while every other year column is INTEGER.** Postgres papers over it; a typed port will not.
+6. **`ProfileFeeds.components` is a JSON string** beside a `componentsArray` virtual that parses it — and the getter throws on null.
+7. **`movie.watchlist` is not the movie's watchlist**, it is the caller's entry, ids only, used as a boolean.
+8. **`Leagues.owner` is a JSON string** whose parsing getter is bypassed under `raw: true`.
+
+## What the audit did not cover
+
+Stated so the gaps are known rather than assumed:
+
+- **The websocket layer** (`server/websockets.js`) was read only where the live page touches it. Phase 14 owns it.
+- **TMDB and OMDb request shapes** in `server/routes/movie/*` were enumerated but not compared field-by-field against what the movie page renders. Phase 8 must do that before P10.T5 closes.
+- **39 of 71 endpoints have no captured fixture**, so their response shapes rest on reading the source rather than on a recorded contract. Where a Phase 10 task depends on a shape, capture the fixture from Heroku **before** porting it (§13) — the app is still running.
+- **Email**, if any is sent outside Auth0, was not looked for.
