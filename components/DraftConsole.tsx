@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useId, useRef, useState, useTransition } from 'react';
 
+import type { ActionResult } from '@/actions/result';
+import { PickList } from '@/components/PickList';
 import { cn } from '@/lib/utils/cn';
 
 export type ConsoleFilm = {
@@ -16,12 +18,8 @@ export type ConsoleSeatView = {
   name: string;
   isDummy: boolean;
   order: number;
-  picks: { pickId: number; round: number; title: string }[];
+  picks: { pickId: number; round: number; title: string; posterUrl: string | null }[];
 };
-
-export type ConsoleResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; code: string; message: string };
 
 /** How long the field waits after a keystroke before asking the server. */
 const SEARCH_DEBOUNCE_MS = 180;
@@ -162,16 +160,21 @@ export function DraftConsole({
   takenMovieIds,
   onSearch,
   onAssign,
+  onReorder,
   className,
 }: {
   seats: readonly ConsoleSeatView[];
   suggestedSeatId: number | null;
   takenMovieIds: readonly number[];
-  onSearch: (query: string) => Promise<ConsoleResult<ConsoleFilm[]>>;
+  onSearch: (query: string) => Promise<ActionResult<ConsoleFilm[]>>;
   onAssign: (input: {
     draftId: number;
     movieId: number;
-  }) => Promise<ConsoleResult<{ pickId: number }>>;
+  }) => Promise<ActionResult<{ pickId: number }>>;
+  onReorder: (input: {
+    draftId: number;
+    pickIds: number[];
+  }) => Promise<ActionResult<null>>;
   className?: string;
 }) {
   const listId = useId();
@@ -244,6 +247,19 @@ export function DraftConsole({
   const onQueryChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(event.target.value);
   }, []);
+
+  const reorderCurrentSeat = useCallback(
+    async (pickIds: number[]) => {
+      if (!currentSeat)
+        return {
+          ok: false as const,
+          code: 'INVALID' as const,
+          message: 'no seat selected',
+        };
+      return onReorder({ draftId: currentSeat.draftId, pickIds });
+    },
+    [currentSeat, onReorder],
+  );
 
   /**
    * The whole console is drivable from the field: arrows move through the
@@ -346,11 +362,16 @@ export function DraftConsole({
           ))}
         </ul>
 
-        {currentSeat && currentSeat.picks.length > 0 ? (
-          <p className="text-text-secondary text-xs">
-            {currentSeat.name} holds{' '}
-            {currentSeat.picks.map((pick) => pick.title).join(', ')}
-          </p>
+        {currentSeat ? (
+          <section className="flex flex-col gap-2">
+            <h3 className="text-text-dim text-xs font-normal uppercase tracking-wide">
+              {currentSeat.name}’s picks
+            </h3>
+            {/* Correcting a round is a separate act from taking a film, and it
+                happens after the fact — usually because a pick went in against
+                the wrong round mid-call. */}
+            <PickList picks={currentSeat.picks} onReorder={reorderCurrentSeat} />
+          </section>
         ) : null}
       </section>
     </div>

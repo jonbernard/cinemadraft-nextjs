@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { addPick } from '@/actions/draft/add-pick';
+import { reorderPicks } from '@/actions/draft/reorder-picks';
 import { searchFilms } from '@/actions/draft/search-films';
 import { DraftConsole } from '@/components/DraftConsole';
 import { LetterboxRule } from '@/components/LetterboxRule';
@@ -97,6 +98,7 @@ export default async function DraftConsolePage({
           takenMovieIds={view.takenMovieIds}
           onSearch={searchFilms}
           onAssign={addPick}
+          onReorder={reorderPicks}
         />
       </div>
     </main>

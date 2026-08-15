@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   type ConsoleFilm,
-  DraftConsole,
   type ConsoleSeatView,
+  DraftConsole,
 } from '@/components/DraftConsole';
 
 /**
@@ -29,15 +29,15 @@ function seats(counts: readonly number[]): ConsoleSeatView[] {
       pickId: 1000 + index * 10 + round,
       round: round + 1,
       title: `Film ${round + 1}`,
+      posterUrl: null,
     })),
   }));
 }
 
-function setup(
-  over: Partial<React.ComponentProps<typeof DraftConsole>> = {},
-) {
+function setup(over: Partial<React.ComponentProps<typeof DraftConsole>> = {}) {
   const onSearch = vi.fn(async () => ({ ok: true as const, data: FILMS }));
   const onAssign = vi.fn(async () => ({ ok: true as const, data: { pickId: 7 } }));
+  const onReorder = vi.fn(async () => ({ ok: true as const, data: null }));
 
   const props = {
     seats: seats([0, 0, 0]),
@@ -45,11 +45,12 @@ function setup(
     takenMovieIds: [] as number[],
     onSearch,
     onAssign,
+    onReorder,
     ...over,
   };
 
   render(<DraftConsole {...props} />);
-  return { onSearch, onAssign, user: userEvent.setup() };
+  return { onSearch, onAssign, onReorder, user: userEvent.setup() };
 }
 
 /** The seat the console says is picking. */
@@ -194,7 +195,7 @@ describe('DraftConsole — assigning', () => {
   it('reports a refusal instead of pretending the pick landed', async () => {
     const onAssign = vi.fn(async () => ({
       ok: false as const,
-      code: 'CONFLICT',
+      code: 'CONFLICT' as const,
       message: 'Paterson is already taken in this group',
     }));
     const { user } = setup({ onAssign });
