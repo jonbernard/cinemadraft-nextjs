@@ -1,3 +1,4 @@
+import { searchTmdb } from '@/lib/external/tmdb';
 import { type Movie, movieRepository } from '@/lib/repositories/movies';
 import { nominationRepository } from '@/lib/repositories/nominations';
 import { posterUrl } from '@/lib/utils/poster';
@@ -64,15 +65,15 @@ function toCandidate(movie: Movie, nominatedYears: readonly number[]): Candidate
  * first, and TMDB is asked only when there are too few of them to be a useful
  * answer.
  *
- * `remote` is injected rather than imported so this function is testable
- * without a network and, more importantly, so it behaves identically whether
- * TMDB is configured or not: with no key the source returns nothing and this
- * is a local search, which is a correct answer rather than a degraded one.
+ * `remote` defaults to TMDB and is overridable so this function is testable
+ * without a network. It behaves identically whether TMDB is configured or not:
+ * with no key `searchTmdb` returns nothing and this is a local search, which
+ * is a correct answer rather than a degraded one.
  */
 export async function findFilms(
   query: string,
   context: SearchContext,
-  remote?: RemoteSource,
+  remote: RemoteSource = searchTmdb,
 ): Promise<FilmResult[]> {
   const trimmed = query.trim();
   if (trimmed === '') return [];
@@ -98,7 +99,7 @@ export async function findFilms(
   );
 
   let candidates = local;
-  if (remote && local.length < TMDB_THRESHOLD) {
+  if (local.length < TMDB_THRESHOLD) {
     const year = context.kind === 'browse' ? null : context.year;
     // 🔴 A TMDB failure must never fail the search. The owner is mid-draft and
     // can see the film in the local list; an error where the results should be
