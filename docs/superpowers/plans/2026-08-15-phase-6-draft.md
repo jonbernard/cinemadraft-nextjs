@@ -35,6 +35,14 @@ three things fast:
 
 Everything else on this page is secondary to those three.
 
+**Live updating for watchers is wanted, and lands with the live award-show
+page (D48).** The league watches the board during the call, so a pick that only
+appears on refresh means a dozen people refreshing together. It shares a
+transport with the live award show and is chosen in phase 14 — not built here.
+What that requires of this phase: the board and its cells take plain props from
+the service and hold no state of their own, so realtime becomes a change of
+supplier rather than a rewrite.
+
 What exists, verified in `server/routes/draftpicks.js` and `src/pages/league/`:
 
 | Reality | Evidence |

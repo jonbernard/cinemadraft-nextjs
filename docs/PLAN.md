@@ -279,6 +279,9 @@ Driven entirely by `docs/PARITY.md` from phase 7. Tasks appended to this index a
 
 ### Phase 14 — Realtime
 
+
+> **Also covers the draft board (D48).** The owner enters picks live on a call while the league watches, so the board needs the same transport as the live award show — one mechanism, both surfaces. The components already take plain props, so this is a change of supplier, not a rewrite.
+
 Replaces the polling fallback (D13).
 
 - T0: **Choose the realtime transport** (D23 deferred this) — evaluate Upstash direct, Pusher, Ably, and Postgres `LISTEN`/`NOTIFY`, then record the decision
