@@ -17,6 +17,15 @@ function pick(round: number, title: string) {
   return { pickId: round * 100, round, title, posterUrl: null, points: round * 10 };
 }
 
+/**
+ * Both presentations (D49) render into the DOM; CSS decides which is shown, so
+ * in a real browser only one is visible and only one reaches the accessibility
+ * tree. JSDOM loads no CSS, so text appears twice here — assertions are
+ * therefore scoped to one presentation at a time rather than loosened.
+ */
+const desktop = () => within(screen.getByRole('table'));
+const phone = () => within(screen.getAllByRole('list')[0] as HTMLElement);
+
 describe('DraftBoard', () => {
   it('renders one row per seat and one column per round', () => {
     render(
@@ -65,7 +74,8 @@ describe('DraftBoard', () => {
       />,
     );
 
-    expect(screen.getByText(/You/)).toBeInTheDocument();
+    expect(desktop().getByText(/You/)).toBeInTheDocument();
+    expect(phone().getByText(/You/)).toBeInTheDocument();
   });
 
   it('labels an unclaimed seat', () => {
@@ -78,8 +88,8 @@ describe('DraftBoard', () => {
       />,
     );
 
-    expect(screen.getByText('Ghost')).toBeInTheDocument();
-    expect(screen.getByText(/unclaimed/)).toBeInTheDocument();
+    expect(desktop().getByText('Ghost')).toBeInTheDocument();
+    expect(phone().getByText(/unclaimed/)).toBeInTheDocument();
   });
 
   it('shows a film’s title and points in its cell', () => {
@@ -90,8 +100,27 @@ describe('DraftBoard', () => {
       />,
     );
 
-    expect(screen.getByText('Sinners')).toBeInTheDocument();
-    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(desktop().getByText('Sinners')).toBeInTheDocument();
+    expect(desktop().getByText('10')).toBeInTheDocument();
+  });
+
+  it('🔴 shows every pick on a phone too, where members actually watch (D49)', () => {
+    render(
+      <DraftBoard
+        rounds={3}
+        seats={[seat({ draftId: 1, picks: [pick(1, 'Sinners'), pick(2, 'Bugonia')] })]}
+      />,
+    );
+
+    // Not a squeezed copy of the grid: the phone lists each seat with its own
+    // strip, so a member reads one seat at a time.
+    expect(phone().getByText('Sinners')).toBeInTheDocument();
+    expect(phone().getByText('Bugonia')).toBeInTheDocument();
+  });
+
+  it('says so when a seat has no picks yet, on a phone', () => {
+    render(<DraftBoard rounds={1} seats={[seat({ draftId: 1 })]} />);
+    expect(phone().getByText(/no picks yet/i)).toBeInTheDocument();
   });
 
   it('renders an empty group without crashing', () => {

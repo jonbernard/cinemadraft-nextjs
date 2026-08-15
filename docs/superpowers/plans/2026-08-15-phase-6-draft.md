@@ -74,6 +74,7 @@ The repository already exposes the parsed `League.ownerIds: number[]` (Phase 2) 
 - **D14** — new features ship after cutover. The live clock is a new feature.
 - **D33 / D37** — `app/`, `actions/` and `components/` may not import Prisma or the db client, nor contain a hex literal. Five CI checks enforce it.
 - **D34** — 🔴 no roster size. The board pads to the **longest seat in the group**, never to a constant.
+- **D49** — 🔴 **mobile-friendly by default; owner tools desktop-first.** Members watch the draft on their phones, so the board must be genuinely usable there — a wide table that scrolls sideways is not. The **draft console is the exception** and is desktop-first: the owner runs it from a laptop on a video call.
 - **D44** — league pages are **public** (they were never guarded in the source app). The board renders signed-out; only the controls are gated.
 - **D45** — the proxy enumerates public routes; add the league routes deliberately.
 - Latest stable for any new dependency (D28) — `@hello-pangea/dnd` replaces `react-beautiful-dnd`, which is unmaintained and breaks under React 19.
