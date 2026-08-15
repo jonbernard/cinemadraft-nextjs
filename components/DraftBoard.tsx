@@ -132,13 +132,13 @@ export function DraftBoard({
               >
                 Seat
               </th>
-              {Array.from({ length: rounds }, (_, index) => (
+              {roundNumbers.map((round) => (
                 <th
-                  key={index + 1}
+                  key={round}
                   scope="col"
                   className="text-text-dim tabular w-24 px-1 py-2 text-left font-mono text-xs font-normal"
                 >
-                  {String(index + 1).padStart(2, '0')}
+                  {String(round).padStart(2, '0')}
                 </th>
               ))}
             </tr>
@@ -172,8 +172,7 @@ export function DraftBoard({
                     </span>
                   </th>
 
-                  {Array.from({ length: rounds }, (_, index) => {
-                    const round = index + 1;
+                  {roundNumbers.map((round) => {
                     const pick = byRound.get(round);
                     return (
                       <td key={round} className="px-1 py-3">
