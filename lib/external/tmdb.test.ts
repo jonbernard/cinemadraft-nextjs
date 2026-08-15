@@ -39,14 +39,14 @@ describe('no key configured — the state the app ships in', () => {
   it('🔴 returns nothing rather than throwing', async () => {
     // Local search is a complete answer. An exception here would break the
     // search box for the sake of an optional source.
-    expect(await searchTmdb('dune', null)).toEqual([]);
+    expect(await searchTmdb('dune')).toEqual([]);
   });
 
   it('🔴 makes no request at all', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    await searchTmdb('dune', null);
+    await searchTmdb('dune');
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -58,7 +58,7 @@ describe('no key configured — the state the app ships in', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     process.env.TMDB_API_KEY = KEY;
-    await searchTmdb('dune', null);
+    await searchTmdb('dune');
 
     expect(fetchMock).toHaveBeenCalled();
   });
@@ -86,7 +86,7 @@ describe('with a key', () => {
       ),
     );
 
-    const [film] = await searchTmdb('dune', null);
+    const [film] = await searchTmdb('dune');
 
     expect(film).toEqual({
       // 🔴 Null id: TMDB knows this film and the app has never ingested it, so
@@ -101,21 +101,16 @@ describe('with a key', () => {
     });
   });
 
-  it('scopes by year when the context has one', async () => {
+  it('🔴 never filters TMDB by the award year', async () => {
+    // An award season honours the *previous* year's releases: of 526
+    // nominations in the restored 2026 season, 507 are 2025 films and 7 are
+    // 2026 films. Sending the season year as `primary_release_year` hid 96% of
+    // the candidates, and an admin entering nominations found nothing. Ranking
+    // applies the season as a boost instead, where nothing gets excluded.
     const fetchMock = vi.fn(async () => jsonResponse({ results: [] }));
     vi.stubGlobal('fetch', fetchMock);
 
-    await searchTmdb('dune', 2026);
-
-    const url = String(fetchMock.mock.calls.at(0)?.at(0));
-    expect(url).toContain('primary_release_year=2026');
-  });
-
-  it('omits the year filter when there is none', async () => {
-    const fetchMock = vi.fn(async () => jsonResponse({ results: [] }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await searchTmdb('dune', null);
+    await searchTmdb('dune');
 
     expect(String(fetchMock.mock.calls.at(0)?.at(0))).not.toContain(
       'primary_release_year',
@@ -130,7 +125,7 @@ describe('with a key', () => {
       ),
     );
 
-    const [film] = await searchTmdb('untitled', null);
+    const [film] = await searchTmdb('untitled');
 
     expect(film?.releaseYear).toBeNull();
     expect(film?.posterPath).toBeNull();
@@ -146,7 +141,7 @@ describe('with a key', () => {
       ),
     );
 
-    const films = await searchTmdb('real', null);
+    const films = await searchTmdb('real');
 
     expect(films.map((f) => f.title)).toEqual(['Real Film']);
   });
@@ -163,7 +158,7 @@ describe('🔴 failure never reaches the caller', () => {
       vi.fn(async () => jsonResponse({}, false)),
     );
 
-    expect(await searchTmdb('dune', null)).toEqual([]);
+    expect(await searchTmdb('dune')).toEqual([]);
   });
 
   it('returns nothing when the request throws', async () => {
@@ -174,7 +169,7 @@ describe('🔴 failure never reaches the caller', () => {
       }),
     );
 
-    expect(await searchTmdb('dune', null)).toEqual([]);
+    expect(await searchTmdb('dune')).toEqual([]);
   });
 
   it('returns nothing when the body is not the expected shape', async () => {
@@ -183,7 +178,7 @@ describe('🔴 failure never reaches the caller', () => {
       vi.fn(async () => jsonResponse({ results: 'not an array' })),
     );
 
-    expect(await searchTmdb('dune', null)).toEqual([]);
+    expect(await searchTmdb('dune')).toEqual([]);
   });
 });
 
@@ -200,21 +195,11 @@ describe('caching', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
 
-    await searchTmdb('dune', null);
-    await searchTmdb('dune', null);
-    await searchTmdb('DUNE  ', null);
+    await searchTmdb('dune');
+    await searchTmdb('dune');
+    await searchTmdb('DUNE  ');
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('treats a different year as a different question', async () => {
-    const fetchMock = vi.fn(async () => jsonResponse({ results: [] }));
-    vi.stubGlobal('fetch', fetchMock);
-
-    await searchTmdb('dune', 2025);
-    await searchTmdb('dune', 2026);
-
-    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

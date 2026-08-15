@@ -122,6 +122,30 @@ describe('rankCandidates — the award year', () => {
     expect(titles(ranked)[0]).toBe('The One');
   });
 
+  it('🔴 boosts a film released the year before, which is what a season honours', () => {
+    // The 2026 award season is about 2025 films. Measured in the restored
+    // data: 507 of the 2026 season's 526 nominations are 2025 releases, 7 are
+    // 2026 releases. A rule that only knew about the award year would sink
+    // almost every film being nominated.
+    const ranked = rankCandidates(
+      'the',
+      [film('The Other', { releaseYear: 2019 }), film('The One', { releaseYear: 2025 })],
+      admin2026,
+    );
+
+    expect(titles(ranked)[0]).toBe('The One');
+  });
+
+  it('does not boost a film two years out', () => {
+    const ranked = rankCandidates(
+      'the',
+      [film('The One', { releaseYear: 2025 }), film('The Other', { releaseYear: 2024 })],
+      admin2026,
+    );
+
+    expect(titles(ranked)[0]).toBe('The One');
+  });
+
   it('ignores the year entirely when browsing', () => {
     // Browse is "find any film"; a 1925 film is not less relevant there.
     const ranked = rankCandidates(

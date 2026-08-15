@@ -16,8 +16,14 @@ afterAll(async () => {
  *
  * The ranking rule is tested exhaustively and without a database in
  * `search-ranking.test.ts`. What is tested here is the half that only the real
- * data can answer: that the query finds things, that a typo still finds them,
- * and that TMDB is left alone when it has nothing to add.
+ * data can answer: that the query finds things, and that a typo still finds
+ * them.
+ *
+ * 🔴 **TMDB is unreachable here on purpose.** `vitest.setup.ts` clears
+ * `TMDB_API_KEY`, so the default remote source returns nothing and every
+ * assertion below is about the local cache alone. Without that, supplying a
+ * real key turned these into live network calls — which is how this suite
+ * first started failing when one was set.
  */
 const browse = { kind: 'browse' } as const;
 
@@ -100,7 +106,7 @@ describe('findFilms — TMDB is the catalogue', () => {
 
     await findFilms('the', browse, remote);
 
-    expect(remote).toHaveBeenCalledWith('the', null);
+    expect(remote).toHaveBeenCalledWith('the');
   });
 
   it('asks TMDB when local results are thin', async () => {
@@ -108,7 +114,7 @@ describe('findFilms — TMDB is the catalogue', () => {
 
     await findFilms('oppenheim', browse, remote);
 
-    expect(remote).toHaveBeenCalledWith('oppenheim', null);
+    expect(remote).toHaveBeenCalledWith('oppenheim');
   });
 
   it('still answers from the cache when TMDB is unconfigured', async () => {
@@ -119,12 +125,16 @@ describe('findFilms — TMDB is the catalogue', () => {
     expect(results.length).toBeGreaterThan(0);
   });
 
-  it('passes the context year to TMDB when there is one', async () => {
+  it('🔴 does not narrow the TMDB query by the award year', async () => {
+    // An award season honours the previous year's films — 507 of the 2026
+    // season's 526 nominations are 2025 releases — so sending the season year
+    // to TMDB hid almost every candidate. The season is applied by ranking
+    // instead, where it boosts rather than excludes.
     const remote = vi.fn(async () => [] as Candidate[]);
 
     await findFilms('oppenheim', { kind: 'award-admin', year: 2026 }, remote);
 
-    expect(remote).toHaveBeenCalledWith('oppenheim', 2026);
+    expect(remote).toHaveBeenCalledWith('oppenheim');
   });
 
   it('🔴 survives TMDB failing, and still returns the local films', async () => {

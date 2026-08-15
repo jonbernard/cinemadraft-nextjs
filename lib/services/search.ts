@@ -27,7 +27,7 @@ export type FilmResult = {
 /** How many candidates the local query considers before ranking. */
 const LOCAL_LIMIT = 25;
 
-type RemoteSource = (query: string, year: number | null) => Promise<Candidate[]>;
+type RemoteSource = (query: string) => Promise<Candidate[]>;
 
 function toCandidate(movie: Movie, nominatedYears: readonly number[]): Candidate {
   return {
@@ -94,11 +94,14 @@ export async function findFilms(
     toCandidate(movie, yearsByMovie.get(movie.id) ?? []),
   );
 
-  const year = context.kind === 'browse' ? null : context.year;
   // 🔴 A TMDB failure must never fail the search. Somebody is mid-draft and can
   // see the local films in front of them; an error where the results should be
   // is strictly worse than a shorter list.
-  const fetched = await remote(trimmed, year).catch(() => [] as Candidate[]);
+  //
+  // The season is not passed: an award year honours the previous year's films,
+  // so filtering TMDB by it hides the candidates (see `searchTmdb`). Ranking
+  // applies the season instead, as a boost.
+  const fetched = await remote(trimmed).catch(() => [] as Candidate[]);
   const candidates = mergeCandidates(local, fetched);
 
   const taken =

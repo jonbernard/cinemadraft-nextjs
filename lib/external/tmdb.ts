@@ -98,13 +98,22 @@ function toCandidate(movie: TmdbMovie): Candidate {
  * in hand. An exception here would turn a slow third party into a broken
  * search box during a live draft.
  *
- * Cached on query plus year, because those are the only inputs; two people
- * typing the same title in the same season are asking one question.
+ * 🔴 **The award year is deliberately NOT sent to TMDB.** An earlier version
+ * passed it as `primary_release_year`, which looked like sensible scoping and
+ * excluded almost every film the caller wanted: an award season honours the
+ * *previous* year's releases. Measured in the restored data — of 526
+ * nominations in the 2026 season, **507 are 2025 films and 7 are 2026 films**.
+ * Filtering on the season year therefore hid 96% of the candidates, and an
+ * admin entering nominations would have found nothing. Caught by an E2E test
+ * that tried to nominate a real film TMDB knows.
+ *
+ * The year still matters — it just belongs to *ranking* (`search-ranking.ts`),
+ * where being in season is a boost rather than a filter, and nothing gets
+ * excluded for being a year out.
+ *
+ * Cached on the query alone, since that is now the only input.
  */
-export async function searchTmdb(
-  query: string,
-  year: number | null,
-): Promise<Candidate[]> {
+export async function searchTmdb(query: string): Promise<Candidate[]> {
   const key = tmdbEnv.apiKey;
   if (!key) return [];
 
@@ -112,7 +121,7 @@ export async function searchTmdb(
   if (trimmed === '') return [];
 
   return cached(
-    `tmdb:search:${year ?? 'any'}:${trimmed.toLowerCase()}`,
+    `tmdb:search:${trimmed.toLowerCase()}`,
     { ttlSeconds: TTL_SECONDS, tags: ['tmdb', 'tmdb-search'], name: 'tmdb-search' },
     async () => {
       const params = new URLSearchParams({
@@ -120,7 +129,6 @@ export async function searchTmdb(
         query: trimmed,
         include_adult: 'false',
       });
-      if (year != null) params.set('primary_release_year', String(year));
 
       try {
         const response = await fetch(`${BASE}/search/movie?${params}`, {
@@ -146,12 +154,26 @@ export async function searchTmdb(
 }
 
 /**
- * The US theatrical release date, falling back to TMDB's primary one.
+ * The US release date, falling back to TMDB's primary one.
  *
  * Ported from `server/utils/routes.js:34-42` rather than simplified. The league
  * is scored on US award seasons, and a film's international date can fall in a
  * different eligibility year — so preferring the US entry is a domain rule,
  * not a formatting preference.
+ *
+ * It takes the **first** US entry of any release type, which is what the source
+ * did, and that was checked against the live API rather than assumed. Across
+ * twelve real award films — Oppenheimer, Sinners, Wicked, Killers of the Flower
+ * Moon, CODA, Dune: Part Two among them — the first US entry and the
+ * theatrical one give the **same year every time**, because a contender's
+ * premiere and release fall in one eligibility year by design.
+ *
+ * It can differ on old catalogue titles: *Wicked City* (1992) has exactly one
+ * US entry, a 1999 home-video release, so it stores 1999. Nothing scored
+ * depends on this — `releaseDate` drives a ranking boost, the year shown beside
+ * a search result, and watchlist sorting — so preferring theatrical types would
+ * add a rule with no measured benefit on the films that matter. Recorded rather
+ * than fixed, so the odd year has an explanation when somebody notices it.
  */
 function releaseDateOf(detail: TmdbMovieDetail): Date | null {
   const us = detail.release_dates?.results?.find((entry) => entry.iso_3166_1 === 'US');

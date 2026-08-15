@@ -17,6 +17,15 @@ const FILMS = [`${TAG} Alpha`, `${TAG} Bravo`];
 const hasClerk = Boolean(
   process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
 );
+const hasTmdb = Boolean(process.env.TMDB_API_KEY);
+
+/**
+ * A real film, chosen because the restored database does not contain it — a
+ * 1992 anime nobody in this league has ever drafted. Nominating it proves the
+ * ingest path end to end: TMDB is searched, the film is cached locally, and a
+ * nomination is written against the new row.
+ */
+const UNCACHED = { title: 'Wicked City', tmdbId: '69011' };
 
 /**
  * Raw `pg` rather than the Prisma client: Playwright does not resolve the `@/`
@@ -57,6 +66,13 @@ async function cleanup(): Promise<void> {
     await query('delete from events where abbreviation like $1', [`${TAG}%`]);
     await query('delete from points where level like $1', [`${TAG}%`]);
     await query('delete from movies where title like $1', [`${TAG}%`]);
+    // The film the TMDB ingest test caches. Removing it puts the database back
+    // to the state that made the test meaningful — the film absent.
+    await query(
+      'delete from nominations where movie_id in (select id from movies where tmdb_id = $1)',
+      [UNCACHED.tmdbId],
+    );
+    await query('delete from movies where tmdb_id = $1', [UNCACHED.tmdbId]);
     await query("delete from users where email like 'e2e_awards_%+clerk_test@%'");
   });
 }
@@ -242,6 +258,50 @@ test.describe('award shows', () => {
       await expect
         .poll(async () => (await stateOfShow()).winners.map((row) => row.title))
         .toEqual([FILMS[1]]);
+    });
+
+    test('🔴 nominates a film TMDB knows and this app has never cached', async ({
+      page,
+    }) => {
+      // The capability the whole phase turns on. `movies` is a cache of TMDB,
+      // so during nominations season the films being entered are precisely the
+      // ones not in it yet — a search that could only return cached films
+      // would be unable to nominate anything new.
+      test.skip(!hasTmdb, 'TMDB_API_KEY not configured');
+
+      const { abbreviation } = await seedShow();
+      await signInAsAdmin(page);
+      await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+
+      // Absent before.
+      const before = await withDb(async (query) =>
+        query('select id from movies where tmdb_id = $1', [UNCACHED.tmdbId]),
+      );
+      expect(before).toHaveLength(0);
+
+      await page.getByRole('searchbox').fill(UNCACHED.title);
+      await page
+        .getByRole('button', { name: new RegExp(UNCACHED.title) })
+        .first()
+        .click();
+
+      await expect(page.getByText(`${UNCACHED.title} nominated`)).toBeVisible();
+
+      // Cached now, and the nomination points at the new row.
+      const after = (await withDb(async (query) =>
+        query('select id, title, imdb_id from movies where tmdb_id = $1', [
+          UNCACHED.tmdbId,
+        ]),
+      )) as { id: number; title: string; imdb_id: string | null }[];
+
+      expect(after).toHaveLength(1);
+      expect(after[0]?.title).toBe(UNCACHED.title);
+      // Stored the way all 1,355 existing rows are: no `tt` prefix.
+      expect(after[0]?.imdb_id).not.toMatch(/^tt/);
+
+      expect((await stateOfShow()).nominations.map((row) => row.title)).toContain(
+        UNCACHED.title,
+      );
     });
 
     test('🔴 removing the winning nominee takes its win with it', async ({ page }) => {

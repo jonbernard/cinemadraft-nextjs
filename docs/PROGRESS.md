@@ -463,13 +463,24 @@ narrower than the matrix says.
   titles; Postgres's default of 0.6 would reject it, and transposition is the
   typo people make at speed. The value lives in the predicate, not a session
   GUC, because a pooled connection may not carry the `SET`.
-- 🔴 **TMDB is required and currently unconfigured.** `movies` is a *cache* of
+- 🔴 **TMDB is required and now configured locally.** `movies` is a *cache* of
   TMDB, so without a key the app finds only films the league has already used —
   which makes drafting or nominating a new release impossible. Search asks TMDB
   on every query, deliberately: an earlier version only asked when local
   results looked thin, which meant a query like "wicked" matched enough cached
   films to never reach TMDB and the new release stayed invisible. The rate
   limit is handled by caching identical queries, not by declining to ask.
+- 🔴 **Never send the award year to TMDB.** An award season honours the
+  *previous* year's films: of the 2026 season's 526 nominations, **507 are 2025
+  releases and 7 are 2026 releases**. An early version passed the season as
+  `primary_release_year`, which hid 96% of the candidates — an admin entering
+  nominations would have found nothing. The season belongs to ranking, where it
+  boosts the award year *and the year before*, and excludes nothing. Caught by
+  the E2E test that nominates a real uncached film, not by a unit test.
+- 🔴 **`vitest.setup.ts` clears `TMDB_API_KEY`.** Supplying a real key turned
+  nine existing tests into live network calls and broke one immediately; worse,
+  the suite began behaving differently depending on whether the developer had a
+  key. Tests that are about TMDB set the variable themselves and stub `fetch`.
 - **`lib/services/film-ingest.ts` is how a TMDB film becomes usable.** Every id
   the app deals in is a local `movies.id`, so a search result carrying only a
   `tmdbId` gets ingested on first use. It reproduces `saveFilm`'s field mapping
@@ -503,12 +514,11 @@ narrower than the matrix says.
 
 ### ⚠️ Waiting on the owner
 
-- 🔴 **A TMDB API key (`TMDB_API_KEY`) is required and missing.** Until it is
-  set, no new film can be drafted or nominated — the app can only find what it
-  has already cached. The code is written and tested against a fake; supplying
-  the key is the whole remaining step. A free key from themoviedb.org, then
-  `.env.local` for development and a Vercel environment variable for
-  production. The source app used the same key (`server/routes/search.js`).
+- ✅ **`TMDB_API_KEY` is set locally** (2026-08-15) and verified end to end:
+  searching "wicked" returns cached films first and TMDB fills the rest, and an
+  admin nominated *Wicked City* — a real film absent from the restored data —
+  straight from TMDB, with the row cached correctly. **Still needed in Vercel**
+  for Preview and Production.
 - **The parity matrix still needs review** (Phase 7 gate). Cutover is blocked
   while any row is open.
 

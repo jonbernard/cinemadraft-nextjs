@@ -62,7 +62,16 @@ const WEIGHT = {
   wordPrefix: 200,
   local: 300,
   nominatedInYear: 250,
-  releasedInYear: 120,
+  /**
+   * 🔴 Released **in the season**, which means the award year *or the year
+   * before it* — not the award year alone.
+   *
+   * An award season honours the previous year's films. Measured in the
+   * restored data: of 526 nominations in the 2026 season, 507 are 2025
+   * releases and 7 are 2026 releases. Boosting only the award year would
+   * therefore have sunk 96% of the films the caller is looking for.
+   */
+  releasedInSeason: 120,
   /**
    * 🔴 Negative, and deliberately smaller than an exact title match.
    *
@@ -101,7 +110,13 @@ function score(query: string, candidate: Candidate, context: SearchContext): num
 
   if (context.kind !== 'browse') {
     if (candidate.nominatedYears.includes(context.year)) total += WEIGHT.nominatedInYear;
-    if (candidate.releaseYear === context.year) total += WEIGHT.releasedInYear;
+    // The season spans the award year and the release year it honours.
+    if (
+      candidate.releaseYear === context.year ||
+      candidate.releaseYear === context.year - 1
+    ) {
+      total += WEIGHT.releasedInSeason;
+    }
   }
 
   if (
