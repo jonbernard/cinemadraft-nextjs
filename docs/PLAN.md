@@ -168,7 +168,7 @@ Replaces the welcome-card home with state: standings position, next deadline, re
 
 ### Phase 6 — Draft 🔴 priority trio
 
-> 🔴 **Rescoped against the source app (D46).** There is no live draft: no clock, no current-pick pointer, no timer, and no column that could hold one. The owner enters picks on behalf of seats, grouped, with `draft_picks.order` reorderable. The on-the-clock affordance is a **new feature** and moves to Phase 15 under D14.
+> 🔴 **The owner enters every pick, by design (D46).** The draft runs on a video call: the owner keeps the selection on the right player, they say their pick, the owner searches and assigns it. So the UI optimises for *that* — whose turn it is, fast search, fewest actions per pick — not for a clock. There is no timer and no on-the-clock cell, and none is missing.
 
 - T1: `lib/services/draft.ts` — league-year → groups → seats → picks; **`lib/services/league-access.ts` fixes the ownership check** (D47)
 - T2: Draft board component — seats down, rounds across, poster thumbnails in filled cells (§6.7), padded to the longest seat in the group (D34)
@@ -296,7 +296,7 @@ Replaces the polling fallback (D13).
 ### Phase 15 — New features
 
 
-> Carries the **live snake draft** (clock, on-the-clock cell, turn order) — designed in spec §6.7 but absent from the source app, so it is a new feature under D14 rather than parity (D46).
+> **Possible future enhancement, not planned work:** a self-service timed draft (clock, on-the-clock cell, per-turn deadline). The owner confirmed that entering picks during a video call is the intended workflow (D46), so this would be a change in how the product works, not a gap to close. Only build it if the owner asks.
 
 Per §7, all post-cutover.
 
