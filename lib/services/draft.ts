@@ -168,3 +168,14 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
     groups,
   };
 }
+
+/**
+ * The seasons a league has drafted, newest first — its year switcher.
+ *
+ * Separate from `getLeagueBoard` because it answers a different question: that
+ * one is "what happened in this season", this one is "which seasons exist".
+ * The board would otherwise carry a list it never uses on the console path.
+ */
+export async function getLeagueSeasons(leagueId: number): Promise<number[]> {
+  return draftRepository.findYearsByLeagueId(leagueId);
+}

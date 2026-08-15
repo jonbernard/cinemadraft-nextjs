@@ -27,6 +27,17 @@ const isPublic = createRouteMatcher([
   '/tokens',
   '/auth/(.*)',
   '/api/webhooks/(.*)',
+  // 🔴 League pages, deliberately (D44/D45). The source app never guarded
+  // them, and the link people paste into a group chat has to open for whoever
+  // taps it. Signing in only marks the viewer's own seat.
+  //
+  // This matches `/leagues/1` and everything under it — including
+  // `/leagues/1/draft`, which is owner-only. That page is not left unguarded
+  // by this: it resolves the session itself and answers 404 to anyone who is
+  // not an owner, which is a stronger answer than the proxy's, because a
+  // bounce to sign-in would confirm the league exists and is mid-draft.
+  // `/leagues` itself is not matched, so the index stays private.
+  '/leagues/(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
