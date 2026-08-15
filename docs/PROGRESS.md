@@ -408,9 +408,37 @@ day.
 
 ## Phase 8 — Award shows + search
 
-Plan: _not yet written_ — 10 tasks, see `docs/PLAN.md`
+Plan: [`docs/superpowers/plans/2026-08-15-phase-8-award-shows-search.md`](superpowers/plans/2026-08-15-phase-8-award-shows-search.md)
 
-- [ ] P8 not started
+🔴 **This is the phase that creates data.** Nominations and winners are the
+inputs to scoring — a wrong winner changes every standing on the site (§12).
+The source app left both endpoints open to the entire internet (`PARITY.md`
+bug 1); here they are admin-gated and the refusals are tested before the
+successes.
+
+🔴 **There is no recompute to trigger.** `PLAN.md` says marking a winner fires
+the phase 9 recompute and a correction reverses it. Neither exists: scoring is
+a pure function computed on read (D41) and there is no materialized total. So a
+correction is consistent by construction today — and this phase writes the test
+that proves points move anyway, because **phase 9 inherits it as a constraint
+it must not break**.
+
+🔴 **TMDB has no key in this repo and the app must not need one.** The local
+table holds 1,355 films, every one with a `tmdbId` — the league's whole
+history. TMDB is an optional second source behind an interface; absent a key it
+is never called and local results are a correct answer, not a degraded one.
+
+- [ ] P8.T1 `lib/services/search-ranking.ts` — the pure ranking rule, three contexts
+- [ ] P8.T2 Trigram index + local-first `lib/services/search.ts`
+- [ ] P8.T3 TMDB as an optional source, cached, failure-tolerant
+- [ ] P8.T4 `components/FilmSearch.tsx` — extracted from the draft console
+- [ ] P8.T5 Award show pages — public (D44), point values resolved through `pointsId`
+- [ ] P8.T6 Admin: attach and remove a nominee 🔴 admin-gated
+- [ ] P8.T7 Admin: mark and correct a winner 🔴 the phase gate
+- [ ] P8.T8 E2E and close-out
+
+Closes `PARITY.md` **P10.T8, T22, T23, T24, T28, T29**. T26, T27 and T30
+(editing a show, category CRUD, the needs-updating list) stay in phase 10.
 
 ---
 
