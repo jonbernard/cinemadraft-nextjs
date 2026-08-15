@@ -348,7 +348,21 @@ its artwork on the board and is labelled Taken in the console.
 
 ## Phase 7 — Parity audit 🔴 gates cutover
 
-Plan: _not yet written_
+Plan: [`docs/superpowers/plans/2026-08-15-phase-7-parity-audit.md`](superpowers/plans/2026-08-15-phase-7-parity-audit.md)
+
+🔴 **The unit of parity is the capability, not the endpoint.** D8 removed the
+HTTP layer, so an endpoint-for-endpoint audit would mark the whole application
+deficient while being true of nothing. Each endpoint, controller and page is
+reduced to what a person can *do*, and that carries the verdict.
+
+🔴 **Three verdicts, no fourth.** ported / deficient / dropped. A capability
+that half works is deficient — a green row has to mean someone can be told
+"yes, that works".
+
+**The audit changes no application code.** Findings become rows and Phase 10
+tasks; a bug found here is filed, not fixed in an audit commit. The exception
+is a security finding on the live Heroku app, which goes to the owner the same
+day.
 
 - [ ] P7.T1 Enumerate 18 source route files
 - [ ] P7.T2 Enumerate 17 source controllers
