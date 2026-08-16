@@ -470,6 +470,12 @@ narrower than the matrix says.
   results looked thin, which meant a query like "wicked" matched enough cached
   films to never reach TMDB and the new release stayed invisible. The rate
   limit is handled by caching identical queries, not by declining to ask.
+- 🔴 **A season's films can be up to five years old, and the boost is graded**
+  (D58). 96.5% of nominations are exactly one year before their season, but the
+  tail is real and has a cause: shorts and foreign-language films carry a
+  festival or home-country date. *This Is Endometriosis* is a 2022 film
+  nominated for Best Short Film in 2026. Verified against the corpus — the same
+  partial query reorders correctly for the 2018, 2021 and 2026 seasons.
 - 🔴 **Never send the award year to TMDB.** An award season honours the
   *previous* year's films: of the 2026 season's 526 nominations, **507 are 2025
   releases and 7 are 2026 releases**. An early version passed the season as

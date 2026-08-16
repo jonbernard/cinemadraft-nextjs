@@ -63,15 +63,34 @@ const WEIGHT = {
   local: 300,
   nominatedInYear: 250,
   /**
-   * 🔴 Released **in the season**, which means the award year *or the year
-   * before it* — not the award year alone.
-   *
-   * An award season honours the previous year's films. Measured in the
-   * restored data: of 526 nominations in the 2026 season, 507 are 2025
-   * releases and 7 are 2026 releases. Boosting only the award year would
-   * therefore have sunk 96% of the films the caller is looking for.
+   * Released in the year an award season actually honours — the year before
+   * it. Measured across every nomination in the restored data with a known
+   * release date: **96.5% sit exactly one year before their season**.
    */
   releasedInSeason: 120,
+  /**
+   * One year either side of that: the season year itself (1.5%) and two years
+   * before (1.9%).
+   */
+  releasedNearSeason: 100,
+  /**
+   * 🔴 The long tail, out to five years before the season.
+   *
+   * Confirmed by the owner as their own search practice, and the data says
+   * why: the nominations with a long gap are **shorts and foreign-language
+   * films**, whose TMDB primary release year is a festival or home-country
+   * date years before the award that recognises them. *This Is Endometriosis*
+   * is a 2022 film nominated for Best Short Film in **2026**; *Son of Saul*
+   * and *The Handmaiden* carry 2015 and 2016 dates against 2017 and 2018
+   * seasons.
+   *
+   * Weighted well below the dominant case rather than flat across the window.
+   * A flat ±5 would rank a 2021 film level with a 2025 one for the 2026
+   * season, discarding the signal that is correct 96.5% of the time — and
+   * nothing here is a filter, so a film outside the window is still findable,
+   * just not promoted.
+   */
+  releasedInSeasonTail: 55,
   /**
    * 🔴 Negative, and deliberately smaller than an exact title match.
    *
@@ -87,6 +106,35 @@ const WEIGHT = {
    */
   alreadyTaken: -900,
 } as const;
+
+/**
+ * How far before a season a nominated film's release year can sit.
+ *
+ * Five, per the owner's own search practice, and the data supports it: the
+ * outliers are shorts and foreign-language films. Everything from 0 to 5 years
+ * before the season is boosted, on a curve rather than flatly.
+ */
+const SEASON_WINDOW = 5;
+
+/**
+ * How much a film's release year suggests it belongs to this award season.
+ *
+ * A season *honours the previous year*, so the gap — not the year — is what
+ * carries the meaning. Zero for anything outside the window; ranking never
+ * excludes, so those films still appear.
+ */
+function seasonBoost(releaseYear: number | null, seasonYear: number): number {
+  if (releaseYear == null) return 0;
+
+  const gap = seasonYear - releaseYear;
+  // A film dated after its season. No nomination in ten years of data has one,
+  // and a draft picks films already scheduled, so this earns nothing.
+  if (gap < 0 || gap > SEASON_WINDOW) return 0;
+
+  if (gap === 1) return WEIGHT.releasedInSeason;
+  if (gap === 0 || gap === 2) return WEIGHT.releasedNearSeason;
+  return WEIGHT.releasedInSeasonTail;
+}
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
@@ -110,13 +158,7 @@ function score(query: string, candidate: Candidate, context: SearchContext): num
 
   if (context.kind !== 'browse') {
     if (candidate.nominatedYears.includes(context.year)) total += WEIGHT.nominatedInYear;
-    // The season spans the award year and the release year it honours.
-    if (
-      candidate.releaseYear === context.year ||
-      candidate.releaseYear === context.year - 1
-    ) {
-      total += WEIGHT.releasedInSeason;
-    }
+    total += seasonBoost(candidate.releaseYear, context.year);
   }
 
   if (

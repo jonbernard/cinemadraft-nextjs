@@ -123,10 +123,9 @@ describe('rankCandidates — the award year', () => {
   });
 
   it('🔴 boosts a film released the year before, which is what a season honours', () => {
-    // The 2026 award season is about 2025 films. Measured in the restored
-    // data: 507 of the 2026 season's 526 nominations are 2025 releases, 7 are
-    // 2026 releases. A rule that only knew about the award year would sink
-    // almost every film being nominated.
+    // Measured across every nomination with a known release date: 96.5% sit
+    // exactly one year before their season. A rule that only knew about the
+    // award year would sink almost every film being nominated.
     const ranked = rankCandidates(
       'the',
       [film('The Other', { releaseYear: 2019 }), film('The One', { releaseYear: 2025 })],
@@ -136,14 +135,71 @@ describe('rankCandidates — the award year', () => {
     expect(titles(ranked)[0]).toBe('The One');
   });
 
-  it('does not boost a film two years out', () => {
+  it('🔴 still boosts a short or foreign film years behind its season', () => {
+    // The long tail is real and has a cause: shorts and foreign-language films
+    // carry a festival or home-country date. *This Is Endometriosis* is a 2022
+    // film nominated for Best Short Film in 2026.
     const ranked = rankCandidates(
       'the',
-      [film('The One', { releaseYear: 2025 }), film('The Other', { releaseYear: 2024 })],
+      [
+        film('The Other', { releaseYear: 2015 }),
+        film('The Short', { releaseYear: 2022 }),
+      ],
       admin2026,
     );
 
-    expect(titles(ranked)[0]).toBe('The One');
+    expect(titles(ranked)[0]).toBe('The Short');
+  });
+
+  it('🔴 ranks the year a season honours above its tail', () => {
+    // The window is graded, not flat. A flat ±5 would rank a 2021 film level
+    // with a 2025 one and discard the signal that is right 96.5% of the time.
+    const ranked = rankCandidates(
+      'the',
+      [film('The Old', { releaseYear: 2021 }), film('The Recent', { releaseYear: 2025 })],
+      admin2026,
+    );
+
+    expect(titles(ranked)).toEqual(['The Recent', 'The Old']);
+  });
+
+  it('ranks the season year and two years before between the two', () => {
+    const ranked = rankCandidates(
+      'the',
+      [
+        film('The Tail', { releaseYear: 2022 }),
+        film('The Near', { releaseYear: 2024 }),
+        film('The Honoured', { releaseYear: 2025 }),
+      ],
+      admin2026,
+    );
+
+    expect(titles(ranked)).toEqual(['The Honoured', 'The Near', 'The Tail']);
+  });
+
+  it('does not boost a film outside the window, but still returns it', () => {
+    // A 2004 film really was nominated — for a RAZZIE in 2025. Nothing is
+    // excluded; it simply is not promoted.
+    const ranked = rankCandidates(
+      'the',
+      [film('The Ancient', { releaseYear: 2004 })],
+      admin2026,
+    );
+
+    expect(titles(ranked)).toEqual(['The Ancient']);
+  });
+
+  it('does not boost a film dated after its season', () => {
+    const ranked = rankCandidates(
+      'the',
+      [
+        film('The Future', { releaseYear: 2028 }),
+        film('The Honoured', { releaseYear: 2025 }),
+      ],
+      admin2026,
+    );
+
+    expect(titles(ranked)[0]).toBe('The Honoured');
   });
 
   it('ignores the year entirely when browsing', () => {
