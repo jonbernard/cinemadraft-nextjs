@@ -3,76 +3,10 @@
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { NAV_LINKS } from '@/lib/nav/links';
 import { cn } from '@/lib/utils/cn';
-
-export type NavLink = {
-  href: string;
-  label: string;
-  /** Inline SVG path data; `currentColor` inherits the active state. */
-  path: string;
-  /** False while the page is still owed by a later batch of Phase 10. */
-  ready: boolean;
-};
-
-/**
- * The seven destinations, as the source app has them.
- *
- * 🔴 Seven, not the four of spec §6.9 — **the owner overrode that** (D62).
- * §6.9 proposed consolidating Browse, Watchlist and Draft List into one Films
- * destination; the league knows the app by these seven names, so they stay.
- *
- * Entries appear as their pages are built, so the nav never links to a 404.
- * The full set lives here rather than being added ad hoc, which keeps what is
- * missing visible: `ready: false` is a page Phase 10 still owes, and flipping
- * the flag is the last step of the task that builds it.
- *
- * Icons are inline SVG rather than an icon package — seven glyphs do not
- * justify a dependency, and `currentColor` makes them inherit state for free.
- * Each is `aria-hidden`; the label beside it is the accessible name, because
- * icon-only navigation hurts discoverability in an app most members open once
- * a year.
- */
-export const NAV_LINKS: NavLink[] = [
-  { href: '/', label: 'Home', ready: true, path: 'M3 10.5 12 3l9 7.5V21H3z' },
-  {
-    href: '/browse',
-    label: 'Browse',
-    ready: false,
-    path: 'M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16',
-  },
-  {
-    href: '/award-shows',
-    label: 'Award shows',
-    ready: true,
-    path: 'M12 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zM9 13l-2 8 5-3 5 3-2-8',
-  },
-  {
-    href: '/leagues',
-    label: 'Leagues',
-    ready: true,
-    path: 'M4 5h6v14H4zM14 5h6v14h-6zM10 12h4',
-  },
-  {
-    href: '/watchlist',
-    label: 'Watchlist',
-    ready: false,
-    path: 'M6 3h12v18l-6-4.5L6 21z',
-  },
-  {
-    href: '/list',
-    label: 'Draft list',
-    ready: false,
-    path: 'M4 6h16M4 12h16M4 18h10M18 16v5M15.5 18.5h5',
-  },
-  {
-    href: '/rules-and-scoring',
-    label: 'Rules & scoring',
-    ready: false,
-    path: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 8v5M12 16h.01',
-  },
-];
 
 /**
  * The app's navigation.
@@ -97,6 +31,10 @@ export const NAV_LINKS: NavLink[] = [
  */
 export function AppNav({ isSignedIn }: { isSignedIn: boolean }) {
   const pathname = usePathname();
+  // `useId` rather than a literal: a hard-coded id is a collision waiting for
+  // the second instance of a component, and `aria-controls` has to point at
+  // the right one.
+  const drawerId = useId();
   const drawer = useRef<HTMLDialogElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -142,7 +80,7 @@ export function AppNav({ isSignedIn }: { isSignedIn: boolean }) {
             type="button"
             onClick={open}
             aria-expanded={isOpen}
-            aria-controls="main-drawer"
+            aria-controls={drawerId}
             className="text-text-primary focus-visible:outline-accent-fill -ml-2 flex min-h-11 min-w-11 items-center justify-center focus-visible:outline-2 md:hidden"
           >
             <svg
@@ -199,7 +137,7 @@ export function AppNav({ isSignedIn }: { isSignedIn: boolean }) {
       {/* Phone: a drawer. Native <dialog>, so focus trapping, Escape and the
           backdrop are the platform's job rather than ours. */}
       <dialog
-        id="main-drawer"
+        id={drawerId}
         ref={drawer}
         aria-label="Main menu"
         className="bg-bg-surface text-text-primary m-0 h-dvh max-h-dvh w-72 max-w-[85vw] p-0 backdrop:bg-black/60 md:hidden"

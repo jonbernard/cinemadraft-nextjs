@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useId, useState, useTransition } from 'react';
 
 import { createLeague } from '@/actions/leagues/create-league';
 import { cn } from '@/lib/utils/cn';
@@ -19,10 +19,19 @@ import { cn } from '@/lib/utils/cn';
  */
 export function CreateLeagueForm({ className }: { className?: string }) {
   const router = useRouter();
+  const helpId = useId();
   const [name, setName] = useState('');
   const [type, setType] = useState<'snake' | 'linear'>('snake');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const onNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setName(event.target.value);
+  }, []);
+
+  const onTypeChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setType(event.target.value === 'linear' ? 'linear' : 'snake');
+  }, []);
 
   const submit = useCallback(
     (event: React.FormEvent) => {
@@ -53,13 +62,13 @@ export function CreateLeagueForm({ className }: { className?: string }) {
         <input
           type="text"
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={onNameChange}
           required
           maxLength={120}
-          aria-describedby="name-help"
+          aria-describedby={helpId}
           className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill w-full border px-3 py-2 text-base focus-visible:outline-2"
         />
-        <span id="name-help" className="text-text-dim text-xs">
+        <span id={helpId} className="text-text-dim text-xs">
           Whatever everyone already calls it.
         </span>
       </label>
@@ -85,7 +94,7 @@ export function CreateLeagueForm({ className }: { className?: string }) {
               name="type"
               value={option.value}
               checked={type === option.value}
-              onChange={() => setType(option.value)}
+              onChange={onTypeChange}
               className="mt-1"
             />
             <span className="flex flex-col">

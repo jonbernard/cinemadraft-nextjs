@@ -8,7 +8,8 @@ vi.mock('@clerk/nextjs', () => ({
   UserButton: () => <button type="button">Account</button>,
 }));
 
-import { AppNav, NAV_LINKS } from '@/components/AppNav';
+import { AppNav } from '@/components/AppNav';
+import { NAV_LINKS } from '@/lib/nav/links';
 
 /**
  * The shell that makes everything else reachable.

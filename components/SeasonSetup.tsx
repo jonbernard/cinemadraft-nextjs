@@ -95,6 +95,32 @@ export function SeasonSetup({
     [leagueId, seats, run],
   );
 
+  const onDummyNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setDummyName(event.target.value);
+  }, []);
+
+  const onGroupCountChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setGroupCount(Number(event.target.value));
+  }, []);
+
+  const addSeat = useCallback(
+    (event: React.FormEvent) => {
+      event.preventDefault();
+      const name = dummyName.trim();
+      if (name === '') return;
+      run(() => addDummySeat({ leagueId, year, dummyName: name }), `${name} seated`);
+      setDummyName('');
+    },
+    [dummyName, leagueId, year, run],
+  );
+
+  const deal = useCallback(() => {
+    run(
+      () => randomiseGroups({ leagueId, year, groupCount }),
+      'Everyone dealt into groups',
+    );
+  }, [leagueId, year, groupCount, run]);
+
   return (
     <div className={cn('flex flex-col gap-8', className)}>
       <section className="flex flex-col gap-3">
@@ -104,70 +130,21 @@ export function SeasonSetup({
 
         <ul className="flex flex-col">
           {seats.map((seat) => (
-            <li
+            <SeatRow
               key={seat.draftId}
-              className="border-border-rule flex flex-wrap items-center gap-3 border-b py-3"
-            >
-              <span className="text-text-primary min-w-40 flex-1 text-sm">
-                {seat.name}
-                {seat.isDummy ? (
-                  <span className="text-text-dim"> · placeholder</span>
-                ) : null}
-              </span>
-
-              <label className="flex items-center gap-2 text-xs">
-                <span className="text-text-dim">Group</span>
-                <select
-                  value={seat.group ?? ''}
-                  disabled={pending || !isPending}
-                  onChange={(event) =>
-                    setGroup(
-                      seat.draftId,
-                      event.target.value === '' ? null : Number(event.target.value),
-                    )
-                  }
-                  className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill min-h-11 border px-2 text-sm focus-visible:outline-2"
-                >
-                  <option value="">Unassigned</option>
-                  {options.map((group) => (
-                    <option key={group} value={group}>
-                      {group}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {/* 🔴 A seat that has drafted cannot be removed — the picks have
-                  no foreign key and would be orphaned. Saying so beats a button
-                  that always refuses. */}
-              {seat.hasPicks ? (
-                <span className="text-text-dim text-xs">has picks</span>
-              ) : (
-                <RemoveSeatButton
-                  leagueId={leagueId}
-                  draftId={seat.draftId}
-                  name={seat.name}
-                  disabled={pending}
-                  onDone={setMessage}
-                />
-              )}
-            </li>
+              seat={seat}
+              leagueId={leagueId}
+              options={options}
+              disabled={pending}
+              editable={isPending}
+              onSetGroup={setGroup}
+              onDone={setMessage}
+            />
           ))}
         </ul>
 
         {isPending ? (
-          <form
-            className="flex flex-wrap items-end gap-3"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (dummyName.trim() === '') return;
-              run(
-                () => addDummySeat({ leagueId, year, dummyName: dummyName.trim() }),
-                `${dummyName.trim()} seated`,
-              );
-              setDummyName('');
-            }}
-          >
+          <form className="flex flex-wrap items-end gap-3" onSubmit={addSeat}>
             <label className="flex flex-col gap-1">
               <span className="text-text-dim text-xs">
                 Add someone without an account
@@ -175,7 +152,7 @@ export function SeasonSetup({
               <input
                 type="text"
                 value={dummyName}
-                onChange={(event) => setDummyName(event.target.value)}
+                onChange={onDummyNameChange}
                 placeholder="Their name"
                 className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill min-h-11 border px-3 text-sm focus-visible:outline-2"
               />
@@ -205,19 +182,14 @@ export function SeasonSetup({
                 min={1}
                 max={20}
                 value={groupCount}
-                onChange={(event) => setGroupCount(Number(event.target.value))}
+                onChange={onGroupCountChange}
                 className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill min-h-11 w-24 border px-3 text-sm focus-visible:outline-2"
               />
             </label>
             <button
               type="button"
               disabled={pending}
-              onClick={() =>
-                run(
-                  () => randomiseGroups({ leagueId, year, groupCount }),
-                  'Everyone dealt into groups',
-                )
-              }
+              onClick={deal}
               className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill min-h-11 border px-4 text-sm disabled:opacity-60 focus-visible:outline-2"
             >
               Deal at random
@@ -253,6 +225,81 @@ export function SeasonSetup({
 }
 
 /**
+ * One person's row.
+ *
+ * Its own component so the select's handler memoises against the seat rather
+ * than being rebuilt for every row on every keystroke elsewhere on the page.
+ */
+function SeatRow({
+  seat,
+  leagueId,
+  options,
+  disabled,
+  editable,
+  onSetGroup,
+  onDone,
+}: {
+  seat: SetupSeatView;
+  leagueId: number;
+  options: readonly number[];
+  disabled: boolean;
+  editable: boolean;
+  onSetGroup: (draftId: number, group: number | null) => void;
+  onDone: (message: string | null) => void;
+}) {
+  const onChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      onSetGroup(
+        seat.draftId,
+        event.target.value === '' ? null : Number(event.target.value),
+      );
+    },
+    [onSetGroup, seat.draftId],
+  );
+
+  return (
+    <li className="border-border-rule flex flex-wrap items-center gap-3 border-b py-3">
+      <span className="text-text-primary min-w-40 flex-1 text-sm">
+        {seat.name}
+        {seat.isDummy ? <span className="text-text-dim"> · placeholder</span> : null}
+      </span>
+
+      <label className="flex items-center gap-2 text-xs">
+        <span className="text-text-dim">Group</span>
+        <select
+          value={seat.group ?? ''}
+          disabled={disabled || !editable}
+          onChange={onChange}
+          className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill min-h-11 border px-2 text-sm focus-visible:outline-2"
+        >
+          <option value="">Unassigned</option>
+          {options.map((group) => (
+            <option key={group} value={group}>
+              {group}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {/* 🔴 A seat that has drafted cannot be removed — the picks have no
+          foreign key and would be orphaned. Saying so beats a button that
+          always refuses. */}
+      {seat.hasPicks ? (
+        <span className="text-text-dim text-xs">has picks</span>
+      ) : (
+        <RemoveSeatButton
+          leagueId={leagueId}
+          draftId={seat.draftId}
+          name={seat.name}
+          disabled={disabled}
+          onDone={onDone}
+        />
+      )}
+    </li>
+  );
+}
+
+/**
  * 🔴 Removing a seat confirms first.
  *
  * Mid-season it is hard to undo: the person has to be re-invited or re-added,
@@ -275,17 +322,19 @@ function RemoveSeatButton({
 }) {
   const [pending, startTransition] = useTransition();
 
+  const remove = useCallback(() => {
+    if (!window.confirm(`Remove ${name} from this league?`)) return;
+    startTransition(async () => {
+      const result = await removeSeat({ leagueId, draftId });
+      onDone(result.ok ? `${name} removed` : result.message);
+    });
+  }, [leagueId, draftId, name, onDone]);
+
   return (
     <button
       type="button"
       disabled={disabled || pending}
-      onClick={() => {
-        if (!window.confirm(`Remove ${name} from this league?`)) return;
-        startTransition(async () => {
-          const result = await removeSeat({ leagueId, draftId });
-          onDone(result.ok ? `${name} removed` : result.message);
-        });
-      }}
+      onClick={remove}
       className="text-text-dim hover:text-text-primary focus-visible:outline-accent-fill min-h-11 text-xs underline focus-visible:outline-2"
     >
       Remove
@@ -307,18 +356,19 @@ function StartDraftButton({
 }) {
   const [pending, startTransition] = useTransition();
 
+  const start = useCallback(() => {
+    if (!window.confirm('Start the draft? Groups cannot be changed afterwards.')) return;
+    startTransition(async () => {
+      const result = await startDraft({ leagueId, year });
+      onDone(result.ok ? 'The draft is open' : result.message);
+    });
+  }, [leagueId, year, onDone]);
+
   return (
     <button
       type="button"
       disabled={disabled || pending}
-      onClick={() => {
-        if (!window.confirm('Start the draft? Groups cannot be changed afterwards.'))
-          return;
-        startTransition(async () => {
-          const result = await startDraft({ leagueId, year });
-          onDone(result.ok ? 'The draft is open' : result.message);
-        });
-      }}
+      onClick={start}
       className="bg-accent-fill focus-visible:outline-accent-fill min-h-11 w-fit px-4 text-sm text-white disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
     >
       Start the draft
