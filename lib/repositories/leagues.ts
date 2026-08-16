@@ -171,4 +171,37 @@ export const leagueRepository = {
     });
     return toLeague(row);
   },
+
+  /**
+   * Change a league's settings.
+   *
+   * Deliberately narrow: name, draft type, drafting status and active year,
+   * and nothing else. 🔴 The source's `PUT /league/:id` wrote `req.body`
+   * straight through (`PARITY.md` bug 6), so a request could set `owner` and
+   * take the league — the same column every ownership check reads.
+   */
+  async update(
+    id: number,
+    changes: {
+      name?: string;
+      type?: LeagueType;
+      draftingStatus?: LeagueDraftingStatus;
+      activeYear?: number;
+    },
+  ): Promise<League> {
+    const row = await db.league.update({
+      where: { id },
+      data: {
+        ...(changes.name !== undefined ? { name: changes.name } : {}),
+        ...(changes.type !== undefined ? { type: changes.type } : {}),
+        ...(changes.draftingStatus !== undefined
+          ? { draftingStatus: changes.draftingStatus }
+          : {}),
+        ...(changes.activeYear !== undefined ? { activeYear: changes.activeYear } : {}),
+        updatedAt: new Date(),
+      },
+      select: SELECT,
+    });
+    return toLeague(row);
+  },
 };

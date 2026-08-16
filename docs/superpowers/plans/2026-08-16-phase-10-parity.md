@@ -198,17 +198,230 @@ everything bespoke (D29).
 
 ---
 
-## Batches C–H
-
-Each batch follows the same shape and is planned in detail when it starts —
-this document is amended rather than replaced, so `PARITY.md` and `PROGRESS.md`
-keep referring to one plan. The constraints above apply to every task in them.
-
 🔴 **Before starting each batch**, re-read:
 1. The batch's rows in `PARITY.md`, including the source evidence column.
 2. The source bugs list — several rows in batches C and E touch code that
    carries one.
 3. `scoring.batching.test.ts`, for any row that shows a score.
+
+---
+
+## Batch C — Running a season
+
+The owner's yearly work, and currently impossible: a league can be created but
+not *run*. Every task is owner-gated through `actions/leagues/guard.ts`, which
+is the same `canManageLeague` every other write uses (D47).
+
+🔴 **Three source bugs live in this batch.** Read `PARITY.md`'s bug list before
+touching any of it:
+- bug 4 — `verifyLeagueOwner` is a no-op on the route that adds a seat, so any
+  logged-in user can add one to any league;
+- bug 5 — `DELETE /draft/:id` authenticates but does not authorise;
+- bug 6 — `PUT /league/:id/status` writes the whole request body and inserts a
+  duplicate seat for the caller on every call.
+
+Bug 6 is the dangerous one to copy: `req.body` straight through means a request
+could set `owner` and take the league.
+
+### Task C1: The group assignment rule
+
+**Files:** `lib/services/group-assignment.ts` + test
+
+- [ ] **Step 1: Port `makeGroups` as a pure function.** The source deals
+  round-robin (`src/pages/league/orderAndGroups/utils.js`), which keeps groups
+  balanced by construction.
+- [ ] **Step 2: 🔴 Do not "simplify" it to chunking a shuffled list.** They look
+  equivalent and are not: 17 people into 4 chunks gives 5/5/5/2, a group of
+  two. Dealing gives 5/4/4/4. Test the remainder cases, not just 16 into 4.
+- [ ] **Step 3: Separate the shuffle from the dealing**, so the rule that
+  decides fairness is testable without randomness.
+- [ ] **Step 4: Commit.**
+
+### Task C2: Seat and league writes
+
+**Files:** `lib/repositories/drafts.ts`, `lib/repositories/leagues.ts`
+
+- [ ] **Step 1: `updateSeat` / `assignSeats` / `deleteSeat`**, each scoped by
+  `leagueId` in the WHERE clause so a seat id from another league matches
+  nothing rather than being rewritten. That is what makes bug 4 and bug 5
+  unrepeatable here.
+- [ ] **Step 2: 🔴 `assignSeats` is one transaction.** A half-applied layout
+  leaves some people grouped and others not, and the owner cannot tell what
+  saved.
+- [ ] **Step 3: 🔴 `deleteSeat` refuses a seat that holds picks.** `draft_picks`
+  has no foreign key, so nothing cascades — the picks would belong to nobody,
+  and the board drops them while the standings keep them.
+- [ ] **Step 4: `leagueRepository.update` takes named fields only** — name,
+  type, status, active year. Never a body object (bug 6).
+- [ ] **Step 5: Commit.**
+
+### Task C3: The season actions
+
+**Files:** `actions/leagues/guard.ts`, `actions/leagues/manage-seats.ts`,
+`actions/leagues/manage-league.ts`
+
+- [ ] **Step 1: One guard, `authorizeLeague`**, mirroring the draft actions'.
+- [ ] **Step 2: 🔴 Refusals tested before successes**, asserting the database is
+  unchanged rather than that the call failed.
+- [ ] **Step 3: `addDummySeat`** — 17 placeholder seats exist in production;
+  they are normal, not an edge case.
+- [ ] **Step 4: `randomiseGroups` refuses once drafting has started.**
+  Reshuffling mid-draft moves people away from picks they have already made.
+- [ ] **Step 5: `startDraft` / `completeDraft` change only the status.** The
+  source's version also inserted a seat for the caller every time it ran.
+- [ ] **Step 6: `stageNextSeason`** — copy this year's members into next year's
+  seats, skipping anyone already seated, so running it twice is safe.
+- [ ] **Step 7: Commit.**
+
+### Task C4: The owner's season console
+
+**Files:** `components/SeasonSetup.tsx`, `app/(app)/leagues/[id]/setup/page.tsx`
+
+- [ ] **Step 1: Owner-only, 404 to everyone else**, like the draft console —
+  a bounce to login would confirm the league exists.
+- [ ] **Step 2: Desktop-first (D49)**, the stated exception: this is a laptop
+  task done once a year.
+- [ ] **Step 3: Group assignment is keyboard-operable.** Reuse
+  `@hello-pangea/dnd` as `PickList` does, or a select per seat — but not
+  drag-only (a11y `gesture-alternative`).
+- [ ] **Step 4: 🔴 Destructive actions confirm.** Removing a seat and starting
+  the draft are both hard to undo mid-season.
+- [ ] **Step 5: Commit.**
+
+### Task C5: E2E and close-out
+
+- [ ] **Step 1: E2E** — as owner: add a placeholder, randomise groups, start the
+  draft; as a member: see none of it. Scratch league, not league 1.
+- [ ] **Step 2:** Full verification, CI excludes, close `PARITY.md` T14–T19.
+- [ ] **Step 3: Commit.**
+
+---
+
+## Batch D — Films
+
+The most-visited pages in the source app, and the reason TMDB is a hard
+requirement (D56). `/browse` and `/movie/:id` are where members spend time
+between ceremonies.
+
+### Task D1: The film page (P10.T5, T6)
+
+**Files:** `lib/services/film.ts`, `app/(app)/films/[id]/page.tsx`
+
+- [ ] **Step 1: 🔴 Capture the fixture first.** `movie-by-id` and `movie-details`
+  exist; the *rendered* shape does not. The old app is still running — capture
+  before porting, because after cutover that evidence is gone.
+- [ ] **Step 2: Local row first, TMDB for the rest.** The film page needs cast,
+  crew, trailers and images that `movies` does not store.
+- [ ] **Step 3: Points by award show, and average draft position.** Reuse
+  `ledgerForMovies` (D41) — do not write a second scoring path. **Add a case to
+  `scoring.batching.test.ts`** (D59).
+- [ ] **Step 4: 🔴 OMDb is a second key and a second failure mode.** Rotten
+  Tomatoes scores come from it in the source (`movie/movie.js:53`). Absent a
+  key, the page renders without them rather than failing.
+- [ ] **Step 5: Public (D44).** Commit.
+
+### Task D2: Browse (P10.T7, T9)
+
+**Files:** `app/(app)/browse/page.tsx`
+
+- [ ] **Step 1: TMDB discovery, paged.** The source infinite-scrolls and drops
+  posterless results.
+- [ ] **Step 2: Mark what is already on the viewer's watchlist** — one batched
+  query, never one per film.
+- [ ] **Step 3: Similar films on the film page** (T9) comes from the same TMDB
+  call as D1 and belongs there rather than in a second request.
+- [ ] **Step 4: Flip `browse.ready` in `NAV_LINKS`.** Commit.
+
+---
+
+## Batch E — Personal
+
+What members do between ceremonies. Every row here is *about the viewer*, so
+every page is private and every query is scoped to their id.
+
+### Task E1: The draft list (P10.T20)
+
+**Files:** `lib/repositories/lists.ts` (writes), `app/(app)/list/page.tsx`
+
+- [ ] **Step 1: A private ranked pre-draft list**, dragged into order — people
+  prepare with this for weeks before a draft.
+- [ ] **Step 2: Reuse `PickList`'s reordering**, which is already keyboard-
+  operable and optimistic.
+- [ ] **Step 3: Statuses are `none` / `selected` / `unavailable`** — the enum
+  already exists. "Unavailable" means someone else took it.
+- [ ] **Step 4: 🔴 `POST /lists/:year` accepts any single segment as a year**
+  in the source (bug 10) and then ignores it. Validate.
+- [ ] **Step 5: Flip `list.ready`.** Commit.
+
+### Task E2: Watchlist (P10.T33–T37)
+
+**Files:** `app/(app)/watchlist/page.tsx`, watchlist write actions
+
+- [ ] **Step 1: Paged and sorted**, as `watchlist-paged` captures it.
+- [ ] **Step 2: Three progress views** — by award show, by nomination count, by
+  what the league drafted. All three are captured fixtures; verify against them.
+- [ ] **Step 3: 🔴 Put the tab in the URL.** The source held it in component
+  state, so a watchlist tab could not be linked. `PARITY.md` records this as a
+  deliberate betterment, not a parity row.
+- [ ] **Step 4: 🔴 Do not port `Watchlist.getByAwards`** — it validates the
+  user then never filters by them, and would return every user's rows.
+- [ ] **Step 5: Flip `watchlist.ready`.** Commit.
+
+### Task E3: Reviews and profiles (P10.T38–T42)
+
+- [ ] **Step 1: Rate and review a film**, 0.5-star precision as the source has.
+- [ ] **Step 2: A member's profile and activity feed.**
+- [ ] **Step 3: 🔴 `ProfileFeeds.components` is a JSON string** beside a
+  `componentsArray` virtual that parses it, and the getter throws on null
+  (trap 6). Handle both forms.
+- [ ] **Step 4: Commit.**
+
+---
+
+## Batch F — Season surfaces
+
+Completing the picture. Each of these shows a score, so **each adds a case to
+`scoring.batching.test.ts`** (D59).
+
+- [ ] **T2 — films in cinemas now.** TMDB `now_playing`, cached like search.
+- [ ] **T3 — the live banner**, which is the only route into the live page.
+  Renders only while an event is active; the flags are `events.nom_active` /
+  `awards_active`.
+- [ ] **T4 — the season leaderboard**, verified against `points-by-year`.
+- [ ] **T10 — league standings on the league page**, so a visitor on a shared
+  link sees scores. Comes free from the board's existing load.
+
+---
+
+## Batch G — Admin and reference
+
+Rare but blocking when needed.
+
+- [ ] **T26/T27 — edit a show, add and delete categories.** Admin-gated, and
+  🔴 deleting a category orphans its nominations exactly as removing a seat
+  orphans picks: refuse, or delete both deliberately.
+- [ ] **T30 — which shows still need entering.** Already built on
+  `/award-shows`; confirm and close the row.
+- [ ] **T43–T45 — notifications.** 🔴 `DELETE /notifications/:id` is dead in the
+  source (no auth middleware, so the controller's guard throws on every call).
+  Rebuild it only if the owner wants it.
+- [ ] **T46 — rules and scoring page.** Static copy; cheapest row in the phase.
+- [ ] **T47 — the scoring rulebook by tier**, from `points`.
+- [ ] **T48 — the active-season control.** The action exists
+  (`actions/admin/set-active-year.ts`); it needs a page (D22).
+- [ ] **T49 — the relink UI.** `actions/admin/relink.ts` exists and is the only
+  code that can move an account between people — the page must say so.
+
+---
+
+## Batch H — The calendar feed
+
+- [ ] **T25 — `/api/ical/[...slug]`.** One of the three `/api` routes D8
+  permits. Every nominations announcement and ceremony as a subscribable feed,
+  matching `GET /events/calendar.ics`.
+- [ ] **🔴 It is a public URL with no session.** Serve only what the public
+  award-show pages already show — dates and names, never anything about a
+  person.
 
 ---
 

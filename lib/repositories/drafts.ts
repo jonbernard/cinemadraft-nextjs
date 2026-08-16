@@ -1,6 +1,6 @@
 import type { DraftModel } from '@/generated/prisma/models';
 import { db } from '@/lib/db';
-import { NotFoundError } from '@/lib/errors';
+import { ConflictError, NotFoundError } from '@/lib/errors';
 
 /**
  * A seat in a league's draft for one year.
@@ -238,5 +238,76 @@ export const draftRepository = {
       select: SELECT,
       orderBy: { year: 'desc' },
     });
+  },
+
+  /**
+   * Move a seat: its group, its position, or the name of a placeholder.
+   *
+   * `updateMany` with the league in the WHERE clause rather than `update` by
+   * id: the caller has authorised one league, and this makes that scope
+   * structural — a seat id from another league matches nothing instead of
+   * being silently rewritten.
+   */
+  async updateSeat(
+    leagueId: number,
+    draftId: number,
+    changes: { group?: number | null; order?: number | null; dummyName?: string },
+  ): Promise<void> {
+    const updated = await db.draft.updateMany({
+      where: { id: draftId, leagueId },
+      data: {
+        ...(changes.group !== undefined ? { group: changes.group } : {}),
+        ...(changes.order !== undefined ? { order: changes.order } : {}),
+        ...(changes.dummyName !== undefined ? { dummyName: changes.dummyName } : {}),
+        updatedAt: new Date(),
+      },
+    });
+    if (updated.count === 0) throw new NotFoundError('seat', draftId);
+  },
+
+  /**
+   * Assign several seats at once, atomically.
+   *
+   * 🔴 One transaction, not a loop. A half-applied assignment leaves some
+   * people in groups and others unassigned, which is a state the board renders
+   * as a league mid-collapse — and the owner would have no way to tell what
+   * had actually been saved.
+   */
+  async assignSeats(
+    leagueId: number,
+    assignments: readonly {
+      draftId: number;
+      group: number | null;
+      order: number | null;
+    }[],
+  ): Promise<void> {
+    if (assignments.length === 0) return;
+    const now = new Date();
+    await db.$transaction(
+      assignments.map((assignment) =>
+        db.draft.updateMany({
+          where: { id: assignment.draftId, leagueId },
+          data: { group: assignment.group, order: assignment.order, updatedAt: now },
+        }),
+      ),
+    );
+  },
+
+  /**
+   * Remove a seat.
+   *
+   * Refuses once the seat holds picks: deleting it would orphan them —
+   * `draft_picks` has no foreign key to cascade — leaving rows that belong to
+   * nobody and that the board silently drops. Removing someone mid-draft is
+   * a different operation from removing an empty seat, and the source
+   * conflated them.
+   */
+  async deleteSeat(leagueId: number, draftId: number): Promise<void> {
+    const picks = await db.draftPick.count({ where: { draftId } });
+    if (picks > 0) {
+      throw new ConflictError('that seat has picks — remove them first');
+    }
+    const deleted = await db.draft.deleteMany({ where: { id: draftId, leagueId } });
+    if (deleted.count === 0) throw new NotFoundError('seat', draftId);
   },
 };
