@@ -370,7 +370,10 @@ day.
 - [x] P7.T4 Classify ported / deficient / dropped
 - [x] P7.T5 Write [`docs/PARITY.md`](PARITY.md)
 - [x] P7.T6 Decompose deficiencies into Phase 10 tasks — **P10.T1–T50**
-- [ ] 🔴 **P7 Owner review of the matrix — the gate. Cutover is blocked while any row is open.**
+- [x] 🔴 **P7 Owner review of the matrix — approved 2026-08-15.** The owner
+  accepted the classifications and asked to revisit the matrix later in the
+  process rather than row-by-row now. **Cutover is still blocked while any row
+  is open** — approval was of the audit, not of shipping with 43 gaps.
 
 **Result: 83 capabilities — 18 ported, 50 deficient, 15 dropped.**
 
@@ -520,17 +523,31 @@ narrower than the matrix says.
 
 ### ⚠️ Waiting on the owner
 
-- ✅ **`TMDB_API_KEY` is set locally** (2026-08-15) and verified end to end:
-  searching "wicked" returns cached films first and TMDB fills the rest, and an
-  admin nominated *Wicked City* — a real film absent from the restored data —
-  straight from TMDB, with the row cached correctly. **Still needed in Vercel**
-  for Preview and Production.
+_Nothing outstanding._
+
+- ✅ **`TMDB_API_KEY` is set locally and in Vercel for every environment**
+  (2026-08-15), and verified end to end: searching "wicked" returns cached
+  films first with TMDB filling the rest, and an admin nominated *Wicked City*
+  — a real film absent from the restored data — straight from TMDB, with the
+  row cached correctly.
 - **The parity matrix still needs review** (Phase 7 gate). Cutover is blocked
   while any row is open.
 
 ---
 
 ## Phase 9 — Scoring pipeline
+
+Plan: [`docs/superpowers/plans/2026-08-16-phase-9-scoring.md`](superpowers/plans/2026-08-16-phase-9-scoring.md)
+
+🔴 **No materialized scores (D59).** Measured before deciding: a full 16-seat
+league board costs **8 ms** including scoring, all 1,355 films 16 ms. The
+spec's three derived tables plus reconciliation and cron would buy ~8 ms and
+introduce drift. Scoring stays computed on read.
+
+The phase is therefore the two things that were never about speed: **proving
+the port scores what production scored** (four captured fixtures; only one was
+previously checked), and **building the ledger** that explains any number on
+screen (§6.7).
 
 Plan: _not yet written_ — 7 tasks, see `docs/PLAN.md`
 

@@ -194,7 +194,7 @@ Not a formality. After the priority trio the app is visibly incomplete and the g
 - T5: Write `docs/PARITY.md`
 - T6: Decompose every deficient row into phase 10 tasks appended to this index
 
-**Gate:** matrix complete and reviewed by the owner. **Cutover is blocked while any row is open.** ⏳ **Matrix complete** — 83 capabilities, 18 ported, 50 deficient, 15 dropped, plus 10 source bugs deliberately not ported and 8 shape traps. **Awaiting owner review**, which is the gate itself.
+**Gate:** matrix complete and reviewed by the owner. **Cutover is blocked while any row is open.** ✅ **Met** — matrix complete and approved by the owner 2026-08-15, to be revisited later in the process. **Matrix complete** — 83 capabilities, 18 ported, 50 deficient, 15 dropped, plus 10 source bugs deliberately not ported and 8 shape traps. **Awaiting owner review**, which is the gate itself.
 
 ---
 
@@ -217,23 +217,27 @@ The award show page is the input to the entire scoring pipeline; errors here pro
 
 **Gate:** all three search contexts return correct top results; a winner correction leaves no stale points. ✅ **Met** — 21 E2E green, 832 unit tests. Ranking is a pure function with its own suite; the correction test asserts points move from the old winner to the new one.
 
-🔴 **TMDB is required.** `movies` is a cache of TMDB — a film enters it the first time somebody drafts or nominates it — so search always asks TMDB and both write paths ingest an uncached film (`lib/services/film-ingest.ts`, ported from the source's `saveFilm`). Without `TMDB_API_KEY` the app degrades to searching its own history and no new release can be drafted or nominated. **Owner action: supply the key.**
+✅ **`TMDB_API_KEY` is configured** locally and in Vercel across all environments. 🔴 **TMDB is required.** `movies` is a cache of TMDB — a film enters it the first time somebody drafts or nominates it — so search always asks TMDB and both write paths ingest an uncached film (`lib/services/film-ingest.ts`, ported from the source's `saveFilm`). Without `TMDB_API_KEY` the app degrades to searching its own history and no new release can be drafted or nominated. *(Key supplied 2026-08-15.)*
 
 ---
 
 ### Phase 9 — Scoring pipeline
 
-Replaces per-request Ramda recomputation in a route file with a tested rule and materialized results (§11).
+Replaces per-request Ramda recomputation in a route file with a tested rule (§11).
 
-- T1: `lib/services/scoring.ts` — pure function, no DB. Unit tests covering nomination = P, win = 2P
-- T2: Migration adding `MovieScore`, `TeamScore`, `LeagueStanding`, each with `computedAt`
-- T3: Bounded recompute: award → movies → teams → leagues → `revalidateTag`
-- T4: Full recompute command (same code path, unbounded scope)
-- T5: Reconciliation job — recompute from source, diff against stored, report mismatches
-- T6: Vercel Cron schedule for nightly reconciliation during season
-- T7: Points ledger UI — movie total by default, per-award lines on click (§6.7)
+Plan: [`docs/superpowers/plans/2026-08-16-phase-9-scoring.md`](superpowers/plans/2026-08-16-phase-9-scoring.md)
 
-**Gate:** scoring unit tests green; reconciliation reports **zero drift** against restored production data.
+🔴 **T2–T6 are cancelled (D59).** Measurement killed them: a full 16-seat league board costs **8 ms** including scoring, and all 1,355 films at once cost 16 ms. Three derived tables, a recompute trigger on every write, a reconciliation job and a nightly cron would buy ~8 ms and introduce drift — a second copy of the truth that can silently disagree with it. Scoring stays the pure function it already is, computed on read.
+
+- T1: `lib/services/scoring.ts` — pure function, no DB. ✅ **Done in Phase 5** (D41), including the `awards.points` foreign-key trap
+- ~~T2–T6: materialized tables, bounded recompute, reconciliation, cron~~ — **cancelled, D59**
+- T1′: 🔴 Verify scoring against **all four** captured points fixtures — a whole season, a whole league, and the per-event breakdown. Only `points-by-draft` was checked before
+- T2′: `ledgerForMovies` — per-award line items from the same inputs as the totals
+- T3′: Points ledger UI — movie total by default, per-award lines on demand (§6.7)
+- T4′: Wire it into the league board, batched
+- T5′: E2E and close-out
+
+**Gate:** scoring unit tests green; **zero drift against the captured production fixtures** — which is the honest reading of the original gate, since the drift that matters is between the port and the app people have used for ten years, not between two copies of our own data.
 
 ---
 
