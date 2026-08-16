@@ -303,6 +303,48 @@ The most-visited pages in the source app, and the reason TMDB is a hard
 requirement (D56). `/browse` and `/movie/:id` are where members spend time
 between ceremonies.
 
+### 🔴 What the source actually looks like
+
+The owner supplied screenshots (2026-08-16), kept in `docs/reference/`:
+`source-browse.png`, `source-film-top.png`, `source-film-detail.png`. Read them
+before building — several things in them were not in this plan and would not
+have been guessed:
+
+**Browse** (`/browse`)
+- A **backdrop hero** carrying the word "Browse", not a bare heading.
+- A single **"The Future / The Past"** toggle — one control that flips the sort
+  between upcoming and past releases and resets the list.
+- Results are **grouped by month**, each group labelled `MM/YYYY` in a card to
+  the left of its films. Not an undifferentiated grid.
+- Every poster carries a **green `+` badge in its corner** — add to watchlist,
+  one tap, without leaving the page. That is the browse page's whole job
+  beyond looking at things.
+- Titles sit **below** each poster, wrapping to as many lines as they need.
+
+**A film** (`/movie/:tmdbId` — note: **TMDB id in the URL**, not our local id)
+- A **backdrop banner** with the title over it, the year beside it, and the
+  **MPAA rating in a bordered box**.
+- A left column of **labelled facts**: Runtime, Language, Tagline, Overview,
+  Genres, Release date, Budget, Box Office Gross, Production companies,
+  Ratings.
+- **Ratings are a coloured chip** — Metacritic 66 on green — not plain text.
+- A right column with a **trailer carousel** (YouTube, arrows both sides), then
+  a **poster carousel** showing a counter like `1/112`, then **Similar Movies**.
+- **Credits are grouped by department** — "Directing" listing each person with
+  their exact role beside the name ("Second Unit Director", "Script
+  Supervisor") — with a **`+ More`** control rather than a wall of names.
+
+**What this changes about the plan below:**
+1. The film route is keyed by **TMDB id**, so it resolves for films the app has
+   never ingested. `ensureFilm` (D56) is what makes a local row when one is
+   needed.
+2. Browse needs **watchlist writes** (batch E's T34) to be useful at all — the
+   `+` badge is the point. Build the action with browse rather than after it.
+3. The month grouping and the two carousels are real components, not styling.
+4. Box office and budget come from TMDB; **Metacritic and Rotten Tomatoes come
+   from OMDb**, a second key that may be absent — the chip must be omitted
+   rather than rendered empty.
+
 ### Task D1: The film page (P10.T5, T6)
 
 **Files:** `lib/services/film.ts`, `app/(app)/films/[id]/page.tsx`
@@ -310,6 +352,9 @@ between ceremonies.
 - [ ] **Step 1: 🔴 Capture the fixture first.** `movie-by-id` and `movie-details`
   exist; the *rendered* shape does not. The old app is still running — capture
   before porting, because after cutover that evidence is gone.
+- [ ] **Step 1b: Route on the TMDB id** (`/films/[tmdbId]`), as the source does.
+  A film nobody has drafted has no local id, and the screenshots show the page
+  working for exactly such a film.
 - [ ] **Step 2: Local row first, TMDB for the rest.** The film page needs cast,
   crew, trailers and images that `movies` does not store.
 - [ ] **Step 3: Points by award show, and average draft position.** Reuse
