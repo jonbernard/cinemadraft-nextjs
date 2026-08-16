@@ -3,7 +3,7 @@ import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
 import { type Movie, movieRepository } from '@/lib/repositories/movies';
 import { userRepository } from '@/lib/repositories/users';
-import { pointsForMovieIds } from './scoring';
+import { type LedgerLine, ledgerForMovies } from './scoring';
 
 export type BoardPick = {
   pickId: number;
@@ -11,6 +11,15 @@ export type BoardPick = {
   /** Position in this seat's own order, from 1. */
   round: number;
   points: number;
+  /**
+   * Why `points` is what it is (§6.7) — award by award.
+   *
+   * Carried on the pick rather than fetched when someone expands it. The
+   * ledger comes from the *same* load as the totals (D41), so having it costs
+   * nothing extra; fetching it on demand would turn one query into one per
+   * click, which is the N+1 that `scoring.batching.test.ts` exists to prevent.
+   */
+  ledger: LedgerLine[];
 };
 
 export type Seat = {
@@ -71,8 +80,10 @@ function seatName(
  * A league drafts in groups — league 1's 2026 season is 4 groups of 4 seats —
  * which is why the source app's league URL carries an `activeGroup`.
  *
- * Scoring goes through `pointsForMovieIds` (D41) rather than a second
+ * Scoring goes through `ledgerForMovies` (D41) rather than a second
  * implementation, and runs once for the entire league rather than per seat.
+ * The ledger is the same load as the totals, so the board carries the
+ * explanation of every number it shows without a second query.
  *
  * Throws `NotFoundError` for a league that does not exist, rather than
  * returning an empty board — the page turns that into a 404. An empty board
@@ -92,8 +103,8 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
   const movieIds = [
     ...new Set(picks.flatMap((pick) => (pick.movieId == null ? [] : [pick.movieId]))),
   ];
-  const [totals, movies, users] = await Promise.all([
-    pointsForMovieIds(movieIds, year),
+  const [ledgers, movies, users] = await Promise.all([
+    ledgerForMovies(movieIds, year),
     movieRepository.findManyByIds(movieIds),
     userRepository.findManyByIds([
       ...new Set(drafts.flatMap((draft) => (draft.userId == null ? [] : [draft.userId]))),
@@ -119,7 +130,8 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
             pickId: pick.id,
             movie,
             round: pick.order ?? index + 1,
-            points: totals.get(movie.id) ?? 0,
+            points: ledgers.get(movie.id)?.total ?? 0,
+            ledger: ledgers.get(movie.id)?.lines ?? [],
           },
         ];
       });

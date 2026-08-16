@@ -1,9 +1,12 @@
+import { type LedgerRow, PointsLedger } from '@/components/PointsLedger';
 import { cn } from '@/lib/utils/cn';
 
 export type PickCellFilm = {
   title: string;
   posterUrl: string | null;
   points: number;
+  /** Per-award breakdown; empty for a film that scored nothing. */
+  ledger?: readonly LedgerRow[];
 };
 
 /**
@@ -63,9 +66,10 @@ export function PickCell({
         <span className="text-text-primary line-clamp-2 text-xs leading-tight">
           {film.title}
         </span>
-        <span className="text-text-secondary tabular font-mono text-[0.65rem]">
-          {film.points}
-        </span>
+        {/* The number explains itself in place (§6.7): the board stays
+            scannable, and the answer to "why" is one interaction away rather
+            than on another page. */}
+        <PointsLedger total={film.points} lines={film.ledger ?? []} label={film.title} />
       </figcaption>
     </figure>
   );

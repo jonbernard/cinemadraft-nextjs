@@ -161,6 +161,7 @@ export default async function LeaguePage({
                       title: pick.movie.title ?? 'Untitled',
                       posterUrl: posterUrl(pick.movie.poster, 'w185'),
                       points: pick.points,
+                      ledger: pick.ledger,
                     })),
                   }))}
                 />

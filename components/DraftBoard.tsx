@@ -1,4 +1,5 @@
 import { PickCell } from '@/components/PickCell';
+import type { LedgerRow } from '@/components/PointsLedger';
 import { cn } from '@/lib/utils/cn';
 
 export type BoardSeat = {
@@ -12,6 +13,7 @@ export type BoardSeat = {
     title: string;
     posterUrl: string | null;
     points: number;
+    ledger?: readonly LedgerRow[];
   }[];
 };
 
@@ -106,6 +108,7 @@ export function DraftBoard({
                           title: pick.title,
                           posterUrl: pick.posterUrl,
                           points: pick.points,
+                          ledger: pick.ledger,
                         }}
                       />
                     </li>
@@ -184,6 +187,7 @@ export function DraftBoard({
                                   title: pick.title,
                                   posterUrl: pick.posterUrl,
                                   points: pick.points,
+                                  ledger: pick.ledger,
                                 }
                               : undefined
                           }

@@ -34,6 +34,10 @@ describe('scoring is batched', () => {
     const one = await countQueries(() => pointsForMovieIds([many[0] as number], 2025));
     const all = await countQueries(() => pointsForMovieIds(many, 2025));
 
+    // 🔴 Greater than zero as well as equal. Both being zero would satisfy the
+    // equality and prove nothing — which is exactly what happened when this
+    // guard listened to its own throwaway client instead of the shared one.
+    expect(one.queries).toBeGreaterThan(0);
     expect(all.queries).toBe(one.queries);
   });
 
@@ -46,6 +50,7 @@ describe('scoring is batched', () => {
     const { queries } = await countQueries(() => pointsForMovieIds(ids, 2025));
 
     expect(queries).toBeLessThanOrEqual(5);
+    expect(queries).toBeGreaterThan(0);
   });
 
   it('issues no queries at all for an empty request', async () => {
@@ -71,8 +76,11 @@ describe('every page that shows a score loads them in bulk', () => {
   it('🔴 a 16-seat league board costs a fixed number of queries', async () => {
     const { queries } = await countQueries(() => getLeagueBoard(1, 2026));
 
-    // 16 seats, 144 picks. An N+1 here would be 144 queries.
+    // 16 seats, 144 picks, and it costs 10 queries. An N+1 would be 144.
+    // The bound is close to the real number on purpose: a loose ceiling is how
+    // a guard keeps passing while the thing it guards gets worse.
     expect(queries).toBeLessThanOrEqual(12);
+    expect(queries).toBeGreaterThan(0);
   });
 
   it('🔴 the board costs no more for a bigger league-year than a smaller one', async () => {
@@ -89,5 +97,6 @@ describe('every page that shows a score loads them in bulk', () => {
     const { queries } = await countQueries(() => getDashboard(6));
 
     expect(queries).toBeLessThanOrEqual(15);
+    expect(queries).toBeGreaterThan(0);
   });
 });

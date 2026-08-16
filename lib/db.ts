@@ -28,11 +28,29 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
  * beside it. Prisma's own example builds one per module evaluation, which
  * leaks a connection pool on every hot reload in development.
  */
+/**
+ * Under test, the client emits a `query` event so a test can count round
+ * trips (`test/query-count.ts`).
+ *
+ * 🔴 It has to be *this* client, not a throwaway one. The first version of the
+ * query-count guard constructed its own client and passed it to the callback —
+ * but every service imports `db` directly and ignored it, so the counter saw
+ * zero queries and the page-level assertions passed while measuring nothing.
+ * A guard that cannot fail is worse than no guard, because it is believed.
+ *
+ * Enabled only under Vitest so production pays nothing, not even the cost of
+ * emitting events nobody listens to.
+ */
+const isTest = process.env.VITEST === 'true' || process.env.NODE_ENV === 'test';
+
 function createClient(): PrismaClient {
   const adapter = isNeon
     ? new PrismaNeon({ connectionString })
     : new PrismaPg({ connectionString });
-  return new PrismaClient({ adapter });
+  return new PrismaClient({
+    adapter,
+    ...(isTest ? { log: [{ emit: 'event' as const, level: 'query' as const }] } : {}),
+  });
 }
 
 export const db = globalForPrisma.prisma ?? createClient();
