@@ -549,6 +549,14 @@ the port scores what production scored** (four captured fixtures; only one was
 previously checked), and **building the ledger** that explains any number on
 screen (§6.7).
 
+🔴 **Every score surface is inventoried and measured** in the plan — dashboard
+7.2 ms, league board 4.9 ms, movie page 2.3 ms, season leaderboard 5.6 ms, live
+rescore 5.0 ms, all 1,355 films 14.2 ms. Cost is **round trips, not
+arithmetic**, so volume is nearly free and an N+1 is the only real danger.
+`lib/services/scoring.batching.test.ts` counts queries rather than timing them
+and asserts a *constant* bound — cost must not grow with league size. **Any new
+surface that shows a score adds a case there.**
+
 Plan: _not yet written_ — 7 tasks, see `docs/PLAN.md`
 
 - [ ] P9 not started

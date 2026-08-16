@@ -65,6 +65,10 @@ export default mergeConfig(base, {
       // Film ingest, which reads film 1 from the restored data to prove a
       // cached film is returned without asking TMDB.
       'lib/services/film-ingest.test.ts',
+      // Query-count guards, measured against the restored corpus — a season of
+      // real nominations is what makes "one film costs the same as 123"
+      // meaningful.
+      'lib/services/scoring.batching.test.ts',
     ],
   },
 });

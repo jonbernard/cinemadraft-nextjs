@@ -45,6 +45,42 @@ is not about speed at all:
 2. **Build the ledger** (§6.7), which is the actual missing capability: today
    nothing can answer "why is this number what it is".
 
+## 🔴 Every surface that shows a score
+
+Asked by the owner, and worth answering exhaustively rather than for the two
+pages that happen to exist: **yes, all of them compute on demand**, and the
+inventory below is the commitment that they keep doing so.
+
+| Surface | Built? | Scores shown | Measured |
+|---|---|---|---|
+| Dashboard | ✅ | Roster points, league standings | **7.2 ms** |
+| League board | ✅ | Per-pick points, team totals | **4.9 ms** |
+| League standings on the league page | P10.T10 | Team totals | covered by the board's load |
+| Movie page | P10.T5/T6 | Total, per-event breakdown, `avgDraftPos` | **2.3 ms** |
+| Season leaderboard | P10.T4 | Every nominated film, per event | **5.6 ms** (123 films) |
+| Live award show | Phase 14 | Full rescore after each announcement | **5.0 ms** |
+| Watchlist | P10.T33–37 | — *(checked: the source's watchlist pages fetch no points endpoint)* | n/a |
+| Award show page | ✅ | Category *values*, not scores — resolved via `pointsId` | n/a |
+| Absolute worst case | — | All 1,355 films at once | **14.2 ms** |
+
+🔴 **The shape of those numbers is the important part.** One film costs 2.3 ms
+and 1,355 films cost 14.2 ms, because the expense is **round trips, not
+arithmetic**. Volume is nearly free; what is not free is asking one film at a
+time. A season leaderboard built as 123 separate calls would cost ~280 ms and
+look perfectly reasonable in review.
+
+So the rule for every surface, existing and future, is: **load the season's
+scores once, in bulk, and hand each row its own.** That is also what the source
+app did — `POST /points/ids` takes an array (`src/pages/league/list.js:17`).
+
+**This is enforced, not just written down.** `lib/services/scoring.batching.test.ts`
+counts queries rather than measuring duration, because a duration assertion
+passes at 280 ms on a developer's laptop and fails on a cold Neon connection.
+It pins three things: scoring one film costs the same number of queries as
+scoring a whole season; a 16-seat board costs the same as a smaller one; and
+the dashboard is bounded. **Every score surface Phase 10 adds must arrive with
+a case in that file.**
+
 ## 🔴 What the fixtures give us
 
 Captured from the live Heroku API before any of this was written:
@@ -113,6 +149,24 @@ would know which number was right.
   source bug without recording it; do not fix the fixture at all.
 
 - [ ] **Step 6: Commit.**
+
+---
+
+## Task 1b: Prove the batching, and keep it proved
+
+**Files:** `test/query-count.ts`, `lib/services/scoring.batching.test.ts`
+
+- [ ] **Step 1: Count queries, do not time them.** `countQueries` attaches a
+  Prisma query-event listener. The assertion is a constant bound, because the
+  property is "cost does not grow with league size", which no duration can say.
+
+- [ ] **Step 2: Pin every built surface** — the board, the dashboard, and the
+  scoring service itself.
+
+- [ ] **Step 3: 🔴 Leave the rule where Phase 10 will find it.** Every new score
+  surface adds a case here; the plan for Phase 10 references it.
+
+- [ ] **Step 4: Commit.**
 
 ---
 

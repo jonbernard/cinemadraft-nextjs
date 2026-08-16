@@ -1,4 +1,5 @@
-import { awardRepository } from '@/lib/repositories/awards';
+import { type Award, awardRepository } from '@/lib/repositories/awards';
+import { eventRepository } from '@/lib/repositories/events';
 import { nominationRepository } from '@/lib/repositories/nominations';
 import { pointRepository } from '@/lib/repositories/points';
 import { winnerRepository } from '@/lib/repositories/winners';
@@ -83,7 +84,28 @@ export async function pointsForMovieIds(
   movieIds: readonly number[],
   year: number,
 ): Promise<Map<number, number>> {
-  if (movieIds.length === 0) return new Map();
+  const inputs = await loadScoringInputs(movieIds, year);
+  if (!inputs) return new Map();
+
+  return scoreMovies(inputs);
+}
+
+/**
+ * Everything the rule needs, loaded once.
+ *
+ * Extracted so the totals and the ledger cannot be computed from different
+ * data. They are the same numbers seen at two resolutions; if they could drift
+ * apart, a ledger that failed to add up to the total above it would be worse
+ * than showing no ledger at all.
+ *
+ * Returns null when there is nothing to score, so callers skip the work
+ * without distinguishing "no films" from "no nominations this season".
+ */
+async function loadScoringInputs(
+  movieIds: readonly number[],
+  year: number,
+): Promise<(ScoringInput & { awards: Award[] }) | null> {
+  if (movieIds.length === 0) return null;
 
   const nominations = await nominationRepository.findManyByMovieIds(movieIds);
 
@@ -94,7 +116,7 @@ export async function pointsForMovieIds(
   // is dropped: it cannot be attributed to a season, and guessing would score
   // a film in the wrong one.
   const forYear = nominations.filter((nomination) => Number(nomination.year) === year);
-  if (forYear.length === 0) return new Map();
+  if (forYear.length === 0) return null;
 
   const awardIds = [...new Set(forYear.map((nomination) => nomination.awardId))];
   const [awards, winners] = await Promise.all([
@@ -126,5 +148,97 @@ export async function pointsForMovieIds(
     else winnersByAward.set(winner.awardId, new Set([winner.movieId]));
   }
 
-  return scoreMovies({ nominations: forYear, pointsByAward, winnersByAward });
+  return { nominations: forYear, pointsByAward, winnersByAward, awards };
+}
+
+export type LedgerLine = {
+  awardId: number;
+  awardName: string;
+  eventAbbreviation: string;
+  eventName: string;
+  /** The award's value. A nomination earns this; a win earns it twice. */
+  points: number;
+  won: boolean;
+  /** What this line contributes: `points`, doubled when won. */
+  earned: number;
+};
+
+export type MovieLedger = {
+  movieId: number;
+  /** 🔴 Always the sum of `lines`, never computed separately. */
+  total: number;
+  lines: LedgerLine[];
+};
+
+/**
+ * Why a film's score is what it is (§6.7).
+ *
+ * The ledger is not a second query path — it is the same inputs as
+ * `pointsForMovieIds`, reported line by line instead of summed. §11 predicted
+ * this ("the ledger comes free"), and it is true only because the rule was
+ * kept pure: the per-award line items *are* the function's inputs.
+ *
+ * 🔴 **`total` is the sum of `lines`.** Computing it separately — even with
+ * the same rule — would allow a ledger that does not add up to the number
+ * printed above it, which is worse than showing no ledger, because it makes
+ * the app look like it is guessing.
+ *
+ * Lines are sorted by what they earned, descending: the question behind
+ * opening a ledger is almost always "where did most of this come from".
+ */
+export async function ledgerForMovies(
+  movieIds: readonly number[],
+  year: number,
+): Promise<Map<number, MovieLedger>> {
+  const inputs = await loadScoringInputs(movieIds, year);
+  if (!inputs) return new Map();
+
+  const awardById = new Map(inputs.awards.map((award) => [award.id, award]));
+  const events = await eventRepository.findManyByIds([
+    ...new Set(inputs.awards.map((award) => award.eventId)),
+  ]);
+  const eventById = new Map(events.map((event) => [event.id, event]));
+
+  const ledgers = new Map<number, MovieLedger>();
+
+  for (const nomination of inputs.nominations) {
+    const points = inputs.pointsByAward.get(nomination.awardId);
+    // An award with no resolvable value scores nothing, so it earns no line
+    // either — a row reading "0" would imply the category is worthless rather
+    // than unconfigured.
+    if (points == null) continue;
+
+    const award = awardById.get(nomination.awardId);
+    const event = award ? eventById.get(award.eventId) : undefined;
+    const won =
+      inputs.winnersByAward.get(nomination.awardId)?.has(nomination.movieId) === true;
+
+    const line: LedgerLine = {
+      awardId: nomination.awardId,
+      awardName: award?.name ?? 'Unknown award',
+      eventAbbreviation: event?.abbreviation ?? '',
+      eventName: event?.name ?? 'Unknown award show',
+      points,
+      won,
+      earned: won ? points * 2 : points,
+    };
+
+    const existing = ledgers.get(nomination.movieId);
+    if (existing) existing.lines.push(line);
+    else
+      ledgers.set(nomination.movieId, {
+        movieId: nomination.movieId,
+        total: 0,
+        lines: [line],
+      });
+  }
+
+  for (const ledger of ledgers.values()) {
+    ledger.lines.sort(
+      (a, b) => b.earned - a.earned || a.awardName.localeCompare(b.awardName),
+    );
+    ledger.total = ledger.lines.reduce((sum, line) => sum + line.earned, 0);
+  }
+
+  return ledgers;
 }
