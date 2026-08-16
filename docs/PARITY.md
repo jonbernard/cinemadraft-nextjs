@@ -179,7 +179,7 @@ which is why so many rows are cheap and a few are not.
 | The scoring rulebook by tier | **deficient** | `GET /points` | **P10.T47** | ✓ |
 | Admin: set the active season | **deficient** | — (source read an env var; changing seasons was a redeploy) | **P10.T48** — the action exists, the control does not (D22) | ✓ |
 | Admin: relink an account | **deficient** | — | **P10.T49** — action exists, no page | ✓ |
-| A 500 page | **deficient** | `/500` | **P10.T50** — needs `error.tsx`; today an unhandled error has no boundary | n/a |
+| A 500 page | **ported** | `/500` | `app/error.tsx`, `app/(app)/error.tsx`, `app/global-error.tsx` + `components/ErrorPanel.tsx`. Four kinds, each with its own words and way out | n/a |
 | A 404 page | **ported** | `/404` | `not-found` — Next's, styled by the app shell | n/a |
 | Maintenance page | **dropped** | `/maintenance` | Unreachable in the source; nothing links to it | |
 | `GET /health` | **dropped** | `routes/index.js:60` | Heroku dyno check. Vercel has its own | |

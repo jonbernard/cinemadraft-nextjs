@@ -624,6 +624,24 @@ browser, since jsdom implements none of them.
 🔴 **Vocabulary is log in / log out / register** (D61), including overrides for
 Clerk's own strings.
 
+🔴 **The app had no error boundary until A2.** An unhandled error in a Server
+Component showed Next's overlay locally and a **blank page** in production.
+Now: `app/error.tsx`, `app/(app)/error.tsx` (keeps the nav), `not-found.tsx` in
+both places, and `global-error.tsx` for a failure in the root layout — that
+last one is deliberately plain and self-contained, because the providers and
+theme are exactly what may have failed.
+
+- 🔴 **An unmatched URL sends a logged-out visitor to log in, not to a 404.**
+  The proxy enumerates public routes and protects everything else (D45), and a
+  path matching no page is protected like any other unknown path — which is
+  what makes forgetting to list a new page harmless. The cost is that a typo'd
+  URL shows a login page. Fixing it would mean a public catch-all, which is the
+  fail-open behaviour D45 exists to prevent. Tested as the intended behaviour
+  rather than papered over.
+- **`ErrorPanel` takes a *kind*, never a message.** The source app returned
+  Postgres errors verbatim, leaking SQL and column names on every error path;
+  here the leak is impossible by construction.
+
 Plan: _written before execution, driven by [`docs/PARITY.md`](PARITY.md)_
 
 Every task below is one deficient row in the matrix, and the two lists are the
