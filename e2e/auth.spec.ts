@@ -126,12 +126,26 @@ test.describe('auth', () => {
     await page.goto('/leagues');
     await expect(page).not.toHaveURL(/\/auth\/login/);
 
-    // Reaching the page is not enough: an account has to exist behind the
+    // 🔴 Reaching the page is not enough: an account has to exist behind the
     // session. Locally the Clerk webhook posts to the deployed host and never
     // arrives here, so this asserts the lazy claim path actually provisioned
     // the row — without it the test passed while creating no account at all.
-    await expect(page.getByText(address, { exact: false })).toBeVisible({
-      timeout: 15_000,
-    });
+    //
+    // Read from the database rather than from the page. It used to assert the
+    // email was rendered, which worked only because `/leagues` was a
+    // placeholder printing it; the real page shows leagues, so that assertion
+    // silently became a test of the placeholder. The row is the actual claim.
+    const { Client } = await import('pg');
+    const client = new Client({ connectionString: process.env.DATABASE_URL });
+    await client.connect();
+    try {
+      const { rows } = await client.query('select clerk_id from users where email = $1', [
+        address,
+      ]);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.clerk_id).toBeTruthy();
+    } finally {
+      await client.end();
+    }
   });
 });

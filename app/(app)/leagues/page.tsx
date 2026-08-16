@@ -1,25 +1,81 @@
+import Link from 'next/link';
+
+import { EmptyState } from '@/components/EmptyState';
 import { LetterboxRule } from '@/components/LetterboxRule';
 import { requireUser } from '@/lib/auth';
+import { getMyLeagues } from '@/lib/services/my-leagues';
 
 /**
- * A placeholder until Phase 5 builds the real thing.
+ * The leagues you are in (P10.T12).
  *
- * It calls `requireUser` rather than rendering static text, because that is
- * what exercises the lazy claim path (`lib/auth.ts`) on a real page. Locally
- * and in Preview the Clerk webhook posts to the deployed host, so a developer
- * signing in here never receives one — without a page that resolves the
- * session, the account is never provisioned and nothing says so.
+ * 🔴 **It shows a list rather than redirecting.** The source app's `/leagues`
+ * rendered `null` and bounced to whichever league happened to be first
+ * (`src/pages/league/redirect.js`), which meant no page ever answered "which
+ * leagues am I in" — and someone in four of them had to guess at URLs to reach
+ * the other three. This is one of the few places the port is deliberately
+ * better than what it replaces.
+ *
+ * Private, unlike the individual league boards (D44). A league board is
+ * shareable; the list of leagues *you* are in is about you.
  */
 export default async function LeaguesPage() {
   const user = await requireUser();
+  const leagues = await getMyLeagues(user.id);
 
   return (
-    <main className="bg-bg-base text-text-primary min-h-dvh p-8">
+    <main className="text-text-primary p-4 md:p-8">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <LetterboxRule as="h1">Leagues</LetterboxRule>
-        <p className="text-text-secondary text-sm">
-          Signed in as <span className="text-text-primary">{user.email}</span>
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <LetterboxRule as="h1">Leagues</LetterboxRule>
+          <Link
+            href="/leagues/new"
+            className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+          >
+            Start a league
+          </Link>
+        </div>
+
+        {leagues.length === 0 ? (
+          <EmptyState
+            title="You are not in a league yet"
+            action={{ label: 'Start a league', href: '/leagues/new' }}
+          >
+            Start one and send the invite link to whoever is playing, or follow a link
+            someone has already sent you.
+          </EmptyState>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {leagues.map((league) => (
+              <li key={league.id}>
+                <Link
+                  href={`/leagues/${league.id}`}
+                  className="border-border-rule hover:bg-bg-raised focus-visible:outline-accent-fill flex flex-col gap-1 border p-4 focus-visible:outline-2"
+                >
+                  <span className="flex flex-wrap items-baseline gap-x-3">
+                    <span className="text-text-primary text-sm">{league.name}</span>
+                    {/* Named, not signalled by colour alone. */}
+                    {league.isOwner ? (
+                      <span className="text-accent-text text-xs">You run this one</span>
+                    ) : null}
+                  </span>
+
+                  <span className="text-text-secondary flex flex-wrap gap-x-3 text-xs">
+                    <span className="tabular font-mono">{league.years[0] ?? '—'}</span>
+                    <span>
+                      {league.memberCount}{' '}
+                      {league.memberCount === 1 ? 'member' : 'members'}
+                    </span>
+                    {league.status ? (
+                      <span className="text-text-dim uppercase tracking-wide">
+                        {league.status}
+                      </span>
+                    ) : null}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </main>
   );

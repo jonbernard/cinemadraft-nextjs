@@ -15,14 +15,17 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 25 |
-| **deficient** | 43 |
+| **ported** | 31 |
+| **deficient** | 37 |
 | **dropped** | 15 |
 | **total capabilities** | 83 |
 
 _Audited at the end of Phase 6 (18 ported). Phase 8 closed seven rows: film
 search and the whole award-show surface, including both admin writes the source
-left unauthenticated._
+left unauthenticated. Phase 9 closed the per-award points breakdown. Phase 10
+batch A added the navigation and the error boundaries; batch B closed the four
+league-formation rows — until it landed, **no new league could be created at
+all**._
 
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
@@ -60,7 +63,7 @@ which is why so many rows are cheap and a few are not.
 | An existing member keeps their history on first sign-in | **ported** | Auth0 `user_id` on `users` | `lib/services/clerk-identity.ts` — claim by verified email (§9) | ✓ |
 | Sign out | **ported** | `src/pages/Logout.js` | Clerk `<UserButton>` | ✓ |
 | Admin repairs a mis-linked account | **ported** | — (no source equivalent) | `actions/admin/relink.ts` — needs a UI, see admin below | ✓ |
-| **Join a league from an invite link** | **deficient** | `src/pages/join.js`, `POST /draft/uuid/:uuid` (`routes/draft.js:50`) | **P10.T1** | — |
+| **Join a league from an invite link** | **ported** | `src/pages/join.js`, `POST /draft/uuid/:uuid` (`routes/draft.js:50`) | `app/(app)/join/[uuid]`, `actions/leagues/join-league.ts` — names the league before registering, and joining is an explicit act so a link unfurl cannot join for you | ✓ |
 | Last-login timestamp | **dropped** | `routes/auth.js:28` → `User.updateLastLogin` | Auth0 bookkeeping; nothing renders it, and Clerk records last sign-in itself | |
 | Change profile picture | **dropped** | `PUT /user/image` (`routes/user.js:8`) | Clerk owns the avatar now; a second store would disagree with it | |
 | `GET /token/generate` | **dropped** | `routes/index.js:61` | Returns 64 random bytes to anyone who asks. No caller in the client. Not a capability | |
@@ -96,9 +99,9 @@ which is why so many rows are cheap and a few are not.
 | Switch season | **ported** | year `<Select>` on the league page | `app/(app)/leagues/[id]/page.tsx` | ✓ |
 | Groups | **ported** | `:activeGroup` segment | Every group renders; no pagination needed | ✓ |
 | **A league's standings, on the league page** | **deficient** | "League points" panel, `GET /points/league/...` | **P10.T10** — exists on the dashboard, but only for signed-in members, so a visitor on a shared link sees no scores | ✓ |
-| **Create a league** | **deficient** | `src/pages/league/create.js`, `POST /league/add` | **P10.T11** | — |
-| **Your leagues, and switching between them** | **deficient** | `src/pages/league/redirect.js`, `GET /league/user` | **P10.T12** — `/leagues` is still the Phase 4 placeholder | ✓ |
-| Copy the invite link | **deficient** | `JoinLink` on create + league panel | **P10.T13** | ✓ |
+| **Create a league** | **ported** | `src/pages/league/create.js`, `POST /league/add` | `app/(app)/leagues/new`, `actions/leagues/create-league.ts` — seats the creator, writes a parseable owner column (D47), generates the invite uuid | ✓ |
+| **Your leagues, and switching between them** | **ported** | `src/pages/league/redirect.js`, `GET /league/user` | `app/(app)/leagues/page.tsx` + `lib/services/my-leagues.ts`. 🔴 Shows a **list** rather than redirecting to the first league as the source did — that redirect meant no page ever answered "which leagues am I in" | ✓ |
+| Copy the invite link | **ported** | `JoinLink` on create + league panel | `components/InviteLink.tsx`, on the league page, **owners only** — the uuid is the join credential | ✓ |
 | **Set up groups before a draft** — drag members between groups, add a group, randomise the unassigned | **deficient** | `league/orderAndGroups/`, `PUT /draft/:leagueId/:id` | **P10.T14** — the port shows this state read-only | — |
 | Add a seat, including a placeholder for someone with no account | **deficient** | `POST /draft/add` (`routes/draft.js:51`) | **P10.T15** — 17 dummy seats exist in production | — |
 | Remove or rename a seat | **deficient** | `DELETE /draft/:id`, `PUT /draft/:leagueId/:id` | **P10.T16** | — |

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { DraftBoard } from '@/components/DraftBoard';
+import { InviteLink } from '@/components/InviteLink';
 import { LetterboxRule } from '@/components/LetterboxRule';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
@@ -9,6 +10,22 @@ import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
 import { canManageLeague } from '@/lib/services/league-access';
 import { getActiveYear } from '@/lib/services/season';
 import { posterUrl } from '@/lib/utils/poster';
+
+/**
+ * The origin an invite link should carry.
+ *
+ * Read from the request rather than an env var so the link works from
+ * localhost, a Vercel preview and production without configuration — and so a
+ * preview deploy cannot hand someone a link into production.
+ */
+async function inviteBase(): Promise<string> {
+  const { headers } = await import('next/headers');
+  const list = await headers();
+  const host = list.get('x-forwarded-host') ?? list.get('host') ?? '';
+  const proto =
+    list.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  return `${proto}://${host}`;
+}
 
 /**
  * A league's draft board.
@@ -87,6 +104,13 @@ export default async function LeaguePage({
               </Link>
             ) : null}
           </div>
+
+          {/* 🔴 Owners only. The uuid is the join credential — anyone holding
+              it can seat themselves — so showing it to every member would make
+              every member able to re-share the league. */}
+          {canManage && board.uuid ? (
+            <InviteLink url={`${await inviteBase()}/join/${board.uuid}`} />
+          ) : null}
 
           {seasons.length > 1 ? (
             <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">

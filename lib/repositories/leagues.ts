@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { LeagueDraftingStatus, LeagueType } from '@/generated/prisma/enums';
 import type { LeagueModel } from '@/generated/prisma/models';
 import { db } from '@/lib/db';
@@ -129,5 +131,44 @@ export const leagueRepository = {
       orderBy: { id: 'asc' },
     });
     return leagues.map(toLeague);
+  },
+
+  /**
+   * Start a league.
+   *
+   * 🔴 **`owner` is TEXT holding a JSON array**, so a write has to produce the
+   * exact shape `ownerIds` parses back (D47). `JSON.stringify` of an array of
+   * numbers is that shape; anything else — a bare id, a comma-joined string —
+   * parses to an empty list and locks the creator out of their own league. The
+   * round trip is asserted in the tests rather than assumed.
+   *
+   * `uuid` is generated here because the column has no database default. The
+   * source app got one from Sequelize's `defaultValue: UUIDV4`
+   * (`server/models/leagues.js:17-20`), which is ORM behaviour the schema
+   * never carried — so a league created without this line would have a null
+   * invite link and no way to add anyone.
+   *
+   * `draftingStatus` starts at `pending`, matching the source: a new league is
+   * assigning order and groups, not drafting.
+   */
+  async create(input: {
+    name: string;
+    ownerId: number;
+    type: LeagueType;
+  }): Promise<League> {
+    const now = new Date();
+    const row = await db.league.create({
+      data: {
+        name: input.name,
+        owner: JSON.stringify([input.ownerId]),
+        uuid: randomUUID(),
+        type: input.type,
+        draftingStatus: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: SELECT,
+    });
+    return toLeague(row);
   },
 };

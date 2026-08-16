@@ -631,6 +631,27 @@ both places, and `global-error.tsx` for a failure in the root layout — that
 last one is deliberately plain and self-contained, because the providers and
 theme are exactly what may have failed.
 
+**Batch B done — leagues can form.** Create, invite, join, and a real
+`/leagues` list. 🔴 Until this landed no new league could be created at all.
+
+- 🔴 **Joining is an explicit act, never a page load.** The first version
+  joined during the render of `/join/[uuid]`; Next rejects a mutation during
+  render outright, and it would also have meant that anything *fetching* the
+  URL joins — a Slack unfurl, an iMessage preview, a prefetch. Pasting an
+  invite into a group chat would have seated the sender before anyone clicked.
+- 🔴 **The invite page names the league before asking anyone to register.**
+  "Log in to continue" with no indication of what you are joining is
+  indistinguishable from phishing, and every existing member was onboarded by
+  exactly this flow.
+- **The invite uuid is owner-only.** Holding it is what lets someone seat
+  themselves, so showing it to every member would let every member re-share the
+  league.
+- **`/leagues` lists rather than redirects.** The source bounced to the first
+  league, so no page ever answered "which leagues am I in".
+- **`leagues.uuid` has no database default.** The source got one from
+  Sequelize's `defaultValue: UUIDV4` — ORM behaviour the schema never carried —
+  so `create` generates it, or the league would have no invite link at all.
+
 - 🔴 **An unmatched URL sends a logged-out visitor to log in, not to a 404.**
   The proxy enumerates public routes and protects everything else (D45), and a
   path matching no page is protected like any other unknown path — which is

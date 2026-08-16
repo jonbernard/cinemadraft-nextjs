@@ -53,6 +53,8 @@ export type BoardView = {
   /** `pending` means the league is still assigning order and groups. */
   status: string | null;
   ownerIds: number[];
+  /** The invite link's uuid. The page shows it to owners only. */
+  uuid: string | null;
   groups: BoardGroup[];
 };
 
@@ -177,6 +179,7 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
     leagueName: league.name,
     status: league.draftingStatus,
     ownerIds: league.ownerIds,
+    uuid: league.uuid,
     groups,
   };
 }

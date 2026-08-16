@@ -187,4 +187,56 @@ export const draftRepository = {
     });
     return rows.flatMap((row) => (row.year === null ? [] : [row.year]));
   },
+
+  /**
+   * Seat someone in a league for a season.
+   *
+   * This is what "joining" is: there is no members table, so membership is the
+   * existence of a `drafts` row (see `findLeagueIdsByUserId`).
+   *
+   * `order` and `group` are left null. A seat's position is assigned when the
+   * owner sets up groups before the draft, and inventing one here would put
+   * every new member at position null-coerced-to-0 on the board.
+   */
+  async create(input: {
+    leagueId: number;
+    year: number;
+    userId?: number | null;
+    group?: number | null;
+    order?: number | null;
+    dummyName?: string | null;
+  }): Promise<Draft> {
+    const now = new Date();
+    return db.draft.create({
+      data: {
+        leagueId: input.leagueId,
+        year: input.year,
+        userId: input.userId ?? null,
+        group: input.group ?? null,
+        order: input.order ?? null,
+        dummy: input.dummyName != null,
+        dummyName: input.dummyName ?? null,
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: SELECT,
+    });
+  },
+
+  /**
+   * Does this person already hold a seat in this league?
+   *
+   * Asked before joining. Deliberately **not** year-scoped, matching the
+   * source's guard (`server/routes/draft.js:28`): membership is of the league,
+   * not of a season, so someone who played in 2017 is already a member and
+   * joining again would give them a second seat rather than a new year's one.
+   * Seats for later seasons are created by the owner staging the next draft.
+   */
+  async findByLeagueIdAndUserId(leagueId: number, userId: number): Promise<Draft | null> {
+    return db.draft.findFirst({
+      where: { leagueId, userId },
+      select: SELECT,
+      orderBy: { year: 'desc' },
+    });
+  },
 };

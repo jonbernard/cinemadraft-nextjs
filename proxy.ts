@@ -45,6 +45,12 @@ const isPublic = createRouteMatcher([
   // the page is open and every write behind it requires an admin.
   '/award-shows/(.*)',
   '/award-shows',
+  // The invite link. Public because the whole point is that someone with no
+  // account can open it — the page itself names the league and offers to
+  // register, carrying the uuid through so they land back here afterwards.
+  // Protecting it would bounce them to a login page that cannot say what they
+  // were invited to.
+  '/join/(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
