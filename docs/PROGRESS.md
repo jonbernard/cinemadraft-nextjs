@@ -644,6 +644,11 @@ are each a test that fails if reintroduced.
 - 🔴 **A seat holding picks cannot be removed.** `draft_picks` has no foreign
   key, so nothing cascades — the picks would belong to nobody, dropped by the
   board and kept by scoring. The console does not offer the button at all.
+- 🔴 **`npm run verify` before pushing.** Lint, typecheck, the five layering
+  checks, both test suites and the build, in one command. It exists because two
+  CI failures in a row were things I had "checked" — a lint run skipped, and a
+  layering grep typed slightly differently by hand than the workflow types it.
+  `npm run layering` runs the five checks alone.
 - 🔴 **Run `npm run test:ci` against an EMPTY database before pushing**, not
   just the local one. CI migrates a fresh Postgres and has no data, so a seeded
   suite that quietly depends on restored rows passes locally and fails there —

@@ -200,8 +200,22 @@ jobs:
           #
           # theme/ is deliberately not scanned. That is where the hex values are
           # supposed to be.
+          #
+          # 🔴 `app/global-error.tsx` is the one exemption, and it is narrow.
+          # That boundary replaces <html> and <body> when the ROOT LAYOUT
+          # itself has failed — so the providers, the fonts and globals.css are
+          # exactly what may not have loaded. Its colours are written as
+          # `var(--color-bg-base, #0b0d10)`: the token when the stylesheet is
+          # there, a literal when it is not. Without the fallback a total
+          # failure renders as black text on a transparent ground, which is the
+          # one moment the app cannot afford to be unreadable.
+          #
+          # Exempted by filename rather than by a comment marker, so it cannot
+          # spread: any other file that wants a literal has to change this
+          # rule and explain why.
           offenders=$(grep -rnE "#[0-9a-fA-F]{3,8}\\b" components app \
-            --include='*.tsx' --include='*.ts' 2>/dev/null || true)
+            --include='*.tsx' --include='*.ts' 2>/dev/null \
+            | grep -v '^app/global-error\.tsx:' || true)
           if [ -n "$offenders" ]; then
             echo "::error::raw hex colours outside the token system; add the colour to theme/tokens.ts instead"
             echo "$offenders"

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "biome check",
     "lint:fix": "biome check --write",
+    "layering": "bash scripts/layering.sh",
     "format": "biome format --write",
     "format:check": "biome format",
     "typecheck": "next typegen && tsc --noEmit",
@@ -20,7 +21,8 @@
     "lock": "docker run --rm -v \"$PWD\":/repo -w /repo node:24 npm install --package-lock-only --ignore-scripts --no-audit --no-fund",
     "typegen": "next typegen",
     "postinstall": "prisma generate",
-    "test:ci": "vitest run --config vitest.ci.config.mts"
+    "test:ci": "vitest run --config vitest.ci.config.mts",
+    "verify": "npm run lint && npm run typecheck && npm run layering && npm run test && npm run test:ci && npm run build"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.5",
