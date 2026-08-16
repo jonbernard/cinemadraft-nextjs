@@ -3,94 +3,180 @@
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils/cn';
 
+export type NavLink = {
+  href: string;
+  label: string;
+  /** Inline SVG path data; `currentColor` inherits the active state. */
+  path: string;
+  /** False while the page is still owed by a later batch of Phase 10. */
+  ready: boolean;
+};
+
 /**
- * The four destinations (§6.9).
+ * The seven destinations, as the source app has them.
  *
- * 🔴 Four, not the source app's seven. Browse, Watchlist and Draft List are
- * three views of one idea and live under **Films**; Rules & Scoring becomes
- * contextual help inside the ledger rather than a nav peer. Four also sits
- * inside the five-item ceiling a phone's bottom bar can carry without the
- * targets shrinking below the touch minimum.
+ * 🔴 Seven, not the four of spec §6.9 — **the owner overrode that** (D62).
+ * §6.9 proposed consolidating Browse, Watchlist and Draft List into one Films
+ * destination; the league knows the app by these seven names, so they stay.
  *
- * Icons are inline SVG rather than an icon package: four glyphs do not justify
- * a dependency, and `currentColor` makes them inherit the active state for
- * free. Each is `aria-hidden` — the label beside it is the accessible name,
- * and an icon-only nav would hurt discoverability in an app most people open
- * once a year.
+ * Entries appear as their pages are built, so the nav never links to a 404.
+ * The full set lives here rather than being added ad hoc, which keeps what is
+ * missing visible: `ready: false` is a page Phase 10 still owes, and flipping
+ * the flag is the last step of the task that builds it.
+ *
+ * Icons are inline SVG rather than an icon package — seven glyphs do not
+ * justify a dependency, and `currentColor` makes them inherit state for free.
+ * Each is `aria-hidden`; the label beside it is the accessible name, because
+ * icon-only navigation hurts discoverability in an app most members open once
+ * a year.
  */
-const LINKS = [
+export const NAV_LINKS: NavLink[] = [
+  { href: '/', label: 'Home', ready: true, path: 'M3 10.5 12 3l9 7.5V21H3z' },
   {
-    href: '/',
-    label: 'Home',
-    // A house.
-    path: 'M3 10.5 12 3l9 7.5V21H3z',
-  },
-  {
-    href: '/films',
-    label: 'Films',
-    // A film frame.
+    href: '/browse',
+    label: 'Browse',
+    ready: false,
     path: 'M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16',
   },
   {
     href: '/award-shows',
     label: 'Award shows',
-    // A rosette.
+    ready: true,
     path: 'M12 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zM9 13l-2 8 5-3 5 3-2-8',
   },
   {
     href: '/leagues',
     label: 'Leagues',
-    // A bracket.
+    ready: true,
     path: 'M4 5h6v14H4zM14 5h6v14h-6zM10 12h4',
   },
-] as const;
+  {
+    href: '/watchlist',
+    label: 'Watchlist',
+    ready: false,
+    path: 'M6 3h12v18l-6-4.5L6 21z',
+  },
+  {
+    href: '/list',
+    label: 'Draft list',
+    ready: false,
+    path: 'M4 6h16M4 12h16M4 18h10M18 16v5M15.5 18.5h5',
+  },
+  {
+    href: '/rules-and-scoring',
+    label: 'Rules & scoring',
+    ready: false,
+    path: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 8v5M12 16h.01',
+  },
+];
 
 /**
  * The app's navigation.
  *
- * **Mobile-first (D49).** Members read this on phones during a ceremony, so
- * under `md` it is a fixed bottom bar — thumb-reachable, and the one place a
- * phone user expects navigation to be. From `md` up it becomes a header,
- * because a bottom bar on a laptop is a phone affordance stranded on a desk.
+ * 🔴 **Seven items is why the phone gets a drawer rather than a bottom bar.**
+ * A bottom bar carries five before targets fall under the 44px minimum, so
+ * seven leaves a choice between shrinking the targets, hiding items behind a
+ * "More" sheet, or a drawer. The drawer is also what the source app used
+ * (`src/layouts/dashboard/navbar`), so it is the pattern members already know.
  *
- * Both presentations render from one array, so a destination cannot exist in
- * one and not the other.
+ * The drawer is a native `<dialog>` opened with `showModal()`, which supplies
+ * the focus trap, `Escape` to close, the inert background and the backdrop —
+ * four things that are easy to write badly and free here.
  *
- * The current page is marked three ways deliberately: `aria-current` for
- * assistive technology, a carmine rule for sighted scanning, and full-strength
- * text against the dimmed siblings. Colour alone would be invisible to a
- * colour-blind reader and in print (§6.7).
+ * From `md` up it is a plain header: seven items fit on one line, and a drawer
+ * on a laptop is a phone affordance stranded on a desk.
+ *
+ * The current page is marked three ways: `aria-current` for assistive
+ * technology, a carmine rule for scanning, and full-strength text against
+ * dimmed siblings. Colour alone would be invisible to a colour-blind reader
+ * and in print (§6.7).
  */
 export function AppNav({ isSignedIn }: { isSignedIn: boolean }) {
   const pathname = usePathname();
+  const drawer = useRef<HTMLDialogElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const links = NAV_LINKS.filter((link) => link.ready);
 
   const isCurrent = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
+  const open = useCallback(() => {
+    drawer.current?.showModal();
+    setIsOpen(true);
+  }, []);
+
+  const close = useCallback(() => {
+    drawer.current?.close();
+  }, []);
+
+  // `close` also fires for Escape and for the backdrop, so the trigger's
+  // `aria-expanded` cannot drift out of step with whether the drawer is open.
+  useEffect(() => {
+    const element = drawer.current;
+    if (!element) return;
+    const onClose = () => setIsOpen(false);
+    element.addEventListener('close', onClose);
+    return () => element.removeEventListener('close', onClose);
+  }, []);
+
+  // A drawer left open across a navigation would cover the page it just
+  // reached.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the trigger, not a value read here
+  useEffect(() => {
+    drawer.current?.close();
+  }, [pathname]);
+
   return (
     <>
-      {/* Desktop: a header. */}
-      <header className="border-border-rule bg-bg-surface sticky top-0 z-40 hidden border-b md:block">
-        <nav aria-label="Main" className="mx-auto flex max-w-6xl items-center gap-6 px-4">
+      <header className="border-border-rule bg-bg-surface sticky top-0 z-40 border-b">
+        <nav
+          aria-label="Main"
+          className="mx-auto flex max-w-6xl items-center gap-4 px-4 md:gap-6"
+        >
+          <button
+            type="button"
+            onClick={open}
+            aria-expanded={isOpen}
+            aria-controls="main-drawer"
+            className="text-text-primary focus-visible:outline-accent-fill -ml-2 flex min-h-11 min-w-11 items-center justify-center focus-visible:outline-2 md:hidden"
+          >
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              viewBox="0 0 24 24"
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+            <span className="sr-only">Menu</span>
+          </button>
+
           <Link
             href="/"
-            className="font-display text-text-primary focus-visible:outline-accent-fill py-4 text-sm font-bold uppercase tracking-wide [font-variation-settings:'wdth'_118] focus-visible:outline-2"
+            className="font-display text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center text-sm font-bold uppercase tracking-wide [font-variation-settings:'wdth'_118] focus-visible:outline-2"
           >
             Cinemadraft
           </Link>
 
-          <ul className="flex flex-1 items-center gap-1">
-            {LINKS.map((link) => (
+          {/* Desktop: the destinations inline. */}
+          <ul className="hidden flex-1 items-center gap-1 md:flex">
+            {links.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   aria-current={isCurrent(link.href) ? 'page' : undefined}
                   className={cn(
-                    // 44px minimum target, and the padding is what provides
-                    // it — not a fixed height that the text could overflow.
+                    // The padding supplies the 44px target rather than a fixed
+                    // height the label could overflow.
                     'focus-visible:outline-accent-fill flex min-h-11 items-center gap-2 border-b-2 px-3 py-3 text-sm transition-colors focus-visible:outline-2',
                     isCurrent(link.href)
                       ? 'border-b-accent-fill text-text-primary'
@@ -104,26 +190,57 @@ export function AppNav({ isSignedIn }: { isSignedIn: boolean }) {
             ))}
           </ul>
 
-          <AccountControl isSignedIn={isSignedIn} />
+          <div className="ml-auto flex items-center md:ml-0">
+            <AccountControl isSignedIn={isSignedIn} />
+          </div>
         </nav>
       </header>
 
-      {/* Phone: a fixed bottom bar, where a thumb already is. */}
-      <nav
-        aria-label="Main"
-        className="border-border-rule bg-bg-surface fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] md:hidden"
+      {/* Phone: a drawer. Native <dialog>, so focus trapping, Escape and the
+          backdrop are the platform's job rather than ours. */}
+      <dialog
+        id="main-drawer"
+        ref={drawer}
+        aria-label="Main menu"
+        className="bg-bg-surface text-text-primary m-0 h-dvh max-h-dvh w-72 max-w-[85vw] p-0 backdrop:bg-black/60 md:hidden"
       >
-        <ul className="flex items-stretch justify-around">
-          {LINKS.map((link) => (
-            <li key={link.href} className="flex-1">
+        <div className="border-border-rule flex items-center justify-between border-b px-4 py-2">
+          <span className="font-display text-sm font-bold uppercase tracking-wide [font-variation-settings:'wdth'_118]">
+            Cinemadraft
+          </span>
+          <button
+            type="button"
+            onClick={close}
+            className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center focus-visible:outline-2"
+          >
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+            <span className="sr-only">Close menu</span>
+          </button>
+        </div>
+
+        <ul className="flex flex-col">
+          {links.map((link) => (
+            <li key={link.href}>
               <Link
                 href={link.href}
+                onClick={close}
                 aria-current={isCurrent(link.href) ? 'page' : undefined}
                 className={cn(
-                  'focus-visible:outline-accent-fill flex min-h-14 flex-col items-center justify-center gap-1 border-t-2 px-2 py-2 text-xs focus-visible:-outline-offset-2 focus-visible:outline-2',
+                  'focus-visible:outline-accent-fill flex min-h-12 items-center gap-3 border-l-2 px-4 py-3 text-sm focus-visible:-outline-offset-2 focus-visible:outline-2',
                   isCurrent(link.href)
-                    ? 'border-t-accent-fill text-text-primary'
-                    : 'text-text-secondary border-t-transparent',
+                    ? 'border-l-accent-fill bg-bg-raised text-text-primary'
+                    : 'text-text-secondary border-l-transparent',
                 )}
               >
                 <NavIcon path={link.path} />
@@ -132,7 +249,7 @@ export function AppNav({ isSignedIn }: { isSignedIn: boolean }) {
             </li>
           ))}
         </ul>
-      </nav>
+      </dialog>
     </>
   );
 }
@@ -143,7 +260,7 @@ function NavIcon({ path }: { path: string }) {
       aria-hidden="true"
       focusable="false"
       viewBox="0 0 24 24"
-      className="h-5 w-5"
+      className="h-5 w-5 shrink-0"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"
@@ -161,11 +278,11 @@ function NavIcon({ path }: { path: string }) {
  * 🔴 The state arrives as a prop, resolved on the server. Clerk 7 (Core 3)
  * **removed `<SignedIn>` and `<SignedOut>`** — they are stubs that throw, which
  * is how this was found: the build failed prerendering `/`. Resolving on the
- * server is what Core 3 asks for and is better regardless, because the
- * client-side components rendered nothing until Clerk loaded, so the header
- * flickered between states on every cold load.
+ * server is what Core 3 asks for and is better regardless, because the client
+ * components rendered nothing until Clerk loaded, so the header flickered
+ * between states on every cold load.
  *
- * The dashboard and league boards are public (D44), so a signed-out visitor
+ * The dashboard and league boards are public (D44), so a logged-out visitor
  * gets the whole nav — they are reading a shared link, and hiding navigation
  * from them would strand them on one page.
  */

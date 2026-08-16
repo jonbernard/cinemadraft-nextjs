@@ -43,3 +43,44 @@ config({ path: '.env', quiet: true });
  * Deliberately after `config()`, so it wins regardless of what the env holds.
  */
 delete process.env.TMDB_API_KEY;
+
+/**
+ * 🔴 jsdom implements `<dialog>`'s `open` attribute but not `showModal()` or
+ * `close()` — verified directly rather than inferred from a stack trace.
+ *
+ * `AppNav`'s phone drawer is a native dialog precisely because the platform
+ * supplies the focus trap, Escape and the backdrop; without these two methods
+ * every test touching it throws. Polyfilling here keeps the component free of
+ * defensive checks that exist only for a test environment.
+ *
+ * Faithful to the parts the tests rely on: `open` reflects state, and `close()`
+ * fires a `close` event, which is what keeps the trigger's `aria-expanded`
+ * honest. It does NOT emulate the focus trap or inertness — those are the
+ * browser's, and the E2E suite is where they are actually exercised.
+ */
+if (typeof HTMLDialogElement !== 'undefined') {
+  const dialog = HTMLDialogElement.prototype as HTMLDialogElement & {
+    showModal?: () => void;
+    show?: () => void;
+    close?: (returnValue?: string) => void;
+  };
+
+  if (!dialog.showModal) {
+    dialog.showModal = function showModal(this: HTMLDialogElement) {
+      this.open = true;
+    };
+  }
+  if (!dialog.show) {
+    dialog.show = function show(this: HTMLDialogElement) {
+      this.open = true;
+    };
+  }
+  if (!dialog.close) {
+    dialog.close = function close(this: HTMLDialogElement, returnValue?: string) {
+      if (!this.open) return;
+      this.open = false;
+      if (returnValue !== undefined) this.returnValue = returnValue;
+      this.dispatchEvent(new Event('close'));
+    };
+  }
+}

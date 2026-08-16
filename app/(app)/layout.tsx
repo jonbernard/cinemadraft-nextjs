@@ -10,9 +10,8 @@ import { AppNav } from '@/components/AppNav';
  * parity matrix could not see it, because the matrix records capabilities and
  * navigation is what makes capabilities findable.
  *
- * The phone nav is a fixed bottom bar (D49), so the page reserves space for it
- * with `pb-20`; without that, the last element of every page sits underneath
- * the bar. `md:pb-0` gives it back once the nav moves to a header.
+ * The nav is a sticky header at every width — a drawer on a phone, inline
+ * links from `md` up (D62) — so no page needs to reserve space beneath it.
  */
 export default async function AppLayout({ children }: LayoutProps<'/'>) {
   // Resolved here rather than in the client component: Clerk 7 removed
@@ -23,7 +22,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
   return (
     <div className="bg-bg-base min-h-dvh">
       <AppNav isSignedIn={userId != null} />
-      <div className="pb-20 md:pb-0">{children}</div>
+      {children}
     </div>
   );
 }

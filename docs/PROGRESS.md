@@ -610,10 +610,16 @@ Plan: [`docs/superpowers/plans/2026-08-16-phase-10-parity.md`](superpowers/plans
 island reachable only by typing its URL. The parity matrix could not see it —
 it records capabilities, and navigation is what makes capabilities findable.
 
-🔴 **Four nav destinations, not the source's seven** (§6.9): Home · Films ·
-Award Shows · Leagues. Browse, watchlist and the draft list are views under
-Films; Rules & Scoring becomes contextual help in the ledger. Four also fits
-inside the five-item ceiling a phone bottom bar can carry at 44px targets.
+🔴 **Seven nav destinations — the source's, not spec §6.9's four** (D62).
+Home · Browse · Award Shows · Leagues · Watchlist · Draft list · Rules &
+scoring. Entries appear as their pages are built (`ready: false` in
+`NAV_LINKS`), so the nav never links to a 404 — **flipping that flag is the
+last step of the task that builds the page.**
+
+🔴 **Seven items is why the phone gets a drawer, not a bottom bar.** A bottom
+bar carries five at 44px targets. The drawer is a native `<dialog>`, so the
+focus trap, Escape, inertness and backdrop are the platform's — verified in a
+browser, since jsdom implements none of them.
 
 🔴 **Vocabulary is log in / log out / register** (D61), including overrides for
 Clerk's own strings.

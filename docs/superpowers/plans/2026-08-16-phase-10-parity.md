@@ -21,17 +21,16 @@ The source app has seven nav entries
 (`src/layouts/dashboard/navbar/NavConfig.js`): Home, Browse, Award Shows,
 Leagues, Watchlist, Draft list, Rules & Scoring.
 
-🔴 **The port ships four, not seven** — spec §6.9, already approved:
+🔴 **The port ships all seven** (D62). Spec §6.9 proposed consolidating to four
+— `Home · Films · Award Shows · Leagues` — and the owner overrode it: the
+league knows the app by these seven names.
 
-> `Home · Films · Award Shows · Leagues`
->
-> Browse, Watchlist and Draft List are three views of one idea. Rules &
-> Scoring becomes contextual help surfaced inside the ledger, not a nav peer.
+That shapes the batches below. Browse (T7), Watchlist (T33–37) and the Draft
+list (T20) are **their own destinations**, not views inside a Films page, and
+each one's task ends by flipping its `ready` flag in `NAV_LINKS`.
 
-That consolidation is load-bearing for the batches below: **Films** is one
-destination with views, not three siblings, so T7 (browse), T20 (draft list)
-and T33–37 (watchlist) build *into* it rather than beside it. It also keeps the
-count at four, inside the five-item ceiling a bottom bar can carry on a phone.
+It also decides the phone pattern: seven will not fit a bottom bar at 44px
+targets, so navigation is a **drawer** — which is what the source app used too.
 
 Navigation is not a `PARITY.md` row, because the matrix records *capabilities*
 and navigation is what makes capabilities findable — invisible in an audit and
