@@ -25,10 +25,46 @@ import { joinLeague } from './join-league';
 const TAG = 'league-actions';
 const DOMAIN = '@example.test';
 
+/**
+ * 🔴 Make sure a season exists, without disturbing one that already does.
+ *
+ * `createLeague` and `joinLeague` seat people for the *active* season, which
+ * `getActiveYear()` reads from `available_years` (D22). Locally that table is
+ * full of restored data; **on CI the schema is migrated and empty**, so
+ * `getActiveYear` threw "no seasons exist" and every test here failed.
+ *
+ * Seeding is the honest fix rather than excluding the suite — these are the
+ * refusal tests for creating and joining, and they belong on every push.
+ *
+ * But it cannot simply insert an active row: a **partial unique index**
+ * (`available_years_one_active`) allows only one, and locally 2026 already
+ * holds it. So this seeds only when the table has no active season, and
+ * removes only what it added. Found by the insert failing against the real
+ * constraint, which is the index doing precisely its job.
+ */
+const SEASON = 2992;
+
+/** True when this run created the season, so cleanup knows whether to remove it. */
+let seededSeason = false;
+
+async function ensureSeason(now: Date): Promise<void> {
+  const active = await db.availableYear.findFirst({ where: { isActive: true } });
+  if (active) return;
+
+  await db.availableYear.upsert({
+    where: { year: SEASON },
+    update: { isActive: true },
+    create: { year: SEASON, isActive: true, createdAt: now, updatedAt: now },
+  });
+  seededSeason = true;
+}
+
 type Fixture = Awaited<ReturnType<typeof seed>>;
 
 async function seed() {
   const now = new Date();
+
+  await ensureSeason(now);
   const [creator, joiner] = await Promise.all(
     ['creator', 'joiner'].map((role) =>
       db.user.create({
@@ -69,6 +105,10 @@ async function cleanup() {
   await db.draft.deleteMany({ where: { leagueId: { in: ids } } });
   await db.league.deleteMany({ where: { id: { in: ids } } });
   await db.user.deleteMany({ where: { email: { contains: `${TAG}-` } } });
+  if (seededSeason) {
+    await db.availableYear.deleteMany({ where: { year: SEASON } });
+    seededSeason = false;
+  }
 }
 
 let fixture: Fixture;

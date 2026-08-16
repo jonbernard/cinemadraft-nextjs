@@ -644,6 +644,20 @@ are each a test that fails if reintroduced.
 - 🔴 **A seat holding picks cannot be removed.** `draft_picks` has no foreign
   key, so nothing cascades — the picks would belong to nobody, dropped by the
   board and kept by scoring. The console does not offer the button at all.
+- 🔴 **Run `npm run test:ci` against an EMPTY database before pushing**, not
+  just the local one. CI migrates a fresh Postgres and has no data, so a seeded
+  suite that quietly depends on restored rows passes locally and fails there —
+  which is exactly what happened to the league actions: `getActiveYear()` reads
+  `available_years`, empty on CI, and threw "no seasons exist". The check is
+  one command:
+  ```
+  createdb ci_sim && DATABASE_URL=…/ci_sim npx prisma migrate deploy \
+    && DATABASE_URL=…/ci_sim npx vitest run --config vitest.ci.config.mts
+  ```
+- **Seeding a season has to respect the partial unique index.** Only one
+  `available_years` row may be active (`available_years_one_active`), and
+  locally 2026 already is — so the fixture seeds only when there is no active
+  season, and removes only what it added.
 - **`lib/db.test.ts` now counts excluding test fixtures.** It asserted exact
   restore counts, which E2E residue turned red at random — a flake that trains
   the eye to ignore a failing suite. Fixtures are identifiable by construction
