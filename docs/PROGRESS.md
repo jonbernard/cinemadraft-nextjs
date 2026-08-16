@@ -549,6 +549,38 @@ the port scores what production scored** (four captured fixtures; only one was
 previously checked), and **building the ledger** that explains any number on
 screen (§6.7).
 
+- [x] P9.T1 Verify against **all four** captured points fixtures 🔴 the gate
+- [x] P9.T1b `test/query-count.ts` — the batching guard
+- [x] P9.T2 `ledgerForMovies` — per-award lines from the same load as the totals
+- [x] P9.T3 `components/PointsLedger.tsx` — total by default, lines on demand
+- [x] P9.T4 Wired into the league board, batched
+- [x] P9.T5 E2E and close-out
+
+**Gate met.** Zero drift against production: the port reproduces the source
+API's own numbers for a whole season (123 films), a whole league (12 team
+totals) and a per-event breakdown (11 shows, 335 points). 872 unit tests, 435
+on CI, 25 E2E.
+
+### What the next phase needs to know
+
+- 🔴 **A guard that cannot fail is worse than no guard.** `countQueries` first
+  built its own `PrismaClient` and passed it to the callback — but every
+  service imports the `db` singleton and ignored it, so it counted **zero**
+  queries and every page-level assertion passed while measuring nothing. It now
+  listens to the shared client (`lib/db.ts` enables query events under Vitest
+  only), and the assertions require a non-zero count, because zero-equals-zero
+  was exactly the vacuous pass that hid it. Verified it can fail: a deliberate
+  N+1 shows 5 queries against 1 batched.
+- **Every new score surface adds a case to `scoring.batching.test.ts`.** The
+  board is 10 queries for 16 seats and 144 picks; an N+1 would be 144.
+- **The ledger rides along free.** `ledgerForMovies` is the same load as the
+  totals, so the board carries 1,353 ledger lines at 8.6 ms without a second
+  query. Never fetch a ledger on expand.
+- **`total` is `lines.reduce(...)`, never computed separately.** A ledger that
+  disagrees with the number above it is worse than no ledger.
+- **jsdom does not toggle `<details>` on Enter** — checked against a bare
+  element. Component tests assert focusability; the toggle belongs to E2E.
+
 🔴 **`nominations.year` is now an integer** (D60). It was the only TEXT year
 column and it produced silent wrong answers three times during the port — most
 recently a fixture carrying `"2017"`, which made a ledger test return nothing.

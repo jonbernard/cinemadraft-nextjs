@@ -82,7 +82,7 @@ which is why so many rows are cheap and a few are not.
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
 | **A film's page** — synopsis, cast, crew, trailers, images, ratings, box office | **deficient** | `src/pages/movie/index.jsx`, `GET /movie/:id`, `/details` | **P10.T5** — TMDB + OMDb, Phase 8/11 | ✓ |
-| A film's points by award show, and its average draft position | **deficient** | `GET /points/movie/:tmdbId` | **P10.T6** | ✓ |
+| A film's points by award show | **ported** | `GET /points/movie/:tmdbId` | `ledgerForMovies` + `components/PointsLedger.tsx`, on the league board. The **movie page** and `avgDraftPos` remain **P10.T6** | ✓ |
 | Browse upcoming and recent releases | **deficient** | `src/pages/browse/index.js`, `GET /movie/discovery/...` | **P10.T7** | — |
 | Search for a film by title | **ported** | `GET /search` | `lib/services/search.ts` — local-first, three ranked contexts (§10). TMDB is an optional second source and is unconfigured; the 1,355 local films answer it completely | ✓ |
 | Similar films | **deficient** | movie page "Similar Movies" grid | **P10.T9** | — |
