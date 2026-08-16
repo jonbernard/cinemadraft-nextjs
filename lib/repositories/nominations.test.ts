@@ -37,7 +37,13 @@ const watchlistNoms = loadFixture<{
   totals: { count: number; total: number };
 }>('watchlist-noms');
 
-const YEAR = '2025';
+/**
+ * A season, as a number.
+ *
+ * It was `'2025'` until `20260816120000_nominations_year_integer` made
+ * `nominations.year` an integer like every other year column in the schema.
+ */
+const YEAR = 2025;
 
 const firstNomination = oscars.awards.find((a) => a.id === 62)?.nominations[0];
 if (!firstNomination) throw new Error('oscars fixture is missing award 62');
@@ -79,21 +85,24 @@ describe('the DTO matches the captured contract', () => {
     expect(nomination.fbId).toBe(firstNomination.fbId);
     expect(nomination.movieId).toBe(firstNomination.movieId);
     expect(nomination.awardId).toBe(firstNomination.awardId);
-    expect(nomination.year).toBe(firstNomination.year);
+    // The captured fixture holds `year` as a string because the column was
+    // text when it was captured; the column is an integer now.
+    expect(nomination.year).toBe(Number(firstNomination.year));
     expect(nomination.detailName).toBe(firstNomination.detailName);
     expect(nomination.detailCharacter).toBe(firstNomination.detailCharacter);
     expect(nomination.detailId).toBe(firstNomination.detailId);
     expect(nomination.createdAt?.toISOString()).toBe(firstNomination.createdAt);
   });
 
-  it('keeps year as a string, because the column is text', async () => {
-    // nominations.year is `text` while every other year column in the schema
-    // is `integer` (recorded during introspection). Coercing it to a number
-    // here would make the DTO disagree with the value a caller must pass back
-    // into findByYear, so the oddity stays visible instead of being papered
-    // over halfway down the stack.
+  it('🔴 returns year as a number, like every other year in the schema', async () => {
+    // It was `text` — the only year column that was — and the DTO exposed a
+    // string to match. That inconsistency produced silent wrong answers three
+    // separate times during the port: a comparison that forgets to convert
+    // matches nothing, so a film scores zero and no page says why. Fixed at
+    // the column by `20260816120000_nominations_year_integer` rather than by
+    // a conversion at each of the ten call sites.
     const nomination = await nominationRepository.findById(firstNomination.id);
-    expect(typeof nomination.year).toBe('string');
+    expect(typeof nomination.year).toBe('number');
   });
 
   it('returns Date objects, not the strings JSON gave us', async () => {
@@ -162,7 +171,7 @@ describe('nominationRepository.findByYear', () => {
   it('returns an empty array for a year with no nominations', async () => {
     // A legitimate miss, not an error: the next season has no nominations
     // until the first announcement.
-    expect(await nominationRepository.findByYear('1901')).toEqual([]);
+    expect(await nominationRepository.findByYear(1901)).toEqual([]);
   });
 });
 
@@ -290,6 +299,6 @@ describe('nominationRepository.countByYear', () => {
   });
 
   it('returns an empty array for a year with no nominations', async () => {
-    expect(await nominationRepository.countByYear('1901')).toEqual([]);
+    expect(await nominationRepository.countByYear(1901)).toEqual([]);
   });
 });

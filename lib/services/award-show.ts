@@ -102,11 +102,9 @@ function toNominee(
  * from the repositories that already exist rather than a second query path —
  * whatever the standings say a film earned, this page has to explain.
  *
- * 🔴 `nominations.year` is TEXT while `winners.year` is INTEGER. That is not a
- * quirk to paper over here; it is the actual schema, and each repository is
- * given the type its column has. A single "year" variable passed to both would
- * work in Postgres by implicit cast and fail the moment either side is
- * type-checked.
+ * Both repositories take the season as a number. `nominations.year` was TEXT
+ * until `20260816120000_nominations_year_integer` — the one year column in the
+ * schema that was — and this function used to convert on the way in.
  */
 export async function getAwardShow(
   abbreviation: string,
@@ -119,7 +117,7 @@ export async function getAwardShow(
   const awardIds = awards.map((award) => award.id);
 
   const [nominations, winners, pointsById] = await Promise.all([
-    nominationRepository.findManyByAwardIds(awardIds, String(year)),
+    nominationRepository.findManyByAwardIds(awardIds, year),
     winnerRepository.findManyByAwardIds(awardIds, year),
     resolvePoints(awards.map((award) => award.pointsId)),
   ]);

@@ -148,7 +148,7 @@ model Nomination {
   fbId            String?   @map("fb_id")
   movieId         BigInt    @map("movie_id")
   awardId         BigInt    @map("award_id")
-  year            String?
+  year            Int?
   detailName      String?   @map("detail_name")
   detailCharacter String?   @map("detail_character")
   detailId        BigInt?   @map("detail_id")

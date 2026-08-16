@@ -244,8 +244,7 @@ describe('attachNominee', () => {
       {
         id: expect.any(Number),
         movieId: fixture.films[0]?.id,
-        // 🔴 TEXT, unlike every other year column in the schema.
-        year: String(YEAR),
+        year: YEAR,
         detailName: null,
       },
     ]);

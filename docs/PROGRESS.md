@@ -549,6 +549,13 @@ the port scores what production scored** (four captured fixtures; only one was
 previously checked), and **building the ledger** that explains any number on
 screen (§6.7).
 
+🔴 **`nominations.year` is now an integer** (D60). It was the only TEXT year
+column and it produced silent wrong answers three times during the port — most
+recently a fixture carrying `"2017"`, which made a ledger test return nothing.
+Fixed at the column, not at the ten call sites that were each converting.
+Go-live rehearsed on a scratch database: restore → `migrate resolve --applied
+0_init` → `migrate deploy` leaves the column an integer with data intact.
+
 🔴 **Every score surface is inventoried and measured** in the plan — dashboard
 7.2 ms, league board 4.9 ms, movie page 2.3 ms, season leaderboard 5.6 ms, live
 rescore 5.0 ms, all 1,355 films 14.2 ms. Cost is **round trips, not

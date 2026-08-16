@@ -54,8 +54,7 @@ export async function attachNominee(
       tmdbId: parsed.data.tmdbId,
     });
 
-    // 🔴 `nominations.year` is TEXT, unlike every other year column.
-    const year = String(parsed.data.year);
+    const year = parsed.data.year;
 
     // Some categories nominate a *person*, not just a film — acting and most
     // craft awards. Storing a null there silently produces a category listing

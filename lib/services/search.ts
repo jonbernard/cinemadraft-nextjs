@@ -82,9 +82,8 @@ export async function findFilms(
   );
   const yearsByMovie = new Map<number, number[]>();
   for (const nomination of nominations) {
-    if (nomination.year == null) continue;
-    const year = Number(nomination.year);
-    if (!Number.isSafeInteger(year)) continue;
+    const year = nomination.year;
+    if (year == null) continue;
     const existing = yearsByMovie.get(nomination.movieId);
     if (existing) existing.push(year);
     else yearsByMovie.set(nomination.movieId, [year]);

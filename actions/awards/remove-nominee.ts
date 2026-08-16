@@ -29,8 +29,8 @@ export async function removeNominee(nominationId: number): Promise<ActionResult>
     const nomination = await nominationRepository.findById(parsed.data);
     const { abbreviation } = await authorizeAward(nomination.awardId);
 
-    const year = Number(nomination.year);
-    if (Number.isSafeInteger(year)) {
+    const year = nomination.year;
+    if (year != null) {
       const winners = await winnerRepository.findManyByAwardIds(
         [nomination.awardId],
         year,

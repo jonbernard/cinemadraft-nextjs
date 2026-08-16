@@ -61,7 +61,7 @@ export async function setWinner(input: SetWinnerInput): Promise<ActionResult> {
     const nomination = await nominationRepository.findByAwardMovieYear(
       award.id,
       parsed.data.movieId,
-      String(parsed.data.year),
+      parsed.data.year,
     );
     if (!nomination) {
       throw new ConflictError(`that film is not nominated for ${award.name}`);

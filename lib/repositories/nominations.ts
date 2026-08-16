@@ -90,12 +90,13 @@ export const nominationRepository = {
   /**
    * Every nomination for a season.
    *
-   * `year` is a string because `nominations.year` is `text` — the only year
-   * column in the schema that is not `integer`. Coercing it here would make
-   * the DTO disagree with the value callers have to pass back in, so the
-   * oddity stays visible rather than being papered over halfway down the stack.
+   * `year` is a number. It was TEXT — the only year column in the schema that
+   * was — until `20260816120000_nominations_year_integer`. That inconsistency
+   * silently produced empty results wherever a comparison forgot to convert,
+   * which is a failure that looks like "this film scored nothing" rather than
+   * like an error.
    */
-  async findByYear(year: string): Promise<Nomination[]> {
+  async findByYear(year: number): Promise<Nomination[]> {
     const rows = await db.nomination.findMany({
       where: { year },
       select: SELECT,
@@ -114,7 +115,7 @@ export const nominationRepository = {
    */
   async findManyByMovieIds(
     movieIds: readonly (number | bigint)[],
-    year?: string,
+    year?: number,
   ): Promise<Nomination[]> {
     if (movieIds.length === 0) return [];
     const rows = await db.nomination.findMany({
@@ -133,7 +134,7 @@ export const nominationRepository = {
    */
   async findManyByAwardIds(
     awardIds: readonly (number | bigint)[],
-    year?: string,
+    year?: number,
   ): Promise<Nomination[]> {
     if (awardIds.length === 0) return [];
     const rows = await db.nomination.findMany({
@@ -168,7 +169,7 @@ export const nominationRepository = {
    * year and counted them in JavaScript; with 4559 rows in the table that is
    * the wrong side of the wire to count on.
    */
-  async countByYear(year: string): Promise<NominationCount[]> {
+  async countByYear(year: number): Promise<NominationCount[]> {
     const rows = await db.nomination.groupBy({
       by: ['movieId'],
       where: { year },
@@ -184,16 +185,14 @@ export const nominationRepository = {
   /**
    * Record that a film is nominated for an award in a year.
    *
-   * 🔴 `year` is a **string**, because `nominations.year` is TEXT while every
-   * other year column in the schema is an integer. That is the actual column
-   * type, not a quirk to smooth over: passing a number works today only
-   * because Postgres casts it, and the cast is silent right up until a query
-   * compares this column with one of the integer ones.
+   * `year` is a number, like every other year column. It was TEXT until the
+   * `20260816120000_nominations_year_integer` migration — see that file for
+   * why the inconsistency had to go rather than be worked around.
    */
   async create(input: {
     movieId: number;
     awardId: number;
-    year: string;
+    year: number;
     detailName?: string | null;
     detailCharacter?: string | null;
     detailId?: number | null;
@@ -231,7 +230,7 @@ export const nominationRepository = {
   async findByAwardMovieYear(
     awardId: number,
     movieId: number,
-    year: string,
+    year: number,
   ): Promise<Nomination | null> {
     const row = await db.nomination.findFirst({
       where: { awardId: BigInt(awardId), movieId: BigInt(movieId), year },

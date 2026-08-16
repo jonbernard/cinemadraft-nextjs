@@ -218,7 +218,7 @@ Shapes where the obvious port is the wrong one. The first cost real money once.
 2. **`award.pointsData` is an array in the events queries and an object in the nominations queries**, purely because of `raw + nest`. Normalising to one shape breaks one consumer. `controllers/events.js:15-19` vs `controllers/nominations.js:15-16`.
 3. **`Movies.poster` and `backdrop` are getters** that prefix a CDN base at runtime, so the field is a relative path in the database and an absolute URL in the response — and reverts under `raw: true`. `lib/utils/poster.ts` does this explicitly.
 4. **`User.displayName` is a VIRTUAL**, selected as an attribute in four places, one of them under `raw: true` where it never materialises. Derive it in code; never select it.
-5. **`Nominations.year` is TEXT while every other year column is INTEGER.** Postgres papers over it; a typed port will not.
+5. ~~**`Nominations.year` is TEXT while every other year column is INTEGER.**~~ ✅ **Fixed in the port** by `20260816120000_nominations_year_integer` (D60). It caused silent wrong answers three times during the port — a comparison that forgets to convert matches nothing, so a film scores zero and no page says why. The restored data was clean (4,559 rows, no nulls, no non-numeric values), so the cast was lossless. **The source app still has TEXT**; anything reading the Heroku database directly must still convert.
 6. **`ProfileFeeds.components` is a JSON string** beside a `componentsArray` virtual that parses it — and the getter throws on null.
 7. **`movie.watchlist` is not the movie's watchlist**, it is the caller's entry, ids only, used as a boolean.
 8. **`Leagues.owner` is a JSON string** whose parsing getter is bypassed under `raw: true`.

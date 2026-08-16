@@ -109,13 +109,11 @@ async function loadScoringInputs(
 
   const nominations = await nominationRepository.findManyByMovieIds(movieIds);
 
-  // `nominations.year` is TEXT while `winners.year` is INTEGER — a genuine
-  // inconsistency in the restored schema, not a modelling choice. Comparing
-  // the text column against a number silently matches nothing, so both sides
-  // are normalized to a number here. A row whose year is null or unparseable
-  // is dropped: it cannot be attributed to a season, and guessing would score
-  // a film in the wrong one.
-  const forYear = nominations.filter((nomination) => Number(nomination.year) === year);
+  // A row with no year is dropped: it cannot be attributed to a season, and
+  // guessing would score a film in the wrong one. The column was TEXT until
+  // `20260816120000_nominations_year_integer`, which is why this comparison
+  // used to need a conversion — and why forgetting it scored nothing at all.
+  const forYear = nominations.filter((nomination) => nomination.year === year);
   if (forYear.length === 0) return null;
 
   const awardIds = [...new Set(forYear.map((nomination) => nomination.awardId))];
