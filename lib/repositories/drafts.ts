@@ -310,4 +310,22 @@ export const draftRepository = {
     const deleted = await db.draft.deleteMany({ where: { id: draftId, leagueId } });
     if (deleted.count === 0) throw new NotFoundError('seat', draftId);
   },
+
+  /**
+   * How many picks each of these seats holds.
+   *
+   * One grouped query rather than a count per seat: the setup console asks
+   * about every member of a league at once, and it only needs to know whether
+   * a seat is empty — a round trip per person to learn that would be the same
+   * N+1 the scoring guard exists to prevent (D59).
+   */
+  async countPicksByDraftIds(draftIds: readonly number[]): Promise<Map<number, number>> {
+    if (draftIds.length === 0) return new Map();
+    const rows = await db.draftPick.groupBy({
+      by: ['draftId'],
+      where: { draftId: { in: [...draftIds] } },
+      _count: { _all: true },
+    });
+    return new Map(rows.map((row) => [row.draftId, row._count._all]));
+  },
 };

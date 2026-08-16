@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 31 |
-| **deficient** | 37 |
+| **ported** | 37 |
+| **deficient** | 31 |
 | **dropped** | 15 |
 | **total capabilities** | 83 |
 
@@ -25,7 +25,7 @@ search and the whole award-show surface, including both admin writes the source
 left unauthenticated. Phase 9 closed the per-award points breakdown. Phase 10
 batch A added the navigation and the error boundaries; batch B closed the four
 league-formation rows — until it landed, **no new league could be created at
-all**._
+all** — and batch C closed the six for running a season._
 
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
@@ -102,12 +102,12 @@ which is why so many rows are cheap and a few are not.
 | **Create a league** | **ported** | `src/pages/league/create.js`, `POST /league/add` | `app/(app)/leagues/new`, `actions/leagues/create-league.ts` — seats the creator, writes a parseable owner column (D47), generates the invite uuid | ✓ |
 | **Your leagues, and switching between them** | **ported** | `src/pages/league/redirect.js`, `GET /league/user` | `app/(app)/leagues/page.tsx` + `lib/services/my-leagues.ts`. 🔴 Shows a **list** rather than redirecting to the first league as the source did — that redirect meant no page ever answered "which leagues am I in" | ✓ |
 | Copy the invite link | **ported** | `JoinLink` on create + league panel | `components/InviteLink.tsx`, on the league page, **owners only** — the uuid is the join credential | ✓ |
-| **Set up groups before a draft** — drag members between groups, add a group, randomise the unassigned | **deficient** | `league/orderAndGroups/`, `PUT /draft/:leagueId/:id` | **P10.T14** — the port shows this state read-only | — |
-| Add a seat, including a placeholder for someone with no account | **deficient** | `POST /draft/add` (`routes/draft.js:51`) | **P10.T15** — 17 dummy seats exist in production | — |
-| Remove or rename a seat | **deficient** | `DELETE /draft/:id`, `PUT /draft/:leagueId/:id` | **P10.T16** | — |
-| Start the draft / mark it complete | **deficient** | Start/Complete buttons, `PUT /league/:id`, `/status` | **P10.T17** — completing also posts each member's picks to their feed | — |
-| Stage next season's draft | **deficient** | "Stage next draft" adornment on the year select | **P10.T18** | — |
-| League settings | **deficient** | `PUT /league/:id` | **P10.T19** | — |
+| **Set up groups before a draft** | **ported** | `league/orderAndGroups/`, `PUT /draft/:leagueId/:id` | `app/(app)/leagues/[id]/setup` + `lib/services/group-assignment.ts`. Assignment is a select per seat, not drag-only, so it works by keyboard; the randomiser deals round-robin, keeping groups balanced | ✓ |
+| Add a seat, including a placeholder for someone with no account | **ported** | `POST /draft/add` (`routes/draft.js:51`) | `actions/leagues/manage-seats.ts` — owner-gated, closing source bug 4 | ✓ |
+| Remove or rename a seat | **ported** | `DELETE /draft/:id`, `PUT /draft/:leagueId/:id` | `actions/leagues/manage-seats.ts` — owner-gated (closing source bug 5), and refuses a seat holding picks, which would orphan them | ✓ |
+| Start the draft / mark it complete | **ported** | Start/Complete buttons, `PUT /league/:id`, `/status` | `actions/leagues/manage-league.ts` — status only, closing source bug 6. *Posting picks to each member's feed waits for the feed itself (T40–42)* | ✓ |
+| Stage next season's draft | **ported** | "Stage next draft" adornment on the year select | `actions/leagues/manage-league.ts` — idempotent, carries placeholders forward | ✓ |
+| League settings | **ported** | `PUT /league/:id` | `actions/leagues/manage-league.ts` — named fields through a Zod allowlist, so the source's take-the-league bug (6) is impossible | ✓ |
 
 ## The draft
 

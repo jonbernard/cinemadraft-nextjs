@@ -96,12 +96,20 @@ export default async function LeaguePage({
               </span>
             ) : null}
             {canManage ? (
-              <Link
-                href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
-                className="text-accent-text underline"
-              >
-                Run the draft
-              </Link>
+              <>
+                <Link
+                  href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
+                  className="text-accent-text underline"
+                >
+                  Set up the season
+                </Link>
+                <Link
+                  href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
+                  className="text-accent-text underline"
+                >
+                  Run the draft
+                </Link>
+              </>
             ) : null}
           </div>
 

@@ -631,6 +631,25 @@ both places, and `global-error.tsx` for a failure in the root layout — that
 last one is deliberately plain and self-contained, because the providers and
 theme are exactly what may have failed.
 
+**Batch C done — a season can be run.** Seats, placeholders, groups, start and
+complete, stage next season, settings. Three source bugs (`PARITY.md` 4, 5, 6)
+are each a test that fails if reintroduced.
+
+- 🔴 **Group dealing is round-robin, never chunked.** 17 people into 4 chunks
+  gives a group of two; dealt, it gives 5/4/4/4. A property test asserts no two
+  groups ever differ by more than one, across 1–40 people and 1–6 groups.
+- 🔴 **Group assignment is a `<select>` per seat, not drag-and-drop.** The
+  source dragged, which is unusable without a mouse. `PickList` gets away with
+  dragging only because `@hello-pangea/dnd` ships a keyboard path.
+- 🔴 **A seat holding picks cannot be removed.** `draft_picks` has no foreign
+  key, so nothing cascades — the picks would belong to nobody, dropped by the
+  board and kept by scoring. The console does not offer the button at all.
+- **`lib/db.test.ts` now counts excluding test fixtures.** It asserted exact
+  restore counts, which E2E residue turned red at random — a flake that trains
+  the eye to ignore a failing suite. Fixtures are identifiable by construction
+  (`+clerk_test`, `@example.test`, spec tags), so the check keeps its exactness
+  without the flake.
+
 **Batch B done — leagues can form.** Create, invite, join, and a real
 `/leagues` list. 🔴 Until this landed no new league could be created at all.
 

@@ -20,14 +20,42 @@ describe('db', () => {
   });
 
   it('reads the restored production data', async () => {
-    expect(await db.movie.count()).toBe(1355);
-    expect(await db.user.count()).toBe(60);
+    // 🔴 Counted excluding anything a test created.
+    //
+    // These are exact counts from the restore, and they are worth asserting
+    // exactly — a silent partial restore is precisely what they catch. But the
+    // E2E suite registers **real** accounts and creates leagues and films, so
+    // a bare `count()` here fails whenever a browser run has just finished or
+    // its teardown raced a request still in flight. That is a flake in the
+    // check, not a fault in the data, and it trained the eye to ignore a red
+    // suite.
+    //
+    // Test fixtures are identifiable by construction: E2E addresses carry
+    // `+clerk_test`, seeded rows carry `@example.test`, and scratch films and
+    // leagues are prefixed with their spec's tag.
+    expect(
+      await db.movie.count({ where: { NOT: { title: { contains: 'e2e-' } } } }),
+    ).toBe(1355);
+    expect(
+      await db.user.count({
+        where: {
+          AND: [
+            { NOT: { email: { contains: '+clerk_test' } } },
+            { NOT: { email: { contains: '@example.test' } } },
+          ],
+        },
+      }),
+    ).toBe(60);
     expect(await db.nomination.count()).toBe(4559);
   });
 
   it('exposes PascalCase models mapped to snake_case tables', async () => {
+    // The point of this one is the *mapping*, not the numbers, so it asks
+    // whether each model reaches its table at all — which is what a broken
+    // `@@map` would break. Exact counts would make it another thing E2E
+    // residue can turn red.
     expect(await db.availableYear.count()).toBe(10);
-    expect(await db.draftPick.count()).toBe(1025);
+    expect(await db.draftPick.count()).toBeGreaterThanOrEqual(1025);
     expect(await db.profileFeed.count()).toBe(125);
   });
 
