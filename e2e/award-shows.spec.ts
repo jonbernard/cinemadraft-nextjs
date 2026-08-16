@@ -118,7 +118,7 @@ async function signInAsAdmin(page: Page): Promise<void> {
   await setupClerkTestingToken({ page });
   const address = `e2e_awards_${Date.now()}+clerk_test@example.com`;
 
-  await page.goto('/auth/sign-up');
+  await page.goto('/auth/register');
   await page.getByLabel(/email address/i).fill(address);
 
   // Wait for the code to be SENT before entering one — the OTP field submits
@@ -131,7 +131,7 @@ async function signInAsAdmin(page: Page): Promise<void> {
   await codeSent;
 
   await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/sign-up/, { timeout: 20_000 });
+  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
 
   await withDb(async (query) => {
     const rows = (await query(

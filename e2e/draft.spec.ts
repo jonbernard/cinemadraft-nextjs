@@ -69,7 +69,7 @@ async function signInAsOwner(page: Page): Promise<{ leagueId: number }> {
   await setupClerkTestingToken({ page });
   const address = `e2e_draft_${Date.now()}+clerk_test@example.com`;
 
-  await page.goto('/auth/sign-up');
+  await page.goto('/auth/register');
   await page.getByLabel(/email address/i).fill(address);
 
   // Wait for the code to be SENT before entering one — the OTP field submits
@@ -82,7 +82,7 @@ async function signInAsOwner(page: Page): Promise<{ leagueId: number }> {
   await codeSent;
 
   await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/sign-up/, { timeout: 20_000 });
+  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
 
   return withDb(async (query) => {
     const users = (await query('select id from users where email = $1', [address])) as {

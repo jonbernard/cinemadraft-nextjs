@@ -29,6 +29,20 @@ import { theme } from '@/theme';
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider
+      // 🔴 Clerk's components say "Sign in" and "Sign out" out of the box; the
+      // app says "log in" and "log out" (D61). Its component *names* stay as
+      // they are — `SignIn`, `UserButton` — because those are its API, not our
+      // vocabulary. Only what a member reads is overridden.
+      localization={{
+        formButtonPrimary: 'Continue',
+        signIn: {
+          start: { title: 'Log in', subtitle: 'to continue to Cinemadraft' },
+        },
+        signUp: {
+          start: { title: 'Register', subtitle: 'to continue to Cinemadraft' },
+        },
+        userButton: { action__signOut: 'Log out' },
+      }}
       appearance={{
         variables: {
           colorBackground: 'var(--color-bg-surface)',

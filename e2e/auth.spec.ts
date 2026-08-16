@@ -58,11 +58,11 @@ test.describe('auth', () => {
     }
   });
 
-  test('the sign-up page leads with the returning-member promise', async ({ page }) => {
-    await page.goto('/auth/sign-up');
+  test('the register page leads with the returning-member promise', async ({ page }) => {
+    await page.goto('/auth/register');
 
     // The single most important sentence in the migration: every existing
-    // member is signing UP, and needs to know their history follows them.
+    // member is REGISTERING, and needs to know their history follows them.
     await expect(page.getByText('Played before?')).toBeVisible();
     await expect(
       page.getByText(/leagues, drafts and points come with you/i),
@@ -70,13 +70,13 @@ test.describe('auth', () => {
   });
 
   test('offers no password field — the flow is passwordless (D26)', async ({ page }) => {
-    await page.goto('/auth/sign-up');
+    await page.goto('/auth/register');
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
   });
 
-  test('a protected route sends a signed-out visitor to sign-in', async ({ page }) => {
+  test('a protected route sends a logged-out visitor to log in', async ({ page }) => {
     await page.goto('/leagues');
-    await expect(page).toHaveURL(/\/auth\/sign-in/);
+    await expect(page).toHaveURL(/\/auth\/login/);
   });
 
   test('a new member can sign up and reach a protected route', async ({ page }) => {
@@ -93,7 +93,7 @@ test.describe('auth', () => {
     // code before attempting to verify".
     const address = `e2e_auth_${Date.now()}+clerk_test@example.com`;
 
-    await page.goto('/auth/sign-up');
+    await page.goto('/auth/register');
     await page.getByLabel(/email address/i).fill(address);
 
     // Wait for the code to actually be SENT before typing one.
@@ -109,7 +109,7 @@ test.describe('auth', () => {
       { timeout: 20_000 },
     );
 
-    // Exact match: "Sign in with Google Continue" also matches a loose
+    // Exact match: an OAuth button's label also matches a loose
     // /continue/i, and clicking that would leave the run testing OAuth.
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
     await codeSent;
@@ -121,10 +121,10 @@ test.describe('auth', () => {
     // the code auto-submits, and the session is not established until that
     // round trip lands — leaving immediately raced it and produced a
     // signed-out browser, which reads as "sign-up is broken".
-    await expect(page).not.toHaveURL(/\/auth\/sign-up/, { timeout: 20_000 });
+    await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
 
     await page.goto('/leagues');
-    await expect(page).not.toHaveURL(/\/auth\/sign-in/);
+    await expect(page).not.toHaveURL(/\/auth\/login/);
 
     // Reaching the page is not enough: an account has to exist behind the
     // session. Locally the Clerk webhook posts to the deployed host and never

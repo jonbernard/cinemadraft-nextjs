@@ -604,6 +604,20 @@ Plan: _not yet written_ — 7 tasks, see `docs/PLAN.md`
 
 ## Phase 10 — Remaining features to parity
 
+Plan: [`docs/superpowers/plans/2026-08-16-phase-10-parity.md`](superpowers/plans/2026-08-16-phase-10-parity.md)
+
+🔴 **The app had no navigation at all** until P10 batch A. Every page was an
+island reachable only by typing its URL. The parity matrix could not see it —
+it records capabilities, and navigation is what makes capabilities findable.
+
+🔴 **Four nav destinations, not the source's seven** (§6.9): Home · Films ·
+Award Shows · Leagues. Browse, watchlist and the draft list are views under
+Films; Rules & Scoring becomes contextual help in the ledger. Four also fits
+inside the five-item ceiling a phone bottom bar can carry at 44px targets.
+
+🔴 **Vocabulary is log in / log out / register** (D61), including overrides for
+Clerk's own strings.
+
 Plan: _written before execution, driven by [`docs/PARITY.md`](PARITY.md)_
 
 Every task below is one deficient row in the matrix, and the two lists are the

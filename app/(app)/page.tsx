@@ -14,7 +14,7 @@ import { getDashboard } from '@/lib/services/dashboard';
  * films have scored, and which show is next.
  *
  * Signed out, it is the season itself — the rail of award shows, and an
- * invitation to sign up. That is deliberate and matches the source app, where
+ * invitation to register. That is deliberate and matches the source app, where
  * `/` was never guarded: an awards league is worth looking at before you have
  * an account, and a login wall on the front page is the worst possible first
  * impression during awards season.
@@ -53,10 +53,10 @@ export default async function DashboardPage() {
         {user == null ? (
           <EmptyState
             title="Play the season"
-            action={{ label: 'Sign up', href: '/auth/sign-up' }}
+            action={{ label: 'Register', href: '/auth/register' }}
           >
             Draft a team of films before awards season and score points as they pick up
-            nominations and wins. Played before? Sign up with the same email and your
+            nominations and wins. Played before? Register with the same email and your
             leagues, drafts and points come with you.
           </EmptyState>
         ) : view.leagues.length === 0 ? (

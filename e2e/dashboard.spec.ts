@@ -82,7 +82,7 @@ async function signInAsMember(page: Page): Promise<void> {
   await setupClerkTestingToken({ page });
   const address = `e2e_dash_${Date.now()}+clerk_test@example.com`;
 
-  await page.goto('/auth/sign-up');
+  await page.goto('/auth/register');
   await page.getByLabel(/email address/i).fill(address);
 
   // Wait for the code to be SENT before entering one — the OTP field submits
@@ -95,7 +95,7 @@ async function signInAsMember(page: Page): Promise<void> {
   await codeSent;
 
   await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/sign-up/, { timeout: 20_000 });
+  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
 
   await withDb(async (query) => {
     const rows = (await query('select clerk_id from users where email = $1', [
@@ -143,7 +143,7 @@ test.describe('dashboard', () => {
     await expect(
       page.getByRole('heading', { name: 'Season', exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: /sign up/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /register/i }).first()).toBeVisible();
 
     // And nothing that belongs to a person.
     await expect(page.getByRole('table')).toHaveCount(0);
