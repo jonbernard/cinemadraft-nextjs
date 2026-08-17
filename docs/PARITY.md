@@ -15,10 +15,10 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 39 |
-| **deficient** | 29 |
+| **ported** | 42 |
+| **deficient** | 27 |
 | **dropped** | 15 |
-| **total capabilities** | 83 |
+| **total capabilities** | 84 |
 
 _Audited at the end of Phase 6 (18 ported). Phase 8 closed seven rows: film
 search and the whole award-show surface, including both admin writes the source
@@ -26,7 +26,7 @@ left unauthenticated. Phase 9 closed the per-award points breakdown. Phase 10
 batch A added the navigation and the error boundaries; batch B closed the four
 league-formation rows — until it landed, **no new league could be created at
 all** — batch C closed the six for running a season, and batch D closed the film
-page and similar films._
+page, similar films, browse and the watched mark._
 
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
@@ -87,7 +87,8 @@ which is why so many rows are cheap and a few are not.
 |---|---|---|---|---|
 | **A film's page** — synopsis, cast, crew, trailers, images, ratings, box office | **ported** | `src/pages/movie/index.jsx`, `GET /movie/:id`, `/details` | `app/(app)/films/[tmdbId]/page.tsx` + `lib/services/film.ts`. Keyed by **TMDB id**, so it resolves for films the app has never cached, and it **never writes** (D63). Ratings and box office come from OMDb and the panel is omitted when there is no key. 🔴 Trailers are a **facade**: the source mounted an `<iframe>` per video — 32 YouTube players for *La La Land* on a page nobody had asked to watch anything on — where this mounts one on demand, through `youtube-nocookie.com` so a logged-out reader picks up no advertising cookies | ✓ |
 | A film's points by award show | **ported** | `GET /points/movie/:tmdbId` | `components/FilmPointsPanel.tsx`. `byEvent` is a regrouping of `ledgerForMovies`' lines, so the per-show rows always sum to the total (D41). Verified against `fixtures/points-by-movie.json`: 335 total, 170 Oscars, 65 GG, 55 BAFTA. `avgDraftPos` is **null, never 0**, when nobody drafted the film | ✓ |
-| Browse upcoming and recent releases | **deficient** | `src/pages/browse/index.js`, `GET /movie/discovery/...` | **P10.T7** | — |
+| Browse upcoming and recent releases | **ported** | `src/pages/browse/index.js`, `GET /movie/discovery/...` | `app/(app)/browse/page.tsx` + `lib/services/browse.ts`. Grouped by release month with the green watched badge on each poster. 🔴 The past and future sides are **two different queries**, not one sort reversed — the past side keeps the source's `vote_average >= 4` / `vote_count >= 200` floors and the future side sends none, because an unreleased film has no votes and carrying them over returns an empty page | — |
+| Browse state is linkable | **ported** | Held in `useState` with an intersection observer appending pages (`browse/index.js:29-70`) | `?when=&page=` (D65). The source could not link a film, lost the reader's place on Back, could not reach page 12 from a keyboard, and re-fired its sentinel on every re-render. "Show more" is a real link | — |
 | Search for a film by title | **ported** | `GET /search` | `lib/services/search.ts` — local-first, three ranked contexts (§10). TMDB is an optional second source and is unconfigured; the 1,355 local films answer it completely | ✓ |
 | Similar films | **ported** | movie page "Similar Movies" grid | On the film page, out of the same TMDB request. 🔴 Sourced from **`/recommendations`, not the source's `/similar`** — measured 2026-08-17, `/similar` answers *La La Land* with *The Tigger Movie*, *Mommie Dearest*, *Xanadu* and *A Goofy Movie*, because it matches shared keywords and genres and a musical drags in every animated film with a song in it. `/recommendations` answers *Pretty Woman*, *Burlesque*, *(500) Days of Summer*. `similar` is kept as a fallback for obscure titles, where `recommendations` is empty | — |
 
@@ -149,7 +150,7 @@ which is why so many rows are cheap and a few are not.
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
 | **Your watched films, paged and sorted** | **deficient** | `/watchlist`, `GET /watchlist/:page/:col/:dir` | **P10.T33** | ✓ |
-| Add or remove a film | **deficient** | `POST /watchlist/item`, `DELETE /watchlist/item/:id` | **P10.T34** | — |
+| Mark a film watched, or unmark it | **ported** | `POST /watchlist/item`, `DELETE /watchlist/item/:id` | `actions/watchlist/set-watched.ts` + `components/WatchedToggle.tsx`, on browse and the film page. 🔴 Keyed on **(userId, movieId)**, not the row id the source took off the URL — another person's row is not addressable at all. Takes the desired state rather than toggling, so a stale badge cannot send the wrong request | ✓ |
 | Progress against this year's nominees, by show | **deficient** | Awards tab, `GET /watchlist/awards/:year` | **P10.T35** | ✓ |
 | Progress against the year's nominated films | **deficient** | Nominations tab, `GET /watchlist/noms/:year` | **P10.T36** | ✓ |
 | Which drafted films you have seen | **deficient** | Draft tab, `GET /watchlist/drafts/:year` | **P10.T37** | ✓ |

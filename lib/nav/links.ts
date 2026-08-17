@@ -39,7 +39,7 @@ export const NAV_LINKS: NavLink[] = [
   {
     href: '/browse',
     label: 'Browse',
-    ready: false,
+    ready: true,
     path: 'M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16',
   },
   {

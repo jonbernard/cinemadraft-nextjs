@@ -70,6 +70,28 @@ export const movieRepository = {
   },
 
   /**
+   * Which of these TMDB films are cached locally, in one query.
+   *
+   * 🔴 Exists so a whole *page* of TMDB results can be matched against local rows
+   * without asking per film. Browse renders forty posters and has to know which
+   * the reader has marked watched; `findByTmdbId` in a loop would be forty round
+   * trips for one shelf — the N+1 that `test/query-count.ts` exists to catch
+   * (D59).
+   *
+   * Most of the ids will not resolve, and that is the normal case rather than a
+   * miss worth reporting: `movies` holds only the 1,355 films this league has
+   * drafted or nominated, so a browse page is mostly films nobody has touched.
+   */
+  async findManyByTmdbIds(tmdbIds: readonly string[]): Promise<Movie[]> {
+    if (tmdbIds.length === 0) return [];
+    return db.movie.findMany({
+      where: { tmdbId: { in: [...tmdbIds] } },
+      select: SELECT,
+      orderBy: { id: 'asc' },
+    });
+  },
+
+  /**
    * Batch-load by id, skipping ids that do not resolve.
    *
    * Accepts bigint because this schema has no foreign keys and the referencing

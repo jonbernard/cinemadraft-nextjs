@@ -55,6 +55,11 @@ const isPublic = createRouteMatcher([
   // a row to be created. The watched badge is the only control on it, it renders
   // only for a signed-in reader, and its action checks the session itself.
   '/films/(.*)',
+  // Browse, public for the same reasons: it was public in the source, it is
+  // where a link to a film comes from, and it only reads. The watched badge on
+  // each poster renders for a signed-in reader and its action checks the session
+  // itself.
+  '/browse',
   // The invite link. Public because the whole point is that someone with no
   // account can open it — the page itself names the league and offers to
   // register, carrying the uuid through so they land back here afterwards.
