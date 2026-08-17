@@ -302,3 +302,30 @@ describe('nominationRepository.countByYear', () => {
     expect(await nominationRepository.countByYear(1901)).toEqual([]);
   });
 });
+
+describe('nominationRepository.findYearsByMovieId', () => {
+  it('returns the one season most films were nominated in', async () => {
+    // La La Land, local id 3, tmdb 313369 — the film `fixtures/points-by-movie.json`
+    // was captured against.
+    expect(await nominationRepository.findYearsByMovieId(3)).toEqual([2017]);
+  });
+
+  it('🔴 returns every season, most recent first, for a film nominated twice', async () => {
+    // *Elle* (id 29) was nominated in both 2017 and 2018 — a foreign-language
+    // film picked up by different bodies a year apart, which is exactly the
+    // shape D58 describes. The source read `data[0].year` off whichever row the
+    // database returned first, so its film page scored *Elle* for an arbitrary
+    // season. The caller chooses here, and it can only choose from a known list.
+    expect(await nominationRepository.findYearsByMovieId(29)).toEqual([2018, 2017]);
+  });
+
+  it('returns an empty array for a film that was never nominated', async () => {
+    // Not an error: most films in `movies` are drafted and never nominated, and
+    // the film page renders for them without a scoring panel at all.
+    expect(await nominationRepository.findYearsByMovieId(999_999_999)).toEqual([]);
+  });
+
+  it('accepts the bigint ids the referencing columns actually store', async () => {
+    expect(await nominationRepository.findYearsByMovieId(3n)).toEqual([2017]);
+  });
+});

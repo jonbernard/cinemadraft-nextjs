@@ -58,6 +58,7 @@ type TmdbFilmResponse = {
   images?: { posters?: TmdbImage[] };
   credits?: { cast?: TmdbCastMember[]; crew?: TmdbCrewMember[] };
   similar?: { results?: TmdbSimilar[] };
+  recommendations?: { results?: TmdbSimilar[] };
 };
 
 export type FilmTrailer = { key: string; name: string };
@@ -240,8 +241,26 @@ function crewOf(detail: TmdbFilmResponse): FilmCrewGroup[] {
   });
 }
 
+/**
+ * Films worth showing next to this one.
+ *
+ * 🔴 **`recommendations` first, `similar` only as a fallback.** The source used
+ * `/similar` (`server/routes/movie/movie.js:25`), and measured against the live
+ * API on 2026-08-17 it is close to useless: for *La La Land* it returns *The
+ * Tigger Movie*, *Mommie Dearest*, *Xanadu*, *A Goofy Movie* and *Sunshine Barry
+ * & the Disco Worms*. `/recommendations` returns *Pretty Woman*, *Burlesque* and
+ * *(500) Days of Summer*. TMDB's `similar` is built from shared keywords and
+ * genres, which for a musical drags in every animated film with a song in it;
+ * `recommendations` is built from what people actually watched together.
+ *
+ * Both arrive in the same request and have the same shape, so this costs
+ * nothing. `similar` is kept as a fallback because `recommendations` is empty for
+ * obscure titles, where keyword matching is all TMDB has. Recorded in
+ * `PARITY.md` as a deliberate betterment.
+ */
 function similarOf(detail: TmdbFilmResponse): FilmSimilar[] {
-  const results = detail.similar?.results ?? [];
+  const recommended = detail.recommendations?.results ?? [];
+  const results = recommended.length > 0 ? recommended : (detail.similar?.results ?? []);
   return results
     .filter(
       (film): film is TmdbSimilar & { id: number; title: string } =>
@@ -266,7 +285,9 @@ function similarOf(detail: TmdbFilmResponse): FilmSimilar[] {
 export async function fetchTmdbFilmPage(tmdbId: string): Promise<TmdbFilmPage | null> {
   const detail = await tmdbFetch<TmdbFilmResponse>(
     `/movie/${tmdbId}`,
-    { append_to_response: 'release_dates,videos,images,credits,similar' },
+    {
+      append_to_response: 'release_dates,videos,images,credits,similar,recommendations',
+    },
     {
       key: `tmdb:film-page:${tmdbId}`,
       tags: ['tmdb', 'tmdb-film-page'],

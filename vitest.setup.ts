@@ -84,3 +84,20 @@ if (typeof HTMLDialogElement !== 'undefined') {
     };
   }
 }
+
+/**
+ * 🔴 jsdom has no `scrollIntoView` at all — not a stub, the property is absent,
+ * so `vi.spyOn` on it throws "The property is not defined on the object".
+ *
+ * `PosterCarousel` scrolls the strip by calling it, which is deliberate: letting
+ * the browser do the scrolling is what makes `prefers-reduced-motion` the
+ * platform's concern rather than a check the component could forget. Defining it
+ * as a no-op here is honest about what jsdom can offer — there is no layout, so
+ * there is nothing to scroll — and lets a test assert that the component *asked*,
+ * which is the part that can regress. Whether a poster moves is an E2E question.
+ */
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {
+    // No layout in jsdom, so there is nothing to scroll. Tests spy on the call.
+  };
+}

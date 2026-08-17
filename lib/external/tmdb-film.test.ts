@@ -211,16 +211,23 @@ describe('the captured La La Land response', () => {
     });
   });
 
-  it('🔴 asks for all five sections in one request', async () => {
-    // Five separate calls per page view against a rate-limited third party is
-    // the difference between a page and an outage.
+  it('🔴 asks for every section in one request', async () => {
+    // Six separate calls per page view against a rate-limited third party is the
+    // difference between a page and an outage.
     const fetchMock = mockTmdb(asTmdbWouldRespond());
 
     await fetchTmdbFilmPage('313369');
 
     const url = String(fetchMock.mock.calls.at(0)?.at(0));
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    for (const section of ['release_dates', 'videos', 'images', 'credits', 'similar']) {
+    for (const section of [
+      'release_dates',
+      'videos',
+      'images',
+      'credits',
+      'similar',
+      'recommendations',
+    ]) {
       expect(url).toContain(section);
     }
   });
@@ -250,6 +257,36 @@ describe('🔴 absences that would otherwise render as facts', () => {
     });
 
     expect((await fetchTmdbFilmPage('1'))?.posterPaths).toEqual(['/en.jpg']);
+  });
+
+  it('🔴 prefers recommendations over similar, which is close to useless', async () => {
+    // Measured against the live API on 2026-08-17: for La La Land, `/similar`
+    // returns The Tigger Movie, Mommie Dearest, Xanadu and A Goofy Movie, while
+    // `/recommendations` returns Pretty Woman, Burlesque and (500) Days of
+    // Summer. The source used `similar`.
+    mockTmdb({
+      id: 1,
+      title: 'Untitled',
+      similar: { results: [{ id: 10, title: 'The Tigger Movie' }] },
+      recommendations: { results: [{ id: 20, title: 'Pretty Woman' }] },
+    });
+
+    expect((await fetchTmdbFilmPage('1'))?.similar).toEqual([
+      { tmdbId: '20', title: 'Pretty Woman', posterPath: null },
+    ]);
+  });
+
+  it('falls back to similar when there are no recommendations', async () => {
+    // `recommendations` is empty for obscure titles, where TMDB's keyword
+    // matching is all it has.
+    mockTmdb({
+      id: 1,
+      title: 'Untitled',
+      similar: { results: [{ id: 10, title: 'Keyword Match' }] },
+      recommendations: { results: [] },
+    });
+
+    expect((await fetchTmdbFilmPage('1'))?.similar.at(0)?.title).toBe('Keyword Match');
   });
 
   it('🔴 drops videos that are not on YouTube', async () => {

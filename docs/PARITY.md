@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 37 |
-| **deficient** | 31 |
+| **ported** | 39 |
+| **deficient** | 29 |
 | **dropped** | 15 |
 | **total capabilities** | 83 |
 
@@ -25,7 +25,8 @@ search and the whole award-show surface, including both admin writes the source
 left unauthenticated. Phase 9 closed the per-award points breakdown. Phase 10
 batch A added the navigation and the error boundaries; batch B closed the four
 league-formation rows — until it landed, **no new league could be created at
-all** — and batch C closed the six for running a season._
+all** — batch C closed the six for running a season, and batch D closed the film
+page and similar films._
 
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
@@ -84,11 +85,11 @@ which is why so many rows are cheap and a few are not.
 
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
-| **A film's page** — synopsis, cast, crew, trailers, images, ratings, box office | **deficient** | `src/pages/movie/index.jsx`, `GET /movie/:id`, `/details` | **P10.T5** — TMDB + OMDb, Phase 8/11 | ✓ |
-| A film's points by award show | **ported** | `GET /points/movie/:tmdbId` | `ledgerForMovies` + `components/PointsLedger.tsx`, on the league board. The **movie page** and `avgDraftPos` remain **P10.T6** | ✓ |
+| **A film's page** — synopsis, cast, crew, trailers, images, ratings, box office | **ported** | `src/pages/movie/index.jsx`, `GET /movie/:id`, `/details` | `app/(app)/films/[tmdbId]/page.tsx` + `lib/services/film.ts`. Keyed by **TMDB id**, so it resolves for films the app has never cached, and it **never writes** (D63). Ratings and box office come from OMDb and the panel is omitted when there is no key. 🔴 Trailers are a **facade**: the source mounted an `<iframe>` per video — 32 YouTube players for *La La Land* on a page nobody had asked to watch anything on — where this mounts one on demand, through `youtube-nocookie.com` so a logged-out reader picks up no advertising cookies | ✓ |
+| A film's points by award show | **ported** | `GET /points/movie/:tmdbId` | `components/FilmPointsPanel.tsx`. `byEvent` is a regrouping of `ledgerForMovies`' lines, so the per-show rows always sum to the total (D41). Verified against `fixtures/points-by-movie.json`: 335 total, 170 Oscars, 65 GG, 55 BAFTA. `avgDraftPos` is **null, never 0**, when nobody drafted the film | ✓ |
 | Browse upcoming and recent releases | **deficient** | `src/pages/browse/index.js`, `GET /movie/discovery/...` | **P10.T7** | — |
 | Search for a film by title | **ported** | `GET /search` | `lib/services/search.ts` — local-first, three ranked contexts (§10). TMDB is an optional second source and is unconfigured; the 1,355 local films answer it completely | ✓ |
-| Similar films | **deficient** | movie page "Similar Movies" grid | **P10.T9** | — |
+| Similar films | **ported** | movie page "Similar Movies" grid | On the film page, out of the same TMDB request. 🔴 Sourced from **`/recommendations`, not the source's `/similar`** — measured 2026-08-17, `/similar` answers *La La Land* with *The Tigger Movie*, *Mommie Dearest*, *Xanadu* and *A Goofy Movie*, because it matches shared keywords and genres and a musical drags in every animated film with a song in it. `/recommendations` answers *Pretty Woman*, *Burlesque*, *(500) Days of Summer*. `similar` is kept as a fallback for obscure titles, where `recommendations` is empty | — |
 
 ## Leagues
 

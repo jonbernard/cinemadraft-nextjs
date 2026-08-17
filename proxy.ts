@@ -45,6 +45,16 @@ const isPublic = createRouteMatcher([
   // the page is open and every write behind it requires an admin.
   '/award-shows/(.*)',
   '/award-shows',
+  // Film pages, public in the source and the app's most-shared URL — a link to
+  // one gets pasted into the league's chat every week, and it has to open for
+  // whoever taps it. It is also the page most likely to be found by search,
+  // which is why it carries Open Graph metadata.
+  //
+  // 🔴 The page **never writes** (D63), and that is what makes leaving it open
+  // safe: an anonymous reader, or a crawler walking every TMDB id, cannot cause
+  // a row to be created. The watched badge is the only control on it, it renders
+  // only for a signed-in reader, and its action checks the session itself.
+  '/films/(.*)',
   // The invite link. Public because the whole point is that someone with no
   // account can open it — the page itself names the league and offers to
   // register, carrying the uuid through so they land back here afterwards.

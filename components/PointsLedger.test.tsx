@@ -13,6 +13,7 @@ import { type LedgerRow, PointsLedger } from '@/components/PointsLedger';
  */
 const LINES: LedgerRow[] = [
   {
+    nominationId: 11,
     awardId: 1,
     awardName: 'Best Picture',
     eventAbbreviation: 'oscars',
@@ -22,6 +23,7 @@ const LINES: LedgerRow[] = [
     earned: 40,
   },
   {
+    nominationId: 12,
     awardId: 2,
     awardName: 'Actor in a Leading Role',
     eventAbbreviation: 'oscars',
@@ -31,6 +33,7 @@ const LINES: LedgerRow[] = [
     earned: 15,
   },
   {
+    nominationId: 13,
     awardId: 3,
     awardName: 'Best Film',
     eventAbbreviation: 'bafta',
@@ -143,5 +146,64 @@ describe('PointsLedger', () => {
 
     // 40 for the win plus 15 for the nomination.
     expect(within(oscars as HTMLElement).getByText('55')).toBeInTheDocument();
+  });
+});
+
+/**
+ * 🔴 The case a browser found and no test had.
+ *
+ * A film can hold **two nominations in the same category**: La La Land took two
+ * of the 2017 Best Original Song slots, both under award 75. The rows were keyed
+ * on `awardId`, so React saw a duplicate key and dropped one — the ledger's
+ * visible lines then summed to less than the total printed above them, which is
+ * exactly the failure this component's "lines add up" rule exists to prevent.
+ * Both lines were computed correctly; one was silently not rendered.
+ */
+describe('two nominations in one category', () => {
+  const SAME_AWARD: LedgerRow[] = [
+    {
+      nominationId: 501,
+      awardId: 75,
+      awardName: 'Music - Original Song',
+      eventAbbreviation: 'oscars',
+      eventName: 'Academy of Motion Picture Arts and Sciences',
+      points: 5,
+      won: true,
+      earned: 10,
+    },
+    {
+      nominationId: 502,
+      awardId: 75,
+      awardName: 'Music - Original Song',
+      eventAbbreviation: 'oscars',
+      eventName: 'Academy of Motion Picture Arts and Sciences',
+      points: 5,
+      won: false,
+      earned: 5,
+    },
+  ];
+
+  it('🔴 renders both lines', async () => {
+    render(<PointsLedger total={15} lines={SAME_AWARD} label="La La Land" />);
+    await userEvent.click(screen.getByRole('group').querySelector('summary') as Element);
+
+    expect(screen.getAllByText(/Music - Original Song/)).toHaveLength(2);
+  });
+
+  it('🔴 the rendered lines still add up to the total', async () => {
+    render(<PointsLedger total={15} lines={SAME_AWARD} label="La La Land" />);
+    await userEvent.click(screen.getByRole('group').querySelector('summary') as Element);
+
+    // Summing the rendered amounts is what catches a dropped row: with one line
+    // missing this comes to 10 or 5 rather than 15. Asserting on the text "15"
+    // would not — the summary already shows the total, so it passes even when a
+    // line has vanished.
+    const group = screen.getByRole('group');
+    const amounts = within(group)
+      .getAllByText(/^(5|10)$/)
+      .map((node) => Number(node.textContent));
+
+    expect(amounts).toContain(10);
+    expect(amounts).toContain(5);
   });
 });

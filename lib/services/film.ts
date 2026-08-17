@@ -8,6 +8,7 @@ import {
 import { draftPickRepository } from '@/lib/repositories/draft-picks';
 import { movieRepository } from '@/lib/repositories/movies';
 import { nominationRepository } from '@/lib/repositories/nominations';
+import { watchlistRepository } from '@/lib/repositories/watchlists';
 import { ledgerForMovies, type MovieLedger } from '@/lib/services/scoring';
 import { posterUrl } from '@/lib/utils/poster';
 
@@ -206,4 +207,30 @@ export async function loadFilmPage(tmdbId: string): Promise<FilmPage | null> {
     facts,
     scoring,
   };
+}
+
+/**
+ * Whether this reader has marked the film watched.
+ *
+ * Separate from `loadFilmPage` rather than a field on it, because the page is
+ * public and cacheable while this answer is per-reader: folding it in would make
+ * the whole payload private, and the expensive half — TMDB, OMDb, the scoring —
+ * is identical for everybody.
+ *
+ * Costs **no queries at all** for a film nobody has used. A watchlist row points
+ * at a local `movies.id`, so with no local row there is nothing that could point
+ * at it, and asking would be a round trip with a foregone answer. That is the
+ * common case on a public page.
+ */
+export async function isFilmWatched(
+  tmdbId: string,
+  userId: number | null,
+): Promise<boolean> {
+  if (userId == null) return false;
+
+  const movie = await movieRepository.findByTmdbId(tmdbId);
+  if (!movie) return false;
+
+  const entries = await watchlistRepository.findByUserAndMovieIds(userId, [movie.id]);
+  return entries.length > 0;
 }

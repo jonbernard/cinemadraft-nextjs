@@ -11,7 +11,12 @@ import { winnerRepository } from '@/lib/repositories/winners';
  * materialize results without a second implementation of the rule.
  */
 export type ScoringInput = {
-  nominations: readonly { movieId: number; awardId: number }[];
+  /**
+   * `id` is carried because a film can hold **two nominations in the same
+   * category** — La La Land took two of the 2017 Best Original Song slots — so
+   * the award is not a unique identity for a line, and the nomination is.
+   */
+  nominations: readonly { id: number; movieId: number; awardId: number }[];
   /** award id → the resolved point value, from `points.points` */
   pointsByAward: ReadonlyMap<number, number>;
   /** award id → the movie ids that won it */
@@ -150,6 +155,19 @@ async function loadScoringInputs(
 }
 
 export type LedgerLine = {
+  /**
+   * 🔴 The line's identity, and the reason it exists.
+   *
+   * `awardId` is **not** unique within a film's ledger: La La Land holds two
+   * 2017 nominations for award 75, "Music - Original Song" ("City of Stars" and
+   * "Audition"). Keying a rendered row on the award therefore collided, and
+   * React dropped one of the two — so the visible lines summed to less than the
+   * total printed above them, which is precisely the failure the ledger's
+   * "total is the sum of lines" rule exists to prevent. Found in a browser, not
+   * by a test: both lines were computed correctly and one was silently not
+   * rendered.
+   */
+  nominationId: number;
   awardId: number;
   awardName: string;
   eventAbbreviation: string;
@@ -212,6 +230,7 @@ export async function ledgerForMovies(
       inputs.winnersByAward.get(nomination.awardId)?.has(nomination.movieId) === true;
 
     const line: LedgerLine = {
+      nominationId: nomination.id,
       awardId: nomination.awardId,
       awardName: award?.name ?? 'Unknown award',
       eventAbbreviation: event?.abbreviation ?? '',
@@ -232,8 +251,14 @@ export async function ledgerForMovies(
   }
 
   for (const ledger of ledgers.values()) {
+    // `nominationId` is the final tiebreak so the order is total: two lines for
+    // the same award earn the same amount and share a name, and an unstable sort
+    // between them would reorder the ledger between renders.
     ledger.lines.sort(
-      (a, b) => b.earned - a.earned || a.awardName.localeCompare(b.awardName),
+      (a, b) =>
+        b.earned - a.earned ||
+        a.awardName.localeCompare(b.awardName) ||
+        a.nominationId - b.nominationId,
     );
     ledger.total = ledger.lines.reduce((sum, line) => sum + line.earned, 0);
   }

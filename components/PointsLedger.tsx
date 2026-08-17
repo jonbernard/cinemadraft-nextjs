@@ -1,6 +1,12 @@
 import { cn } from '@/lib/utils/cn';
 
 export type LedgerRow = {
+  /**
+   * 🔴 The row's key, because `awardId` is not unique within a film's ledger — a
+   * film can hold two nominations in one category. See `LedgerLine` in
+   * `lib/services/scoring.ts`.
+   */
+  nominationId: number;
   awardId: number;
   awardName: string;
   eventAbbreviation: string;
@@ -96,7 +102,7 @@ export function PointsLedger({
             <ul className="flex flex-col">
               {event.lines.map((line) => (
                 <li
-                  key={line.awardId}
+                  key={line.nominationId}
                   className="flex items-baseline justify-between gap-2"
                 >
                   <span className="text-text-dim text-xs leading-tight">

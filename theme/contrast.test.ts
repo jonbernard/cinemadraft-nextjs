@@ -63,6 +63,16 @@ describe.each(['dark', 'light'] as const)('%s palette meets WCAG AA', (scheme) =
     // so it is held to visibility rather than to the 3:1 non-text threshold.
     ['rule on base', p.border.rule, p.bg.base, 1.2],
     ['beam on base', p.beam, p.bg.base, UI],
+    // 🔴 The score colours are held to the *text* threshold, not the 3:1
+    // non-text one, because the number is printed in them. That is what makes
+    // the chip readable in greyscale and to a colour-blind reader — the colour
+    // is a second signal, never the only one (§6.7, a11y `color-not-only`).
+    ['score high on surface', p.score.high, p.bg.surface, TEXT],
+    ['score mid on surface', p.score.mid, p.bg.surface, TEXT],
+    ['score low on surface', p.score.low, p.bg.surface, TEXT],
+    ['score high on base', p.score.high, p.bg.base, TEXT],
+    ['score mid on base', p.score.mid, p.bg.base, TEXT],
+    ['score low on base', p.score.low, p.bg.base, TEXT],
   ])('%s', (_label, fg, bg, threshold) => {
     expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(threshold);
   });

@@ -39,6 +39,9 @@ function flatten(palette: Palette): Map<string, string> {
     ['accent-fill', palette.accent.fill],
     ['accent-text', palette.accent.text],
     ['beam', palette.beam],
+    ['score-high', palette.score.high],
+    ['score-mid', palette.score.mid],
+    ['score-low', palette.score.low],
   ];
   return new Map(pairs.map(([k, v]) => [k, v.toLowerCase()]));
 }

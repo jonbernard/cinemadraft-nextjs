@@ -10,7 +10,20 @@ import { scoreMovies, sumTotals } from './scoring';
  * source API's own answer for a real draft — and needs the restored data, so
  * it runs locally.
  */
-const award = (id: number, movieId: number) => ({ movieId, awardId: id });
+/**
+ * One nomination.
+ *
+ * The `id` is generated rather than passed in: these cases are about the scoring
+ * rule, which does not read it, and every nomination needs a distinct one because
+ * a film can hold two in the same category — the ledger keys its rows on this
+ * (see `LedgerLine`).
+ */
+let nextNominationId = 1;
+const award = (id: number, movieId: number) => ({
+  id: nextNominationId++,
+  movieId,
+  awardId: id,
+});
 
 describe('scoreMovies', () => {
   it('a nomination is worth P', () => {

@@ -42,6 +42,9 @@
   --color-accent-fill: #a8323e;
   --color-accent-text: #da707c;
   --color-beam: #7fa6b8;
+  --color-score-high: #63c08a;
+  --color-score-mid: #d6a64a;
+  --color-score-low: #e06c74;
 
   /* Faces are registered here rather than in tokens.ts: their values are
    * next/font-generated custom properties that only exist at runtime, so
@@ -81,4 +84,7 @@
   --color-accent-fill: #8c2f39;
   --color-accent-text: #8c2f39;
   --color-beam: #3f6273;
+  --color-score-high: #1f6b41;
+  --color-score-mid: #7a5410;
+  --color-score-low: #8c2f39;
 }
