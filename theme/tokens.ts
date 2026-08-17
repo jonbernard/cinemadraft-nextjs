@@ -69,17 +69,19 @@ export const palettes: Record<ColorScheme, Palette> = {
   light: {
     bg: { base: '#EFEAE2', surface: '#FBF9F6', raised: '#E7E1D7' },
     border: { rule: '#D5CDC0' },
-    // The spec lists no `dim` for light; secondary's value is reused rather
-    // than inventing a lighter grey that no contrast pair was computed for.
+    // §3.1 gives light `dim` its own value, distinct from `secondary` — unlike
+    // the previous palette, which had no dedicated light `dim` and reused
+    // secondary's colour for it.
     text: { primary: '#1A151F', secondary: '#5C5566', dim: '#665E70' },
     accent: { fill: '#9B2F3C', text: '#8E2A36' },
     brass: { fill: '#7A5A12', text: '#7A5A12', contrast: '#FFFFFF' },
     // Darkened from the dark theme's #7FA6B8, which is 1.9:1 on warm paper.
     beam: '#3F6273',
-    // Darkened the same way. `low` lands on the same carmine as `accent.fill`
-    // and that is deliberate rather than lazy: a bad review score in this
-    // product's own red is on-palette and reads as a judgement, where a second
-    // near-identical red beside it would read as a mistake.
+    // Darkened the same way. `low` (#8C2F39) no longer matches `accent.fill`
+    // (#9B2F3C) — it now sits close to `accent.text` (#8E2A36) instead. Two
+    // near-identical carmines coexisting is fine here because score colours
+    // are read as text/border only, never as a fill, so they never compete
+    // with accent for the same visual role.
     score: { high: '#1F6B41', mid: '#7A5410', low: '#8C2F39' },
   },
 };
