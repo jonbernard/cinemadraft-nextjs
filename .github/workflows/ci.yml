@@ -38,6 +38,10 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://cinemadraft:local@localhost:5432/cinemadraft
+      # Stops a Google Fonts hiccup from failing the build. The fixture is an
+      # empty map, so next/font's loader falls back to its bundled font data
+      # instead of touching the network at all.
+      NEXT_FONT_GOOGLE_MOCKED_RESPONSES: ${{ github.workspace }}/e2e/fixtures/google-font-mock.js
 
     steps:
       - uses: actions/checkout@v5
