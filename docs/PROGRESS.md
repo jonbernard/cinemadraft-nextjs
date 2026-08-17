@@ -742,44 +742,56 @@ are each a test that fails if reintroduced.
 Plan: _written before execution, driven by [`docs/PARITY.md`](PARITY.md)_
 
 Every task below is one deficient row in the matrix, and the two lists are the
-same list seen twice — if they can disagree, they will. `repo ready` means the
-repository method exists and the work is a page; `needs repository` means the
-data layer comes first.
+same list seen twice — if they can disagree, they will. A ticked line names the
+batch that closed it; on an open one, `repo ready` means the repository method
+exists and the work is a page, while `needs repository` means the data layer
+comes first.
 
-- [ ] **P10.T1** Join a league from an invite link — _needs repository_
+**23 of 50 done** — T1, T5–T9, T11–T19, T22–T24, T28–T30, T34, T50.
+Remaining, grouped as the plan batches them:
+
+| Batch | Tasks | What it is |
+|---|---|---|
+| **E** — personal | T20, T33, T35–T42 | The draft list, the watched-films page and its three progress views, reviews, profiles and feeds |
+| **F** — season surfaces | T2, T3, T4, T10 | Films in cinemas, the live banner, the season leaderboard, league standings |
+| **G** — admin and reference | T26, T27, T43–T49 | Show and category admin, notifications, the rules and scoring pages, the active-season and relink controls |
+| **H** — the calendar feed | T25 | `/api/ical/[...slug]` |
+| **Phase 14** | T21, T31, T32 | Realtime. Deferred by D23 and not on the cutover path |
+
+- [x] **P10.T1** Join a league from an invite link — _batch B_
 - [ ] **P10.T2** Films in cinemas now — _needs repository_
 - [ ] **P10.T3** "Watch live" banner during a ceremony — _repo ready_
 - [ ] **P10.T4** Season leaderboard by year — _repo ready_
-- [ ] **P10.T5** A film's page — synopsis, cast, crew, trailers, images, ratings, box office — _repo ready_
-- [ ] **P10.T6** A film's points by award show, and its average draft position — _repo ready_
-- [ ] **P10.T7** Browse upcoming and recent releases — _needs repository_
-- [ ] **P10.T8** Search for a film by title — _repo ready_
-- [ ] **P10.T9** Similar films — _needs repository_
+- [x] **P10.T5** A film's page — synopsis, cast, crew, trailers, images, ratings, box office — _batch D_
+- [x] **P10.T6** A film's points by award show, and its average draft position — _batch D_
+- [x] **P10.T7** Browse upcoming and recent releases — _batch D_
+- [x] **P10.T8** Search for a film by title — _phase 8_
+- [x] **P10.T9** Similar films — _batch D_
 - [ ] **P10.T10** A league's standings, on the league page — _repo ready_
-- [ ] **P10.T11** Create a league — _needs repository_
-- [ ] **P10.T12** Your leagues, and switching between them — _repo ready_
-- [ ] **P10.T13** Copy the invite link — _repo ready_
-- [ ] **P10.T14** Set up groups before a draft — drag members between groups, add a group, randomise the unassigned — _needs repository_
-- [ ] **P10.T15** Add a seat, including a placeholder for someone with no account — _needs repository_
-- [ ] **P10.T16** Remove or rename a seat — _needs repository_
-- [ ] **P10.T17** Start the draft / mark it complete — _needs repository_
-- [ ] **P10.T18** Stage next season's draft — _needs repository_
-- [ ] **P10.T19** League settings — _needs repository_
+- [x] **P10.T11** Create a league — _batch B_
+- [x] **P10.T12** Your leagues, and switching between them — _batch B_
+- [x] **P10.T13** Copy the invite link — _batch B_
+- [x] **P10.T14** Set up groups before a draft — drag members between groups, add a group, randomise the unassigned — _batch C_
+- [x] **P10.T15** Add a seat, including a placeholder for someone with no account — _batch C_
+- [x] **P10.T16** Remove or rename a seat — _batch C_
+- [x] **P10.T17** Start the draft / mark it complete — _batch C_
+- [x] **P10.T18** Stage next season's draft — _batch C_
+- [x] **P10.T19** League settings — _batch C_
 - [ ] **P10.T20** A private ranked pre-draft list — add films, drag to rank, mark taken or unavailable — _needs repository_
-- [ ] **P10.T21** Live board updates while the draft runs — _repo ready_
-- [ ] **P10.T22** Every award show — _repo ready_
-- [ ] **P10.T23** One show: its categories, point values, nominees and winners — _repo ready_
-- [ ] **P10.T24** Past seasons of a show — _repo ready_
+- [ ] **P10.T21** Live board updates while the draft runs — _deferred to phase 14 (D23)_
+- [x] **P10.T22** Every award show — _phase 8_
+- [x] **P10.T23** One show: its categories, point values, nominees and winners — _phase 8_
+- [x] **P10.T24** Past seasons of a show — _phase 8_
 - [ ] **P10.T25** Subscribe to ceremony dates as a calendar — _repo ready_
 - [ ] **P10.T26** Admin: edit a show's dates and live flags — _needs repository_
 - [ ] **P10.T27** Admin: add or delete a category — _needs repository_
-- [ ] **P10.T28** Admin: enter nominations — _needs repository_
-- [ ] **P10.T29** Admin: pick winners during the ceremony — _needs repository_
-- [ ] **P10.T30** Admin: which shows still need entering — _repo ready_
-- [ ] **P10.T31** Watch results land in real time, with league standings beside them — _repo ready_
-- [ ] **P10.T32** The admin's selection drives every watcher's screen — _repo ready_
+- [x] **P10.T28** Admin: enter nominations — _phase 8_
+- [x] **P10.T29** Admin: pick winners during the ceremony — _phase 8_
+- [x] **P10.T30** Admin: which shows still need entering — _phase 8_
+- [ ] **P10.T31** Watch results land in real time, with league standings beside them — _deferred to phase 14 (D23)_
+- [ ] **P10.T32** The admin's selection drives every watcher's screen — _deferred to phase 14 (D23)_
 - [ ] **P10.T33** Your watched films, paged and sorted — _repo ready_
-- [ ] **P10.T34** Add or remove a film — _needs repository_
+- [x] **P10.T34** Mark a film watched, or unmark it — _batch D_
 - [ ] **P10.T35** Progress against this year's nominees, by show — _repo ready_
 - [ ] **P10.T36** Progress against the year's nominated films — _repo ready_
 - [ ] **P10.T37** Which drafted films you have seen — _repo ready_
@@ -795,7 +807,7 @@ data layer comes first.
 - [ ] **P10.T47** The scoring rulebook by tier — _repo ready_
 - [ ] **P10.T48** Admin: set the active season — _repo ready_
 - [ ] **P10.T49** Admin: relink an account — _repo ready_
-- [ ] **P10.T50** A 500 page — _no data layer needed_
+- [x] **P10.T50** A 500 page — _batch A_
 
 
 ---
