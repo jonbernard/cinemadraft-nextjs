@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { type ColorScheme, type Palette, palettes } from './tokens';
+import { type ColorScheme, type Palette, palettes, radius } from './tokens';
 
 /**
  * The anti-drift test.
@@ -38,6 +38,9 @@ function flatten(palette: Palette): Map<string, string> {
     ['text-dim', palette.text.dim],
     ['accent-fill', palette.accent.fill],
     ['accent-text', palette.accent.text],
+    ['brass-fill', palette.brass.fill],
+    ['brass-text', palette.brass.text],
+    ['brass-contrast', palette.brass.contrast],
     ['beam', palette.beam],
     ['score-high', palette.score.high],
     ['score-mid', palette.score.mid],
@@ -64,5 +67,18 @@ describe('globals.css agrees with tokens.ts', () => {
       css.match(/\[data-mui-color-scheme="light"\]\s*\{([^}]*)\}/)?.[1] ?? '',
     );
     expect([...light.keys()].sort()).toEqual([...dark.keys()].sort());
+  });
+});
+
+describe('globals.css agrees with the radius scale', () => {
+  it('every radius token is mirrored', () => {
+    const block = css.match(/@theme\s*\{([^}]*)\}/)?.[1] ?? '';
+    const found = new Map(
+      [...block.matchAll(/--radius-([a-z]+):\s*([^;]+);/g)].map(([, k, v]) => [
+        k,
+        v.trim(),
+      ]),
+    );
+    expect(found).toEqual(new Map(Object.entries(radius)));
   });
 });

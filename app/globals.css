@@ -32,27 +32,41 @@
  * them under MUI's own attribute.
  */
 @theme {
-  --color-bg-base: #0b0d10;
-  --color-bg-surface: #14171c;
-  --color-bg-raised: #1d2127;
-  --color-border-rule: #2a2f38;
-  --color-text-primary: #e8e6e1;
-  --color-text-secondary: #8a9099;
-  --color-text-dim: #828993;
-  --color-accent-fill: #a8323e;
-  --color-accent-text: #da707c;
+  --color-bg-base: #0a0910;
+  --color-bg-surface: #16131c;
+  --color-bg-raised: #211c29;
+  --color-border-rule: #302938;
+  --color-text-primary: #efece9;
+  --color-text-secondary: #a8a1b2;
+  --color-text-dim: #8c8598;
+  --color-accent-fill: #c03d4e;
+  --color-accent-text: #e78e99;
+  --color-brass-fill: #cfa93a;
+  --color-brass-text: #cfa93a;
+  --color-brass-contrast: #241c05;
   --color-beam: #7fa6b8;
   --color-score-high: #63c08a;
   --color-score-mid: #d6a64a;
   --color-score-low: #e06c74;
 
-  /* Faces are registered here rather than in tokens.ts: their values are
-   * next/font-generated custom properties that only exist at runtime, so
-   * there is nothing for the anti-drift test to compare. It matches
-   * --color-* only, so these are outside its scope by design.
-   */
-  --font-display: var(--font-archivo);
+  /* D73. Tailwind's `--radius-*` namespace, so these are `rounded-xs` …
+   * `rounded-pill` with no plugin. MUI's own default moves to 6px in
+   * theme/index.ts; the two are set from the same numbers by hand because
+   * MUI reads JS and Tailwind reads CSS, exactly as the colours do. */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Faces. Named so they cannot self-reference: `--font-serif` and
+   * `--font-mono` are Tailwind's own theme keys, so a loader must never be
+   * given those variable names — the cycle resolves to the guaranteed-invalid
+   * value and the family silently vanishes. */
+  --font-display: var(--font-instrument-serif);
+  --font-serif: var(--font-instrument-serif);
   --font-sans: var(--font-archivo);
+  --font-prose: var(--font-newsreader);
   --font-mono: var(--font-plex-mono);
 }
 
@@ -62,6 +76,13 @@
  */
 @utility tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* D73. A percentage radius resolves against the element's own box, so one
+ * declaration gives a 40px thumbnail ~4px and a hero poster ~12px. This is
+ * Letterboxd's technique, measured from their own CSS. */
+@utility poster-radius {
+  border-radius: clamp(4px, 2.8%, 12px);
 }
 
 /* MUI's cssVariables plugin stamps data-mui-color-scheme on <html>. Binding
@@ -74,15 +95,18 @@
 );
 
 [data-mui-color-scheme="light"] {
-  --color-bg-base: #f5f3ef;
-  --color-bg-surface: #ffffff;
-  --color-bg-raised: #edeae3;
-  --color-border-rule: #ded9cf;
-  --color-text-primary: #14171c;
-  --color-text-secondary: #5f636c;
-  --color-text-dim: #5f636c;
-  --color-accent-fill: #8c2f39;
-  --color-accent-text: #8c2f39;
+  --color-bg-base: #efeae2;
+  --color-bg-surface: #fbf9f6;
+  --color-bg-raised: #e7e1d7;
+  --color-border-rule: #d5cdc0;
+  --color-text-primary: #1a151f;
+  --color-text-secondary: #5c5566;
+  --color-text-dim: #665e70;
+  --color-accent-fill: #9b2f3c;
+  --color-accent-text: #8e2a36;
+  --color-brass-fill: #7a5a12;
+  --color-brass-text: #7a5a12;
+  --color-brass-contrast: #ffffff;
   --color-beam: #3f6273;
   --color-score-high: #1f6b41;
   --color-score-mid: #7a5410;
