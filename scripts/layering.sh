@@ -8,6 +8,12 @@
 # The workflow still owns the canonical copy; this mirrors it so a developer can
 # get the same answer before pushing rather than from a red build.
 set -uo pipefail
+# macOS ships bash 3.2 (GPLv2-frozen). Its parser mishandles brace expansion
+# inside a double-quoted command substitution that spans a backslash-continued
+# line — the {3,8} interval below gets split into two separate greps, neither
+# of which matches anything, so the hex check silently always passes. `+B`
+# disables brace expansion outright; nothing here relies on it.
+set +B
 fail=0
 
 check() {
@@ -38,8 +44,8 @@ check "only repositories import the db client" \
      | grep -v -E '\.test\.tsx?$' || true)"
 
 check "no raw hex outside the token system" \
-  "$(grep -rnE "#[0-9a-fA-F]{3,8}\b" components app \
-     --include='*.tsx' --include='*.ts' 2>/dev/null \
+  "$(grep -rnE "#[0-9a-fA-F]{3,8}\b" components app .storybook \
+     --include='*.tsx' --include='*.ts' --include='*.mdx' 2>/dev/null \
      | grep -v '^app/global-error\.tsx:' || true)"
 
 exit $fail
