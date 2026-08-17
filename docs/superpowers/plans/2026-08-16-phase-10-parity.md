@@ -400,7 +400,7 @@ an integer now (D60) and the port returns a number.
 - Produces: `fetchOmdb(imdbId: string): Promise<OmdbFacts | null>` where
   `OmdbFacts = { mpaaRating: string | null; boxOffice: string | null; metacritic: number | null; rottenTomatoes: number | null; imdbRating: string | null; imdbVotes: number | null }`
 
-- [ ] **Step 1: Extract the fetch.** `tmdb.ts` already holds `BASE`,
+- [x] **Step 1: Extract the fetch.** `tmdb.ts` already holds `BASE`,
   `TTL_SECONDS`, `TIMEOUT_MS`, the key read, the `cached` wrapper and the
   try/catch that turns every failure into an absorbed miss. The film page and
   discovery both need all six. Copying them would give three places to forget
@@ -430,14 +430,14 @@ export async function tmdbFetch<T>(
 }
 ```
 
-- [ ] **Step 2: Rewrite `searchTmdb` and `fetchTmdbFilm` on top of it** and run
+- [x] **Step 2: Rewrite `searchTmdb` and `fetchTmdbFilm` on top of it** and run
   `lib/external/tmdb.test.ts` unchanged. It must stay green without edits —
   that is the whole proof the refactor changed nothing.
 
 Run: `npx vitest run lib/external/tmdb.test.ts`
 Expected: PASS, no test file changes.
 
-- [ ] **Step 3: 🔴 `omdbEnv` is optional where `tmdbEnv` is required.** Write it
+- [x] **Step 3: 🔴 `omdbEnv` is optional where `tmdbEnv` is required.** Write it
   as such in `lib/env.ts`, with the reason in the comment: TMDB absent means no
   film can be drafted at all; OMDb absent means a ratings chip and a box-office
   line are missing from one page. One is a broken install, the other is a
@@ -451,7 +451,7 @@ export const omdbEnv = {
 };
 ```
 
-- [ ] **Step 4: Write the failing test for `fetchOmdb`.** Four cases, and the
+- [x] **Step 4: Write the failing test for `fetchOmdb`.** Four cases, and the
   first two matter most:
 
 ```ts
@@ -496,7 +496,7 @@ it('returns null rather than throwing when OMDb fails', async () => { /* 500, th
 Run: `npx vitest run lib/external/omdb.test.ts`
 Expected: FAIL — `fetchOmdb` is not defined.
 
-- [ ] **Step 5: Implement `lib/external/omdb.ts`.** Cache on the imdb id, one
+- [x] **Step 5: Implement `lib/external/omdb.ts`.** Cache on the imdb id, one
   day, tag `omdb`. Numbers are parsed here, not in a component: `'91%'` and
   `'94/100'` become `91` and `94`, `'652,341'` becomes `652341`.
 
@@ -515,7 +515,7 @@ Fall back to `Metascore` when the array is missing.
 Run: `npx vitest run lib/external/omdb.test.ts`
 Expected: PASS
 
-- [ ] **Step 6: Full verification, then commit.**
+- [x] **Step 6: Full verification, then commit.**
 
 ```bash
 npm run verify
@@ -571,7 +571,7 @@ export type FilmScoring = {
 export async function loadFilmPage(tmdbId: string): Promise<FilmPage | null>;
 ```
 
-- [ ] **Step 1: Write the failing test for the TMDB half**
+- [x] **Step 1: Write the failing test for the TMDB half**
   (`lib/external/tmdb-film.test.ts`), driven off the committed fixture rather
   than a hand-written stub — the fixture is the contract:
 
@@ -602,7 +602,7 @@ it('returns null when TMDB has no key', async () => { /* not [] — one film, no
 Run: `npx vitest run lib/external/tmdb-film.test.ts`
 Expected: FAIL — `fetchTmdbFilmPage` is not defined.
 
-- [ ] **Step 2: Implement `fetchTmdbFilmPage`.** One request, with
+- [x] **Step 2: Implement `fetchTmdbFilmPage`.** One request, with
   `append_to_response=release_dates,videos,images,credits,similar` — the same
   five sections the source appended, for the same reason: five round trips per
   page view against a rate-limited third party is the difference between a page
@@ -628,7 +628,7 @@ Expected: FAIL — `fetchTmdbFilmPage` is not defined.
 Run: `npx vitest run lib/external/tmdb-film.test.ts`
 Expected: PASS
 
-- [ ] **Step 3: `nominationRepository.findYearsByMovieId`.** `ledgerForMovies`
+- [x] **Step 3: `nominationRepository.findYearsByMovieId`.** `ledgerForMovies`
   takes a year, and the film page does not know one. The source read it off the
   first nomination row (`data[0].year`). Be explicit instead: return the
   distinct years descending, and the service scores the most recent.
@@ -648,7 +648,7 @@ async findYearsByMovieId(movieId: number): Promise<number[]> {
 Test it against the restored data: La La Land (local id from
 `fixtures/points-by-movie.json`) returns `[2017]`.
 
-- [ ] **Step 4: Write the failing test for `loadFilmPage`.** The cases that
+- [x] **Step 4: Write the failing test for `loadFilmPage`.** The cases that
   matter are the absences, so write those first:
 
 ```ts
@@ -690,7 +690,7 @@ it('sums byEvent to the same total as the ledger', () => {
 Run: `npx vitest run lib/services/film.test.ts`
 Expected: FAIL
 
-- [ ] **Step 5: 🔴 Implement it, and do NOT ingest on view.** The obvious port
+- [x] **Step 5: 🔴 Implement it, and do NOT ingest on view.** The obvious port
   of `movie.js` writes on a GET: it calls `Movies.update` to refresh posters,
   and `ensureFilm` would create a row. This page is **public** (D44), so a
   crawler hitting `/films/<any id>` would write a row per request and turn a
@@ -738,11 +738,11 @@ const averageDraftPosition =
 Run: `npx vitest run lib/services/film.test.ts`
 Expected: PASS
 
-- [ ] **Step 6: Add the D59 case to `scoring.batching.test.ts`.** Every surface
+- [x] **Step 6: Add the D59 case to `scoring.batching.test.ts`.** Every surface
   that shows a score gets one. Assert `loadFilmPage` issues a bounded number of
   queries and that none of them is per-nomination.
 
-- [ ] **Step 7: Commit.**
+- [x] **Step 7: Commit.**
 
 ```bash
 npm run verify
@@ -764,7 +764,7 @@ green badge is what browse is *for*.
 - Produces: `toggleWatched(input: { tmdbId: string; watched: boolean }): Promise<ActionResult<{ watched: boolean }>>`
 - Produces: `<WatchedToggle tmdbId={string} title={string} watched={boolean} />`
 
-- [ ] **Step 1: Write the failing action test — refusals first**, as every
+- [x] **Step 1: Write the failing action test — refusals first**, as every
   other action's test does:
 
 ```ts
@@ -792,7 +792,7 @@ it('deletes only the caller’s row', async () => {
 Run: `npx vitest run actions/watchlist/watchlist-actions.test.ts`
 Expected: FAIL
 
-- [ ] **Step 2: 🔴 Add the repository writes keyed on `(userId, movieId)`, not
+- [x] **Step 2: 🔴 Add the repository writes keyed on `(userId, movieId)`, not
   on the row id.** The pair is what the caller actually knows and what the
   guard can check in one place.
 
@@ -821,7 +821,7 @@ async deleteByUserAndMovie(userId: number | bigint, movieId: number | bigint): P
 `deleteMany` rather than `delete`: unmarking a film that was never marked is
 not an error, and the schema has no unique constraint to lean on.
 
-- [ ] **Step 3: The action, with `ensureFilm` — here it is correct.** Marking a
+- [x] **Step 3: The action, with `ensureFilm` — here it is correct.** Marking a
   film watched is a deliberate write by a logged-in person, so ingesting the
   film is exactly right; the same call on the *page render* of D2 was not.
   `revalidatePath` the browse and watchlist routes afterwards.
@@ -829,7 +829,7 @@ not an error, and the schema has no unique constraint to lean on.
 Run: `npx vitest run actions/watchlist/watchlist-actions.test.ts`
 Expected: PASS
 
-- [ ] **Step 4: `WatchedToggle`, optimistic, 44px, and honest about its label.**
+- [x] **Step 4: `WatchedToggle`, optimistic, 44px, and honest about its label.**
 
 ```tsx
 <button
@@ -854,10 +854,10 @@ Expected: PASS
   - Hidden entirely when logged out, as the source did — but as a *server*
     decision (`isSignedIn` prop), because Clerk 7 removed `<SignedIn>`.
 
-- [ ] **Step 5: Component test** — click flips `aria-pressed`, a rejected
+- [x] **Step 5: Component test** — click flips `aria-pressed`, a rejected
   action flips it back, and the accessible name contains the title.
 
-- [ ] **Step 6: Commit.**
+- [x] **Step 6: Commit.**
 
 ### Task D4: The film page UI (P10.T5, T6, T9)
 
@@ -873,7 +873,7 @@ Expected: PASS
 - Consumes: `loadFilmPage` (D2), `PointsLedger`, `LetterboxRule`,
   `PosterFrame`, `WatchedToggle` (D3), `ErrorPanel`.
 
-- [ ] **Step 1: The route.** `notFound()` when `loadFilmPage` returns null;
+- [x] **Step 1: The route.** `notFound()` when `loadFilmPage` returns null;
   public, so no `auth()` gate — but `auth()` is still read, to decide whether
   `WatchedToggle` renders.
 
@@ -891,12 +891,12 @@ export default async function FilmPage({ params }: PageProps<'/films/[tmdbId]'>)
   🔴 Validate the id shape before spending a TMDB request on it. `/films/../..`
   and `/films/%00` both reach this handler.
 
-- [ ] **Step 2: `generateMetadata`.** This is the app's most-shared URL — a
+- [x] **Step 2: `generateMetadata`.** This is the app's most-shared URL — a
   Slack unfurl of a film page should show the film, not "Cinemadraft". Title,
   description from the tagline or overview, `openGraph.images` from the
   backdrop.
 
-- [ ] **Step 3: The banner.** Backdrop, title, year, MPAA rating in a bordered
+- [x] **Step 3: The banner.** Backdrop, title, year, MPAA rating in a bordered
   box, `WatchedToggle` at top right when logged in. The rating box is a
   `<span>` with the `border-border-rule` token and `tabular` — **not** the
   source's eleven SVG rating glyphs (`src/pages/movie/icons`), which are US
@@ -907,7 +907,7 @@ export default async function FilmPage({ params }: PageProps<'/films/[tmdbId]'>)
   `bg-gradient-to-t from-bg-base` scrim over the backdrop and put the text on
   the dark end, rather than trusting the image.
 
-- [ ] **Step 4: `FilmFacts`** — the labelled left column, `<dl>` not a table.
+- [x] **Step 4: `FilmFacts`** — the labelled left column, `<dl>` not a table.
   Label in `text-text-secondary`, right-aligned at `md` and above as the
   screenshot shows, stacked above the value on a phone (a 30%/70% split at
   375px leaves ten characters for "Production companies").
@@ -916,7 +916,7 @@ export default async function FilmPage({ params }: PageProps<'/films/[tmdbId]'>)
   `Stat` with `text=undefined` and got a label with nothing beside it; a
   "Budget" label with an empty column reads as a loading failure.
 
-- [ ] **Step 5: `RatingChip`.** Metacritic's own colour rule, ported exactly
+- [x] **Step 5: `RatingChip`.** Metacritic's own colour rule, ported exactly
   (`>= 61` green, `>= 40` yellow, else red — `movie.js:117`).
 
   🔴 **Colour cannot be the only signal** (a11y `color-not-only`, §6.7). The
@@ -930,7 +930,7 @@ export default async function FilmPage({ params }: PageProps<'/films/[tmdbId]'>)
   `/images/rt.png` and applied `certified`/`fresh`/`rotten` classes; the
   imagery is Fandango's trademark.
 
-- [ ] **Step 6: `CreditsPanel`** — grouped by department, each person with
+- [x] **Step 6: `CreditsPanel`** — grouped by department, each person with
   their exact job. Directing and Writing first, then the rest alphabetically,
   Cast as a photo grid.
 
@@ -940,7 +940,7 @@ export default async function FilmPage({ params }: PageProps<'/films/[tmdbId]'>)
   and find-in-page for free, and a film with 62 "Crew" entries is exactly what
   find-in-page is for.
 
-- [ ] **Step 7: `MediaCarousel`** — trailers, then posters with a `1/112`
+- [x] **Step 7: `MediaCarousel`** — trailers, then posters with a `1/112`
   counter.
 
   🔴 **Not `react-slick`.** A CSS scroll-snap strip with `overflow-x-auto` plus
@@ -953,7 +953,7 @@ export default async function FilmPage({ params }: PageProps<'/films/[tmdbId]'>)
   Render a poster-and-play-button facade and swap in the iframe on click.
   The counter is `aria-live="polite"` so the position is announced.
 
-- [ ] **Step 8: `FilmPointsPanel`** — total, average draft position, per-event
+- [x] **Step 8: `FilmPointsPanel`** — total, average draft position, per-event
   totals, and the existing `PointsLedger` behind a `<details>` for the
   award-by-award breakdown (D41, reused rather than reimplemented).
 
@@ -963,17 +963,17 @@ export default async function FilmPage({ params }: PageProps<'/films/[tmdbId]'>)
 
   Each event row links to `/award-shows/[abbreviation]`, as the source did.
 
-- [ ] **Step 9: `SimilarFilms`** — seven posters via `PosterFrame`, each
+- [x] **Step 9: `SimilarFilms`** — seven posters via `PosterFrame`, each
   linking to `/films/[tmdbId]`. T9 closes here, out of the same request as the
   rest of the page.
 
-- [ ] **Step 10: Component tests.** For each: the absent case renders nothing,
+- [x] **Step 10: Component tests.** For each: the absent case renders nothing,
   the present case renders the value, and the interactive ones are operable
   from the keyboard. `MediaCarousel` gets the jsdom caveat the nav drawer got —
   scroll position is not simulated, so assert the button wiring and leave the
   scrolling to E2E.
 
-- [ ] **Step 11: Commit**, and close `PARITY.md` T5, T6, T9.
+- [x] **Step 11: Commit**, and close `PARITY.md` T5, T6, T9.
 
 ### Task D5: Browse (P10.T7)
 
@@ -990,7 +990,7 @@ export default async function FilmPage({ params }: PageProps<'/films/[tmdbId]'>)
   where `BrowsePage = { when, page, pageCount, months: { label: string; films: BrowseFilm[] }[] }`
   and `BrowseFilm = { tmdbId, title, posterUrl, releaseDate, watched: boolean }`
 
-- [ ] **Step 1: Write the failing test for discovery**, pinning the two
+- [x] **Step 1: Write the failing test for discovery**, pinning the two
   different queries rather than a sort flip:
 
 ```ts
@@ -1026,7 +1026,7 @@ it('returns an empty page rather than throwing when TMDB is down', async () => {
 Run: `npx vitest run lib/external/tmdb-discover.test.ts`
 Expected: FAIL
 
-- [ ] **Step 2: Implement it on `tmdbFetch`.** The date in the query is
+- [x] **Step 2: Implement it on `tmdbFetch`.** The date in the query is
   `new Date()` truncated to a day, which is also the cache key's suffix — a key
   containing a timestamp would never hit.
 
@@ -1035,7 +1035,7 @@ Expected: FAIL
   the browser, so its page counter counted rows the user never saw and "load
   more" sometimes appeared to do nothing.
 
-- [ ] **Step 3: Write the failing test for `loadBrowse`.**
+- [x] **Step 3: Write the failing test for `loadBrowse`.**
 
 ```ts
 it('groups films by release month, newest group first on the past side', async () => {
@@ -1063,7 +1063,7 @@ it('files a film with no release date under its own group rather than dropping i
 Run: `npx vitest run lib/services/browse.test.ts`
 Expected: FAIL
 
-- [ ] **Step 4: Implement `loadBrowse`.** Watched marks are one
+- [x] **Step 4: Implement `loadBrowse`.** Watched marks are one
   `findByUserAndMovieIds` — but the ids are *TMDB* ids and the table stores
   local ids, so it is two queries at most: `movieRepository` by tmdbId set,
   then watchlist by the local ids found. Both batched, neither per film.
@@ -1073,7 +1073,7 @@ Expected: FAIL
   🔴 Without it a film released on the 1st shows in the previous month for
   anyone west of UTC, and the grouping silently differs by viewer.
 
-- [ ] **Step 5: The page.** `?when=past|future&page=N` in the URL, not
+- [x] **Step 5: The page.** `?when=past|future&page=N` in the URL, not
   component state.
 
   🔴 **No infinite scroll.** The source's `useInView` loop meant a film could
@@ -1088,39 +1088,39 @@ Expected: FAIL
   source's label read as one string. Two links styled as a segmented control,
   with `aria-current` on the active one.
 
-- [ ] **Step 6: `BrowseMonth`.** The month card sticky at `md` and above (as
+- [x] **Step 6: `BrowseMonth`.** The month card sticky at `md` and above (as
   the source had it), the poster grid beside it, `WatchedToggle` in each
   poster's corner, title below the poster wrapping freely.
 
   Grid: 2 columns at 375px, up to 6 at `lg`. 🔴 Posters get explicit
   `aspect-[2/3]` so the grid does not reflow as images arrive (CLS).
 
-- [ ] **Step 7: Flip `browse.ready`, close T7 in `PARITY.md`, commit.**
+- [x] **Step 7: Flip `browse.ready`, close T7 in `PARITY.md`, commit.**
 
 ### Task D6: E2E and close-out
 
 **Files:** `e2e/films.spec.ts`, `e2e/browse.spec.ts`, `docs/PARITY.md`,
 `docs/PROGRESS.md`
 
-- [ ] **Step 1: E2E for the film page.** Against a real film (La La Land,
+- [x] **Step 1: E2E for the film page.** Against a real film (La La Land,
   313369, which the restored data has nominations for): the banner names it,
   the facts list shows the real runtime, the points panel shows the per-event
   totals, the credits disclosure opens with Enter, and the poster carousel's
   counter advances.
 
-- [ ] **Step 2: E2E for browse.** Toggle to The Future and back — the URL
+- [x] **Step 2: E2E for browse.** Toggle to The Future and back — the URL
   changes both times and the month groups reverse. Mark a film watched as a
   logged-in user, reload, and the badge is still set. Then unmark it, so the
   test leaves the database as it found it.
 
-- [ ] **Step 3: 🔴 A film TMDB does not know 404s** rather than 500s. Hit
+- [x] **Step 3: 🔴 A film TMDB does not know 404s** rather than 500s. Hit
   `/films/999999999`.
 
-- [ ] **Step 4: Full verification**, CI excludes if any, close `PARITY.md`
+- [x] **Step 4: Full verification**, CI excludes if any, close `PARITY.md`
   T5, T6, T7, T9, T34, add the two betterments and the two new source bugs
   (hard-coded OMDb key, hard-coded runtime), and update `PROGRESS.md`.
 
-- [ ] **Step 5: Commit and push.**
+- [x] **Step 5: Commit and push.**
 
 ---
 

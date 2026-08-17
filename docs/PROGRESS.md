@@ -631,6 +631,44 @@ both places, and `global-error.tsx` for a failure in the root layout — that
 last one is deliberately plain and self-contained, because the providers and
 theme are exactly what may have failed.
 
+**Batch D done — films are browsable and a film has a page.** `/films/[tmdbId]`
+and `/browse`, plus the watched mark that browse is built around. Closes
+`PARITY.md` T5, T6, T7, T9 and T34.
+
+- 🔴 **The film route is keyed by the TMDB id, not ours.** `movies` holds only
+  the 1,355 films this league has used, so a local id exists for almost none of
+  the catalogue — and the owner's screenshots show the page working for exactly
+  such a film.
+- 🔴 **That page never writes** (D63). The straight port refreshes posters on a
+  GET and `ensureFilm` was one line away; on a public route that is unbounded
+  insert traffic from crawlers, and it would fill `movies` with films nobody
+  drafted — breaking the invariant that a row means somebody used it. Marking a
+  film watched *does* ingest, because that is a person pressing a button.
+- 🔴 **A "watchlist" here is films you have *watched*** (D64), read out of the
+  source rather than inferred from the table name: its button says "Mark as
+  watched" and offers "Write a review" next. Getting this backwards would have
+  shipped a feature that reads as the opposite of what it does.
+- 🔴 **Three bugs the browser found and no test could.** The film title painted
+  *behind* the backdrop (a positioned sibling beats a static one in paint order,
+  whatever the source order). `PointsLedger` keyed rows on `awardId`, but La La
+  Land holds two 2017 Best Original Song nominations under award 75 — React
+  dropped one, so the ledger's rows summed to less than the total above them,
+  which is the exact failure its "total is the sum of lines" rule exists to
+  prevent. And TMDB's `/similar` answers La La Land with *The Tigger Movie*, so
+  similar films now come from `/recommendations`.
+- 🔴 **Browse's past and future sides are two different queries**, not one sort
+  reversed. The past side keeps the source's `vote_count >= 200` floor; the
+  future side must not, because an unreleased film has no votes and carrying it
+  over returns an empty page — which is what copying only the sort would have
+  shipped.
+- 🔴 **Paging is in the URL** (D65). The source's infinite scroll meant a film
+  could not be linked, Back lost the reader's place, and page 12 was unreachable
+  from a keyboard.
+- 🔴 **`data-testid` is now the only test handle** (D66), stripped from
+  production output. A name-based locator cost real time on a bug that did not
+  exist: marking a film changes the badge's accessible name by design, so the
+  locator silently moved to the next film's badge and reported the wrong state.
+
 **Batch C done — a season can be run.** Seats, placeholders, groups, start and
 complete, stage next season, settings. Three source bugs (`PARITY.md` 4, 5, 6)
 are each a test that fails if reintroduced.

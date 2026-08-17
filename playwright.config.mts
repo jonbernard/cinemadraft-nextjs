@@ -26,7 +26,12 @@ export default defineConfig({
     // Production build, not `next dev`. Dev mode injects extra styling and
     // does not exercise the same CSS pipeline, and the layer-order assertions
     // below are specifically about compiled output.
-    command: 'npm run build && npm run start',
+    //
+    // 🔴 `KEEP_TEST_IDS=1` is what makes `data-testid` survive that build.
+    // `next.config.ts` strips the attribute from production output, and this is
+    // the one build where it must not — remove this and every testid selector in
+    // the suite fails with a locator that matches nothing.
+    command: 'KEEP_TEST_IDS=1 npm run build && npm run start',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

@@ -86,6 +86,11 @@ export function WatchedToggle({
       <button
         type="button"
         onClick={toggle}
+        // 🔴 The test's handle. Not the accessible name: that name *changes* when
+        // the film is marked, by design, so a name-based locator resolves to a
+        // different element after the click — which is how a correct feature came
+        // to look broken. Stripped from production output by `next.config.ts`.
+        data-testid={`watched-toggle-${tmdbId}`}
         aria-pressed={isWatched}
         // Not `disabled` while pending: disabling moves focus off the control
         // mid-interaction, and a second press is harmless because the action
