@@ -22,7 +22,9 @@
     "typegen": "next typegen",
     "postinstall": "prisma generate",
     "test:ci": "vitest run --config vitest.ci.config.mts",
-    "verify": "npm run lint && npm run typecheck && npm run layering && npm run test && npm run test:ci && npm run build"
+    "verify": "npm run lint && npm run typecheck && npm run layering && npm run test && npm run test:ci && npm run build",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.5",
@@ -47,6 +49,9 @@
     "@biomejs/biome": "2.5.8",
     "@clerk/testing": "^2.2.23",
     "@playwright/test": "^1.62.1",
+    "@storybook/addon-a11y": "^10.5.8",
+    "@storybook/addon-docs": "^10.5.8",
+    "@storybook/nextjs-vite": "^10.5.8",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
@@ -58,6 +63,7 @@
     "dotenv": "^17.4.2",
     "jsdom": "^30.0.1",
     "prisma": "^7.9.1",
+    "storybook": "^10.5.8",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
