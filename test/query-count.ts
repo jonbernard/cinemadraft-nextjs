@@ -30,26 +30,54 @@ import { db } from '@/lib/db';
  * queries and the page-level assertions passed while measuring nothing at all.
  * `lib/db.ts` enables query events under Vitest for this reason.
  */
-export async function countQueries<T>(work: () => Promise<T>): Promise<{
-  result: T;
-  queries: number;
-}> {
-  let queries = 0;
-  const onQuery = () => {
-    queries += 1;
-  };
+/**
+ * 🔴 One listener for the whole file, not one per call.
+ *
+ * Prisma's `$on` has no counterpart to remove a subscriber, so the obvious
+ * shape — subscribe on entry, count, return — leaks a listener per call and
+ * Node warns at eleven: *"Possible EventEmitter memory leak detected. 11 query
+ * listeners added"*. That surfaced as soon as this file's ninth surface was
+ * pinned, and it gets worse with every page Phase 10 adds.
+ *
+ * So the subscription happens once and every measurement shares it, with the
+ * counter switched on and off around the work. It also means a stray query from
+ * elsewhere cannot be attributed to a caller that is not currently measuring.
+ */
+let counting: { queries: number } | null = null;
+let subscribed = false;
 
+function subscribeOnce(): void {
+  if (subscribed) return;
+  subscribed = true;
   // The generated client types `$on` per log level; only the fact of the event
   // is needed here, not its payload.
   const emitter = db as unknown as {
     $on: (event: 'query', cb: () => void) => void;
   };
-  emitter.$on('query', onQuery);
+  emitter.$on('query', () => {
+    if (counting) counting.queries += 1;
+  });
+}
 
-  const result = await work();
-  // Query events are emitted asynchronously, so a count read immediately after
-  // the last await can miss the final one.
-  await new Promise((resolve) => setTimeout(resolve, 50));
+export async function countQueries<T>(work: () => Promise<T>): Promise<{
+  result: T;
+  queries: number;
+}> {
+  subscribeOnce();
 
-  return { result, queries };
+  // Nesting would make the inner call's queries vanish from the outer count,
+  // and the outer assertion would silently measure less than it claims to.
+  if (counting) throw new Error('countQueries cannot be nested');
+
+  const active = { queries: 0 };
+  counting = active;
+  try {
+    const result = await work();
+    // Query events are emitted asynchronously, so a count read immediately
+    // after the last await can miss the final one.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    return { result, queries: active.queries };
+  } finally {
+    counting = null;
+  }
 }

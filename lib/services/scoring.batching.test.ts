@@ -1,12 +1,15 @@
 // @vitest-environment node
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
+import fixture from '@/fixtures/movie-by-id.json';
 import { db } from '@/lib/db';
+import { clearCacheForTests } from '@/lib/external/cache';
 import { loadFixture } from '@/test/fixtures';
 import { countQueries } from '@/test/query-count';
 import { getDashboard } from './dashboard';
 import { getLeagueBoard } from './draft';
+import { loadFilmPage } from './film';
 import { pointsForMovieIds } from './scoring';
 
 afterAll(async () => {
@@ -98,5 +101,75 @@ describe('every page that shows a score loads them in bulk', () => {
 
     expect(queries).toBeLessThanOrEqual(15);
     expect(queries).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The film page's own case (D59).
+ *
+ * Its shape is different from the board's: one film rather than 144, but three
+ * sources instead of one, and it is the app's **most-visited page and its most
+ * shared URL**. The number that matters here is not how it scales with films —
+ * there is only ever one — but that reaching for a score does not turn into a
+ * query per nomination. La La Land has 46 of them.
+ */
+describe('the film page', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.TMDB_API_KEY;
+    delete process.env.OMDB_API_KEY;
+  });
+
+  /** The captured response, put back into the shape TMDB actually sends. */
+  function stubTmdb() {
+    clearCacheForTests();
+    process.env.TMDB_API_KEY = 'test-tmdb-key';
+    // No OMDb key: it is stubbed out entirely, because a third party's latency
+    // is not what this is measuring and it issues no queries either way.
+    delete process.env.OMDB_API_KEY;
+
+    const body = JSON.parse(JSON.stringify(fixture)) as Record<string, unknown>;
+    const credits = body.credits as { cast: unknown[]; crew: Record<string, unknown[]> };
+    body.credits = { cast: credits.cast, crew: Object.values(credits.crew).flat() };
+    body.similar = { results: body.similar };
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => body }) as Response),
+    );
+  }
+
+  it('🔴 costs a fixed number of queries for a film with 46 nominations', async () => {
+    stubTmdb();
+
+    const { queries } = await countQueries(() => loadFilmPage('313369'));
+
+    // The lookup, the years, the ledger's batch loads and the draft picks.
+    // An N+1 over nominations would be 46 on its own.
+    expect(queries).toBeLessThanOrEqual(10);
+    expect(queries).toBeGreaterThan(0);
+  });
+
+  it('🔴 costs no more for a heavily nominated film than a lightly nominated one', async () => {
+    // The property, rather than a ceiling: La La Land earned 335 points across
+    // eleven award shows; *Kubo and the Two Strings* (tmdb 313297) was nominated
+    // in one season by far fewer. If the count moves with the number of
+    // nominations, something is querying per row.
+    stubTmdb();
+    const heavy = await countQueries(() => loadFilmPage('313369'));
+    stubTmdb();
+    const light = await countQueries(() => loadFilmPage('313297'));
+
+    expect(heavy.queries).toBe(light.queries);
+  });
+
+  it('asks the database nothing beyond the lookup for a film it has never seen', async () => {
+    // The common case on a public page: a TMDB id nobody has drafted. One
+    // query — findByTmdbId — and no scoring work at all.
+    stubTmdb();
+
+    const { queries } = await countQueries(() => loadFilmPage('1185806'));
+
+    expect(queries).toBe(1);
   });
 });

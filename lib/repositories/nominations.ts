@@ -127,6 +127,32 @@ export const nominationRepository = {
   },
 
   /**
+   * The seasons one film was nominated in, most recent first.
+   *
+   * The film page needs this because `ledgerForMovies` takes a year and the page
+   * has no season of its own — it is reached from a poster, not from a
+   * leaderboard. 🔴 The source read the year off whichever nomination row came
+   * back first (`server/routes/points.js:87` — `data[0].year`), which is an
+   * arbitrary choice dressed as a fact: a film nominated in two seasons scored
+   * for whichever the database happened to return, and the page gave a different
+   * total on different days. Returning the list makes the caller say which one
+   * it means.
+   *
+   * Rows with no year are excluded rather than sorted to the end: a nomination
+   * that cannot be attributed to a season cannot be scored either, which is the
+   * same rule `loadScoringInputs` applies.
+   */
+  async findYearsByMovieId(movieId: number | bigint): Promise<number[]> {
+    const rows = await db.nomination.findMany({
+      where: { movieId: BigInt(movieId), year: { not: null } },
+      select: { year: true },
+      distinct: ['year'],
+      orderBy: { year: 'desc' },
+    });
+    return rows.flatMap((row) => (row.year == null ? [] : [row.year]));
+  },
+
+  /**
    * Every nomination for these awards, optionally for one year.
    *
    * Award ids come from `awardRepository.findByEventId`, which is how "the
