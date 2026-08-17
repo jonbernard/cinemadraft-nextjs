@@ -50,3 +50,27 @@ export const tmdbEnv = {
     return Boolean(process.env.TMDB_API_KEY);
   },
 };
+
+/**
+ * OMDb, and it really is optional — unlike TMDB above.
+ *
+ * The difference is worth stating because the two sit side by side and look
+ * interchangeable. Without TMDB no film can be drafted or nominated at all; the
+ * app is broken. Without OMDb, one panel on the film page loses a ratings chip,
+ * an MPAA rating and a box-office line, and every other thing the app does is
+ * unaffected. So this one has no `isConfigured` and nothing checks for it at
+ * startup: `lib/external/omdb.ts` returns null and the page omits the panel.
+ *
+ * 🔴 The source app hard-coded a key in committed source
+ * (`server/routes/movie/details.js:15`) beside a sibling request that read it
+ * from the environment. That key is in git history, cannot be rotated by
+ * editing a file, and is recorded as bug 11 in `PARITY.md`. It is not reused
+ * here — the variable name is deliberately `OMDB_API_KEY` rather than the
+ * source's `OMDB_KEY`, so a stale value in a shared environment cannot be
+ * picked up by accident.
+ */
+export const omdbEnv = {
+  get apiKey(): string | null {
+    return process.env.OMDB_API_KEY ?? null;
+  },
+};

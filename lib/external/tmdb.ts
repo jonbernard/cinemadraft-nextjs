@@ -1,9 +1,11 @@
-import { tmdbEnv } from '@/lib/env';
 import type { Candidate } from '@/lib/services/search-ranking';
-import { cached } from './cache';
+import { tmdbFetch } from './tmdb-client';
 
 /**
- * The only module that knows TMDB exists.
+ * Search, and the one-film fetch that caches a search result locally.
+ *
+ * The transport lives in `tmdb-client.ts`; this module is the two queries the
+ * draft and nomination flows need, and the field mapping they depend on.
  *
  * 🔴 **TMDB is the source of truth for films; `movies` is a cache of it.**
  * Every one of the 1,355 local rows carries a `tmdbId` because every one of
@@ -21,17 +23,6 @@ import { cached } from './cache';
  * cost the remote results, not the local ones — but "no key" is a
  * misconfiguration, not a mode.
  */
-
-const BASE = 'https://api.themoviedb.org/3';
-
-/**
- * A day. TMDB's catalogue moves slowly and the same handful of queries are
- * typed over and over during a live draft, which is the case this exists for.
- */
-const TTL_SECONDS = 86_400;
-
-/** How long to wait before giving up and letting local results stand. */
-const TIMEOUT_MS = 3_000;
 
 type TmdbMovie = {
   id: number;
@@ -64,15 +55,10 @@ export type TmdbFilmDetail = {
 };
 
 /**
- * Read the key at call time, not at module load.
- *
- * Reading it eagerly would bake the answer into the module the first time
- * anything imported it — which in tests is before a case can set or clear the
- * variable, and in a build is before the runtime environment exists.
+ * Re-exported so callers that already depend on this module do not need to know
+ * the transport was split out from under them.
  */
-export function isTmdbConfigured(): boolean {
-  return tmdbEnv.isConfigured;
-}
+export { isTmdbConfigured } from './tmdb-client';
 
 function toCandidate(movie: TmdbMovie): Candidate {
   const year = movie.release_date ? Number(movie.release_date.slice(0, 4)) : Number.NaN;
@@ -114,43 +100,28 @@ function toCandidate(movie: TmdbMovie): Candidate {
  * Cached on the query alone, since that is now the only input.
  */
 export async function searchTmdb(query: string): Promise<Candidate[]> {
-  const key = tmdbEnv.apiKey;
-  if (!key) return [];
-
   const trimmed = query.trim();
   if (trimmed === '') return [];
 
-  return cached(
-    `tmdb:search:${trimmed.toLowerCase()}`,
-    { ttlSeconds: TTL_SECONDS, tags: ['tmdb', 'tmdb-search'], name: 'tmdb-search' },
-    async () => {
-      const params = new URLSearchParams({
-        api_key: key,
-        query: trimmed,
-        include_adult: 'false',
-      });
-
-      try {
-        const response = await fetch(`${BASE}/search/movie?${params}`, {
-          signal: AbortSignal.timeout(TIMEOUT_MS),
-        });
-        if (!response.ok) return [];
-
-        const body: unknown = await response.json();
-        const results = (body as { results?: unknown })?.results;
-        if (!Array.isArray(results)) return [];
-
-        return results
-          .filter((entry): entry is TmdbMovie => {
-            const movie = entry as TmdbMovie;
-            return typeof movie?.id === 'number' && typeof movie?.title === 'string';
-          })
-          .map(toCandidate);
-      } catch {
-        return [];
-      }
+  const body = await tmdbFetch<{ results?: unknown }>(
+    '/search/movie',
+    { query: trimmed },
+    {
+      key: `tmdb:search:${trimmed.toLowerCase()}`,
+      tags: ['tmdb', 'tmdb-search'],
+      name: 'tmdb-search',
     },
   );
+
+  const results = body?.results;
+  if (!Array.isArray(results)) return [];
+
+  return results
+    .filter((entry): entry is TmdbMovie => {
+      const movie = entry as TmdbMovie;
+      return typeof movie?.id === 'number' && typeof movie?.title === 'string';
+    })
+    .map(toCandidate);
 }
 
 /**
@@ -199,40 +170,23 @@ function releaseDateOf(detail: TmdbMovieDetail): Date | null {
  *   ordering uses, so a new film would otherwise file under T.
  */
 export async function fetchTmdbFilm(tmdbId: string): Promise<TmdbFilmDetail | null> {
-  const key = tmdbEnv.apiKey;
-  if (!key) return null;
-
-  return cached(
-    `tmdb:film:${tmdbId}`,
-    { ttlSeconds: TTL_SECONDS, tags: ['tmdb', 'tmdb-film'], name: 'tmdb-film' },
-    async () => {
-      try {
-        const params = new URLSearchParams({
-          api_key: key,
-          append_to_response: 'release_dates',
-        });
-        const response = await fetch(`${BASE}/movie/${tmdbId}?${params}`, {
-          signal: AbortSignal.timeout(TIMEOUT_MS),
-        });
-        if (!response.ok) return null;
-
-        const detail = (await response.json()) as TmdbMovieDetail;
-        if (typeof detail?.id !== 'number' || typeof detail?.title !== 'string') {
-          return null;
-        }
-
-        return {
-          tmdbId: String(detail.id),
-          imdbId: detail.imdb_id ? detail.imdb_id.replace(/^tt/, '') : null,
-          title: detail.title,
-          sortTitle: detail.title.replace(/^(the|a)\s/i, ''),
-          poster: detail.poster_path ?? null,
-          backdrop: detail.backdrop_path ?? null,
-          releaseDate: releaseDateOf(detail),
-        };
-      } catch {
-        return null;
-      }
-    },
+  const detail = await tmdbFetch<TmdbMovieDetail>(
+    `/movie/${tmdbId}`,
+    { append_to_response: 'release_dates' },
+    { key: `tmdb:film:${tmdbId}`, tags: ['tmdb', 'tmdb-film'], name: 'tmdb-film' },
   );
+
+  if (typeof detail?.id !== 'number' || typeof detail?.title !== 'string') {
+    return null;
+  }
+
+  return {
+    tmdbId: String(detail.id),
+    imdbId: detail.imdb_id ? detail.imdb_id.replace(/^tt/, '') : null,
+    title: detail.title,
+    sortTitle: detail.title.replace(/^(the|a)\s/i, ''),
+    poster: detail.poster_path ?? null,
+    backdrop: detail.backdrop_path ?? null,
+    releaseDate: releaseDateOf(detail),
+  };
 }
