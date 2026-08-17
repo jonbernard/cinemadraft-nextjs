@@ -202,4 +202,57 @@ export const watchlistRepository = {
     });
     return rows.map(toDto);
   },
+
+  /**
+   * Mark a film watched, once.
+   *
+   * 🔴 **Keyed on `(userId, movieId)`, not on the row id.** The source app wrote
+   * with `POST /watchlist/item` and removed with `DELETE /watchlist/item/:id` —
+   * a row id off the URL. The pair is what a caller actually knows, and the
+   * difference is a security property: another person's row id is a perfectly
+   * valid integer, whereas this pair cannot address their row at all.
+   *
+   * Idempotent, because marking a film watched twice is not an error — a member
+   * double-taps the badge on a browse grid, or has two tabs open. The table has
+   * no unique constraint to lean on (the schema declares none, and adding one
+   * would need the restored rows checked for existing duplicates first), so the
+   * check is explicit.
+   */
+  async add(userId: number | bigint, movieId: number | bigint): Promise<Watchlist> {
+    const existing = await db.watchlist.findFirst({
+      where: { userId: BigInt(userId), movieId: BigInt(movieId) },
+      select: SELECT,
+    });
+    if (existing) return toDto(existing);
+
+    const now = new Date();
+    const row = await db.watchlist.create({
+      data: {
+        userId: BigInt(userId),
+        movieId: BigInt(movieId),
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: SELECT,
+    });
+    return toDto(row);
+  },
+
+  /**
+   * Unmark a film, for this user only.
+   *
+   * `deleteMany` rather than `delete`: unmarking a film that was never marked is
+   * a no-op rather than a failure — an optimistic badge and the database can
+   * disagree for a moment when two tabs are open — and `delete` throws on a
+   * miss. It also clears a duplicate pair if one ever existed, which `delete`
+   * could not.
+   */
+  async deleteByUserAndMovie(
+    userId: number | bigint,
+    movieId: number | bigint,
+  ): Promise<void> {
+    await db.watchlist.deleteMany({
+      where: { userId: BigInt(userId), movieId: BigInt(movieId) },
+    });
+  },
 };
