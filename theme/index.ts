@@ -4,7 +4,8 @@ import { createTheme } from '@mui/material/styles';
 
 import { type ColorScheme, motion, palettes } from './tokens';
 
-const FAMILY = 'var(--font-archivo), system-ui, sans-serif';
+const SANS = 'var(--font-archivo), system-ui, sans-serif';
+const SERIF = 'var(--font-instrument-serif), Georgia, serif';
 
 /**
  * The MUI half of the token system.
@@ -45,26 +46,25 @@ export const theme = createTheme({
   cssVariables: { colorSchemeSelector: 'data-mui-color-scheme' },
   defaultColorScheme: 'dark',
   colorSchemes: { dark: scheme('dark'), light: scheme('light') },
-  // Near-square. Rounded corners read as friendly-app; this is a projection
-  // room, and the letterbox rule is the device carrying that.
-  shape: { borderRadius: 2 },
+  // D73. Buttons are the default consumer of this value, and 6px is the whole
+  // scale's anchor: soft enough to stop reading as a developer tool, hard
+  // enough to stay a projection room rather than a friendly app.
+  shape: { borderRadius: 6 },
   typography: {
-    fontFamily: FAMILY,
-    // The film credit block: expanded, heavy, uppercase, tight (§6.5).
-    h1: {
-      fontFamily: FAMILY,
-      fontVariationSettings: '"wdth" 120',
-      fontWeight: 700,
-      textTransform: 'uppercase',
-      letterSpacing: '-0.01em',
-    },
-    h2: {
-      fontFamily: FAMILY,
-      fontVariationSettings: '"wdth" 118',
-      fontWeight: 700,
-      textTransform: 'uppercase',
-    },
-    button: { textTransform: 'none' },
+    fontFamily: SANS,
+    /**
+     * 🔴 Tracking is negative and tightens as size grows — the direct
+     * opposite of the retired expanded-uppercase treatment. This single
+     * inversion is what separates editorial from techy.
+     *
+     * h1/h2 are serif because a page heading is a *name* (D70). A section
+     * heading is structure and uses h3 in Archivo.
+     */
+    h1: { fontFamily: SERIF, fontWeight: 400, letterSpacing: '-0.03em' },
+    h2: { fontFamily: SERIF, fontWeight: 400, letterSpacing: '-0.02em' },
+    h3: { fontFamily: SANS, fontWeight: 600, letterSpacing: '-0.01em' },
+    h4: { fontFamily: SANS, fontWeight: 600, letterSpacing: '-0.01em' },
+    button: { textTransform: 'none', fontWeight: 600 },
   },
   transitions: {
     duration: {
@@ -73,6 +73,14 @@ export const theme = createTheme({
     },
   },
   components: {
+    MuiButton: {
+      defaultProps: { disableElevation: true },
+      styleOverrides: {
+        // Pinned rather than inherited so a future shape change cannot
+        // silently turn every button into something else.
+        root: { borderRadius: 'var(--radius-sm)' },
+      },
+    },
     MuiCssBaseline: {
       styleOverrides: {
         // Respected throughout (§6.8). Declared once here rather than per

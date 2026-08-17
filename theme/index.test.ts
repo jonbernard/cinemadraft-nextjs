@@ -50,8 +50,21 @@ describe('MUI theme is built from the tokens', () => {
     expect(theme.transitions.duration.shortest).toBe(150);
     expect(theme.transitions.duration.standard).toBe(200);
   });
+});
 
-  it('sets the display face to the expanded width', () => {
-    expect(theme.typography.h1.fontVariationSettings).toBe('"wdth" 120');
+describe('the retired treatments are gone', () => {
+  it('no typography variant is uppercase', () => {
+    const variants = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'button'] as const;
+    for (const v of variants) {
+      expect(theme.typography[v]?.textTransform).not.toBe('uppercase');
+    }
+  });
+
+  it('no variant requests a width axis', () => {
+    expect(JSON.stringify(theme.typography)).not.toContain('wdth');
+  });
+
+  it('buttons are 6px, never square and never pill', () => {
+    expect(theme.shape.borderRadius).toBe(6);
   });
 });
