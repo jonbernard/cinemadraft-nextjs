@@ -15,7 +15,6 @@ import { palettes } from './tokens';
 
 /** WCAG AA. */
 const TEXT = 4.5;
-const UI = 3;
 
 describe('known values', () => {
   it.each([
@@ -54,25 +53,43 @@ describe.each(['dark', 'light'] as const)('%s palette meets WCAG AA', (scheme) =
     ['primary on raised', p.text.primary, p.bg.raised, TEXT],
     ['secondary on base', p.text.secondary, p.bg.base, TEXT],
     ['secondary on surface', p.text.secondary, p.bg.surface, TEXT],
+    ['secondary on raised', p.text.secondary, p.bg.raised, TEXT],
+    // 🔴 `on raised` is the pair that failed on the first pass at 3.87 and is
+    // the reason dim moved to #8C8598. Deleting this row would let it back in.
     ['dim on base', p.text.dim, p.bg.base, TEXT],
+    ['dim on surface', p.text.dim, p.bg.surface, TEXT],
+    ['dim on raised', p.text.dim, p.bg.raised, TEXT],
     ['accent text on base', p.accent.text, p.bg.base, TEXT],
     ['accent text on surface', p.accent.text, p.bg.surface, TEXT],
-    // The one correct use of accent.fill: as a fill, with white on it.
-    ['white on accent fill', '#FFFFFF', p.accent.fill, TEXT],
+    ['accent text on raised', p.accent.text, p.bg.raised, TEXT],
+    ['brass text on base', p.brass.text, p.bg.base, TEXT],
+    ['brass text on surface', p.brass.text, p.bg.surface, TEXT],
+    ['brass text on raised', p.brass.text, p.bg.raised, TEXT],
+    ['beam on base', p.beam, p.bg.base, TEXT],
+    ['beam on raised', p.beam, p.bg.raised, TEXT],
     // A hairline divider is not UI a user must perceive to operate the app,
     // so it is held to visibility rather than to the 3:1 non-text threshold.
     ['rule on base', p.border.rule, p.bg.base, 1.2],
-    ['beam on base', p.beam, p.bg.base, UI],
     // 🔴 The score colours are held to the *text* threshold, not the 3:1
     // non-text one, because the number is printed in them. That is what makes
     // the chip readable in greyscale and to a colour-blind reader — the colour
     // is a second signal, never the only one (§6.7, a11y `color-not-only`).
-    ['score high on surface', p.score.high, p.bg.surface, TEXT],
-    ['score mid on surface', p.score.mid, p.bg.surface, TEXT],
-    ['score low on surface', p.score.low, p.bg.surface, TEXT],
     ['score high on base', p.score.high, p.bg.base, TEXT],
     ['score mid on base', p.score.mid, p.bg.base, TEXT],
     ['score low on base', p.score.low, p.bg.base, TEXT],
+    ['score high on surface', p.score.high, p.bg.surface, TEXT],
+    ['score mid on surface', p.score.mid, p.bg.surface, TEXT],
+    ['score low on surface', p.score.low, p.bg.surface, TEXT],
+    ['score high on raised', p.score.high, p.bg.raised, TEXT],
+    ['score mid on raised', p.score.mid, p.bg.raised, TEXT],
+    ['score low on raised', p.score.low, p.bg.raised, TEXT],
+    // The one correct use of accent.fill: as a fill, with white on it.
+    ['white on accent fill', '#FFFFFF', p.accent.fill, TEXT],
+    // 🔴 The whole point of brass.contrast. Dark ink is 7.55 on the dark
+    // theme's bright brass and 2.65 on the light theme's dark brass — so the
+    // contrast text differs per scheme. This is a token pair, not a component
+    // branch, so D15 ("no component branches on theme") still holds.
+    ['brass contrast on brass fill', p.brass.contrast, p.brass.fill, TEXT],
   ])('%s', (_label, fg, bg, threshold) => {
     expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(threshold);
   });
@@ -80,7 +97,7 @@ describe.each(['dark', 'light'] as const)('%s palette meets WCAG AA', (scheme) =
 
 describe('the §6.4 corrections stay corrected', () => {
   it('rejects carmine fill as dark-mode text', () => {
-    // 2.96:1. This is the entire reason accent.text exists as a separate
+    // 3.79:1. This is the entire reason accent.text exists as a separate
     // token — if this ever passes, someone widened a palette by accident.
     expect(contrastRatio(palettes.dark.accent.fill, palettes.dark.bg.base)).toBeLessThan(
       TEXT,
