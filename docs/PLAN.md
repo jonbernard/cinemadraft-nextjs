@@ -129,6 +129,29 @@ Tokens, both themes, typography, and the tests that keep them honest.
 
 **Gate:** design tests green; a token-gallery page renders both themes with no raw hex anywhere in `components/`. ✅ **Met** — `/tokens` renders both, and the `layering` CI job fails on a hex literal under `components/` or `app/` (D37).
 
+🔴 **Revised by Phase 3.5** (2026-08-17). T1–T8 stay ticked — they were met as written — but their *content* changed: the palette, the type treatment, the shape language and the letterbox device were all revised, and **Storybook replaces `/tokens` as the gallery** (D76). The gate itself survives; only what satisfies it moves. See D67–D76.
+
+---
+
+### Phase 3.5 — Design system refinement + Storybook
+
+Spec: [`docs/superpowers/specs/2026-08-17-design-system-and-storybook-design.md`](superpowers/specs/2026-08-17-design-system-and-storybook-design.md)
+
+Requested by the owner mid-Phase-10: the app read "too techy/nerdy". Five faults were measured in the running app; the three the owner named were two of them. Ten reference products were measured live before anything was proposed. Decisions D67–D76.
+
+Sequenced in six sub-phases, each ending green:
+
+- T1: Storybook 10 + `@storybook/nextjs-vite` stands up — PostCSS object-form fix, font decorator, MUI `setMode` wiring, `addon-a11y`
+- T2: Foundations — both palettes (every pair re-verified), type scale, radius, elevation, motion; `contrast.test.ts` and `tokens.test.ts` extended; `Styleguide.mdx` foundations
+- T3: Primitives — `SectionHead`, `Eyebrow`, `Shelf`, `Button`, `StatusChip`, `Panel`, `CinemaFrame`, with stories and every state
+- T4: `AppShell`, `NavRail`, `TabBar`, `MoreSheet`; `AppNav` deleted; `e2e/nav.spec.ts` rewritten (D75)
+- T5: The page sweep — 20 surfaces, enumerated in the spec's §8
+- T6: Docs reconciled; `/tokens` deleted; second Vercel project live
+
+🔴 **Blocked on the owner for deployment only** — the Vercel Git integration is disconnected (`sourceless`, zero webhooks), so no project builds until it is reconnected. T1–T5 proceed locally regardless.
+
+**Gate:** `npm run verify` and E2E green; every page renders in both themes; Storybook builds and every primitive story is a11y-clean.
+
 ---
 
 ### Phase 4 — Auth 🔴 priority trio

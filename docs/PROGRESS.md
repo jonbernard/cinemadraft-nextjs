@@ -812,6 +812,50 @@ Remaining, grouped as the plan batches them:
 
 ---
 
+## Phase 3.5 — Design system refinement + Storybook
+
+Spec: [`docs/superpowers/specs/2026-08-17-design-system-and-storybook-design.md`](superpowers/specs/2026-08-17-design-system-and-storybook-design.md)
+Research: [`docs/reference/2026-08-17-design-research.md`](reference/2026-08-17-design-research.md)
+
+Requested by the owner 2026-08-17, mid-Phase-10: the app read "too techy/nerdy",
+naming the all-caps headings, the squared-off buttons and the desktop top nav.
+Numbered 3.5 because it revises Phase 3's output rather than following Phase 10.
+Decisions D67–D76.
+
+- [ ] P3.5.T1 Storybook 10 + `@storybook/nextjs-vite` — PostCSS object-form fix, font decorator, MUI `setMode` wiring, `addon-a11y`
+- [ ] P3.5.T2 Foundations — both palettes, type scale, radius, elevation, motion; `contrast.test.ts` + `tokens.test.ts` extended; `Styleguide.mdx`
+- [ ] P3.5.T3 Primitives — `SectionHead`, `Eyebrow`, `Shelf`, `Button`, `StatusChip`, `Panel`, `CinemaFrame`, each with stories and states
+- [ ] P3.5.T4 `AppShell`, `NavRail`, `TabBar`, `MoreSheet`; `AppNav` deleted; `e2e/nav.spec.ts` rewritten
+- [ ] P3.5.T5 Page sweep — 20 surfaces (spec §8)
+- [ ] P3.5.T6 Docs reconciled; `/tokens` deleted; second Vercel project live
+
+### What the next phase needs to know
+
+- **Five faults were measured in the running app**, not the three the owner
+  named. The two unnamed ones are the larger: cards outlined with hairlines on
+  all four sides (the monitoring-dashboard signature), and monospace carrying
+  *labels* rather than only digits. Fixing only the named three would not have
+  worked.
+- **The palette was verified before it was written down.** Every pair was run
+  through `theme/contrast.ts`'s own algorithm against all three grounds. Four
+  candidate values failed and were replaced — `text.dim` in both themes was the
+  worst, at 3.87 on dark `raised`. The numbers in the spec are worst-case.
+- 🔴 **`brass` needs a fill/text split and a per-scheme contrast text.** Dark ink
+  on dark-theme brass is 7.55; white on light-theme brass is 6.37; dark ink on
+  light-theme brass is 2.65 and fails. Getting this wrong ships an unreadable
+  winner seal in one theme only.
+- 🔴 **The rail costs 16% of the content width at 1280px** — 1152px today versus
+  966px with the rail. Measured, after an earlier estimate in the spec claimed it
+  was near-neutral and was wrong. Check a 10-seat league at 1280px and 1366px
+  before T5 commits; the rail narrows to 208px if it does not hold.
+- **`e2e/nav.spec.ts` is a rewrite, not an edit.** Every assertion names the
+  drawer or its `Menu` trigger. What must survive is the proof that `<dialog>`
+  behaviour is real, since jsdom implements none of it.
+- **`scripts/layering.sh` must grow to cover `.storybook/` and `*.stories.tsx`**
+  when `/tokens` is deleted, or the no-raw-hex guarantee is silently lost.
+
+---
+
 ## Phase 11 — Media → Vercel Blob
 
 - [ ] P11.T0 Record the Blob **public hostname** — needed for `next/image` `remotePatterns`. Read it off the first uploaded blob's URL
