@@ -212,6 +212,8 @@ in the source and, where the data could settle it, measured.
 | 8 | **Reorder writes are never awaited** — `req.body.forEach(async …)`, so the response returns before the writes land and a failure is silent | `routes/draftpicks.js:28` | Fixed: one transaction, `lib/repositories/draft-picks.ts` |
 | 9 | **`:type` is ignored in two routes.** `/points/league/total/…` and `/points/league/event/…` return identical payloads; `POST /notifications/type/:type` always sends to everyone | `routes/points.js:195-198`, `routes/notifications.js:29` | P10.T10/T45 either honour the distinction or drop the segment |
 | 10 | **`POST /lists/:year` accepts any single segment as a year** and then ignores it in favour of the body | `routes/lists.js:12-14, 43` | P10.T20 validates |
+| 11 | 🔴 **An OMDb API key is hard-coded in committed source** — `apikey: 'e4d963ed'`, beside a sibling request that correctly reads `process.env.OMDB_KEY`. A secret in git history cannot be rotated by editing a file | `server/routes/movie/details.js:15` vs `routes/movie/movie.js:53` | Not ported: `omdbEnv` reads `OMDB_API_KEY` and returns null when unset. **The source is untouched** (D54) — the key is still live and should be rotated at cutover |
+| 12 | **The film page prints the same runtime for every film.** `moment.duration(101, 'minutes')` is a literal; `movie.runtime` is fetched and never read, so every film claims 1 hour 41 minutes | `src/pages/movie/index.jsx:88`; `fixtures/movie-by-id.json` has `runtime: 129` for La La Land, rendered as 1h 41m | P10.T5 reads `runtime`, pinned against the fixture in `lib/external/tmdb-film.test.ts` |
 
 ## 🔴 Traps to carry into Phase 10
 
