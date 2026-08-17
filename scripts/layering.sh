@@ -8,11 +8,13 @@
 # The workflow still owns the canonical copy; this mirrors it so a developer can
 # get the same answer before pushing rather than from a red build.
 set -uo pipefail
-# macOS ships bash 3.2 (GPLv2-frozen). Its parser mishandles brace expansion
-# inside a double-quoted command substitution that spans a backslash-continued
-# line — the {3,8} interval below gets split into two separate greps, neither
-# of which matches anything, so the hex check silently always passes. `+B`
-# disables brace expansion outright; nothing here relies on it.
+# macOS ships bash 3.2 (GPLv2-frozen). Its parser brace-expands a quoted
+# command substitution when it's passed as a *function argument* — exactly
+# how `check` is called below — splitting the {3,8} interval into two greps
+# that each match nothing, so the hex check silently always passes. (A plain
+# variable assignment, which is how the CI workflow's own copy runs the same
+# grep, is not affected — that's why CI was never at risk.) `+B` disables
+# brace expansion outright; nothing here relies on it.
 set +B
 fail=0
 
