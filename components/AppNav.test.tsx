@@ -43,9 +43,9 @@ describe('AppNav', () => {
     // this asserts the full set exists rather than that all seven render.
     expect(NAV_LINKS.map((link) => link.label)).toEqual([
       'Home',
+      'Leagues',
       'Browse',
       'Award shows',
-      'Leagues',
       'Watchlist',
       'Draft list',
       'Rules & scoring',

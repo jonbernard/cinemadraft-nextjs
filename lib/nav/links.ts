@@ -14,6 +14,16 @@ export type NavLink = {
   path: string;
   /** False while the page is still owed by a later batch of Phase 10. */
   ready: boolean;
+  /**
+   * 🔴 D75. `primary` are the four a member opens weekly and they get the
+   * bottom tabs on a phone and the top of the rail on desktop. `yours` are the
+   * three opened once a season — a draft list before the draft, rules when a
+   * score surprises them — and they live behind the More sheet on a phone.
+   *
+   * All seven stay reachable everywhere, which is what D62's override
+   * requires; grouping only changes how many taps each costs.
+   */
+  group: 'primary' | 'yours';
 };
 
 /**
@@ -35,41 +45,56 @@ export type NavLink = {
  * a year.
  */
 export const NAV_LINKS: NavLink[] = [
-  { href: '/', label: 'Home', ready: true, path: 'M3 10.5 12 3l9 7.5V21H3z' },
   {
-    href: '/browse',
-    label: 'Browse',
+    href: '/',
+    label: 'Home',
     ready: true,
-    path: 'M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16',
-  },
-  {
-    href: '/award-shows',
-    label: 'Award shows',
-    ready: true,
-    path: 'M12 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zM9 13l-2 8 5-3 5 3-2-8',
+    path: 'M3 10.5 12 3l9 7.5V21H3z',
+    group: 'primary',
   },
   {
     href: '/leagues',
     label: 'Leagues',
     ready: true,
     path: 'M4 5h6v14H4zM14 5h6v14h-6zM10 12h4',
+    group: 'primary',
+  },
+  {
+    href: '/browse',
+    label: 'Browse',
+    ready: true,
+    path: 'M4 4h16v16H4zM4 9h16M4 15h16M9 4v16M15 4v16',
+    group: 'primary',
+  },
+  {
+    href: '/award-shows',
+    label: 'Award shows',
+    ready: true,
+    path: 'M12 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10zM9 13l-2 8 5-3 5 3-2-8',
+    group: 'primary',
   },
   {
     href: '/watchlist',
     label: 'Watchlist',
     ready: false,
     path: 'M6 3h12v18l-6-4.5L6 21z',
+    group: 'yours',
   },
   {
     href: '/list',
     label: 'Draft list',
     ready: false,
     path: 'M4 6h16M4 12h16M4 18h10M18 16v5M15.5 18.5h5',
+    group: 'yours',
   },
   {
     href: '/rules-and-scoring',
     label: 'Rules & scoring',
     ready: false,
     path: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 8v5M12 16h.01',
+    group: 'yours',
   },
 ];
+
+export const PRIMARY_LINKS = NAV_LINKS.filter((l) => l.group === 'primary');
+export const YOURS_LINKS = NAV_LINKS.filter((l) => l.group === 'yours');
