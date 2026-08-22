@@ -61,14 +61,16 @@ export function PosterFrame({
 
   return (
     <figure className={cn('flex flex-col gap-2', className)}>
-      {/* The hairline border is required by §6.3 and is not decoration. The
-          dark theme is a room that contains a poster on its own; warm paper is
-          not, and without an edge the frame dissolves into the ground. It is a
-          token, so it swaps with the theme and no branch is needed (D15) — in
-          dark it reads as a barely-there seam, which is the intent. */}
+      {/* The hairline border is required by §6.3 and is not decoration, but
+          only in light: the dark theme is a room that contains a poster on
+          its own, while warm paper is not, and without an edge the frame
+          dissolves into the ground. Radius is proportional, not a token —
+          posters are excluded from the 3/6/10/16/pill scale so a percentage
+          resolves against each frame's own box. */}
       <div
         className={cn(
-          'bg-bg-raised border-border-rule relative aspect-[2/3] overflow-hidden border',
+          'poster-radius bg-bg-raised relative aspect-[2/3] overflow-hidden',
+          'border-0 [[data-mui-color-scheme=light]_&]:border [[data-mui-color-scheme=light]_&]:border-border-rule',
           status === 'nominated' && 'border-t-accent-fill border-t-2',
         )}
       >
