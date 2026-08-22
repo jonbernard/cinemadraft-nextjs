@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { EmptyState } from '@/components/EmptyState';
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
 import { requireUser } from '@/lib/auth';
 import { getMyLeagues } from '@/lib/services/my-leagues';
 
@@ -25,15 +25,19 @@ export default async function LeaguesPage() {
   return (
     <main className="text-text-primary p-4 md:p-8">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <LetterboxRule as="h1">Leagues</LetterboxRule>
-          <Link
-            href="/leagues/new"
-            className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
-          >
-            Start a league
-          </Link>
-        </div>
+        <SectionHead
+          as="h1"
+          right={
+            <Link
+              href="/leagues/new"
+              className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+            >
+              Start a league
+            </Link>
+          }
+        >
+          Leagues
+        </SectionHead>
 
         {leagues.length === 0 ? (
           <EmptyState
@@ -49,7 +53,7 @@ export default async function LeaguesPage() {
               <li key={league.id}>
                 <Link
                   href={`/leagues/${league.id}`}
-                  className="border-border-rule hover:bg-bg-raised focus-visible:outline-accent-fill flex flex-col gap-1 border p-4 focus-visible:outline-2"
+                  className="bg-bg-surface hover:bg-bg-raised focus-visible:outline-accent-fill flex flex-col gap-1 rounded-md p-4 focus-visible:outline-2"
                 >
                   <span className="flex flex-wrap items-baseline gap-x-3">
                     <span className="text-text-primary text-sm">{league.name}</span>
@@ -66,9 +70,7 @@ export default async function LeaguesPage() {
                       {league.memberCount === 1 ? 'member' : 'members'}
                     </span>
                     {league.status ? (
-                      <span className="text-text-dim uppercase tracking-wide">
-                        {league.status}
-                      </span>
+                      <span className="text-text-dim">{league.status}</span>
                     ) : null}
                   </span>
                 </Link>

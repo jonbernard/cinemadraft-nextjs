@@ -7,6 +7,7 @@ import { removeNominee } from '@/actions/awards/remove-nominee';
 import { setWinner } from '@/actions/awards/set-winner';
 import { findFilmsAction } from '@/actions/search/find-films';
 import { FilmSearch, type SearchedFilm } from '@/components/FilmSearch';
+import { StatusChip } from '@/components/StatusChip';
 import { cn } from '@/lib/utils/cn';
 
 export type AdminNominee = {
@@ -123,9 +124,7 @@ export function CategoryAdmin({
     >
       {requiresNomineeName ? (
         <label className="flex flex-col gap-1">
-          <span className="text-text-dim text-xs uppercase tracking-wide">
-            Person nominated
-          </span>
+          <span className="text-text-dim text-xs">Person nominated</span>
           <input
             type="text"
             value={nomineeName}
@@ -182,10 +181,10 @@ function NomineeControls({
 
   return (
     <li className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-text-primary flex-1">
+      <span className="text-text-primary flex flex-1 flex-wrap items-center gap-2">
         {nominee.title}
         {/* Named, not signalled by colour alone. */}
-        {nominee.isWinner ? <span className="text-accent-text"> · winner</span> : null}
+        {nominee.isWinner ? <StatusChip tone="brass">Winner</StatusChip> : null}
       </span>
       <button
         type="button"

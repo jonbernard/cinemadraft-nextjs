@@ -1,5 +1,5 @@
 import { CreateLeagueForm } from '@/components/CreateLeagueForm';
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
 import { requireUser } from '@/lib/auth';
 
 /**
@@ -14,7 +14,7 @@ export default async function NewLeaguePage() {
   return (
     <main className="text-text-primary p-4 md:p-8">
       <div className="mx-auto flex max-w-lg flex-col gap-6">
-        <LetterboxRule as="h1">Start a league</LetterboxRule>
+        <SectionHead as="h1">Start a league</SectionHead>
 
         <p className="text-text-secondary text-sm leading-relaxed">
           You will run this one: entering everyone's picks on draft night, and setting the

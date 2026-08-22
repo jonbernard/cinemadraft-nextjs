@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-
-import { LetterboxRule } from '@/components/LetterboxRule';
 import { SeasonSetup } from '@/components/SeasonSetup';
+import { SectionHead } from '@/components/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { canManageLeague } from '@/lib/services/league-access';
@@ -48,9 +47,10 @@ export default async function SeasonSetupPage({
     <main className="text-text-primary p-4 md:p-8">
       <div className="mx-auto flex max-w-3xl flex-col gap-8">
         <header className="flex flex-col gap-2">
-          <LetterboxRule as="h1">{view.leagueName}</LetterboxRule>
+          <SectionHead as="h1" name eyebrow={`${view.year} · Setting up`}>
+            {view.leagueName}
+          </SectionHead>
           <p className="text-text-secondary text-sm">
-            <span className="tabular font-mono">{view.year}</span> · setting up ·{' '}
             <Link href={`/leagues/${view.leagueId}`} className="underline">
               the board
             </Link>
