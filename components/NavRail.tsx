@@ -30,12 +30,10 @@ import { Eyebrow } from './Eyebrow';
  * in Storybook without a router, and so every active state is a story rather
  * than something only reachable by navigating.
  *
- * `primary` and `yours` default to the real destination lists. The props
- * exist only so the grouped "Yours" state is testable and storyable while all
- * three `yours` pages are still unbuilt (every one is `ready: false` in
- * `lib/nav/links.ts` today, so `Group` renders nothing for that heading) —
- * not as speculative API. Don't delete them once Phase 10 ships a `yours`
- * page and the default data alone starts exercising the grouped state.
+ * `primary` and `yours` default to the real destination lists. The props exist
+ * so both the empty and the populated "Yours" state are testable and
+ * storyable — not as speculative API. `/list` is the first `yours` page to
+ * ship, so the default data now exercises the grouped state as well.
  */
 export function NavRail({
   pathname,

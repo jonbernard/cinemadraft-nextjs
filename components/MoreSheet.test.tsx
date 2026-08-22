@@ -42,6 +42,9 @@ const readyYours: NavLink[] = [
   },
 ];
 
+/** The same three, as they were before any of their pages existed. */
+const unreadyYours: NavLink[] = readyYours.map((link) => ({ ...link, ready: false }));
+
 /**
  * Structure only. jsdom implements neither `showModal()` nor the focus trap,
  * so open/close behaviour, focus trapping and Escape are Task 17's job in a
@@ -76,12 +79,19 @@ describe('MoreSheet', () => {
     }
   });
 
-  // 🔴 A nav entry pointing at a 404 is worse than a missing one. All three
-  // real `yours` links are `ready: false` today, so the default render must
-  // show none of them — and must not leave the "Yours" heading floating above
-  // an empty list, the trap Task 14 hit.
+  // 🔴 A nav entry pointing at a 404 is worse than a missing one, and the
+  // heading must not float above an empty list either — the trap Task 14 hit.
+  // Injected rather than read off the real data, which now has `/list` ready.
   it('hides the yours group entirely while every destination is unready', () => {
-    render(<MoreSheet id={MORE_ID} ref={createRef()} pathname="/" isSignedIn={false} />);
+    render(
+      <MoreSheet
+        id={MORE_ID}
+        ref={createRef()}
+        pathname="/"
+        isSignedIn={false}
+        yours={unreadyYours}
+      />,
+    );
     expect(screen.queryByText('Yours')).toBeNull();
     for (const label of ['Watchlist', 'Draft list', 'Rules & scoring']) {
       expect(screen.queryByRole('link', { hidden: true, name: label })).toBeNull();

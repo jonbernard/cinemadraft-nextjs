@@ -9,7 +9,7 @@ vi.mock('@clerk/nextjs', () => ({
 }));
 
 import { AppShell } from '@/components/AppShell';
-import { PRIMARY_LINKS } from '@/lib/nav/links';
+import { NAV_LINKS } from '@/lib/nav/links';
 
 /**
  * The shell that makes everything else reachable.
@@ -23,10 +23,13 @@ const rail = () => screen.getByRole('navigation', { name: 'Main' });
 const tabs = () => screen.getByRole('navigation', { name: 'Primary, mobile' });
 const sheet = () => screen.getByLabelText('More');
 
-/** Destinations whose pages exist today; `NavRail` only shows these. */
-const READY_PRIMARY = PRIMARY_LINKS.filter((link) => link.ready).map(
-  (link) => link.label,
-);
+/**
+ * Destinations whose pages exist today; `NavRail` only shows these.
+ *
+ * Every ready link, not just the primary ones — the rail renders both groups,
+ * and `yours` stopped being empty when `/list` shipped.
+ */
+const READY_LINKS = NAV_LINKS.filter((link) => link.ready).map((link) => link.label);
 
 /**
  * Open the sheet before reading it.
@@ -76,7 +79,7 @@ describe('AppShell', () => {
       .map((link) => link.textContent?.trim())
       .filter((label) => label !== 'Cinemadraft');
 
-    expect(labels).toEqual(READY_PRIMARY);
+    expect(labels).toEqual(READY_LINKS);
   });
 
   it('🔴 the More trigger reports whether the sheet is open', async () => {

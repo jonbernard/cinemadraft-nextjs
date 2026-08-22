@@ -147,7 +147,7 @@ test.describe('navigation', () => {
     expect(result.focused).toBe(false);
   });
 
-  test('the More sheet holds the theme and account controls, and no destinations yet', async ({
+  test('the More sheet holds the yours destinations, the theme and the account control', async ({
     page,
   }) => {
     await page.setViewportSize(PHONE);
@@ -157,23 +157,23 @@ test.describe('navigation', () => {
     const sheet = page.getByRole('dialog', { name: 'More' });
     await expect(sheet).toBeVisible();
 
-    // 🔴 The sample spec for this task clicked `sheet.getByRole('link').first()`
-    // and expected a `yours` destination. There is none: all three of
-    // Watchlist, Draft list and Rules & scoring are `ready: false` in
-    // `lib/nav/links.ts`, and the sheet filters on that flag rather than
-    // linking at a 404 — heading, list and divider all gated together. So the
-    // only link in the sheet today is the account control, and asserting that
-    // is the honest version of the sample's test.
-    //
-    // When Phase 10 ships one of the three and flips its flag, this count
-    // breaks. That is the point: it is the reminder to assert on the real
-    // destination — that clicking it navigates and the sheet closes behind it —
-    // which cannot be asserted today without inventing data the app does not
-    // have.
-    await expect(sheet.getByRole('link')).toHaveCount(1);
+    // 🔴 `/list` is the first `yours` page to exist (P10.T20), so the group and
+    // its heading are no longer gated away. The other two are still
+    // `ready: false` and the sheet filters on that flag rather than linking at
+    // a 404 — which is what makes their absence here an assertion rather than
+    // an omission. When T19 and T24 ship, this count moves again.
+    await expect(sheet.getByText('Yours')).toBeVisible();
+    await expect(sheet.getByRole('link', { name: 'Draft list' })).toHaveAttribute(
+      'href',
+      '/list',
+    );
+    await expect(sheet.getByRole('link', { name: 'Watchlist' })).toHaveCount(0);
+    await expect(sheet.getByRole('link', { name: 'Rules & scoring' })).toHaveCount(0);
+
+    // The destination and the account control; the theme toggle is a button.
+    await expect(sheet.getByRole('link')).toHaveCount(2);
     await expect(sheet.getByRole('link', { name: 'Log in' })).toBeVisible();
     await expect(sheet.getByRole('button', { name: /theme/i })).toBeVisible();
-    await expect(sheet.getByText('Yours')).toHaveCount(0);
   });
 
   test('🔴 the tab bar does not cover the bottom of the page', async ({ page }) => {

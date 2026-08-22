@@ -19,9 +19,9 @@ import { ThemeToggle } from './ThemeToggle';
  * and grouping the once-a-season pages behind one more tap keeps every
  * destination reachable without shrinking the tabs a member uses weekly.
  *
- * `yours` defaults to the real list and exists only so the sheet is testable
- * and storyable while all three are still `ready: false` — the same reason
- * `NavRail` takes a `yours` prop. Don't delete it once Phase 10 ships one.
+ * `yours` defaults to the real list and exists so the all-unready and
+ * all-ready states are both testable and storyable — the same reason `NavRail`
+ * takes a `yours` prop. `/list` is the first of the three to ship.
  *
  * `id`/`ref`/`pathname`/`isSignedIn` arrive from the caller: opening this
  * dialog needs a ref to it, and this is the shape Task 16 ports from
@@ -42,10 +42,8 @@ export function MoreSheet({
   yours?: NavLink[];
 }) {
   // A nav entry pointing at a 404 is worse than a missing one — the same gate
-  // `NavRail`'s `Group` and `TabBar` both apply. All three real `yours` links
-  // are `ready: false` today, so this renders nothing until Phase 10 ships
-  // one; the heading and its divider are gated with it below rather than
-  // left floating above an empty list.
+  // `NavRail`'s `Group` and `TabBar` both apply. The heading and its divider
+  // are gated with it below rather than left floating above an empty list.
   const visible = yours.filter((link) => link.ready);
 
   return (

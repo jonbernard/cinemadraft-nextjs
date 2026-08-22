@@ -83,7 +83,7 @@ export const NAV_LINKS: NavLink[] = [
   {
     href: '/list',
     label: 'Draft list',
-    ready: false,
+    ready: true,
     path: 'M4 6h16M4 12h16M4 18h10M18 16v5M15.5 18.5h5',
     group: 'yours',
   },
