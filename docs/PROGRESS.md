@@ -828,9 +828,9 @@ Decisions D67–D77.
 - [x] P3.5.T4 `AppShell`, `NavRail`, `TabBar`, `MoreSheet`; `AppNav` deleted; `e2e/nav.spec.ts` rewritten
 - [x] P3.5.T5 Page sweep — 20 surfaces (spec §8)
 - [x] P3.5.T6 Docs reconciled; `/tokens` deleted
-- [ ] P3.5.T6b Second Vercel project for Storybook — 🔴 **blocked on the owner**: the Vercel Git integration is disconnected (`sourceless`, zero webhooks), so no project builds until it is reconnected
+- [~] P3.5.T6b Second Vercel project for Storybook — **dropped** (D78). Run it locally with `npm run storybook`.
 
-**Phase 3.5 complete apart from the deployment.** 86 files / 1207 tests. `npm run verify`, `npm run build-storybook`, `bash scripts/layering.sh` and `npm run typecheck` all clean. Decisions D67–D77.
+**Phase 3.5 complete.** 86 files / 1207 tests. `npm run verify`, `npm run build-storybook`, `bash scripts/layering.sh` and `npm run typecheck` all clean. Decisions D67–D77.
 
 Two gate clauses were dropped by owner direction mid-run and are still owed before cutover: the consolidated Storybook a11y pass over every story in both schemes, and the per-surface browser checks at 1440px/390px. `addon-a11y` is configured `test: 'error'`, but no Storybook test-runner is installed, so `build-storybook` runs no axe checks.
 

@@ -147,9 +147,9 @@ Sequenced in six sub-phases, each ending green:
 - T4: `AppShell`, `NavRail`, `TabBar`, `MoreSheet`; `AppNav` deleted; `e2e/nav.spec.ts` rewritten (D75)
 - T5: The page sweep — 20 surfaces, enumerated in the spec's §8
 - T6: Docs reconciled; `/tokens` deleted — done
-- T6b: Second Vercel project for Storybook — 🔴 **still outstanding**, blocked on the owner
+- T6b: Second Vercel project for Storybook — **dropped** (D78). Storybook stays local; `npm run storybook`.
 
-🔴 **Blocked on the owner for deployment only** — the Vercel Git integration is disconnected (`sourceless`, zero webhooks), so no project builds until it is reconnected. T1–T5 proceed locally regardless.
+The Vercel Git integration has since been reconnected and the app project deploys on push.
 
 **Gate:** `npm run verify` and E2E green; every page renders in both themes; Storybook builds and every primitive story is a11y-clean. ⚠️ **Partially met.** `npm run verify` and `npm run build-storybook` are green and every surface was swept, but two clauses were dropped by owner direction mid-run ("you're doing too much reviewing of your work, and don't focus too much on e2e testing"): the consolidated a11y pass over every story, and the per-task browser checks at 1440px/390px. Both remain worth one pass before cutover — `addon-a11y` is configured `test: 'error'` but no Storybook test-runner is installed, so `build-storybook` runs no axe checks at all.
 
