@@ -1,4 +1,4 @@
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
 import { cn } from '@/lib/utils/cn';
 
 export type CreditPerson = { name: string; job: string };
@@ -32,7 +32,7 @@ export function CreditsPanel({ departments }: { departments: CreditDepartment[] 
 
   return (
     <section className="flex flex-col gap-4">
-      <LetterboxRule as="h2">Credits</LetterboxRule>
+      <SectionHead as="h2">Credits</SectionHead>
 
       <div className="flex flex-col gap-4">
         {departments.map((group) => (
@@ -49,9 +49,7 @@ function Department({ group }: { group: CreditDepartment }) {
 
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="text-text-secondary text-xs uppercase tracking-wide">
-        {group.department}
-      </h3>
+      <h3 className="text-text-secondary text-xs font-semibold">{group.department}</h3>
 
       <CreditList people={visible} />
 

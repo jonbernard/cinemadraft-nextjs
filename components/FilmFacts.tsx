@@ -16,9 +16,9 @@ import { cn } from '@/lib/utils/cn';
  * than a film nobody recorded the numbers for. `Fact` returns null instead, and
  * `FilmFacts` renders nothing at all when every row is empty.
  *
- * The label is right-aligned from `md` up, as the screenshot shows, and stacks
- * above its value on a phone: a 30/70 split at 375px leaves about ten characters
- * for "Production companies".
+ * Labels sit left and stay dim; values sit in `text.primary`. One divider
+ * between rows carries the boundary — there is no box around the whole
+ * table, only the rule each row shares with the next.
  */
 export function FilmFacts({
   children,
@@ -45,9 +45,7 @@ export function Fact({
 
   return (
     <div className="border-border-rule flex flex-col gap-1 border-b py-3 last:border-b-0 md:flex-row md:gap-4">
-      <dt className="text-text-secondary shrink-0 text-xs uppercase tracking-wide md:w-40 md:text-right md:text-sm md:normal-case md:tracking-normal">
-        {label}
-      </dt>
+      <dt className="text-text-secondary shrink-0 text-sm md:w-40">{label}</dt>
       <dd className="text-text-primary min-w-0 text-sm leading-relaxed">
         {value ?? children}
       </dd>

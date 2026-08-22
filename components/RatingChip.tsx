@@ -34,8 +34,8 @@ const COLOUR = {
  * force all three band colours dark enough to carry white text at 4.5:1, which
  * makes them muddy and mutually indistinguishable — destroying the one thing a
  * traffic light is for. As text on the app's own surface they stay bright and
- * legible, and the hairline matches the letterbox language of every other
- * panel. See `theme/tokens.ts`.
+ * legible, and the hairline is the border that carries this chip's own
+ * meaning — the traffic-light band — rather than decoration. See `theme/tokens.ts`.
  *
  * `out of 100` is spelled out rather than shown as `94/100`: the denominator is
  * the same for both sources this renders, and a slash reads as a fraction of

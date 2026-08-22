@@ -2,7 +2,8 @@
 
 import { useCallback, useState } from 'react';
 
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { Panel } from '@/components/Panel';
+import { SectionHead } from '@/components/SectionHead';
 
 export type Trailer = { key: string; name: string };
 
@@ -49,10 +50,10 @@ export function TrailerReel({ trailers }: { trailers: readonly Trailer[] }) {
 
   return (
     <section className="flex flex-col gap-3">
-      <LetterboxRule as="h2">Trailers</LetterboxRule>
+      <SectionHead as="h2">Trailers</SectionHead>
 
       {playing ? (
-        <div className="bg-bg-raised border-border-rule aspect-video w-full border">
+        <Panel tone="raised" className="aspect-video w-full overflow-hidden">
           <iframe
             // `key` so switching trailers replaces the frame rather than
             // mutating its src, which leaves the old player running in some
@@ -64,7 +65,7 @@ export function TrailerReel({ trailers }: { trailers: readonly Trailer[] }) {
             allowFullScreen
             className="h-full w-full"
           />
-        </div>
+        </Panel>
       ) : null}
 
       <ul className="flex flex-col gap-1">
@@ -142,7 +143,7 @@ function TrailerButton({
         }
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.5"
+        strokeWidth="1.6"
       >
         <circle cx="12" cy="12" r="9" />
         <path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor" stroke="none" />

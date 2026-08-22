@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { setWatched } from '@/actions/watchlist/set-watched';
+import { CinemaFrame } from '@/components/CinemaFrame';
 import { CreditsPanel } from '@/components/CreditsPanel';
 import { Fact, FilmFacts } from '@/components/FilmFacts';
 import { FilmPointsPanel } from '@/components/FilmPointsPanel';
-import { LetterboxRule } from '@/components/LetterboxRule';
 import { PosterCarousel } from '@/components/PosterCarousel';
 import { RatingChip } from '@/components/RatingChip';
+import { SectionHead } from '@/components/SectionHead';
 import { TrailerReel } from '@/components/TrailerReel';
 import { WatchedToggle } from '@/components/WatchedToggle';
 import { getCurrentUser } from '@/lib/auth';
@@ -94,13 +95,17 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
       <div className="mx-auto grid max-w-6xl gap-8 px-4 md:grid-cols-2 md:px-8">
         <div className="flex flex-col gap-8">
           <section className="flex flex-col gap-4">
-            <LetterboxRule as="h2">About</LetterboxRule>
+            <SectionHead as="h2">About</SectionHead>
 
             <FilmFacts>
               <Fact label="Runtime" value={formatRuntime(film.runtimeMinutes)} />
               <Fact label="Language" value={film.language} />
               <Fact label="Tagline" value={film.tagline} />
-              <Fact label="Overview" value={film.overview} />
+              {film.overview ? (
+                <Fact label="Overview">
+                  <p className="font-prose text-base leading-relaxed">{film.overview}</p>
+                </Fact>
+              ) : null}
               <Fact
                 label="Genres"
                 value={film.genres.length > 0 ? film.genres.join(', ') : null}
@@ -134,7 +139,7 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
 
           {film.posterUrls.length > 0 ? (
             <section className="flex flex-col gap-3">
-              <LetterboxRule as="h2">Posters</LetterboxRule>
+              <SectionHead as="h2">Posters</SectionHead>
               <PosterCarousel title={film.title} posterUrls={film.posterUrls} />
             </section>
           ) : null}
@@ -166,7 +171,7 @@ function FilmBanner({
 }) {
   return (
     <header className="relative mb-8">
-      <div className="bg-bg-raised relative h-48 w-full overflow-hidden md:h-72">
+      <CinemaFrame className="bg-bg-raised">
         {film.backdropUrl ? (
           // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11, which needs the remote host allowlist configured first
           <img
@@ -179,7 +184,7 @@ function FilmBanner({
           />
         ) : null}
         <div className="from-bg-base absolute inset-0 bg-gradient-to-t via-transparent" />
-      </div>
+      </CinemaFrame>
 
       {/* 🔴 `relative` is load-bearing, not decoration. This block is pulled up
           over the banner by `-mt-16`, and the banner above it is positioned —
@@ -189,7 +194,7 @@ function FilmBanner({
           nothing in jsdom could have caught it. */}
       <div className="relative mx-auto -mt-16 flex max-w-6xl flex-wrap items-end justify-between gap-4 px-4 md:px-8">
         <div className="flex flex-col gap-2">
-          <h1 className="font-display text-text-primary text-3xl font-bold uppercase tracking-wide [font-variation-settings:'wdth'_118] md:text-5xl">
+          <h1 className="font-serif text-text-primary text-3xl font-bold tracking-[-0.02em] md:text-5xl">
             {film.title}
           </h1>
           <div className="flex flex-wrap items-center gap-3">
@@ -203,7 +208,7 @@ function FilmBanner({
                 rating glyphs (`src/pages/movie/icons`), which would have to be
                 redrawn to no benefit. */}
             {film.facts?.mpaaRating ? (
-              <span className="border-border-rule text-text-secondary border px-2 py-0.5 font-mono text-xs uppercase">
+              <span className="border-border-rule text-text-secondary border px-2 py-0.5 font-sans text-xs">
                 {film.facts.mpaaRating}
               </span>
             ) : null}
@@ -254,7 +259,7 @@ function SimilarFilms({ films }: { films: FilmPage['similar'] }) {
 
   return (
     <section className="flex flex-col gap-3">
-      <LetterboxRule as="h2">Similar films</LetterboxRule>
+      <SectionHead as="h2">Similar films</SectionHead>
 
       <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {films.map((film) => (
@@ -263,7 +268,7 @@ function SimilarFilms({ films }: { films: FilmPage['similar'] }) {
               href={`/films/${film.tmdbId}`}
               className="focus-visible:outline-accent-fill group flex flex-col gap-2 focus-visible:outline-2"
             >
-              <span className="bg-bg-raised border-border-rule block aspect-[2/3] overflow-hidden border">
+              <span className="poster-radius bg-bg-raised light:border light:border-border-rule block aspect-[2/3] overflow-hidden">
                 {film.posterUrl ? (
                   // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11, which needs the remote host allowlist configured first
                   <img

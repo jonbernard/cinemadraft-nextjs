@@ -120,7 +120,7 @@ export function WatchedToggle({
             className="h-4 w-4"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="1.6"
             strokeLinecap="round"
             strokeLinejoin="round"
           >

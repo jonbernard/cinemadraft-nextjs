@@ -1,7 +1,8 @@
 import Link from 'next/link';
 
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { Eyebrow } from '@/components/Eyebrow';
 import { PointsLedger } from '@/components/PointsLedger';
+import { SectionHead } from '@/components/SectionHead';
 import type { FilmScoring } from '@/lib/services/film';
 
 /**
@@ -35,7 +36,7 @@ export function FilmPointsPanel({
 }) {
   return (
     <section className="flex flex-col gap-4">
-      <LetterboxRule as="h2">League points</LetterboxRule>
+      <SectionHead as="h2">League points</SectionHead>
 
       <div className="flex flex-wrap gap-6">
         <Stat label={`Total, ${scoring.year} season`} value={String(scoring.total)} />
@@ -84,8 +85,8 @@ export function FilmPointsPanel({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-text-secondary text-xs uppercase tracking-wide">{label}</span>
-      <span className="font-display text-text-primary tabular text-3xl font-bold [font-variation-settings:'wdth'_118]">
+      <Eyebrow>{label}</Eyebrow>
+      <span className="font-sans text-text-primary tabular text-3xl font-bold">
         {value}
       </span>
     </div>
