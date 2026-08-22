@@ -194,12 +194,12 @@ The plan groups the eight items below into seven executable tasks — T1+T2 are 
 - [x] P3.T1 Token types + dark palette — `theme/tokens.ts`; 3 tests
 - [x] P3.T2 Light palette — same file. Spec gave no light `text.dim` or `beam`; dim reuses secondary, and beam is darkened to `#3F6273` (5.91:1 on paper — the dark theme's `#7FA6B8` is 1.9:1 there)
 - [x] P3.T3 🔴 Contrast test — 34 assertions, both palettes. Computed values match the spec's own §6.4 table
-- [x] P3.T4 Typography via `next/font`, tabular numerals
+- [x] P3.T4 Typography via `next/font`, tabular numerals. 🔴 **Archivo's `wdth` axis is retired** (D71); Instrument Serif and Newsreader were added in Phase 3.5
 - [x] P3.T5 MUI theme assembly, dark default + light toggle; 8 tests
 - [x] P3.T6 Poster accent luminance clamping + test — 108 tests
-- [x] P3.T7 Letterbox rule component — 12 tests shared with T8
+- [x] P3.T7 Letterbox rule component — 12 tests shared with T8. 🔴 **Retired in Phase 3.5** (D74): `LetterboxRule` is deleted and `SectionHead` replaced it
 - [x] P3.T8 Poster frame component
-- [x] P3.T9 Token gallery at `/tokens` + no-raw-hex CI check — the gate named in `PLAN.md`, which the task list had left unowned
+- [x] P3.T9 Token gallery at `/tokens` + no-raw-hex CI check — the gate named in `PLAN.md`, which the task list had left unowned. 🔴 **`/tokens` is deleted** (D76): Storybook is the gallery and `scripts/layering.sh` carries the hex check
 
 **Phase 3 complete.** 528 tests, 26 files. Typecheck, Biome, build and all five layering checks clean.
 
@@ -820,39 +820,99 @@ Research: [`docs/reference/2026-08-17-design-research.md`](reference/2026-08-17-
 Requested by the owner 2026-08-17, mid-Phase-10: the app read "too techy/nerdy",
 naming the all-caps headings, the squared-off buttons and the desktop top nav.
 Numbered 3.5 because it revises Phase 3's output rather than following Phase 10.
-Decisions D67–D76.
+Decisions D67–D77.
 
-- [ ] P3.5.T1 Storybook 10 + `@storybook/nextjs-vite` — PostCSS object-form fix, font decorator, MUI `setMode` wiring, `addon-a11y`
-- [ ] P3.5.T2 Foundations — both palettes, type scale, radius, elevation, motion; `contrast.test.ts` + `tokens.test.ts` extended; `Styleguide.mdx`
-- [ ] P3.5.T3 Primitives — `SectionHead`, `Eyebrow`, `Shelf`, `Button`, `StatusChip`, `Panel`, `CinemaFrame`, each with stories and states
-- [ ] P3.5.T4 `AppShell`, `NavRail`, `TabBar`, `MoreSheet`; `AppNav` deleted; `e2e/nav.spec.ts` rewritten
-- [ ] P3.5.T5 Page sweep — 20 surfaces (spec §8)
-- [ ] P3.5.T6 Docs reconciled; `/tokens` deleted; second Vercel project live
+- [x] P3.5.T1 Storybook 10 + `@storybook/nextjs-vite` — PostCSS object-form fix, font decorator, MUI `setMode` wiring, `addon-a11y`
+- [x] P3.5.T2 Foundations — both palettes, type scale, radius, elevation, motion; `contrast.test.ts` + `tokens.test.ts` extended; `Styleguide.mdx`
+- [x] P3.5.T3 Primitives — `SectionHead`, `Eyebrow`, `Shelf`, `Button`, `StatusChip`, `Panel`, `CinemaFrame`, each with stories and states
+- [x] P3.5.T4 `AppShell`, `NavRail`, `TabBar`, `MoreSheet`; `AppNav` deleted; `e2e/nav.spec.ts` rewritten
+- [x] P3.5.T5 Page sweep — 20 surfaces (spec §8)
+- [x] P3.5.T6 Docs reconciled; `/tokens` deleted
+- [ ] P3.5.T6b Second Vercel project for Storybook — 🔴 **blocked on the owner**: the Vercel Git integration is disconnected (`sourceless`, zero webhooks), so no project builds until it is reconnected
+
+**Phase 3.5 complete apart from the deployment.** 86 files / 1207 tests. `npm run verify`, `npm run build-storybook`, `bash scripts/layering.sh` and `npm run typecheck` all clean. Decisions D67–D77.
+
+Two gate clauses were dropped by owner direction mid-run and are still owed before cutover: the consolidated Storybook a11y pass over every story in both schemes, and the per-surface browser checks at 1440px/390px. `addon-a11y` is configured `test: 'error'`, but no Storybook test-runner is installed, so `build-storybook` runs no axe checks.
 
 ### What the next phase needs to know
 
-- **Five faults were measured in the running app**, not the three the owner
-  named. The two unnamed ones are the larger: cards outlined with hairlines on
-  all four sides (the monitoring-dashboard signature), and monospace carrying
-  *labels* rather than only digits. Fixing only the named three would not have
-  worked.
-- **The palette was verified before it was written down.** Every pair was run
-  through `theme/contrast.ts`'s own algorithm against all three grounds. Four
-  candidate values failed and were replaced — `text.dim` in both themes was the
-  worst, at 3.87 on dark `raised`. The numbers in the spec are worst-case.
-- 🔴 **`brass` needs a fill/text split and a per-scheme contrast text.** Dark ink
-  on dark-theme brass is 7.55; white on light-theme brass is 6.37; dark ink on
-  light-theme brass is 2.65 and fails. Getting this wrong ships an unreadable
-  winner seal in one theme only.
-- 🔴 **The rail costs 16% of the content width at 1280px** — 1152px today versus
-  966px with the rail. Measured, after an earlier estimate in the spec claimed it
-  was near-neutral and was wrong. Check a 10-seat league at 1280px and 1366px
-  before T5 commits; the rail narrows to 208px if it does not hold.
-- **`e2e/nav.spec.ts` is a rewrite, not an edit.** Every assertion names the
-  drawer or its `Menu` trigger. What must survive is the proof that `<dialog>`
-  behaviour is real, since jsdom implements none of it.
-- **`scripts/layering.sh` must grow to cover `.storybook/` and `*.stories.tsx`**
-  when `/tokens` is deleted, or the no-raw-hex guarantee is silently lost.
+Facts a later phase cannot re-derive by reading the code. Verified against the
+code at the close of Phase 3.5, not copied from the spec.
+
+**Storybook (spec §7.2 — five landmines, all still live)**
+
+- `postcss.config.mjs` must use the **object** form. Next accepts
+  `plugins: ["@tailwindcss/postcss"]`; Vite's `postcss-load-config` rejects it.
+- `.storybook/preview` must be **`.tsx`, never `.ts`** — the `.ts` extension is
+  a documented cause of `Cannot read properties of undefined (reading
+  'className')` with `next/font`.
+- Fonts reach `<html>` from a **decorator** importing `theme/fonts.ts`, applied
+  to `document.documentElement`. Storybook never renders the root layout, and
+  calling a `next/font` loader a second time inside `preview.tsx` breaks.
+  CI needs `NEXT_FONT_GOOGLE_MOCKED_RESPONSES`; **`ci.yml` sets it on the
+  `verify` job's `npm run build` only, because there is no `build-storybook`
+  job** — add one and it needs the variable too.
+- Drive MUI's `setMode()` from a toolbar global (`.storybook/SyncMode.tsx`).
+  Never `withThemeByDataAttribute`: MUI *owns* `data-mui-color-scheme`, and an
+  addon writing it makes `useColorScheme()` stale and `localStorage['mui-mode']`
+  wrong.
+- `forceThemeRerender` is required on `ThemeProvider`; with `cssVariables: true`
+  MUI does not re-render on a mode switch.
+- Two more, and the second is the one that costs time: `app/globals.css` must be
+  the **first** import in `preview.tsx`, because `@layer` order is fixed by first
+  declaration — and **Storybook injects its own preview styles un-layered, which
+  outranks every layered rule.** If a story looks wrong *only* in Storybook,
+  suspect that before suspecting the component.
+
+**Primitive contracts — the traps, not the API**
+
+- **`SectionHead`'s right-slot wrapper carries `font-mono`**, so a non-numeric
+  child silently inherits monospace. This shipped a primary CTA in IBM Plex Mono
+  before it was caught. Words in that slot need `font-sans` at the call site.
+- **`SectionHead`'s non-`name` heading is `font-semibold`, and Instrument Serif
+  ships weight 400 only**, so `font-serif` inside it is browser-synthesised into
+  faux-bold. Needs `font-normal` at the call site.
+- **`Shelf` hard-codes `as="h3"` and renders a bare `<ul>` with no
+  accessible-name prop.** Three separate tasks each wanted a different widening
+  of that contract, so it was deliberately left alone mid-sweep. It is a known
+  gap, not an oversight — settle it once, with all call sites in view.
+- **`components/EmptyState.tsx` and `components/SeasonRail.tsx` are shared
+  across surfaces.** Changing their rendered output moves pages a task may not
+  have in view (`SeasonRail` renders on both Home and Browse).
+
+**Tokens and type**
+
+- **Token *names* did not change; values did** (D77). The spec says
+  `bg.void` / `bg.panel`; the code says `bg.base` / `bg.surface`. Translate.
+- **`brass.contrast` differs per scheme** — `#241C05` on dark, `#FFFFFF` on
+  light. Dark ink on *light* brass is 2.65:1 and fails, so this is a **token
+  pair, not a component branch**; D15's "no component branches on theme" holds
+  because the pair does the work.
+- **Serif renders proper nouns only** (D70), and it is a *semantic* rule, not a
+  dimensional one — which is what makes a single-weight face safe. A name that
+  must be set below 15px renders in Archivo. That is the only exception.
+- **`--font-serif` and `--font-mono` are Tailwind's own theme keys.** A
+  `next/font` loader must never be given those variable names: the resulting
+  self-reference is a CSS cycle, which resolves silently to the browser default
+  with no warning and a passing build. Hence `--font-instrument-serif` and
+  `--font-plex-mono`.
+
+**Layout and process**
+
+- **The rail is 208px and collapses at `xl` (1280px), not `lg`.** Measured, not
+  estimated — see D67. §11.4's own arithmetic is wrong by ~25%: it predicts
+  ~128px per poster on a 7-round board where the measured figure is 96.1px,
+  because its sum ignores the board's ~114px seat column and the page's padding.
+  The 28px the rail gave back is **not** what makes a 10-seat board legible; the
+  desktop `DraftBoard` compressing instead of scrolling is (see Open questions).
+- **Deleting a route leaves a stale `.next/dev/types/validator.ts`** that fails
+  `npm run typecheck` with a "cannot find module" error naming the page you just
+  deleted. `rm -rf .next/dev/types` fixes it.
+- `scripts/layering.sh` covers `.storybook/` and `*.stories.tsx` as well as
+  `components/` and `app/`; `app/global-error.tsx` is the only hex exemption. It
+  does **not** grep for `uppercase`, `font-display` or `wdth` — those retired
+  treatments are enforced by remembering, which is how two files no task owned
+  shipped in violation with every gate green.
 
 ---
 
@@ -887,3 +947,25 @@ Decisions D67–D76.
 - **Clerk keys are Development instance (`pk_test_`) in all environments.** Correct for the build — the Production instance needs a verified domain. At release, create it, swap Production to `pk_live_`/`sk_live_`, and recreate the webhook (endpoints and signing secrets are per-instance).
 - **Realtime transport undecided** — deferred to phase 14 by D23. Not on the cutover path.
 - **Logo mark undecided.** Wordmark-only until resolved. See `docs/DECISIONS.md` → Still open.
+- **The desktop `DraftBoard` compresses instead of scrolling.** A 10-seat board
+  at 1280px inside the shell holds poster cells around 66–81px whatever the rail
+  width — the table's `w-24` columns are a hint rather than a floor
+  (`scrollWidth === clientWidth` at every width measured), and the league page
+  sheds a further 64px to its own `max-w-6xl` and `p-8`. `Shelf` and
+  `RosterStrip` both scroll or wrap and hold their 160px floor; the table is the
+  one component that does neither. Three ways out, none chosen: the table
+  scrolls horizontally like `Shelf`; the board sheds its own `max-w-6xl`/`p-8`
+  inside the shell; or 10 seats is declared out of scope below 1440px. The
+  design target is 1440px, so this is not on the cutover path. See
+  `docs/DECISIONS.md` → Still open.
+- **No a11y pass has run over the Storybook stories.** `addon-a11y` is
+  configured `test: 'error'`, but no Storybook test-runner is installed, so
+  `build-storybook` runs no axe checks — they need a real browser. One pass over
+  every story in both schemes is owed before cutover, along with the per-surface
+  browser checks at 1440px and 390px.
+- **Retired treatments are enforced by memory, not by a gate.**
+  `scripts/layering.sh` greps for raw hex and for layering violations, and for
+  nothing else. Two files carrying `uppercase` that no task owned shipped in
+  violation with every gate green until they were found by inventory. Consider
+  adding `uppercase`, `font-display` and `font-variation-settings` greps —
+  scoped so `Eyebrow` and `PickCell`'s two-letter initials are allowed.

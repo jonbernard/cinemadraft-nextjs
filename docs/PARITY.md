@@ -229,6 +229,14 @@ Shapes where the obvious port is the wrong one. The first cost real money once.
 6. **`ProfileFeeds.components` is a JSON string** beside a `componentsArray` virtual that parses it — and the getter throws on null.
 7. **`movie.watchlist` is not the movie's watchlist**, it is the caller's entry, ids only, used as a boolean.
 8. **`Leagues.owner` is a JSON string** whose parsing getter is bypassed under `raw: true`.
+9. 🔴 **Every remaining row is built on the Phase 3.5 design system, not on what the
+   screenshots show.** `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`,
+   `Eyebrow`, `CinemaFrame`, `PosterFrame` — each new surface uses them and carries a
+   Storybook story. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the
+   `/tokens` gallery page were all deleted; the gallery is `.storybook/Styleguide.mdx`.
+   No hairline card border, no all-caps heading outside `Eyebrow`, no squared or pill
+   button, no machine-formatted date. See D67–D77 and `docs/PLAN.md` → Phase 10 for the
+   four surfaces still owed and the primitives each needs.
 
 ## What the audit did not cover
 

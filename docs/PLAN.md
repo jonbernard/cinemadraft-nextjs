@@ -127,9 +127,9 @@ Tokens, both themes, typography, and the tests that keep them honest.
 - T7: Letterbox rule component (the signature device, §6.1)
 - T8: Poster frame component — 2:3, caption below, two-line clamp, seal and nominated states
 
-**Gate:** design tests green; a token-gallery page renders both themes with no raw hex anywhere in `components/`. ✅ **Met** — `/tokens` renders both, and the `layering` CI job fails on a hex literal under `components/` or `app/` (D37).
+**Gate:** design tests green; the gallery renders every token in both themes, and no raw hex exists outside the token system. ✅ **Met, then re-satisfied by Phase 3.5** — **Storybook is the gallery** (`.storybook/Styleguide.mdx`, which reads the live custom properties so it cannot drift) and **`scripts/layering.sh` is what enforces the hex rule**, over `components/`, `app/`, `.storybook/` and `*.stories.tsx`, with `app/global-error.tsx` the one exemption (D37, D76). The `/tokens` page that originally met this gate is deleted.
 
-🔴 **Revised by Phase 3.5** (2026-08-17). T1–T8 stay ticked — they were met as written — but their *content* changed: the palette, the type treatment, the shape language and the letterbox device were all revised, and **Storybook replaces `/tokens` as the gallery** (D76). The gate itself survives; only what satisfies it moves. See D67–D76.
+🔴 **Revised by Phase 3.5** (2026-08-17). T1–T8 stay ticked — they were met as written — but their *content* was superseded: the palette, the type treatment, the shape language and the letterbox device were all revised. **T7's `LetterboxRule` no longer exists** (D74; `SectionHead` replaced it) and **T4's Archivo `wdth` axis is retired** (D71). Read T1–T8 as history, not as a description of the code. See D67–D77.
 
 ---
 
@@ -137,7 +137,7 @@ Tokens, both themes, typography, and the tests that keep them honest.
 
 Spec: [`docs/superpowers/specs/2026-08-17-design-system-and-storybook-design.md`](superpowers/specs/2026-08-17-design-system-and-storybook-design.md)
 
-Requested by the owner mid-Phase-10: the app read "too techy/nerdy". Five faults were measured in the running app; the three the owner named were two of them. Ten reference products were measured live before anything was proposed. Decisions D67–D76.
+Requested by the owner mid-Phase-10: the app read "too techy/nerdy". Five faults were measured in the running app; the three the owner named were two of them. Ten reference products were measured live before anything was proposed. Decisions D67–D77.
 
 Sequenced in six sub-phases, each ending green:
 
@@ -146,11 +146,12 @@ Sequenced in six sub-phases, each ending green:
 - T3: Primitives — `SectionHead`, `Eyebrow`, `Shelf`, `Button`, `StatusChip`, `Panel`, `CinemaFrame`, with stories and every state
 - T4: `AppShell`, `NavRail`, `TabBar`, `MoreSheet`; `AppNav` deleted; `e2e/nav.spec.ts` rewritten (D75)
 - T5: The page sweep — 20 surfaces, enumerated in the spec's §8
-- T6: Docs reconciled; `/tokens` deleted; second Vercel project live
+- T6: Docs reconciled; `/tokens` deleted — done
+- T6b: Second Vercel project for Storybook — 🔴 **still outstanding**, blocked on the owner
 
 🔴 **Blocked on the owner for deployment only** — the Vercel Git integration is disconnected (`sourceless`, zero webhooks), so no project builds until it is reconnected. T1–T5 proceed locally regardless.
 
-**Gate:** `npm run verify` and E2E green; every page renders in both themes; Storybook builds and every primitive story is a11y-clean.
+**Gate:** `npm run verify` and E2E green; every page renders in both themes; Storybook builds and every primitive story is a11y-clean. ⚠️ **Partially met.** `npm run verify` and `npm run build-storybook` are green and every surface was swept, but two clauses were dropped by owner direction mid-run ("you're doing too much reviewing of your work, and don't focus too much on e2e testing"): the consolidated a11y pass over every story, and the per-task browser checks at 1440px/390px. Both remain worth one pass before cutover — `addon-a11y` is configured `test: 'error'` but no Storybook test-runner is installed, so `build-storybook` runs no axe checks at all.
 
 ---
 
@@ -272,7 +273,20 @@ The audit confirmed the surfaces guessed here — films (browse + watchlist + li
 
 🔴 **The shape of the work is not what this line assumed.** 26 of the 50 open rows already have their repository and need only a page; 22 need a repository written first, and those are almost all *writes* — the port's data layer is nearly complete for reads and nearly empty for writes.
 
+**The four surfaces Phase 3.5 leaves to build**, and what each is built from. Flipping a link's `ready` flag in
+`lib/nav/links.ts` is the **last step** of the task that builds it — `NavRail`, `TabBar` and `MoreSheet` all read that
+flag, so nothing else has to change, and until it flips the nav cannot link to a 404.
+
+| Page | Owed by | Built from |
+|---|---|---|
+| `/watchlist` | P10.T33–T37 | `Shelf`, `SectionHead`, `EmptyState` |
+| `/list` (draft list) | P10.T20 | `Shelf`, `StatusChip`, drag-and-drop as already specced |
+| `/rules-and-scoring` | P10.T46 | `Panel`, `SectionHead`, `font-prose` |
+| `/live/[abbr]` | P10.T31 — phase 14 (D23) | `CinemaFrame`, carmine `StatusChip`, `Shelf` |
+
 **Gate:** every row in `PARITY.md` closed; E2E green per feature.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
 
 ---
 
@@ -287,6 +301,8 @@ The audit confirmed the surfaces guessed here — films (browse + watchlist + li
 
 **Gate:** images render from Blob; no Cloudinary request remains in the network log.
 
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+
 ---
 
 ### Phase 12 — Parallel run
@@ -298,6 +314,8 @@ The audit confirmed the surfaces guessed here — films (browse + watchlist + li
 - T5: Fix everything found
 
 **Gate:** full manual pass with zero blocking defects; free-tier headroom confirmed sufficient.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
 
 ---
 
@@ -311,6 +329,8 @@ The audit confirmed the surfaces guessed here — films (browse + watchlist + li
 - T5: Retire Heroku
 
 **Gate:** site live on Vercel; Heroku scaled to zero.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
 
 ---
 
@@ -331,6 +351,8 @@ Replaces the polling fallback (D13).
 
 **Gate:** live event works end to end with two concurrent clients.
 
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+
 ---
 
 ### Phase 15 — New features
@@ -346,3 +368,5 @@ Per §7, all post-cutover.
 - Public logged-out league board replacing the welcome card
 
 **Gate:** per-feature E2E green.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
