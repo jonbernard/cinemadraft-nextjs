@@ -99,7 +99,7 @@ describe('PointsLedger', () => {
       .getAllByRole('listitem')
       .find((item) => item.textContent?.includes('Best Picture'));
 
-    expect(winner?.textContent).toContain('won');
+    expect(winner?.textContent).toContain('Won');
     // And carries double the award's value, which is the rule (D41).
     expect(winner?.textContent).toContain('40');
   });

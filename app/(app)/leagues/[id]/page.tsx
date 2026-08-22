@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation';
 
 import { DraftBoard } from '@/components/DraftBoard';
 import { InviteLink } from '@/components/InviteLink';
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
+import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
@@ -86,14 +87,14 @@ export default async function LeaguePage({
     <main className="bg-bg-base text-text-primary min-h-dvh p-4 md:p-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-3">
-          <LetterboxRule as="h1">{board.leagueName ?? 'League'}</LetterboxRule>
+          <SectionHead as="h1" name>
+            {board.leagueName ?? 'League'}
+          </SectionHead>
 
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 text-sm">
             <span className="text-text-secondary tabular font-mono">{board.year}</span>
             {board.status ? (
-              <span className="text-text-dim text-xs uppercase tracking-wide">
-                {board.status}
-              </span>
+              <span className="text-text-dim text-xs">{board.status}</span>
             ) : null}
             {canManage ? (
               <>
@@ -147,9 +148,7 @@ export default async function LeaguePage({
         ) : (
           board.groups.map((group) => (
             <section key={group.group} className="flex flex-col gap-3">
-              <h2 className="text-text-dim text-xs font-normal uppercase tracking-wide">
-                Group {group.group}
-              </h2>
+              <h2 className="text-text-dim text-xs font-normal">Group {group.group}</h2>
 
               {isPending ? (
                 /* Before a draft starts there is nothing to put on a board, and
@@ -166,13 +165,15 @@ export default async function LeaguePage({
                       <span className="text-text-dim tabular w-6 font-mono text-xs">
                         {String(seat.order).padStart(2, '0')}
                       </span>
-                      <span className="text-text-primary text-sm">
-                        {seat.name}
-                        {seat.draftId === viewerSeatId ? (
-                          <span className="text-accent-text"> · You</span>
-                        ) : null}
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-text-primary text-sm">
+                          {seat.name}
+                          {seat.draftId === viewerSeatId ? (
+                            <span className="text-accent-text"> · You</span>
+                          ) : null}
+                        </span>
                         {seat.isDummy ? (
-                          <span className="text-text-dim"> · unclaimed</span>
+                          <StatusChip tone="neutral">Unclaimed</StatusChip>
                         ) : null}
                       </span>
                     </li>
@@ -187,6 +188,7 @@ export default async function LeaguePage({
                     name: seat.name,
                     isDummy: seat.isDummy,
                     total: seat.total,
+                    order: seat.order,
                     picks: seat.picks.map((pick) => ({
                       pickId: pick.pickId,
                       round: pick.round,

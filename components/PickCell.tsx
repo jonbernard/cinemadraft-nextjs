@@ -39,7 +39,7 @@ export function PickCell({
         )}
       >
         {/* Says "nothing here yet" rather than looking like a failed image. */}
-        <span className="text-text-dim font-mono text-xs">
+        <span className="text-text-dim tabular font-mono text-xs">
           {String(round).padStart(2, '0')}
         </span>
       </div>

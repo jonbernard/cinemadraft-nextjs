@@ -65,19 +65,16 @@ export function StandingsPanel({
         <tr className="border-border-rule border-b">
           <th
             scope="col"
-            className="text-text-dim w-10 py-2 pr-3 text-right text-xs font-normal uppercase tracking-wide"
+            className="text-text-dim w-10 py-2 pr-3 text-right text-xs font-normal"
           >
             Pos
           </th>
-          <th
-            scope="col"
-            className="text-text-dim py-2 text-left text-xs font-normal uppercase tracking-wide"
-          >
+          <th scope="col" className="text-text-dim py-2 text-left text-xs font-normal">
             Member
           </th>
           <th
             scope="col"
-            className="text-text-dim py-2 pl-3 text-right text-xs font-normal uppercase tracking-wide"
+            className="text-text-dim py-2 pl-3 text-right text-xs font-normal"
           >
             Points
           </th>
@@ -116,9 +113,7 @@ export function StandingsPanel({
                 <span className="sr-only">, tied for position {row.position}</span>
               ) : null}
               {row.isViewer ? (
-                <span className="text-text-secondary ml-2 text-xs uppercase tracking-wide">
-                  You
-                </span>
+                <span className="text-text-secondary ml-2 text-xs">You</span>
               ) : null}
             </th>
             {/* 🔴 `tabular` is not optional (§6.5). Proportional figures make

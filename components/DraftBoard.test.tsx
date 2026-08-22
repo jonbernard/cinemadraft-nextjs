@@ -89,7 +89,7 @@ describe('DraftBoard', () => {
     );
 
     expect(desktop().getByText('Ghost')).toBeInTheDocument();
-    expect(phone().getByText(/unclaimed/)).toBeInTheDocument();
+    expect(phone().getByText(/unclaimed/i)).toBeInTheDocument();
   });
 
   it('shows a film’s title and points in its cell', () => {

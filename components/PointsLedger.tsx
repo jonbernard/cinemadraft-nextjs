@@ -1,3 +1,4 @@
+import { StatusChip } from '@/components/StatusChip';
 import { cn } from '@/lib/utils/cn';
 
 export type LedgerRow = {
@@ -105,9 +106,9 @@ export function PointsLedger({
                   key={line.nominationId}
                   className="flex items-baseline justify-between gap-2"
                 >
-                  <span className="text-text-dim text-xs leading-tight">
+                  <span className="text-text-dim flex flex-wrap items-center gap-2 text-xs leading-tight">
                     {line.awardName}
-                    {line.won ? <span className="text-accent-text"> · won</span> : null}
+                    {line.won ? <StatusChip tone="brass">Won</StatusChip> : null}
                   </span>
                   <span className="text-text-dim tabular font-mono text-xs">
                     {line.earned}

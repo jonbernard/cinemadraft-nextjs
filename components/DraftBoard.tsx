@@ -1,5 +1,7 @@
 import { PickCell } from '@/components/PickCell';
 import type { LedgerRow } from '@/components/PointsLedger';
+import { Shelf } from '@/components/Shelf';
+import { StatusChip } from '@/components/StatusChip';
 import { cn } from '@/lib/utils/cn';
 
 export type BoardSeat = {
@@ -7,6 +9,11 @@ export type BoardSeat = {
   name: string;
   isDummy: boolean;
   total: number;
+  /** The seat's position in the running order. Only known once a league has
+   *  been arranged (P10.T14–T17); omitted for a stale caller, in which case
+   *  the mobile shelf's eyebrow drops the "Seat NN" segment rather than
+   *  print `undefined`. */
+  order?: number;
   picks: {
     pickId: number;
     round: number;
@@ -68,39 +75,43 @@ export function DraftBoard({
 
   return (
     <div className={className}>
-      {/* Phone: one seat at a time. */}
+      {/* Phone: one seat at a time, each seat's picks a horizontally
+          scrolling Shelf — the same pattern the roster uses everywhere else,
+          so a member reads it exactly the way they read their own team. */}
       <ul className="flex flex-col gap-6 md:hidden">
         {seats.map((seat) => {
           const isViewer = viewerSeatId != null && seat.draftId === viewerSeatId;
           return (
-            <li
-              key={seat.draftId}
-              aria-current={isViewer ? true : undefined}
-              className={cn(
-                'border-border-rule flex flex-col gap-2 border-b pb-4',
-                isViewer && 'border-l-accent-fill bg-bg-raised border-l-2 pl-3',
-              )}
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-text-primary text-sm">
-                  {seat.name}
-                  {isViewer ? <span className="text-accent-text"> · You</span> : null}
-                  {seat.isDummy ? (
-                    <span className="text-text-dim"> · unclaimed</span>
-                  ) : null}
-                </span>
-                <span className="text-text-secondary tabular font-mono text-xs">
-                  {seat.total}
-                </span>
-              </div>
-
-              {seat.picks.length === 0 ? (
-                <span className="text-text-dim text-xs">No picks yet.</span>
-              ) : (
-                // Scrolls within the seat rather than the whole page, so a
-                // long roster never pushes the next seat off-screen.
-                <ul className="flex gap-2 overflow-x-auto pb-1">
-                  {seat.picks.map((pick) => (
+            <li key={seat.draftId} aria-current={isViewer ? true : undefined}>
+              <Shelf
+                eyebrow={
+                  seat.order == null
+                    ? `Rounds 1–${rounds}`
+                    : `Seat ${String(seat.order).padStart(2, '0')} · Rounds 1–${rounds}`
+                }
+                heading={
+                  <>
+                    <span className="font-serif">{seat.name}</span>
+                    {isViewer ? (
+                      <span className="text-accent-text ml-2 font-sans text-sm font-normal">
+                        You
+                      </span>
+                    ) : null}
+                  </>
+                }
+                right={
+                  <span className="flex items-center gap-2">
+                    {seat.isDummy ? (
+                      <StatusChip tone="neutral">Unclaimed</StatusChip>
+                    ) : null}
+                    <span className="tabular font-mono">{seat.total}</span>
+                  </span>
+                }
+              >
+                {seat.picks.length === 0 ? (
+                  <li className="text-text-dim text-xs">No picks yet.</li>
+                ) : (
+                  seat.picks.map((pick) => (
                     <li key={pick.pickId} className="w-20 shrink-0">
                       <PickCell
                         round={pick.round}
@@ -112,9 +123,9 @@ export function DraftBoard({
                         }}
                       />
                     </li>
-                  ))}
-                </ul>
-              )}
+                  ))
+                )}
+              </Shelf>
             </li>
           );
         })}
@@ -131,7 +142,7 @@ export function DraftBoard({
             <tr className="border-border-rule border-b">
               <th
                 scope="col"
-                className="text-text-dim w-40 py-2 pr-4 text-left text-xs font-normal uppercase tracking-wide"
+                className="text-text-dim w-40 py-2 pr-4 text-left text-xs font-normal"
               >
                 Seat
               </th>
@@ -162,16 +173,18 @@ export function DraftBoard({
                   )}
                 >
                   <th scope="row" className="py-3 pr-4 text-left font-normal">
-                    <span className="text-text-primary block text-sm">{seat.name}</span>
+                    <span className="text-text-primary flex flex-wrap items-center gap-2 text-sm">
+                      {seat.name}
+                      {seat.isDummy ? (
+                        <StatusChip tone="neutral">Unclaimed</StatusChip>
+                      ) : null}
+                    </span>
                     <span className="text-text-secondary tabular block font-mono text-xs">
                       {seat.total}
                       {/* The viewer is named, not just tinted — colour alone
                         would be invisible to a colour-blind reader and in
                         print (a11y: colour-not-only). */}
                       {isViewer ? <span className="text-accent-text"> · You</span> : null}
-                      {seat.isDummy ? (
-                        <span className="text-text-dim"> · unclaimed</span>
-                      ) : null}
                     </span>
                   </th>
 
