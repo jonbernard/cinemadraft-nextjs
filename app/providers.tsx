@@ -36,10 +36,21 @@ export function Providers({ children }: { children: ReactNode }) {
       localization={{
         formButtonPrimary: 'Continue',
         signIn: {
-          start: { title: 'Log in', subtitle: 'to continue to Cinemadraft' },
+          start: {
+            title: 'Log in',
+            subtitle: 'to continue to Cinemadraft',
+            // Default is "Don't have an account? Sign up" — "Sign up" is the
+            // one word that has to change; the question itself is fine.
+            actionLink: 'Register',
+          },
         },
         signUp: {
-          start: { title: 'Register', subtitle: 'to continue to Cinemadraft' },
+          start: {
+            title: 'Register',
+            subtitle: 'to continue to Cinemadraft',
+            // Default is "Already have an account? Sign in".
+            actionLink: 'Log in',
+          },
         },
         userButton: { action__signOut: 'Log out' },
       }}
@@ -56,7 +67,8 @@ export function Providers({ children }: { children: ReactNode }) {
           colorInputForeground: 'var(--color-text-primary)',
           colorBorder: 'var(--color-border-rule)',
           colorDanger: 'var(--color-accent-text)',
-          borderRadius: '2px',
+          // Buttons are always 6px, never the 2px Clerk shipped with (D73).
+          borderRadius: 'var(--radius-sm)',
           fontFamily: 'var(--font-archivo)',
         },
       }}
