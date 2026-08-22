@@ -15,10 +15,14 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 46 |
-| **deficient** | 23 |
+| **ported** | 47 |
+| **deficient** | 22 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
+
+🔴 **Recompute these from the table; never increment them.** The counts drifted
+by one during Phase 10 and went unnoticed for four batches, because each task
+adjusted the header by its own delta rather than recounting.
 
 _Audited at the end of Phase 6 (18 ported). Phase 8 closed seven rows: film
 search and the whole award-show surface, including both admin writes the source
