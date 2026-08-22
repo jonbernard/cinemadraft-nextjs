@@ -1,4 +1,5 @@
 import { PosterFrame } from '@/components/PosterFrame';
+import { StatusChip } from '@/components/StatusChip';
 import { cn } from '@/lib/utils/cn';
 
 export type GridNominee = {
@@ -13,9 +14,10 @@ export type GridNominee = {
 /**
  * One category's nominees (§12).
  *
- * 🔴 **One signal per fact.** A win is the carmine corner seal; a live
- * nomination is the top hairline — both already implemented by `PosterFrame`,
- * so this component chooses the status and adds no treatment of its own.
+ * 🔴 **One signal per fact, and the fact here is the win.** Every poster in
+ * this grid is a nomination, so `PosterFrame`'s nomination marker distinguishes
+ * nothing on this page — and it is carmine, which is urgency, not awards (D69).
+ * So the frames carry no status and the win is named once, in brass.
  *
  * The source app marked a winner **twice over**: it doubled the poster's size
  * *and* stamped a green check on it. Two signals for one fact is not emphasis,
@@ -25,7 +27,7 @@ export type GridNominee = {
  *
  * Nominees keep a uniform size for the same reason: the grid is scanned to
  * learn which films are in play, and resizing one of them makes that harder to
- * do at a glance in exchange for information the seal already carries.
+ * do at a glance in exchange for information the chip already carries.
  */
 export function NomineeGrid({
   nominees,
@@ -49,11 +51,14 @@ export function NomineeGrid({
     >
       {nominees.map((nominee) => (
         <li key={nominee.nominationId} className="flex flex-col gap-1">
-          <PosterFrame
-            title={nominee.title}
-            posterUrl={nominee.posterUrl}
-            status={nominee.isWinner ? 'won' : 'nominated'}
-          />
+          <PosterFrame title={nominee.title} posterUrl={nominee.posterUrl} />
+
+          {nominee.isWinner ? (
+            <StatusChip tone="brass" className="self-start">
+              Winner
+            </StatusChip>
+          ) : null}
+
           {/* The person, where the category nominates one. Without this an
               acting category is four identical posters of the same film. */}
           {nominee.detailName ? (

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { JoinLeagueButton } from '@/components/JoinLeagueButton';
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
@@ -54,13 +54,13 @@ export default async function JoinPage({
         <div className="flex flex-wrap gap-3">
           <Link
             href={`/auth/register?redirect_url=/join/${uuid}`}
-            className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center px-4 text-sm text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             Register
           </Link>
           <Link
             href={`/auth/login?redirect_url=/join/${uuid}`}
-            className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+            className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-4 text-sm transition-colors focus-visible:outline-2"
           >
             I already have an account
           </Link>
@@ -85,7 +85,7 @@ export default async function JoinPage({
         </p>
         <Link
           href={`/leagues/${league.id}`}
-          className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 w-fit items-center border px-4 text-sm focus-visible:outline-2"
+          className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 w-fit items-center rounded-sm px-4 text-sm transition-colors focus-visible:outline-2"
         >
           Go to the league
         </Link>
@@ -107,7 +107,9 @@ function Frame({ name, children }: { name: string; children: React.ReactNode }) 
   return (
     <main className="text-text-primary p-4 md:p-8">
       <div className="mx-auto flex max-w-lg flex-col gap-6">
-        <LetterboxRule as="h1">{name}</LetterboxRule>
+        <SectionHead as="h1" name eyebrow="Invitation" className="pb-0">
+          {name}
+        </SectionHead>
         {children}
       </div>
     </main>

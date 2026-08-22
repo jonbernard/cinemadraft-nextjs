@@ -35,11 +35,11 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'border-border-rule bg-bg-surface flex flex-col items-start gap-3 border p-6',
+        'bg-bg-surface flex flex-col items-start gap-3 rounded-md p-6',
         className,
       )}
     >
-      <h3 className="font-display text-text-primary text-sm font-bold uppercase tracking-wide [font-variation-settings:'wdth'_118]">
+      <h3 className="text-text-primary font-sans text-[17px] font-semibold tracking-[-0.01em]">
         {title}
       </h3>
 
@@ -55,7 +55,7 @@ export function EmptyState({
           // Carmine as a fill with white on it — 6.58:1. The same colour as
           // text on the ground is 2.96:1 and fails, which is why accent.fill
           // is fill-only (§6.2).
-          className="bg-accent-fill mt-1 px-4 py-2 text-sm font-medium text-white"
+          className="bg-accent-fill focus-visible:outline-accent-fill mt-1 flex min-h-11 items-center rounded-sm px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           {action.label}
         </Link>

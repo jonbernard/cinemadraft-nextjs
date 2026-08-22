@@ -1,6 +1,9 @@
 import Link from 'next/link';
 
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { Eyebrow } from '@/components/Eyebrow';
+import { Panel } from '@/components/Panel';
+import { SectionHead } from '@/components/SectionHead';
+import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { getAwardShows } from '@/lib/services/award-show';
 import { getActiveYear } from '@/lib/services/season';
@@ -29,33 +32,36 @@ export default async function AwardShowsPage() {
   return (
     <main className="bg-bg-base text-text-primary min-h-dvh p-4 md:p-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
-        <header className="flex flex-col gap-2">
-          <LetterboxRule as="h1">Award shows</LetterboxRule>
-          <p className="text-text-secondary tabular font-mono text-sm">{year}</p>
-        </header>
+        <SectionHead as="h1" right={String(year)}>
+          Award shows
+        </SectionHead>
 
         {isAdmin && outstanding.length > 0 ? (
-          <section className="border-border-rule flex flex-col gap-2 border-l-2 border-l-accent-fill bg-bg-raised p-4">
-            <h2 className="text-text-dim text-xs font-normal uppercase tracking-wide">
+          <Panel tone="raised" as="section" className="flex flex-col gap-3 p-4">
+            <SectionHead as="h2" className="pb-0">
               Still to enter
-            </h2>
-            <ul className="flex flex-col gap-1">
+            </SectionHead>
+            <ul className="flex flex-col gap-2">
               {outstanding.map((show) => (
-                <li key={show.eventId} className="text-sm">
+                <li key={show.eventId} className="flex flex-wrap items-center gap-2">
                   <Link
                     href={`/award-shows/${show.abbreviation}?year=${year}`}
-                    className="underline"
+                    className="text-text-primary hover:text-accent-text font-serif text-base"
                   >
                     {show.name}
                   </Link>
-                  <span className="text-text-dim">
-                    {show.needsNominations ? ' · nominations' : ''}
-                    {show.needsWinners ? ' · winners' : ''}
-                  </span>
+                  {/* Carmine: work outstanding during a ceremony is urgency,
+                      not an award. */}
+                  {show.needsNominations ? (
+                    <StatusChip tone="carmine">Nominations</StatusChip>
+                  ) : null}
+                  {show.needsWinners ? (
+                    <StatusChip tone="carmine">Winners</StatusChip>
+                  ) : null}
                 </li>
               ))}
             </ul>
-          </section>
+          </Panel>
         ) : null}
 
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
@@ -63,11 +69,11 @@ export default async function AwardShowsPage() {
             <li key={show.eventId}>
               <Link
                 href={`/award-shows/${show.abbreviation}?year=${year}`}
-                className="border-border-rule hover:bg-bg-raised flex h-full flex-col gap-1 border p-4"
+                className="bg-bg-surface hover:bg-bg-raised focus-visible:outline-accent-fill flex h-full flex-col gap-1 rounded-md p-4 focus-visible:outline-2"
               >
-                <span className="text-text-primary text-sm">{show.name}</span>
-                <span className="text-text-dim font-mono text-xs uppercase">
-                  {show.abbreviation}
+                <Eyebrow>{show.abbreviation}</Eyebrow>
+                <span className="text-text-primary font-serif text-base tracking-[-0.02em]">
+                  {show.name}
                 </span>
                 <span className="text-text-secondary tabular font-mono text-xs">
                   {show.categoryCount} categories

@@ -2,8 +2,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { CategoryAdmin } from '@/components/CategoryAdmin';
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { EmptyState } from '@/components/EmptyState';
 import { NomineeGrid } from '@/components/NomineeGrid';
+import { SectionHead } from '@/components/SectionHead';
+import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { getAwardShow } from '@/lib/services/award-show';
@@ -53,17 +55,20 @@ export default async function AwardShowPage({
     <main className="bg-bg-base text-text-primary min-h-dvh p-4 md:p-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-3">
-          <LetterboxRule as="h1">{show.name}</LetterboxRule>
+          <SectionHead
+            as="h1"
+            name
+            eyebrow={show.abbreviation}
+            right={String(show.year)}
+            className="pb-0"
+          >
+            {show.name}
+          </SectionHead>
 
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 text-sm">
-            <span className="text-text-secondary tabular font-mono">{show.year}</span>
-            <span className="text-text-dim font-mono text-xs uppercase">
-              {show.abbreviation}
-            </span>
-            <span className="text-text-secondary tabular font-mono text-xs">
-              {show.categories.length} categories
-            </span>
-          </div>
+          <p className="text-text-secondary text-sm">
+            {show.categories.length}{' '}
+            {show.categories.length === 1 ? 'category' : 'categories'}
+          </p>
 
           {seasons.length > 1 ? (
             <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
@@ -86,21 +91,29 @@ export default async function AwardShowPage({
         </header>
 
         {show.categories.length === 0 ? (
-          <p className="text-text-secondary text-sm">No categories for this show yet.</p>
+          <EmptyState title="No categories yet">
+            Nothing has been entered for this show and season.
+          </EmptyState>
         ) : (
           show.categories.map((category) => (
             <section key={category.awardId} className="flex flex-col gap-3">
-              <div className="border-border-rule flex flex-wrap items-baseline justify-between gap-x-4 border-b pb-2">
-                <h2 className="text-text-primary text-sm">{category.name}</h2>
-                <span className="text-text-secondary tabular font-mono text-xs">
-                  {/* A nomination earns this; a win earns it a second time, so
-                      the category is worth twice this to whoever wins it. */}
-                  {category.points} pts
-                  {category.hasWinner ? null : (
-                    <span className="text-text-dim"> · no winner yet</span>
-                  )}
-                </span>
-              </div>
+              {/* A nomination earns the category's points; a win earns them a
+                  second time, so it is worth twice this to whoever wins it. */}
+              <SectionHead as="h2" right={`${category.points} pts`} className="pb-0">
+                {category.name}
+              </SectionHead>
+
+              {category.nominees.length > 0 || !category.hasWinner ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {category.nominees.length > 0 ? (
+                    <StatusChip tone="brass">
+                      {category.nominees.length}{' '}
+                      {category.nominees.length === 1 ? 'nomination' : 'nominations'}
+                    </StatusChip>
+                  ) : null}
+                  {category.hasWinner ? null : <StatusChip>No winner yet</StatusChip>}
+                </div>
+              ) : null}
 
               <NomineeGrid nominees={category.nominees} />
 
