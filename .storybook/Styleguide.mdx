@@ -1,0 +1,94 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { TokenTable } from './TokenTable';
+import { radius } from '../theme/tokens';
+
+<Meta title="Foundations/Styleguide" />
+
+# Cinemadraft styleguide
+
+The visual system. Every value here is read live from `theme/tokens.ts` and
+`app/globals.css` — if this page and the app disagree, the page is the bug.
+
+## Palette
+
+Ratios are computed at render with `theme/contrast.ts`, the same function CI
+gates on. The threshold is WCAG AA, 4.5:1 for text.
+
+### Dark, against `bg.raised` (the worst case)
+
+<TokenTable scheme="dark" ground="raised" />
+
+### Light, against `bg.raised` (the worst case)
+
+<TokenTable scheme="light" ground="raised" />
+
+**Two accents, two jobs (D69).** Brass is awards — nomination, win, seal,
+eyebrow. Carmine is urgency — deadline, live, on the clock, destructive. One
+red doing both is why a winner and a countdown used to look identical.
+
+`brass.contrast` differs per scheme by design: dark ink on the dark theme's
+bright brass, white on the light theme's dark brass. It is a token pair, so no
+component reads the mode to decide.
+
+**Elevation** is a surface step, never a hairline border. `base → surface →
+raised` are ~1.1:1 apart, far below any contrast threshold, and that is
+correct: they separate surfaces, they do not carry information. Anything
+carrying information needs text, an icon, or a border.
+
+## Type
+
+| Role | Face | Setting | Applies to |
+|---|---|---|---|
+| Names | Instrument Serif 400 | −0.015em, mixed case | Film titles, member names, league names, page `h1` |
+| Structure | Archivo 600 | −0.01em, mixed case | Section headings, labels, buttons, nav |
+| Eyebrow | Archivo 700 | 11px, +0.085em, uppercase | The only surviving uppercase |
+| Prose | Newsreader 400 | 15.5–17px, 1.55 | Synopses, ledes, explanatory copy |
+| Numerals | IBM Plex Mono 500 | `tabular-nums` | Digits only — never labels |
+
+**Serif renders proper nouns. Archivo renders everything else.** The rule is
+semantic, not dimensional, so there is no pixel threshold to remember. A name
+that must be set below 15px renders in Archivo — the one exception.
+
+**Tracking is negative and tightens with size**: −0.02em at 24–32px, −0.03em at
+40–56px, −0.04em above 64px. Never positive on a heading.
+
+## Shape
+
+<ul>
+  {Object.entries(radius).map(([name, value]) => (
+    <li key={name}>
+      <code>--radius-{name}</code> — {value}
+    </li>
+  ))}
+</ul>
+
+`xs` chips and badges · `sm` buttons, inputs, row hover · `md` cards, panels,
+modals, the rail · `lg` hero and feature containers only · `pill` status and
+filter chips **only, never a button**.
+
+Posters use a rule rather than a token: `clamp(4px, 2.8%, 12px)`, exposed as
+the `poster-radius` utility. A percentage radius resolves against the
+element's own box, so one declaration tunes a 40px thumbnail and a hero poster.
+
+## Motion
+
+150ms fast, 200ms base, ease-out on enter. **Exit runs at ~65% of enter** —
+that is what makes a dismissal feel responsive rather than sluggish.
+`prefers-reduced-motion` is honoured globally in `MuiCssBaseline`; never
+re-implement it per component. The winner seal is the single orchestrated
+exception and owns its timing at the point of use.
+
+## Iconography
+
+Inline SVG, `currentColor`, stroke width **1.6** everywhere. Every glyph is
+`aria-hidden` with a text label beside it. No icon package, and no emoji, ever.
+
+## Rules
+
+- Touch targets are 44px minimum.
+- `focus-visible` is always visible; never remove a focus ring.
+- One signal per fact is not enough for state: colour plus text, or colour plus
+  an icon. Colour alone is invisible to a colour-blind reader and in print.
+- Copy is **log in / log out / register** — never sign in, sign up, or sign out.
+- Active voice. A control names what happens: "Save changes", not "Submit". The
+  same verb survives the whole flow — a "Publish" button produces "Published".
