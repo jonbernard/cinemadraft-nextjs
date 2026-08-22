@@ -820,7 +820,7 @@ Research: [`docs/reference/2026-08-17-design-research.md`](reference/2026-08-17-
 Requested by the owner 2026-08-17, mid-Phase-10: the app read "too techy/nerdy",
 naming the all-caps headings, the squared-off buttons and the desktop top nav.
 Numbered 3.5 because it revises Phase 3's output rather than following Phase 10.
-Decisions D67–D77.
+Decisions D67–D78.
 
 - [x] P3.5.T1 Storybook 10 + `@storybook/nextjs-vite` — PostCSS object-form fix, font decorator, MUI `setMode` wiring, `addon-a11y`
 - [x] P3.5.T2 Foundations — both palettes, type scale, radius, elevation, motion; `contrast.test.ts` + `tokens.test.ts` extended; `Styleguide.mdx`
@@ -830,7 +830,7 @@ Decisions D67–D77.
 - [x] P3.5.T6 Docs reconciled; `/tokens` deleted
 - [~] P3.5.T6b Second Vercel project for Storybook — **dropped** (D78). Run it locally with `npm run storybook`.
 
-**Phase 3.5 complete.** 86 files / 1207 tests. `npm run verify`, `npm run build-storybook`, `bash scripts/layering.sh` and `npm run typecheck` all clean. Decisions D67–D77.
+**Phase 3.5 complete.** 86 files / 1207 tests. `npm run verify`, `npm run build-storybook`, `bash scripts/layering.sh` and `npm run typecheck` all clean. Decisions D67–D78.
 
 Two gate clauses were dropped by owner direction mid-run and are still owed before cutover: the consolidated Storybook a11y pass over every story in both schemes, and the per-surface browser checks at 1440px/390px. `addon-a11y` is configured `test: 'error'`, but no Storybook test-runner is installed, so `build-storybook` runs no axe checks.
 
