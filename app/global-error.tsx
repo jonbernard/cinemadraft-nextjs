@@ -28,28 +28,20 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
           minHeight: '100dvh',
           display: 'grid',
           placeItems: 'center',
-          background: 'var(--color-bg-base, #0b0d10)',
-          color: 'var(--color-text-primary, #e8e6e1)',
+          background: 'var(--color-bg-base, #0A0910)',
+          color: 'var(--color-text-primary, #EFECE9)',
           fontFamily: 'system-ui, sans-serif',
         }}
       >
         <main style={{ maxWidth: '32rem', padding: '1.5rem' }}>
-          <h1
-            style={{
-              fontSize: '1rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            Cinemadraft is down
-          </h1>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Cinemadraft is down</h1>
           <p style={{ fontSize: '0.875rem', lineHeight: 1.6, opacity: 0.8 }}>
             Something failed before the page could load. It has been logged. Reloading may
             be enough; if not, it is not you.
           </p>
           <a
             href="/"
-            style={{ fontSize: '0.875rem', color: 'var(--color-accent-text, #da707c)' }}
+            style={{ fontSize: '0.875rem', color: 'var(--color-accent-text, #E78E99)' }}
           >
             Reload the dashboard
           </a>

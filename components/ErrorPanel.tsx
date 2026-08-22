@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { Button } from '@/components/Button';
+import { SectionHead } from '@/components/SectionHead';
 import { cn } from '@/lib/utils/cn';
 
 export type ErrorKind = 'not-found' | 'forbidden' | 'conflict' | 'unknown';
@@ -48,10 +49,10 @@ const COPY: Record<
 /**
  * The app's failure surface.
  *
- * Uses the same devices as every other page — the letterbox rule for the
- * heading, tokens for colour, the app's own voice — because a page that
- * suddenly looks like a different application reads as "the site is broken"
- * rather than "that request failed".
+ * Uses the same devices as every other page — a section heading, tokens for
+ * colour, the app's own voice — because a page that suddenly looks like a
+ * different application reads as "the site is broken" rather than "that
+ * request failed".
  *
  * No exclamation marks and no apology-as-personality. Errors state the cause
  * and the way out.
@@ -76,19 +77,15 @@ export function ErrorPanel({
       )}
     >
       <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
-        <LetterboxRule as="h1">{copy.title}</LetterboxRule>
+        <SectionHead as="h1">{copy.title}</SectionHead>
 
         <p className="text-text-secondary text-sm leading-relaxed">{copy.body}</p>
 
         <div className="flex flex-wrap items-center gap-3">
           {onRetry ? (
-            <button
-              type="button"
-              onClick={onRetry}
-              className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
-            >
+            <Button onClick={onRetry} className="min-h-11">
               Try again
-            </button>
+            </Button>
           ) : null}
 
           {copy.action ? (
