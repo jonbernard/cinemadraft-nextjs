@@ -849,9 +849,14 @@ code at the close of Phase 3.5, not copied from the spec.
 - Fonts reach `<html>` from a **decorator** importing `theme/fonts.ts`, applied
   to `document.documentElement`. Storybook never renders the root layout, and
   calling a `next/font` loader a second time inside `preview.tsx` breaks.
-  CI needs `NEXT_FONT_GOOGLE_MOCKED_RESPONSES`; **`ci.yml` sets it on the
-  `verify` job's `npm run build` only, because there is no `build-storybook`
-  job** — add one and it needs the variable too.
+- 🔴 **Do not set `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` in CI.** Turbopack has no
+  fallback for a mocked-response miss: an empty map fails every font with
+  `Module not found: Can't resolve
+  '@vercel/turbopack-next/internal/font/google/cssmodule.module.css'` and
+  `url not found`. Only a map containing the exact CSS-API URL of every
+  requested family works, and those URLs change with any font option. CI
+  fetches from Google Fonts like every other build; the loader already retries
+  three times.
 - Drive MUI's `setMode()` from a toolbar global (`.storybook/SyncMode.tsx`).
   Never `withThemeByDataAttribute`: MUI *owns* `data-mui-color-scheme`, and an
   addon writing it makes `useColorScheme()` stale and `localStorage['mui-mode']`
