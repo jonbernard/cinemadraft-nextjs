@@ -5,6 +5,7 @@ import { useCallback, useId, useState, useTransition } from 'react';
 import type { ActionResult } from '@/actions/result';
 import { FilmSearch, type SearchedFilm } from '@/components/FilmSearch';
 import { PickList } from '@/components/PickList';
+import { StatusChip } from '@/components/StatusChip';
 import { cn } from '@/lib/utils/cn';
 
 /**
@@ -56,11 +57,11 @@ function SeatButton({
           isCurrent && 'border-l-accent-fill bg-bg-raised border-l-2',
         )}
       >
-        <span className="text-text-primary text-sm">
-          {seat.name}
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
+          <span className="text-text-primary text-sm">{seat.name}</span>
           {/* Named, never colour alone (a11y: colour-not-only). */}
-          {isCurrent ? <span className="text-accent-text"> · picking now</span> : null}
-          {seat.isDummy ? <span className="text-text-dim"> · unclaimed</span> : null}
+          {isCurrent ? <StatusChip tone="carmine">On the clock</StatusChip> : null}
+          {seat.isDummy ? <StatusChip tone="neutral">Unclaimed</StatusChip> : null}
         </span>
         <span className="text-text-secondary tabular font-mono text-xs">
           {seat.picks.length}
@@ -196,10 +197,7 @@ export function DraftConsole({
     <div className={cn('grid gap-8 lg:grid-cols-[20rem_1fr]', className)}>
       {/* Running order. */}
       <section aria-labelledby={`${listId}-order`} className="flex flex-col gap-3">
-        <h2
-          id={`${listId}-order`}
-          className="text-text-dim text-xs font-normal uppercase tracking-wide"
-        >
+        <h2 id={`${listId}-order`} className="text-text-dim text-xs font-normal">
           Running order
         </h2>
 
@@ -244,7 +242,7 @@ export function DraftConsole({
 
         {currentSeat ? (
           <section className="flex flex-col gap-2">
-            <h3 className="text-text-dim text-xs font-normal uppercase tracking-wide">
+            <h3 className="text-text-dim text-xs font-normal">
               {currentSeat.name}’s picks
             </h3>
             {/* Correcting a round is a separate act from taking a film, and it

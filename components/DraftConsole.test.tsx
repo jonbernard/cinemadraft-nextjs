@@ -68,7 +68,7 @@ describe('DraftConsole — whose turn', () => {
     expect(currentSeatName()).toContain('Seat 1');
     // Named, not merely tinted: colour alone would be invisible to a
     // colour-blind reader.
-    expect(currentSeatName()).toContain('picking now');
+    expect(currentSeatName()).toContain('On the clock');
     expect(screen.getByRole('heading', { name: 'Pick for Seat 1' })).toBeInTheDocument();
   });
 

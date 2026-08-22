@@ -5,7 +5,7 @@ import { addPick } from '@/actions/draft/add-pick';
 import { reorderPicks } from '@/actions/draft/reorder-picks';
 import { findFilmsAction } from '@/actions/search/find-films';
 import { DraftConsole } from '@/components/DraftConsole';
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { getDraftConsole } from '@/lib/services/draft-console';
@@ -63,10 +63,14 @@ export default async function DraftConsolePage({
     <main className="bg-bg-base text-text-primary min-h-dvh p-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-2">
-          <LetterboxRule as="h1">{view.leagueName ?? 'Draft'}</LetterboxRule>
+          <SectionHead
+            as="h1"
+            name
+            eyebrow={`${view.year} · Group ${view.group} · Round ${view.round}`}
+          >
+            {view.leagueName ?? 'Draft'}
+          </SectionHead>
           <p className="text-text-secondary text-sm">
-            {view.year} · group {view.group} · round {view.round}
-            {' · '}
             <Link href={`/leagues/${view.leagueId}`} className="underline">
               the board the league is watching
             </Link>
