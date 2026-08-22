@@ -6,6 +6,7 @@ vi.mock('@clerk/nextjs', () => ({
   UserButton: () => <button type="button">Account</button>,
 }));
 
+import type { NavLink } from '@/lib/nav/links';
 import { MoreSheet } from './MoreSheet';
 
 // A module-level constant rather than a literal on the JSX attribute: Biome's
@@ -13,6 +14,33 @@ import { MoreSheet } from './MoreSheet';
 // whether the component actually renders more than once, and this render is
 // scoped to one test each (`afterEach(cleanup)` in vitest.setup.ts).
 const MORE_ID = 'more';
+
+// All three real `yours` links are `ready: false` until Phase 10 ships one,
+// so the populated group is otherwise unreachable here — the same fixture
+// `NavRail.stories.tsx` injects for the same reason.
+const readyYours: NavLink[] = [
+  {
+    href: '/watchlist',
+    label: 'Watchlist',
+    ready: true,
+    path: 'M6 3h12v18l-6-4.5L6 21z',
+    group: 'yours',
+  },
+  {
+    href: '/list',
+    label: 'Draft list',
+    ready: true,
+    path: 'M4 6h16M4 12h16M4 18h10M18 16v5M15.5 18.5h5',
+    group: 'yours',
+  },
+  {
+    href: '/rules-and-scoring',
+    label: 'Rules & scoring',
+    ready: true,
+    path: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 8v5M12 16h.01',
+    group: 'yours',
+  },
+];
 
 /**
  * Structure only. jsdom implements neither `showModal()` nor the focus trap,
@@ -33,11 +61,39 @@ describe('MoreSheet', () => {
     expect(screen.getByLabelText('More').tagName).toBe('DIALOG');
   });
 
-  it('renders the three yours destinations', () => {
-    render(<MoreSheet id={MORE_ID} ref={createRef()} pathname="/" isSignedIn={false} />);
+  it('renders the three yours destinations when they are ready', () => {
+    render(
+      <MoreSheet
+        id={MORE_ID}
+        ref={createRef()}
+        pathname="/"
+        isSignedIn={false}
+        yours={readyYours}
+      />,
+    );
     for (const label of ['Watchlist', 'Draft list', 'Rules & scoring']) {
       expect(screen.getByRole('link', { hidden: true, name: label })).toBeInTheDocument();
     }
+  });
+
+  // 🔴 A nav entry pointing at a 404 is worse than a missing one. All three
+  // real `yours` links are `ready: false` today, so the default render must
+  // show none of them — and must not leave the "Yours" heading floating above
+  // an empty list, the trap Task 14 hit.
+  it('hides the yours group entirely while every destination is unready', () => {
+    render(<MoreSheet id={MORE_ID} ref={createRef()} pathname="/" isSignedIn={false} />);
+    expect(screen.queryByText('Yours')).toBeNull();
+    for (const label of ['Watchlist', 'Draft list', 'Rules & scoring']) {
+      expect(screen.queryByRole('link', { hidden: true, name: label })).toBeNull();
+    }
+    // The theme toggle and account control are unconditional — only the
+    // yours group and its divider are gated.
+    expect(
+      screen.getByRole('button', { hidden: true, name: /theme/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { hidden: true, name: 'Log in' }),
+    ).toBeInTheDocument();
   });
 
   it('renders the theme toggle', () => {

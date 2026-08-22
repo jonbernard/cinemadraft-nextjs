@@ -41,6 +41,13 @@ export function MoreSheet({
   isSignedIn: boolean;
   yours?: NavLink[];
 }) {
+  // A nav entry pointing at a 404 is worse than a missing one — the same gate
+  // `NavRail`'s `Group` and `TabBar` both apply. All three real `yours` links
+  // are `ready: false` today, so this renders nothing until Phase 10 ships
+  // one; the heading and its divider are gated with it below rather than
+  // left floating above an empty list.
+  const visible = yours.filter((link) => link.ready);
+
   return (
     <dialog
       id={id}
@@ -49,31 +56,35 @@ export function MoreSheet({
       className="bg-bg-surface text-text-primary mt-auto mb-0 w-full max-w-none rounded-t-lg rounded-b-none p-0 backdrop:bg-black/60 xl:hidden"
     >
       <div className="flex flex-col gap-4 p-4">
-        <Eyebrow className="px-2">Yours</Eyebrow>
-        <ul className="flex flex-col gap-0.5">
-          {yours.map((link) => {
-            const current = isCurrent(link.href, pathname);
-            return (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  aria-current={current ? 'page' : undefined}
-                  className={cn(
-                    'focus-visible:outline-accent-fill flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-colors focus-visible:outline-2',
-                    current
-                      ? 'bg-bg-raised text-text-primary shadow-[inset_2px_0_0_0_var(--color-accent-fill)]'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-raised',
-                  )}
-                >
-                  <SheetIcon path={link.path} />
-                  {link.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        {visible.length > 0 ? (
+          <>
+            <Eyebrow className="px-2">Yours</Eyebrow>
+            <ul className="flex flex-col gap-0.5">
+              {visible.map((link) => {
+                const current = isCurrent(link.href, pathname);
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      aria-current={current ? 'page' : undefined}
+                      className={cn(
+                        'focus-visible:outline-accent-fill flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-colors focus-visible:outline-2',
+                        current
+                          ? 'bg-bg-raised text-text-primary shadow-[inset_2px_0_0_0_var(--color-accent-fill)]'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-bg-raised',
+                      )}
+                    >
+                      <SheetIcon path={link.path} />
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
 
-        <div className="border-border-rule border-t" />
+            <div className="border-border-rule border-t" />
+          </>
+        ) : null}
 
         <div className="flex items-center justify-between px-2">
           <ThemeToggle />
