@@ -12,19 +12,6 @@ import { requireUser } from '@/lib/auth';
 import { getDraftList } from '@/lib/services/draft-list';
 import { getActiveYear } from '@/lib/services/season';
 
-/**
- * A member's private ranked pre-draft list (P10.T20).
- *
- * The one surface in the app that is only about preparation: nobody else sees
- * it, nothing on it scores, and people keep one for weeks before a draft. That
- * is also why it shows no points — there is nothing to be right or wrong about
- * yet, and a number here would invite reading the list as a prediction rather
- * than an intention.
- *
- * Private, and not listed in `proxy.ts` — everything under `(app)` needs a
- * session unless it is deliberately public (D44).
- */
-
 export const metadata: Metadata = {
   title: 'Draft list',
   description: 'Your private ranked shortlist for the next draft.',
@@ -37,6 +24,9 @@ export default async function DraftListPage() {
 
   const marked = entries.filter((entry) => entry.status !== 'none').length;
   const remaining = entries.length - marked;
+  const onList = entries.flatMap((entry) =>
+    entry.movieId == null ? [] : [entry.movieId],
+  );
 
   return (
     <>
@@ -69,16 +59,12 @@ export default async function DraftListPage() {
               releaseYear: entry.releaseYear,
               status: entry.status,
             }))}
-            // The search is bound to the season, so a film eligible this year
-            // ranks above one that is not (§10). An inline Server Action rather
-            // than a prop on the component, because the year is server data and
-            // the editor must stay injectable for its tests.
             // biome-ignore lint/performance/noJsxPropsBind: a Server Action in a Server Component — this compiles to a stable action reference, not a client closure rebuilt on render
             onSearch={async (query: string) => {
               'use server';
               return findFilmsAction({
                 query,
-                context: { kind: 'draft', year, takenMovieIds: [] },
+                context: { kind: 'draft', year, takenMovieIds: onList },
               });
             }}
             // biome-ignore lint/performance/noJsxPropsBind: as above

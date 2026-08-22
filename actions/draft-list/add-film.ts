@@ -11,9 +11,7 @@ import { Year } from './year';
 const Input = z
   .object({
     year: Year,
-    /** A local film, when search found one already in the catalogue. */
     movieId: z.int().positive().optional(),
-    /** A film only TMDB knows, which is ingested on the way through. */
     tmdbId: z.string().trim().regex(/^\d+$/).max(20).optional(),
   })
   .refine((value) => value.movieId != null || value.tmdbId != null, {
@@ -22,12 +20,6 @@ const Input = z
 
 export type AddFilmInput = z.infer<typeof Input>;
 
-/**
- * Put a film on the caller's shortlist for a season.
- *
- * The list is private, so there is nothing to authorize beyond having a
- * session: a member can only ever write to their own.
- */
 export async function addFilmToList(
   input: AddFilmInput,
 ): Promise<ActionResult<{ entryId: number }>> {

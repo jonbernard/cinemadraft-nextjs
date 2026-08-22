@@ -161,18 +161,30 @@ async function fillList(userId: number) {
 
 describe('refusals', () => {
   it('🔴 refuses an anonymous caller on every write, and stores nothing', async () => {
+    // Aimed at a real member's real rows, so a missing `requireUser()` would
+    // reach the repository and succeed. Ids that match nothing would be refused
+    // as NOT_FOUND with or without the session check.
+    signInAs(fixture.member);
+    const mine = await fillList(fixture.member.id);
     signInAs(null);
     const before = await db.list.count();
 
     const results = [
       await addFilmToList({ year: YEAR, movieId: fixture.films[0]?.id }),
-      await removeFilmFromList({ entryId: 1 }),
-      await setListStatus({ entryId: 1, status: 'selected' }),
-      await reorderList({ year: YEAR, entryIds: [1] }),
+      await removeFilmFromList({ entryId: mine[0]?.id ?? 0 }),
+      await setListStatus({ entryId: mine[1]?.id ?? 0, status: 'selected' }),
+      await reorderList({
+        year: YEAR,
+        entryIds: [...mine].reverse().map((entry) => entry.id),
+      }),
     ];
 
-    expect(results.every((result) => !result.ok)).toBe(true);
+    for (const result of results) {
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.code).toBe('FORBIDDEN');
+    }
     expect(await db.list.count()).toBe(before);
+    expect(await listFor(fixture.member.id)).toEqual(mine);
   });
 
   it('refuses input with no film at all', async () => {

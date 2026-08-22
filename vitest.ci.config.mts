@@ -30,8 +30,11 @@ export default mergeConfig(base, {
       'node_modules',
       '.next',
       'e2e',
-      // Contract tests against restored production data.
-      'lib/repositories/**',
+      // Contract tests against restored production data. The extglob spares
+      // `lists.writes.test.ts`, which seeds every row it touches — the
+      // `userId`/`year` scoping on the list writes is a security claim and
+      // belongs on every push.
+      'lib/repositories/!(lists.writes).test.ts',
       'lib/schema.test.ts',
       'lib/services/clerk-identity.production.test.ts',
       // Asserts the local Docker connection string (port 5433) and the

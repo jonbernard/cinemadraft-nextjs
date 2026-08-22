@@ -10,11 +10,8 @@ import { StatusChip } from '@/components/StatusChip';
 import { cn } from '@/lib/utils/cn';
 
 /**
- * The three states `lists.status` allows.
- *
- * Written out rather than imported from the generated enum: `components/` may
- * not reference Prisma, and importing the repository that re-exports it would
- * drag the database client into the client bundle.
+ * Written out rather than imported from the generated enum: importing the
+ * repository that re-exports it would drag Prisma into the client bundle.
  */
 export type DraftListStatus = 'none' | 'selected' | 'unavailable';
 
@@ -28,7 +25,6 @@ export type DraftListRow = {
   movieId: number | null;
 };
 
-/** What each state is called, everywhere it appears. */
 const STATUS_LABEL: Record<DraftListStatus, string> = {
   none: 'No mark',
   selected: 'You took it',
@@ -41,23 +37,7 @@ function isStatus(value: string): value is DraftListStatus {
   return STATUSES.includes(value as DraftListStatus);
 }
 
-/**
- * A member's private shortlist, in the order they put it in.
- *
- * The only surface in the app that is purely about *preparation*: it is read by
- * nobody else, it scores nothing, and people keep one for weeks before a draft.
- * So it optimises for two things and no others — getting a film onto it in one
- * action, and moving films around once they are on it.
- *
- * Ranking is `ReorderableList`, shared with the draft console's pick list, which
- * is what makes this keyboard-operable and optimistic without a second copy of
- * that logic.
- *
- * 🔴 The row's controls sit **outside** the drag handle. A `<button>` inside an
- * element the library has given `role="button"` is a control inside a control:
- * space would lift the row instead of pressing the button, and a screen reader
- * would announce one nested in the other.
- */
+/** A member's private shortlist, in the order they put it in. */
 export function DraftListEditor({
   entries,
   onSearch,
@@ -89,7 +69,12 @@ export function DraftListEditor({
   const search = useCallback(
     async (term: string): Promise<SearchedFilm[]> => {
       const result = await onSearch(term);
-      return result.ok ? result.data : [];
+      // An empty list on a failure would read as "no film by that name".
+      if (!result.ok) {
+        setMessage(result.message);
+        return [];
+      }
+      return result.data;
     },
     [onSearch],
   );
@@ -188,8 +173,6 @@ export function DraftListEditor({
 }
 
 /**
- * One film on the list, with its two controls.
- *
  * Its own component so each row's handlers are memoised against that row rather
  * than rebuilt for every row on every keystroke — the search field above
  * re-renders on each character typed, and a prepared list runs to dozens of
@@ -225,8 +208,7 @@ function EntryRow({
         className="focus-visible:outline-accent-fill flex min-h-11 min-w-0 flex-1 items-center gap-3 px-2 focus-visible:outline-2"
       >
         {/* The position in the list, not the stored one: while a drag is in
-            flight the two differ, and the number under the cursor has to be the
-            one that will be saved. */}
+            flight the two differ. */}
         <span className="text-text-dim tabular w-6 font-mono text-xs">
           {String(row.index + 1).padStart(2, '0')}
         </span>
@@ -239,7 +221,6 @@ function EntryRow({
           </span>
         )}
         <span className="min-w-0 flex-1 text-sm">
-          {/* Serif for the film, Archivo for everything structural (D70). */}
           <span className="text-text-primary font-serif">{entry.title}</span>
           {entry.releaseYear ? (
             <span className="text-text-dim tabular font-mono text-xs">
@@ -249,8 +230,7 @@ function EntryRow({
           ) : null}
         </span>
         {/* Carmine marks *this one* — the film this member took. Gone to
-            somebody else is information rather than urgency, so it is neutral;
-            either way it is a word, never colour alone. */}
+            somebody else is information rather than urgency, so it is neutral. */}
         {entry.status === 'selected' ? (
           <StatusChip tone="carmine">{STATUS_LABEL.selected}</StatusChip>
         ) : null}
@@ -259,15 +239,8 @@ function EntryRow({
         ) : null}
       </div>
 
-      {/* 🔴 The controls sit outside the handle. A `<button>` inside an element
-          the library has given `role="button"` is a control inside a control:
-          space would lift the row rather than press the button.
-
-          A native `<select>` over a built menu — three named options, operable
-          from a keyboard, where the source used three icon buttons whose
-          meaning lived in a tooltip. It sets a state rather than toggling, so a
-          member who marked the wrong row can put it back, and two open tabs
-          converge instead of fighting. */}
+      {/* Sets a state rather than toggling, so a member who marked the wrong row
+          can put it back and two open tabs converge instead of fighting. */}
       <label className="flex items-center">
         <span className="sr-only">Mark {entry.title}</span>
         <select

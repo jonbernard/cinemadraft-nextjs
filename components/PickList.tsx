@@ -1,6 +1,7 @@
 'use client';
 
 import type { ActionResult } from '@/actions/result';
+import { cn } from '@/lib/utils/cn';
 import { ReorderableList } from './ReorderableList';
 
 export type ListPick = {
@@ -37,7 +38,7 @@ export function PickList({
       droppableId="picks"
       label="Picks, in draft order — drag or use space and the arrow keys to reorder"
       itemClassName="border-border-rule border-b"
-      empty={<p className="text-text-dim text-xs">No picks yet.</p>}
+      empty={<p className={cn('text-text-dim text-xs', className)}>No picks yet.</p>}
       onReorder={onReorder}
       className={className}
     >

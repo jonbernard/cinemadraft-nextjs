@@ -108,6 +108,23 @@ function titlesInOrder() {
     );
 }
 
+function rowFor(title: string): HTMLElement {
+  const row = within(theList())
+    .getAllByRole('listitem')
+    .find((item) =>
+      within(item).queryByRole('button', { name: `Remove ${title} from your list` }),
+    );
+  if (!row) throw new Error(`no row for ${title}`);
+  return row;
+}
+
+/** The row's own names for a state, with the `<select>`'s options discounted. */
+function chipsIn(row: HTMLElement, label: string): HTMLElement[] {
+  return within(row)
+    .queryAllByText(label)
+    .filter((node) => node.closest('select') == null);
+}
+
 /**
  * Lift the first row, move it down once, drop it — space, arrow, space.
  *
@@ -186,9 +203,14 @@ describe('the marks', () => {
   it('🔴 names every state rather than relying on colour', () => {
     renderEditor();
 
-    // Once as the chip on the row, once as the selected option of its control.
-    expect(screen.getAllByText('You took it').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Someone else took it').length).toBeGreaterThan(0);
+    // Every row renders all three names as `<option>` text, so a count over the
+    // whole page proves nothing. The marked row has to carry its name a second
+    // time, outside the `<select>`, and an unmarked row must not.
+    expect(chipsIn(rowFor('Moonlight'), 'You took it')).toHaveLength(1);
+    expect(chipsIn(rowFor('Arrival'), 'You took it')).toHaveLength(0);
+
+    expect(chipsIn(rowFor('Paterson'), 'Someone else took it')).toHaveLength(1);
+    expect(chipsIn(rowFor('Arrival'), 'Someone else took it')).toHaveLength(0);
   });
 
   it('sets the state the member chose, rather than toggling', async () => {

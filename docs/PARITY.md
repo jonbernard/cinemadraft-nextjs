@@ -122,7 +122,7 @@ which is why so many rows are cheap and a few are not.
 | Whose turn it is, advancing automatically | **ported** | "Auto-advance" checkbox, linear or snake | `lib/services/draft-order.ts` — snake confirmed against 309 of 310 live picks (D50) | ✓ |
 | Posters on the board | **ported** | pick strips | `components/PickCell.tsx` + `lib/utils/poster.ts` | ✓ |
 | Per-pick point totals on the board | **ported** | `POST /points/ids` | `lib/services/draft.ts` via `pointsForMovieIds` (D41) | ✓ |
-| **A private ranked pre-draft list** — add films, drag to rank, mark taken or unavailable | **ported** | `/list`, `GET/POST /lists/:year`, `/order`, `/status`, `/delete` | `app/(app)/list/page.tsx` + `components/DraftListEditor.tsx` on the shared `components/ReorderableList.tsx`, `lib/services/draft-list.ts`, `actions/draft-list/*`, writes in `lib/repositories/lists.ts`. The year is validated against `available_years` (closing bug 10), and every write is scoped to the caller's own rows — the source's `/lists/delete/:id` had no owner clause at all | — |
+| **A private ranked pre-draft list** — add films, drag to rank, mark taken or unavailable | **ported** | `/list`, `GET/POST /lists/:year`, `/order`, `/status`, `/delete` | `app/(app)/list/page.tsx` + `components/DraftListEditor.tsx` on the shared `components/ReorderableList.tsx`, `lib/services/draft-list.ts`, `actions/draft-list/*`, writes in `lib/repositories/lists.ts`. The year is validated against `available_years` (closing bug 10), and every write is scoped to the caller's own rows — the source's `/lists/delete/:id` had no owner clause at all | ✓ |
 | Live board updates while the draft runs | **deficient** | polling | **P10.T21** — Phase 14 with the live page (D48) | ✓ |
 
 ## Award shows

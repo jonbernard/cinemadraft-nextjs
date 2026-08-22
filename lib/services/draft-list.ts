@@ -17,13 +17,8 @@ export type DraftListEntry = {
 /**
  * A member's private ranked shortlist for one season.
  *
- * Nobody else reads it and it has no bearing on scoring, which is why every
- * function here is keyed on `userId` first: there is no such thing as somebody
- * else's row being relevant, so ownership is a parameter rather than a check.
- *
- * The join to `movies` is manual. `lists` declares no foreign keys — nothing in
- * this schema does — so the films are fetched in one batched read and matched
- * in memory, the same shape every other service here uses.
+ * The join to `movies` is manual: `lists` declares no foreign keys, so the
+ * films are fetched in one batched read and matched in memory.
  */
 export async function getDraftList(
   userId: number,
@@ -55,14 +50,10 @@ export async function getDraftList(
 }
 
 /**
- * A year this app has a season for.
- *
- * 🔴 Source bug 10: `POST /lists/:year` took whatever single path segment it
- * was given, ignored it, and wrote `req.body.year` instead — so `/lists/banana`
- * was a valid request and the year that landed in the row was whatever the
- * client claimed. Here the year is checked against `available_years`, which is
- * the same table the season picker reads, so a list can only ever be written
- * for a season the app knows about.
+ * 🔴 Source bug 10: `POST /lists/:year` took whatever single path segment it was
+ * given, ignored it, and wrote `req.body.year` instead — so the year that landed
+ * in the row was whatever the client claimed. Checked against `available_years`
+ * here, the same table the season picker reads.
  */
 async function requireSeason(year: number): Promise<void> {
   const seasons = await availableYearRepository.listYears();
@@ -70,11 +61,9 @@ async function requireSeason(year: number): Promise<void> {
 }
 
 /**
- * Put a film at the end of the list.
- *
- * Accepts either identifier because search returns both kinds of result, and a
- * TMDB-only film is ingested on the way through — this is a logged-in member
- * pressing a button, which is the case D63 permits.
+ * Accepts either identifier because search returns both kinds of result. A
+ * TMDB-only film is ingested on the way through — a logged-in member pressing a
+ * button, which is the case D63 permits.
  */
 export async function addToDraftList(input: {
   userId: number;
@@ -97,8 +86,7 @@ export async function addToDraftList(input: {
 
   const current = await listRepository.findByUserAndYear(input.userId, input.year);
   // The highest stored position rather than the row count: legacy rows are
-  // 0-based and a list that has never been reordered may start at 0, so
-  // counting would collide with the last entry.
+  // 0-based, so counting would collide with the last entry.
   const last = current.reduce((highest, entry) => Math.max(highest, entry.order), 0);
 
   const created = await listRepository.create({
@@ -134,13 +122,9 @@ export async function setDraftListStatus(
 }
 
 /**
- * Rewrite the ordering.
- *
- * 🔴 **The list must be a permutation of the member's own entries for that
- * season** — every entry present, exactly once, nothing from anywhere else.
- * Checked against the stored rows rather than trusted: a partial list would
- * renumber some entries and leave the rest at their old positions, which is the
- * duplicate-`order` state the page cannot render in a single sequence.
+ * 🔴 The list must be a **permutation of the member's own stored entries** for
+ * that season. A partial list would renumber some entries and leave the rest at
+ * their old positions — the duplicate-`order` state the page cannot render.
  */
 export async function reorderDraftList(input: {
   userId: number;
