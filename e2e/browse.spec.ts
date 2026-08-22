@@ -154,9 +154,8 @@ test.describe('browse', () => {
   test('groups films by release month', async ({ page }) => {
     await page.goto('/browse');
 
-    // `MM/YYYY`, as the source's cards do.
     await expect(page.getByRole('heading', { level: 2 }).first()).toHaveText(
-      /^\d{2}\/\d{4}$/,
+      /^(January|February|March|April|May|June|July|August|September|October|November|December) \d{4}$/,
     );
   });
 
@@ -176,8 +175,8 @@ test.describe('browse', () => {
       .textContent();
 
     const order = (label: string | null) => {
-      const [month, year] = (label ?? '').split('/');
-      return Number(year) * 12 + Number(month);
+      const at = Date.parse(`1 ${label ?? ''}`);
+      return Number.isNaN(at) ? Number.POSITIVE_INFINITY : at;
     };
     // The past side's newest month is at or before the future side's soonest.
     expect(order(newestPast)).toBeLessThanOrEqual(order(soonestFuture));
