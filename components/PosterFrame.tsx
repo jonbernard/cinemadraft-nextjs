@@ -66,12 +66,24 @@ export function PosterFrame({
           its own, while warm paper is not, and without an edge the frame
           dissolves into the ground. Radius is proportional, not a token —
           posters are excluded from the 3/6/10/16/pill scale so a percentage
-          resolves against each frame's own box. */}
+          resolves against each frame's own box.
+
+          The top edge is split from the other three: measuring in a real
+          browser showed Tailwind emits `light:` utilities after plain ones
+          regardless of source order, so a single `light:border` shorthand
+          silently outranks the nomination marker's plain `border-t-2` /
+          `border-t-accent-fill` on light mode's top edge (border-top-width
+          came back 1px grey instead of 2px carmine). Keeping `light:border-t`
+          mutually exclusive with the nominated branch means the two rules
+          for the top edge never coexist, so there is nothing for the
+          cascade to arbitrate. */}
       <div
         className={cn(
           'poster-radius bg-bg-raised relative aspect-[2/3] overflow-hidden',
-          'border-0 [[data-mui-color-scheme=light]_&]:border [[data-mui-color-scheme=light]_&]:border-border-rule',
-          status === 'nominated' && 'border-t-accent-fill border-t-2',
+          'light:border-x light:border-b light:border-x-border-rule light:border-b-border-rule',
+          status === 'nominated'
+            ? 'border-t-accent-fill border-t-2'
+            : 'light:border-t light:border-t-border-rule',
         )}
       >
         {posterUrl ? (

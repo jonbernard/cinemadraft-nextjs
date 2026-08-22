@@ -94,6 +94,16 @@
   &:where([data-mui-color-scheme="dark"], [data-mui-color-scheme="dark"] *)
 );
 
+/* Mirrors `dark` above for the light-only poster edge (PosterFrame). The
+ * `:where()` is load-bearing: it contributes zero specificity, so a
+ * `light:border-*` utility stays equal-specificity with plain per-side
+ * utilities like `border-t-2` and the two compete on source order the way
+ * Tailwind expects, instead of the attribute selector always winning.
+ */
+@custom-variant light (
+  &:where([data-mui-color-scheme="light"], [data-mui-color-scheme="light"] *)
+);
+
 [data-mui-color-scheme="light"] {
   --color-bg-base: #efeae2;
   --color-bg-surface: #fbf9f6;
