@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils/cn';
+import { StatusChip } from './StatusChip';
 
 /**
  * Structurally the `SeasonEvent` produced by `lib/services/dashboard.ts`, and
@@ -120,7 +121,7 @@ export function SeasonRail({
     // on a 375px phone has to stay readable, and both alternatives trade
     // legibility for fitting everything on screen at once.
     <div className={cn('-mx-1 overflow-x-auto px-1', className)}>
-      <ol aria-label="Season award shows" className="flex min-w-max items-stretch gap-2">
+      <ol aria-label="Season award shows" className="flex min-w-max items-stretch gap-3">
         {ordered.map((event) => {
           const isNext = event.id === next?.id;
           const countdown =
@@ -133,26 +134,22 @@ export function SeasonRail({
               // moves through, and assistive tech should land on the show the
               // league is actually waiting for.
               aria-current={isNext ? 'step' : undefined}
-              className={cn(
-                'border-border-rule flex w-36 shrink-0 flex-col gap-1 border p-2',
-                event.complete && 'bg-bg-raised',
-                isNext && 'bg-accent-fill border-accent-fill text-white',
-                !event.complete && !isNext && 'bg-bg-surface',
-              )}
+              className="bg-bg-raised flex w-40 shrink-0 flex-col gap-2 rounded-md p-3"
             >
-              <span
-                className={cn(
-                  'font-mono text-xs uppercase tracking-wide',
-                  isNext ? 'text-white' : 'text-text-dim',
-                )}
+              <StatusChip
+                tone={isNext ? 'carmine' : 'neutral'}
+                // The card is already `raised`, so a neutral chip steps down
+                // rather than up; `self-start` keeps it a badge rather than a
+                // stretched banner in the flex column.
+                className={cn('self-start', !isNext && 'bg-bg-surface')}
               >
                 {event.complete ? 'Complete' : isNext ? 'Next' : 'Upcoming'}
-              </span>
+              </StatusChip>
 
               <span
                 className={cn(
-                  'text-sm leading-tight',
-                  isNext ? 'text-white' : 'text-text-primary',
+                  'font-serif text-base leading-tight',
+                  event.complete ? 'text-text-secondary' : 'text-text-primary',
                 )}
               >
                 {label(event)}
@@ -162,28 +159,18 @@ export function SeasonRail({
                 // Undated shows still belong on the rail: they are real shows
                 // on the season's ballot, and omitting them makes the season
                 // look shorter than it is.
-                <span
-                  className={cn(
-                    'font-mono text-xs',
-                    isNext ? 'text-white' : 'text-text-secondary',
-                  )}
-                >
-                  Date TBA
-                </span>
+                <span className="text-text-dim text-xs">Date TBA</span>
               ) : (
                 <time
                   dateTime={new Date(event.date).toISOString()}
-                  className={cn(
-                    'tabular font-mono text-xs',
-                    isNext ? 'text-white' : 'text-text-secondary',
-                  )}
+                  className="text-text-secondary tabular font-mono text-xs"
                 >
                   {showDate.format(event.date)}
                 </time>
               )}
 
               {countdown != null && (
-                <span className="tabular font-mono text-xs text-white">
+                <span className="text-accent-text tabular text-xs font-semibold">
                   {countdown === 1 ? 'in 1 day' : `in ${countdown} days`}
                 </span>
               )}

@@ -4,7 +4,8 @@ import Link from 'next/link';
 
 import { BrowseMonth } from '@/components/BrowseMonth';
 import { EmptyState } from '@/components/EmptyState';
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
+import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import type { BrowseWhen } from '@/lib/external/tmdb-discover';
 import { loadBrowse } from '@/lib/services/browse';
@@ -62,12 +63,24 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
 
   const shelf = await loadBrowse({ when, page, userId: user?.id ?? null });
   const hasMore = shelf.page < shelf.pageCount;
+  const films = shelf.months.reduce((total, month) => total + month.films.length, 0);
 
   return (
-    <main className="bg-bg-base text-text-primary min-h-dvh p-4 md:p-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+    // No ground and no padding of its own: `AppShell`'s content panel owns
+    // both, and repainting `bg-bg-base` here paints its outer ground back over
+    // the panel this sits inside.
+    <main className="text-text-primary">
+      <div className="mx-auto flex max-w-6xl flex-col gap-10">
         <header className="flex flex-col gap-4">
-          <LetterboxRule as="h1">Browse</LetterboxRule>
+          <SectionHead
+            as="h1"
+            eyebrow={
+              films === 0 ? undefined : `${films} ${films === 1 ? 'film' : 'films'}`
+            }
+            right={shelf.pageCount > 0 ? `${shelf.page}/${shelf.pageCount}` : undefined}
+          >
+            Browse
+          </SectionHead>
 
           {/* 🔴 Two links, not a switch. The source used a single `<Switch>`
               labelled "The Future/The Past", which does not say which side it is
@@ -109,10 +122,10 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
           <nav aria-label="More films" className="flex justify-center">
             <Link
               href={`/browse?when=${when}&page=${shelf.page + 1}`}
-              className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-6 text-sm focus-visible:outline-2"
+              className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 items-center gap-2 rounded-sm px-6 text-sm transition-colors focus-visible:outline-2"
             >
               Show more
-              <span className="text-text-dim tabular ml-2 font-mono text-xs">
+              <span className="text-text-dim tabular font-mono text-xs">
                 {shelf.page + 1}/{shelf.pageCount}
               </span>
             </Link>
@@ -123,6 +136,15 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
   );
 }
 
+/**
+ * One side of the past/future choice, as a filter pill (D73 — a filter row is
+ * one of the two places a pill is allowed).
+ *
+ * A `Link` around the chip rather than a `Button`: every behaviour here comes
+ * from being a real URL — `aria-current`, Back, open-in-new-tab, and rendering
+ * before any JavaScript arrives. The 44px minimum sits on the link so the
+ * touch target is larger than the pill it draws.
+ */
 function WhenLink({
   when,
   current,
@@ -141,14 +163,14 @@ function WhenLink({
       // there would look like an empty result.
       href={`/browse?when=${when}`}
       aria-current={isCurrent ? 'true' : undefined}
-      className={cn(
-        'focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2',
-        isCurrent
-          ? 'border-accent-fill bg-bg-raised text-text-primary'
-          : 'border-border-rule text-text-secondary hover:text-text-primary',
-      )}
+      className="rounded-pill focus-visible:outline-accent-fill group flex min-h-11 items-center focus-visible:outline-2"
     >
-      {label}
+      <StatusChip
+        tone={isCurrent ? 'carmine' : 'neutral'}
+        className={cn('px-4 py-2 text-sm', !isCurrent && 'group-hover:text-text-primary')}
+      >
+        {label}
+      </StatusChip>
     </Link>
   );
 }
