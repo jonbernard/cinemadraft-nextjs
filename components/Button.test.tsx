@@ -26,7 +26,14 @@ describe('Button', () => {
     );
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
-    await userEvent.click(button);
+    // MUI's disabled styling sets `pointer-events: none`, which is exactly
+    // what makes a real disabled button inert — but userEvent v14 treats
+    // clicking such an element as a test-authoring mistake and throws by
+    // default. `pointerEventsCheck: 0` opts out of that guard so the click
+    // is actually dispatched; the assertion below still means something,
+    // because a disabled <button> does not invoke onClick even when a click
+    // is dispatched at it.
+    await userEvent.click(button, { pointerEventsCheck: 0 });
     expect(onClick).not.toHaveBeenCalled();
   });
 

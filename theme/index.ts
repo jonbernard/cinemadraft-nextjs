@@ -84,6 +84,20 @@ export const theme = createTheme({
         // Pinned rather than inherited so a future shape change cannot
         // silently turn every button into something else.
         root: { borderRadius: 'var(--radius-sm)' },
+        // `main` (accent.fill) is fill-only in dark mode (see the comment on
+        // `primary` above): 2.96:1 as text on the page background, which
+        // fails WCAG AA. `outlined` and `text` render the primary colour
+        // directly as the label (and `outlined`'s border), so both need the
+        // accent-text token instead — the pair built for exactly this job.
+        // `contained` is unaffected: it puts white on accent.fill, not
+        // accent.fill on the page, so it keeps `main`.
+        outlined: {
+          color: 'var(--color-accent-text)',
+          borderColor: 'var(--color-accent-text)',
+        },
+        text: {
+          color: 'var(--color-accent-text)',
+        },
       },
     },
     MuiCssBaseline: {
