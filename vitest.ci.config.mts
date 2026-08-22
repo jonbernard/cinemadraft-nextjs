@@ -16,9 +16,10 @@ import base from './vitest.config.mts';
  * What still runs on CI is everything that either needs no database at all
  * (tokens, contrast, the OKLCH clamp, components) or seeds its own rows — and
  * that second group includes every security test in the project: the claim
- * rules, session resolution, webhook signature verification and the admin
- * relink guard. Those are the ones a regression would hurt most, and they run
- * on every push.
+ * rules, session resolution, webhook signature verification, the admin relink
+ * guard, the `userId`/`year` scoping on the list writes and the ownership
+ * scoping on the watchlist's three progress reads. Those are the ones a
+ * regression would hurt most, and they run on every push.
  *
  * The excluded suites still run locally, and `npm run test` remains the full
  * suite. They are the pre-cutover gate (spec §13), not dead weight — see
@@ -31,10 +32,11 @@ export default mergeConfig(base, {
       '.next',
       'e2e',
       // Contract tests against restored production data. The extglob spares
-      // `lists.writes.test.ts`, which seeds every row it touches — the
-      // `userId`/`year` scoping on the list writes is a security claim and
-      // belongs on every push.
-      'lib/repositories/!(lists.writes).test.ts',
+      // the two files that seed every row they touch — the `userId`/`year`
+      // scoping on the list writes and the ownership scoping on the
+      // watchlist's progress reads are security claims and belong on every
+      // push.
+      'lib/repositories/!(lists.writes|watchlists.scoping).test.ts',
       'lib/schema.test.ts',
       'lib/services/clerk-identity.production.test.ts',
       // Asserts the local Docker connection string (port 5433) and the

@@ -10,7 +10,6 @@ import { SeenMeter } from '@/components/SeenMeter';
 import { StatusChip } from '@/components/StatusChip';
 import { WatchedToggle } from '@/components/WatchedToggle';
 import { requireUser } from '@/lib/auth';
-import type { SortDirection, WatchlistSortColumn } from '@/lib/repositories/watchlists';
 import { getActiveYear } from '@/lib/services/season';
 import {
   type LeagueProgress,
@@ -20,8 +19,10 @@ import {
   loadWatchedFilms,
   type NominatedProgress,
   type ShowProgress,
+  type SortDirection,
   type WatchedPage,
   type WatchlistFilm,
+  type WatchlistSort,
 } from '@/lib/services/watchlist';
 import { cn } from '@/lib/utils/cn';
 import { formatReleaseDate } from '@/lib/utils/format';
@@ -68,26 +69,11 @@ function toPage(raw: string | undefined): number {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
-/**
- * `?sort=` is the reader's word, not the column name.
- *
- * The source route took `:columnName` off the URL and handed it to Sequelize,
- * which is how `/watchlist/1/title/asc` reached Postgres as an unknown column
- * and echoed the schema back in the error. Mapping two known words onto the
- * repository's closed union means nothing off the URL is ever a column name.
- */
-const SORTS = {
-  marked: 'createdAt',
-  release: 'releaseDate',
-} as const satisfies Record<string, WatchlistSortColumn>;
-
-type Sort = keyof typeof SORTS;
-
-function toSort(raw: string | undefined): Sort {
+function toSort(raw: string | undefined): WatchlistSort {
   return raw === 'release' ? 'release' : 'marked';
 }
 
-function toDirection(raw: string | undefined, sort: Sort): SortDirection {
+function toDirection(raw: string | undefined, sort: WatchlistSort): SortDirection {
   if (raw === 'asc' || raw === 'desc') return raw;
   // Newest first for when you marked it; oldest first for release order, which
   // is how the source's own captured page was sorted.
@@ -112,7 +98,7 @@ export default async function WatchlistPage({ searchParams }: PageProps<'/watchl
       ? await loadWatchedFilms({
           userId: user.id,
           page,
-          sortBy: SORTS[sort],
+          sortBy: sort,
           direction,
         })
       : null;
@@ -152,7 +138,6 @@ export default async function WatchlistPage({ searchParams }: PageProps<'/watchl
   );
 }
 
-/** One tab, as a filter pill (D73) around a real link — the same idiom browse uses. */
 function ViewLink({
   view,
   current,
@@ -167,7 +152,7 @@ function ViewLink({
   return (
     <Link
       href={`/watchlist?view=${view}`}
-      aria-current={isCurrent ? 'true' : undefined}
+      aria-current={isCurrent ? 'page' : undefined}
       className="rounded-pill focus-visible:outline-accent-fill group flex min-h-11 items-center focus-visible:outline-2"
     >
       <StatusChip
@@ -186,7 +171,7 @@ function WatchedFilms({
   direction,
 }: {
   page: WatchedPage;
-  sort: Sort;
+  sort: WatchlistSort;
   direction: SortDirection;
 }) {
   if (page.count === 0) {
@@ -196,6 +181,17 @@ function WatchedFilms({
         action={{ label: 'Browse films', href: '/browse' }}
       >
         Mark a film watched from browse or from its own page, and it lands here.
+      </EmptyState>
+    );
+  }
+
+  if (page.films.length === 0) {
+    return (
+      <EmptyState
+        title="That page is past the end of your list"
+        action={{ label: 'Back to the first page', href: '/watchlist?view=films' }}
+      >
+        You have {page.count} films marked, across {page.pageCount} pages.
       </EmptyState>
     );
   }
@@ -232,9 +228,7 @@ function WatchedFilms({
                 <FilmTitle film={film} />
                 <p className="text-text-dim mt-0.5 text-xs">
                   {formatReleaseDate(film.releaseDate) ?? 'Release date unknown'}
-                  {film.markedAt
-                    ? ` · marked ${formatReleaseDate(film.markedAt) ?? ''}`
-                    : null}
+                  {film.markedAt ? ` · marked ${formatReleaseDate(film.markedAt)}` : null}
                 </p>
               </div>
 
@@ -275,8 +269,8 @@ function SortLink({
   direction,
   label,
 }: {
-  sort: Sort;
-  current: Sort;
+  sort: WatchlistSort;
+  current: WatchlistSort;
   direction: SortDirection;
   label: string;
 }) {
@@ -287,7 +281,7 @@ function SortLink({
   return (
     <Link
       href={`/watchlist?view=films&sort=${sort}&dir=${next}`}
-      aria-current={isCurrent ? 'true' : undefined}
+      aria-current={isCurrent ? 'page' : undefined}
       aria-label={`${label}, ${spoken}`}
       className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center gap-1.5 rounded-sm px-3 text-sm focus-visible:outline-2 aria-[current]:text-text-primary aria-[current]:font-semibold"
     >
@@ -315,7 +309,7 @@ function Shows({ shows, year }: { shows: ShowProgress[]; year: number }) {
       {shows.map((show) => (
         // A native <details>: it opens with a keyboard, before hydration, and
         // without a line of JavaScript. Closed by default because the summary
-        // already carries the answer — twelve shows expanded is 526 nominees.
+        // already carries the answer — twelve shows expanded is 529 nominees.
         <Panel key={show.show} as="details" className="p-4">
           <summary className="focus-visible:outline-accent-fill flex min-h-11 cursor-pointer flex-wrap items-center justify-between gap-3 focus-visible:outline-2">
             <h2 className="text-text-primary font-serif text-xl tracking-[-0.02em]">
@@ -436,7 +430,6 @@ function Drafted({ leagues, year }: { leagues: LeagueProgress[]; year: number })
   );
 }
 
-/** Serif, because a film has a name (D70) — and a link wherever there is a page to link to. */
 function FilmTitle({ film }: { film: Pick<WatchlistFilm, 'title' | 'tmdbId'> }) {
   if (!film.tmdbId) {
     return <span className="text-text-primary font-serif text-base">{film.title}</span>;
@@ -452,7 +445,6 @@ function FilmTitle({ film }: { film: Pick<WatchlistFilm, 'title' | 'tmdbId'> }) 
   );
 }
 
-/** A word, never colour alone (§6.7). Nothing at all for a film not yet seen. */
 function SeenChip({ watched }: { watched: boolean }) {
   if (!watched) return null;
 

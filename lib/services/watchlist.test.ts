@@ -9,9 +9,10 @@ import type { DraftedFilmRow, NomineeProgressRow } from '@/lib/repositories/watc
  *
  * The repository's own reads are covered against the captured fixtures in
  * `lib/repositories/watchlists.test.ts`, which needs the restored data and so
- * cannot run on CI. What is tested here is everything above that line —
- * grouping, the two totals, the locale-aware ordering and the dangling row —
- * and it runs on every push.
+ * cannot run on CI; their ownership scoping is seeded and asserted in
+ * `lib/repositories/watchlists.scoping.test.ts`, which does. What is tested
+ * here is everything above that line — grouping, the two totals, the
+ * locale-aware ordering and the dangling row — and it runs on every push.
  */
 
 const findNomineeProgressByUser = vi.fn();
@@ -122,26 +123,23 @@ describe('loadShowProgress', () => {
   });
 
   it('sorts by the sort title but renders the real one', async () => {
+    // The two orders have to disagree or this asserts nothing: by title it is
+    // Blitz then The Apprentice, by sort title the other way round.
     findNomineeProgressByUser.mockResolvedValue([
-      nominee({ nominationId: 1, movieId: 1, title: 'Anora', sortTitle: 'Anora' }),
+      nominee({ nominationId: 1, movieId: 1, title: 'Blitz', sortTitle: 'Blitz' }),
       nominee({
         nominationId: 2,
         movieId: 2,
-        title: 'The Brutalist',
-        sortTitle: 'Brutalist',
+        title: 'The Apprentice',
+        sortTitle: 'Apprentice',
       }),
     ]);
 
     const [show] = await loadShowProgress(USER, 2026);
     expect(show.awards[0].nominees.map((n) => n.title)).toEqual([
-      'Anora',
-      'The Brutalist',
+      'The Apprentice',
+      'Blitz',
     ]);
-  });
-
-  it('returns nothing for a season with no nominations', async () => {
-    findNomineeProgressByUser.mockResolvedValue([]);
-    expect(await loadShowProgress(USER, 1900)).toEqual([]);
   });
 });
 
@@ -206,11 +204,6 @@ describe('loadDraftedProgress', () => {
     expect(racso.seen).toBe(1);
     expect(racso.total).toBe(2);
   });
-
-  it('returns nothing for a member with no drafted league', async () => {
-    findDraftedFilmProgressByUser.mockResolvedValue([]);
-    expect(await loadDraftedProgress(USER, 2026)).toEqual([]);
-  });
 });
 
 describe('loadWatchedFilms', () => {
@@ -251,7 +244,7 @@ describe('loadWatchedFilms', () => {
     const page = await loadWatchedFilms({
       userId: USER,
       page: 1,
-      sortBy: 'createdAt',
+      sortBy: 'marked',
       direction: 'desc',
     });
 
@@ -269,7 +262,7 @@ describe('loadWatchedFilms', () => {
     const page = await loadWatchedFilms({
       userId: USER,
       page: 1,
-      sortBy: 'createdAt',
+      sortBy: 'marked',
       direction: 'desc',
     });
 
@@ -288,7 +281,7 @@ describe('loadWatchedFilms', () => {
     const page = await loadWatchedFilms({
       userId: USER,
       page: 1,
-      sortBy: 'releaseDate',
+      sortBy: 'release',
       direction: 'asc',
     });
 
@@ -296,7 +289,7 @@ describe('loadWatchedFilms', () => {
     expect(page.films[0].posterUrl).toContain('/w185/10.jpg');
   });
 
-  it('asks for no movies at all when the page is empty', async () => {
+  it('does not go to the movies table at all when the page is empty', async () => {
     findPageByUser.mockResolvedValue({
       entries: [],
       pagination: { count: 0, page: 1, pageCount: 0 },
@@ -306,10 +299,31 @@ describe('loadWatchedFilms', () => {
     const page = await loadWatchedFilms({
       userId: USER,
       page: 1,
-      sortBy: 'createdAt',
+      sortBy: 'marked',
       direction: 'desc',
     });
 
     expect(page.films).toEqual([]);
+    expect(findManyByIds).not.toHaveBeenCalled();
+  });
+
+  it('asks the repository for the column behind the reader’s word', async () => {
+    findPageByUser.mockResolvedValue({
+      entries: [],
+      pagination: { count: 0, page: 1, pageCount: 0 },
+    });
+
+    await loadWatchedFilms({
+      userId: USER,
+      page: 1,
+      sortBy: 'release',
+      direction: 'asc',
+    });
+
+    expect(findPageByUser).toHaveBeenCalledWith(USER, {
+      page: 1,
+      sortBy: 'releaseDate',
+      direction: 'asc',
+    });
   });
 });

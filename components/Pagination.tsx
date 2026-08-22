@@ -82,9 +82,6 @@ export function Pagination({
 }
 
 /**
- * The pages worth drawing: the ends, the current page and its neighbours, with
- * `null` standing for a gap.
- *
  * Eleven pages fit on a phone only as five cells; the two ends stay because
  * "back to the start" and "the last page" are the two jumps a reader actually
  * makes.

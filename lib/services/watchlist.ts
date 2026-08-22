@@ -20,6 +20,24 @@ import { posterUrl } from '@/lib/utils/poster';
  * what it will win.
  */
 
+export type { SortDirection } from '@/lib/repositories/watchlists';
+
+/**
+ * The sort as a reader asks for it, so the repository's column names never
+ * leave `lib/`.
+ *
+ * The source route took `:columnName` off the URL and handed it to Sequelize,
+ * which is how `/watchlist/1/title/asc` reached Postgres as an unknown column
+ * and echoed the schema back in the error. Two known words mapped onto the
+ * repository's closed union means nothing off the URL is ever a column name.
+ */
+export type WatchlistSort = 'marked' | 'release';
+
+const SORT_COLUMNS = {
+  marked: 'createdAt',
+  release: 'releaseDate',
+} as const satisfies Record<WatchlistSort, WatchlistSortColumn>;
+
 export type WatchlistFilm = {
   movieId: number;
   tmdbId: string | null;
@@ -79,7 +97,6 @@ function toFilm(row: WatchlistProgressFilm): WatchlistFilm {
   };
 }
 
-/** The film's own sort key, falling back to its title where the column is null. */
 function sortKey(row: WatchlistProgressFilm): string {
   return row.sortTitle ?? row.title ?? '';
 }
@@ -87,25 +104,33 @@ function sortKey(row: WatchlistProgressFilm): string {
 /**
  * One page of the films this reader has marked watched.
  *
- * Two queries, whatever the page size: the entries, then the movies behind
- * them in one batch. The repository returns ids in the sorted order and that
- * order is preserved here — `findManyByIds` does not promise one.
+ * The repository returns ids in the sorted order and that order is preserved
+ * here — `findManyByIds` does not promise one.
  */
 export async function loadWatchedFilms(input: {
   userId: number;
   page: number;
-  sortBy: WatchlistSortColumn;
+  sortBy: WatchlistSort;
   direction: SortDirection;
 }): Promise<WatchedPage> {
   const { entries, pagination } = await watchlistRepository.findPageByUser(input.userId, {
     page: input.page,
-    sortBy: input.sortBy,
+    sortBy: SORT_COLUMNS[input.sortBy],
     direction: input.direction,
   });
 
   const movieIds = entries.flatMap((entry) =>
     entry.movieId === null ? [] : [entry.movieId],
   );
+  if (movieIds.length === 0) {
+    return {
+      films: [],
+      count: pagination.count,
+      page: pagination.page,
+      pageCount: pagination.pageCount,
+    };
+  }
+
   const movies = await movieRepository.findManyByIds(movieIds);
   const byId = new Map(movies.map((movie) => [movie.id, movie]));
 

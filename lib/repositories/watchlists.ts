@@ -243,7 +243,7 @@ export const watchlistRepository = {
    * seen.
    *
    * One query. The naive shape — nominations, then awards, then events, then
-   * movies, then a watchlist lookup per film — is five round trips plus 526
+   * movies, then a watchlist lookup per film — is five round trips plus 529
    * more for a single season, and the page groups the whole set anyway.
    *
    * Rows come back in id order; the display ordering is the service's, because

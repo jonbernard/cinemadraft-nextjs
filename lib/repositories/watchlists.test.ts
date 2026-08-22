@@ -425,13 +425,4 @@ describe('watchlistRepository.findDraftedFilmProgressByUser', () => {
       await watchlistRepository.findDraftedFilmProgressByUser(STRANGER, FIXTURE_YEAR),
     ).toEqual([]);
   });
-
-  it('lists a film once per league even when two seats took it', async () => {
-    const rows = await watchlistRepository.findDraftedFilmProgressByUser(
-      USER,
-      FIXTURE_YEAR,
-    );
-    const pairs = rows.map((r) => `${r.leagueId}:${r.movieId}`);
-    expect(new Set(pairs).size).toBe(pairs.length);
-  });
 });

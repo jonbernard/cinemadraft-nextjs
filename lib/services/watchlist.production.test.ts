@@ -109,7 +109,7 @@ describe('loadWatchedFilms', () => {
     const page = await loadWatchedFilms({
       userId: USER,
       page: 1,
-      sortBy: 'releaseDate',
+      sortBy: 'release',
       direction: 'asc',
     });
 
@@ -122,7 +122,7 @@ describe('loadWatchedFilms', () => {
   it('costs three queries however long the page is', async () => {
     // The count, the page, and one batch for the movies behind it.
     const { queries } = await countQueries(() =>
-      loadWatchedFilms({ userId: USER, page: 1, sortBy: 'createdAt', direction: 'desc' }),
+      loadWatchedFilms({ userId: USER, page: 1, sortBy: 'marked', direction: 'desc' }),
     );
     expect(queries).toBe(3);
   });
