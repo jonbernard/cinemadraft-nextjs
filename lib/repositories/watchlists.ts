@@ -48,6 +48,41 @@ export type WatchlistPage = {
   pagination: { count: number; page: number; pageCount: number };
 };
 
+/**
+ * A film as the three progress views need it: enough to draw a row, plus
+ * whether this reader has seen it.
+ *
+ * `watched` is computed per row against the caller's own id. It is an
+ * `exists` subquery rather than a join because `watchlists` has no unique
+ * constraint on `(user_id, movie_id)` — see `add` — so a duplicate pair would
+ * otherwise multiply the nominee rows it touched.
+ */
+export type WatchlistProgressFilm = {
+  movieId: number;
+  tmdbId: string | null;
+  title: string | null;
+  sortTitle: string | null;
+  releaseDate: Date | null;
+  poster: string | null;
+  watched: boolean;
+};
+
+/** One nomination, for "how much of this show have I seen". */
+export type NomineeProgressRow = WatchlistProgressFilm & {
+  nominationId: number;
+  showName: string;
+  awardName: string;
+};
+
+/** One nominated film and how many nominations it earned that year. */
+export type NominatedFilmRow = WatchlistProgressFilm & { nominations: number };
+
+/** One film a league drafted, in a league the caller has a seat in. */
+export type DraftedFilmRow = WatchlistProgressFilm & {
+  leagueId: number;
+  leagueName: string;
+};
+
 const SELECT = {
   id: true,
   movieId: true,
@@ -201,6 +236,116 @@ export const watchlistRepository = {
       orderBy: { id: 'asc' },
     });
     return rows.map(toDto);
+  },
+
+  /**
+   * This year's nominees, every one of them, marked with what the caller has
+   * seen.
+   *
+   * One query. The naive shape — nominations, then awards, then events, then
+   * movies, then a watchlist lookup per film — is five round trips plus 526
+   * more for a single season, and the page groups the whole set anyway.
+   *
+   * Rows come back in id order; the display ordering is the service's, because
+   * sorting film titles is a locale question and Postgres would answer it with
+   * whatever collation the cluster was created with.
+   */
+  async findNomineeProgressByUser(
+    userId: number | bigint,
+    year: number,
+  ): Promise<NomineeProgressRow[]> {
+    return db.$queryRaw<NomineeProgressRow[]>`
+      select n.id           as "nominationId",
+             e.name         as "showName",
+             a.name         as "awardName",
+             m.id           as "movieId",
+             m.tmdb_id      as "tmdbId",
+             m.title        as "title",
+             m.sort_title   as "sortTitle",
+             m.release_date as "releaseDate",
+             m.poster       as "poster",
+             exists (
+               select 1 from watchlists w
+                where w.movie_id = m.id and w.user_id = ${Number(userId)}
+             )              as "watched"
+        from nominations n
+        join awards a on a.id = n.award_id
+        join events e on e.id = a.event_id
+        join movies m on m.id = n.movie_id
+       where n.year = ${year}
+       order by n.id asc`;
+  },
+
+  /**
+   * The year's nominated films, each with its nomination count.
+   *
+   * Counting is not scoring — no point value is involved — which is why this
+   * counts rows rather than going through `lib/services/scoring.ts`.
+   */
+  async findNominatedFilmProgressByUser(
+    userId: number | bigint,
+    year: number,
+  ): Promise<NominatedFilmRow[]> {
+    return db.$queryRaw<NominatedFilmRow[]>`
+      select m.id           as "movieId",
+             m.tmdb_id      as "tmdbId",
+             m.title        as "title",
+             m.sort_title   as "sortTitle",
+             m.release_date as "releaseDate",
+             m.poster       as "poster",
+             count(*)::int  as "nominations",
+             exists (
+               select 1 from watchlists w
+                where w.movie_id = m.id and w.user_id = ${Number(userId)}
+             )              as "watched"
+        from nominations n
+        join movies m on m.id = n.movie_id
+       where n.year = ${year}
+       group by m.id
+       order by count(*) desc, m.id asc`;
+  },
+
+  /**
+   * What the caller's leagues drafted this year, marked with what they have
+   * seen.
+   *
+   * 🔴 Scoped twice over, and both scopes matter. The leagues are the ones the
+   * caller holds a seat in — membership is a `drafts` row, this schema has no
+   * members table — and the seen mark is their own. The source's equivalent
+   * (`Watchlist.getByAwards`) checked that *a* user was signed in and then
+   * filtered by none, so it answered with every user's rows.
+   *
+   * Grouped by `(league, movie)` so a film two seats in the same league both
+   * took appears once, which is the `uniqBy` the source did in JavaScript.
+   */
+  async findDraftedFilmProgressByUser(
+    userId: number | bigint,
+    year: number,
+  ): Promise<DraftedFilmRow[]> {
+    return db.$queryRaw<DraftedFilmRow[]>`
+      select l.id           as "leagueId",
+             l.name         as "leagueName",
+             m.id           as "movieId",
+             m.tmdb_id      as "tmdbId",
+             m.title        as "title",
+             m.sort_title   as "sortTitle",
+             m.release_date as "releaseDate",
+             m.poster       as "poster",
+             exists (
+               select 1 from watchlists w
+                where w.movie_id = m.id and w.user_id = ${Number(userId)}
+             )              as "watched"
+        from drafts d
+        join leagues l on l.id = d.league_id
+        join draft_picks p on p.draft_id = d.id
+        join movies m on m.id = p.movie_id
+       where d.year = ${year}
+         and d.league_id in (
+           select s.league_id from drafts s
+            where s.user_id = ${Number(userId)} and s.league_id is not null
+         )
+       group by l.id, m.id
+       order by l.id asc, m.id asc`;
   },
 
   /**

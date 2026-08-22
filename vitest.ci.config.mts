@@ -70,6 +70,12 @@ export default mergeConfig(base, {
       // that need no data — an un-ingested film, and every way OMDb or TMDB
       // can fail — stayed in film.test.ts and run here.
       'lib/services/film.production.test.ts',
+      // The watchlist, read against the restored corpus: the four captured
+      // responses are user 3's own 2025 season, and the show-by-show totals
+      // are only meaningful against the real 529 nominations behind them. The
+      // shaping above the repository — grouping, the two totals, the ordering
+      // — is `watchlist.test.ts`, which mocks the repositories and runs here.
+      'lib/services/watchlist.production.test.ts',
       // Query-count guards, measured against the restored corpus — a season of
       // real nominations is what makes "one film costs the same as 123"
       // meaningful.

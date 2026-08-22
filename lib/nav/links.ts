@@ -76,7 +76,7 @@ export const NAV_LINKS: NavLink[] = [
   {
     href: '/watchlist',
     label: 'Watchlist',
-    ready: false,
+    ready: true,
     path: 'M6 3h12v18l-6-4.5L6 21z',
     group: 'yours',
   },

@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 42 |
-| **deficient** | 27 |
+| **ported** | 46 |
+| **deficient** | 23 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
@@ -25,8 +25,9 @@ search and the whole award-show surface, including both admin writes the source
 left unauthenticated. Phase 9 closed the per-award points breakdown. Phase 10
 batch A added the navigation and the error boundaries; batch B closed the four
 league-formation rows — until it landed, **no new league could be created at
-all** — batch C closed the six for running a season, and batch D closed the film
-page, similar films, browse and the watched mark._
+all** — batch C closed the six for running a season, batch D closed the film
+page, similar films, browse and the watched mark, and batch E closed the four
+watchlist rows — the paged list and all three progress views._
 
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
@@ -149,12 +150,12 @@ which is why so many rows are cheap and a few are not.
 
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
-| **Your watched films, paged and sorted** | **deficient** | `/watchlist`, `GET /watchlist/:page/:col/:dir` | **P10.T33** | ✓ |
+| **Your watched films, paged and sorted** | **ported** | `/watchlist`, `GET /watchlist/:page/:col/:dir` | `app/(app)/watchlist/page.tsx` (`?view=films`), `lib/services/watchlist.ts` → `loadWatchedFilms`, `components/Pagination.tsx`. Sorted across the whole list before paging — the source sorted only the 25 rows a page had already chosen | ✓ |
 | Mark a film watched, or unmark it | **ported** | `POST /watchlist/item`, `DELETE /watchlist/item/:id` | `actions/watchlist/set-watched.ts` + `components/WatchedToggle.tsx`, on browse and the film page. 🔴 Keyed on **(userId, movieId)**, not the row id the source took off the URL — another person's row is not addressable at all. Takes the desired state rather than toggling, so a stale badge cannot send the wrong request | ✓ |
-| Progress against this year's nominees, by show | **deficient** | Awards tab, `GET /watchlist/awards/:year` | **P10.T35** | ✓ |
-| Progress against the year's nominated films | **deficient** | Nominations tab, `GET /watchlist/noms/:year` | **P10.T36** | ✓ |
-| Which drafted films you have seen | **deficient** | Draft tab, `GET /watchlist/drafts/:year` | **P10.T37** | ✓ |
-| Deep-link a watchlist tab | **dropped** | Tabs are component state (`watchlist/index.js:25-41`) | Impossible in the source. The port should put the tab in the URL — a betterment, not a parity row | |
+| Progress against this year's nominees, by show | **ported** | Awards tab, `GET /watchlist/awards/:year` | `?view=awards` → `loadShowProgress`, `watchlistRepository.findNomineeProgressByUser`. Both totals the source computed — nominations seen and films seen — in one query for the season | ✓ |
+| Progress against the year's nominated films | **ported** | Nominations tab, `GET /watchlist/noms/:year` | `?view=nominations` → `loadNominatedProgress`, `watchlistRepository.findNominatedFilmProgressByUser`. Counted in Postgres rather than by reading every row of the year into JavaScript | ✓ |
+| Which drafted films you have seen | **ported** | Draft tab, `GET /watchlist/drafts/:year` | `?view=drafted` → `loadDraftedProgress`, `watchlistRepository.findDraftedFilmProgressByUser`. 🔴 Scoped to the leagues the caller holds a seat in **and** to their own marks; the source's `Watchlist.getByAwards` filtered by neither | ✓ |
+| Deep-link a watchlist tab | **dropped** | Tabs are component state (`watchlist/index.js:25-41`) | Impossible in the source. The port puts the tab in the URL — `/watchlist?view=awards`, with page and sort beside it — a betterment, not a parity row | |
 
 ## Reviews and profiles
 

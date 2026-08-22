@@ -255,3 +255,183 @@ describe('the DTO matches the captured contract', () => {
     );
   });
 });
+
+/** `GET /watchlist/awards/2025`, `.../noms/2025`, `.../drafts/2025`, all as user 3. */
+type FixtureNominee = { id: number; movieId: number; watchlistId?: number };
+type FixtureAwards = Record<
+  string,
+  { awards: { name: string; nominees: FixtureNominee[] }[] }
+>;
+type FixtureNoms = { movies: (FixtureNominee & { count: number })[] };
+type FixtureDrafts = Record<string, FixtureNominee[]>;
+
+const FIXTURE_YEAR = 2025;
+const awardsFixture = loadFixture<FixtureAwards>('watchlist-awards');
+const nomsFixture = loadFixture<FixtureNoms>('watchlist-noms');
+const draftsFixture = loadFixture<FixtureDrafts>('watchlist-drafts');
+
+/** A user id no row in the restored database points at. */
+const STRANGER = 999_999;
+
+const seenMovieIds = (nominees: FixtureNominee[]) =>
+  new Set(nominees.filter((n) => n.watchlistId !== undefined).map((n) => n.movieId));
+
+describe('watchlistRepository.findNomineeProgressByUser', () => {
+  it('returns every nominee the source API grouped by show', async () => {
+    const rows = await watchlistRepository.findNomineeProgressByUser(USER, FIXTURE_YEAR);
+
+    const expected = Object.values(awardsFixture).flatMap((show) =>
+      show.awards.flatMap((award) => award.nominees.map((n) => n.id)),
+    );
+    expect(rows.map((r) => r.nominationId).sort()).toEqual(expected.sort());
+  });
+
+  it('carries the show and award each nomination belongs to', async () => {
+    const rows = await watchlistRepository.findNomineeProgressByUser(USER, FIXTURE_YEAR);
+    const byId = new Map(rows.map((r) => [r.nominationId, r]));
+
+    for (const [showName, show] of Object.entries(awardsFixture)) {
+      for (const award of show.awards) {
+        for (const nominee of award.nominees) {
+          const row = byId.get(nominee.id);
+          expect(row).toBeDefined();
+          expect(row?.showName).toBe(showName);
+          expect(row?.awardName).toBe(award.name);
+          expect(row?.movieId).toBe(nominee.movieId);
+        }
+      }
+    }
+  });
+
+  it('marks exactly the films the captured response flagged as seen', async () => {
+    const rows = await watchlistRepository.findNomineeProgressByUser(USER, FIXTURE_YEAR);
+
+    const expected = seenMovieIds(
+      Object.values(awardsFixture).flatMap((show) =>
+        show.awards.flatMap((award) => award.nominees),
+      ),
+    );
+    const actual = new Set(rows.filter((r) => r.watched).map((r) => r.movieId));
+
+    expect(actual).toEqual(expected);
+    expect(actual.size).toBeGreaterThan(0);
+  });
+
+  it('scopes the seen mark to the caller — the source route did not', async () => {
+    // 🔴 Step 4. `Watchlist.getByAwards` validated that someone was signed in
+    // and then filtered by nobody. Another user sees the same nominees with
+    // none of user 3's marks on them.
+    const rows = await watchlistRepository.findNomineeProgressByUser(
+      STRANGER,
+      FIXTURE_YEAR,
+    );
+
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.some((r) => r.watched)).toBe(false);
+  });
+
+  it('returns nothing for a season with no nominations', async () => {
+    expect(await watchlistRepository.findNomineeProgressByUser(USER, 1900)).toEqual([]);
+  });
+});
+
+describe('watchlistRepository.findNominatedFilmProgressByUser', () => {
+  it('reports the nomination count the source API computed, film for film', async () => {
+    const rows = await watchlistRepository.findNominatedFilmProgressByUser(
+      USER,
+      FIXTURE_YEAR,
+    );
+    const counts = new Map(rows.map((r) => [r.movieId, r.nominations]));
+
+    expect(rows).toHaveLength(nomsFixture.movies.length);
+    for (const movie of nomsFixture.movies) {
+      expect(counts.get(movie.movieId)).toBe(movie.count);
+    }
+  });
+
+  it('orders by nomination count, most nominated first', async () => {
+    const rows = await watchlistRepository.findNominatedFilmProgressByUser(
+      USER,
+      FIXTURE_YEAR,
+    );
+    const counts = rows.map((r) => r.nominations);
+    expect(counts).toEqual([...counts].sort((a, b) => b - a));
+  });
+
+  it('marks exactly the films the captured response flagged as seen', async () => {
+    const rows = await watchlistRepository.findNominatedFilmProgressByUser(
+      USER,
+      FIXTURE_YEAR,
+    );
+
+    expect(new Set(rows.filter((r) => r.watched).map((r) => r.movieId))).toEqual(
+      seenMovieIds(nomsFixture.movies),
+    );
+  });
+
+  it('scopes the seen mark to the caller', async () => {
+    const rows = await watchlistRepository.findNominatedFilmProgressByUser(
+      STRANGER,
+      FIXTURE_YEAR,
+    );
+
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.some((r) => r.watched)).toBe(false);
+  });
+});
+
+describe('watchlistRepository.findDraftedFilmProgressByUser', () => {
+  it('returns the films the caller’s leagues drafted, grouped as the API grouped them', async () => {
+    const rows = await watchlistRepository.findDraftedFilmProgressByUser(
+      USER,
+      FIXTURE_YEAR,
+    );
+
+    const byLeague = new Map<string, number[]>();
+    for (const row of rows) {
+      byLeague.set(row.leagueName, [
+        ...(byLeague.get(row.leagueName) ?? []),
+        row.movieId,
+      ]);
+    }
+
+    for (const [leagueName, films] of Object.entries(draftsFixture)) {
+      expect(byLeague.get(leagueName)?.sort()).toEqual(
+        films.map((f) => f.movieId).sort(),
+      );
+    }
+  });
+
+  it('marks exactly the drafted films the captured response flagged as seen', async () => {
+    const rows = await watchlistRepository.findDraftedFilmProgressByUser(
+      USER,
+      FIXTURE_YEAR,
+    );
+    const fixtureLeagues = new Set(Object.keys(draftsFixture));
+
+    const actual = new Set(
+      rows
+        .filter((r) => r.watched && fixtureLeagues.has(r.leagueName))
+        .map((r) => r.movieId),
+    );
+
+    expect(actual).toEqual(seenMovieIds(Object.values(draftsFixture).flat()));
+  });
+
+  it('returns nothing for someone who holds no seat — not every league’s picks', async () => {
+    // 🔴 The scope that the source's unfiltered query lost: a stranger must not
+    // see what other people's leagues drafted.
+    expect(
+      await watchlistRepository.findDraftedFilmProgressByUser(STRANGER, FIXTURE_YEAR),
+    ).toEqual([]);
+  });
+
+  it('lists a film once per league even when two seats took it', async () => {
+    const rows = await watchlistRepository.findDraftedFilmProgressByUser(
+      USER,
+      FIXTURE_YEAR,
+    );
+    const pairs = rows.map((r) => `${r.leagueId}:${r.movieId}`);
+    expect(new Set(pairs).size).toBe(pairs.length);
+  });
+});
