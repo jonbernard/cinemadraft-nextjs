@@ -95,4 +95,18 @@ test('the cascade layers resolve in the declared order', async ({ page }) => {
   // between `base` and `utilities`.
   expect(order.indexOf('base')).toBeLessThan(order.indexOf('mui'));
   expect(order.indexOf('mui')).toBeLessThan(order.indexOf('utilities'));
+
+  // 🔴 And the whole contract, not just the middle of it. Storybook's preview
+  // now depends on the same six-layer statement as the app — a component that
+  // looks right in one and wrong in the other is almost always this order — so
+  // all six are pinned, in sequence. `properties` is Tailwind's own (its
+  // @property fallbacks) and `components` is where MUI's own generated rules
+  // land, so neither is optional.
+  //
+  // Filtered rather than sliced: this pins the relative order of the six that
+  // matter without failing the day a library introduces a seventh layer name
+  // somewhere else in the cascade.
+  const contract = ['properties', 'theme', 'base', 'mui', 'components', 'utilities'];
+  for (const layer of contract) expect(order).toContain(layer);
+  expect(order.filter((name) => contract.includes(name))).toEqual(contract);
 });
