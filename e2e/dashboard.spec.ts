@@ -178,7 +178,17 @@ test.describe('dashboard', () => {
         await page.goto('/');
 
         const longest = await longestRosterTitle();
-        const title = page.getByText(longest, { exact: true });
+        // 🔴 Scoped to the roster grid, not to the page. `longestRosterTitle`
+        // applies no points filter, so the film it names may also be on the
+        // dashboard's lower-fold shelves — and two matches make
+        // `getByText(..., { exact: true })` fail Playwright's strict mode
+        // before a single assertion runs. `RosterStrip` is the only list on
+        // the page with this accessible name (`Shelf` renders a bare <ul>),
+        // so this resolves to the grid this test is about and to nothing else.
+        const title = page
+          .getByRole('list', { name: /drafted films/i })
+          .getByText(longest, { exact: true })
+          .first();
         await expect(title).toBeVisible();
 
         // The old app's defect was the *text* being cut to "Wake …", so the

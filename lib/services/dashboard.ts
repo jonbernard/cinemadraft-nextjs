@@ -15,6 +15,26 @@ export type RosterEntry = {
   points: number;
   /** This film's share of the seat's total, 0–1. Zero when nothing has scored. */
   share: number;
+  /**
+   * When the pick was made, in epoch milliseconds, or `null` if the row has no
+   * timestamp.
+   *
+   * 🔴 The one ordering that is comparable **across** leagues. A draft
+   * round is not: round 3 in one league and round 3 in another say nothing
+   * about which came first, so anything cross-league that wants "recent" has
+   * to use this. Within one seat the two agree — the 2026 picks are minutes
+   * apart and monotonic in `order` — which is why `round` still orders the
+   * roster strip and this exists only for the cross-league shelves.
+   *
+   * Epoch milliseconds rather than a `Date`, matching `SeasonEvent.date`: the
+   * dashboard's DTOs cross the RSC boundary and this file normalizes every
+   * temporal column the same way.
+   *
+   * Nullable because `draft_picks.created_at` is. No row in the restored data
+   * is null today, but the column allows it and a sort that assumes otherwise
+   * would put an unknown pick at the epoch, i.e. first.
+   */
+  pickedAt: number | null;
 };
 
 export type StandingsRow = {
@@ -209,7 +229,12 @@ async function buildLeague(
 
 async function buildRoster(
   drafts: { id: number; userId: number | null }[],
-  picks: { draftId: number; movieId: number | null; order: number | null }[],
+  picks: {
+    draftId: number;
+    movieId: number | null;
+    order: number | null;
+    createdAt: Date | null;
+  }[],
   totals: ReadonlyMap<number, number>,
   viewerId: number,
 ): Promise<{ roster: RosterEntry[]; total: number }> {
@@ -246,6 +271,7 @@ async function buildRoster(
         // Guarded: before anything has been awarded every seat is on zero,
         // and dividing by it would make every bar NaN on opening day.
         share: total > 0 ? points / total : 0,
+        pickedAt: pick.createdAt?.getTime() ?? null,
       },
     ];
   });

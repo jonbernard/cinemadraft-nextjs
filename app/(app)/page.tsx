@@ -6,6 +6,7 @@ import { SectionHead } from '@/components/SectionHead';
 import { Shelf } from '@/components/Shelf';
 import { StandingsPanel } from '@/components/StandingsPanel';
 import { getCurrentUser } from '@/lib/auth';
+import { recentPicks, type ShelfView, topScorers } from '@/lib/dashboard/shelves';
 import { type DashboardView, getDashboard } from '@/lib/services/dashboard';
 
 /**
@@ -133,7 +134,7 @@ export default async function DashboardPage() {
             </section>
           ))}
 
-          <TopScorers leagues={view.leagues} />
+          <LowerFold leagues={view.leagues} />
         </>
       )}
     </div>
@@ -150,58 +151,80 @@ function standingLabel(league: DashboardView['leagues'][number]): string {
 /**
  * The lower fold (spec §1, fault 5: "Home is ~60% empty below the fold").
  *
- * 🔴 **A different cut of the roster, not a second copy of it.** The strips
- * above are ordered by draft round and must stay that way — snake order is
- * real information, and `lib/services/dashboard.ts` says so where it builds
- * them. That means nothing on this page answers "what is actually carrying my
- * team", which is the question a member has once the awards start landing.
- * Ranking by points is that answer, and it has nowhere else to live.
+ * Two shelves, both a different cut of the same rosters rather than a second
+ * copy of them: the strips above are ordered by draft round and must stay that
+ * way, so neither "what did I take most recently" nor "what is carrying my
+ * team" is answered anywhere else in the product.
  *
- * Deduplicated by film, because one film drafted in two leagues is one film:
- * points are a property of the film and the season (`pointsForMovieIds`), not
- * of the seat, so both entries carry the same score and showing it twice would
- * read as two different films with the same name.
+ * "Upcoming deadlines" and "the leagues you are in" were the plan's other two
+ * candidates and are deliberately absent: `SeasonRail` at the top of this page
+ * already renders every show date-sorted with a countdown on the next one, and
+ * every league is rendered above in full. A shelf of either would be the same
+ * content twice.
  *
- * The draft round is deliberately not passed to `PosterFrame`: a film held in
- * two leagues has two rounds, and printing whichever one was found first would
- * be a number that is wrong half the time. The contribution bar is rescaled
- * against the best pick here for the same reason — `RosterEntry.share` is a
- * share of *one seat's* total, so two leagues give one film two of them, and
- * the shelf would draw whichever it happened to keep.
- *
- * Nothing renders before anything has scored. A shelf of zeroes on opening day
- * is worse than the empty space it fills. The eyebrow counts every scoring
- * film, not the twelve the shelf shows: it is there to say how much of the
- * team is working, which a capped number would understate.
+ * The ranking lives in `lib/dashboard/shelves.ts` and is unit-tested there;
+ * this decides only what the shelves are called and what they say.
  */
-function TopScorers({ leagues }: { leagues: DashboardView['leagues'] }) {
-  const films = [
-    ...new Map(
-      leagues.flatMap((league) => league.roster).map((entry) => [entry.movie.id, entry]),
-    ).values(),
-  ];
-  const scoring = films
-    .filter((entry) => entry.points > 0)
-    .sort((a, b) => b.points - a.points);
-
-  if (scoring.length === 0) return null;
-  // Guarded by the check above: the list is sorted descending, so [0] exists
-  // and its points are greater than zero.
-  const best = scoring[0]?.points ?? 1;
+function LowerFold({ leagues }: { leagues: DashboardView['leagues'] }) {
+  const recent = recentPicks(leagues);
+  const best = topScorers(leagues);
 
   return (
-    <Shelf
-      eyebrow={`${scoring.length} of ${films.length} films scoring`}
-      heading="Top scorers"
-    >
-      {scoring.slice(0, 12).map((entry) => (
-        <li key={entry.movie.id} className="w-28">
+    <>
+      <FilmShelf
+        heading="Recent picks"
+        eyebrow={`${recent.held} ${recent.held === 1 ? 'film' : 'films'} drafted`}
+        shelf={recent}
+      />
+      <FilmShelf
+        heading="Top scorers"
+        // Both numbers, not just the shelf's: how much of the team is working
+        // is the point, and the twelve-frame cap would understate it.
+        eyebrow={`${best.matching} of ${best.held} films scoring`}
+        shelf={best}
+      />
+    </>
+  );
+}
+
+/**
+ * One shelf of posters, or nothing.
+ *
+ * Nothing is the right answer more often than it looks: `topScorers` is empty
+ * until something has been awarded, and a row of zeroes on opening day is
+ * worse than the space it fills.
+ *
+ * 🔴 The frames are 10rem wide, matching `RosterStrip`'s measured grid floor.
+ * That measurement is in its docstring and it is not arbitrary: at ~130px a
+ * 24-character title in a two-line clamp clips — "One Battle After Another"
+ * cut off, the exact defect this redesign exists to fix. A `Shelf` scrolls, so
+ * a wider frame costs scroll length and nothing else.
+ */
+function FilmShelf({
+  heading,
+  eyebrow,
+  shelf,
+}: {
+  heading: string;
+  eyebrow: string;
+  shelf: ShelfView;
+}) {
+  if (shelf.films.length === 0) return null;
+
+  return (
+    <Shelf eyebrow={eyebrow} heading={heading}>
+      {shelf.films.map((film) => (
+        <li key={film.id} className="w-40">
           <PosterFrame
-            title={entry.movie.title ?? 'Untitled'}
-            // Posters arrive in Phase 11 with the media migration.
+            title={film.title}
+            // Posters arrive in Phase 11 with the media migration;
+            // PosterFrame already renders an initials placeholder.
             posterUrl={null}
-            points={entry.points}
-            share={entry.points / best}
+            points={film.points}
+            share={film.share}
+            // No draft round: a film held in two leagues has two of them, and
+            // printing whichever survived the dedupe would be wrong half the
+            // time. The strips above are where round belongs.
           />
         </li>
       ))}
