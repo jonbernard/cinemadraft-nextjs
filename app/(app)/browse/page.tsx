@@ -69,7 +69,7 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
     // No ground and no padding of its own: `AppShell`'s content panel owns
     // both, and repainting `bg-bg-base` here paints its outer ground back over
     // the panel this sits inside.
-    <main className="text-text-primary">
+    <>
       <div className="mx-auto flex max-w-6xl flex-col gap-10">
         <header className="flex flex-col gap-4">
           <SectionHead
@@ -132,7 +132,7 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
           </nav>
         ) : null}
       </div>
-    </main>
+    </>
   );
 }
 

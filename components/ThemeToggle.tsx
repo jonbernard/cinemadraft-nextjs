@@ -23,7 +23,7 @@ export function ThemeToggle() {
       disabled={!mode}
       onClick={toggle}
       aria-label={mode ? `Switch to ${next} theme` : 'Theme'}
-      className="border-border-rule text-text-secondary hover:text-text-primary min-w-24 border px-3 py-1 font-mono text-xs uppercase"
+      className="text-text-secondary hover:text-text-primary rounded-sm min-w-24 px-3 py-1 text-sm"
     >
       {mode ? `→ ${next}` : ' '}
     </button>

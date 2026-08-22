@@ -89,7 +89,7 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
   const watched = await isFilmWatched(id, user?.id ?? null);
 
   return (
-    <main className="bg-bg-base text-text-primary min-h-dvh pb-8">
+    <>
       <FilmBanner film={film} isSignedIn={userId != null} watched={watched} />
 
       <div className="mx-auto grid max-w-6xl gap-8 px-4 md:grid-cols-2 md:px-8">
@@ -147,7 +147,7 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
           <SimilarFilms films={film.similar} />
         </div>
       </div>
-    </main>
+    </>
   );
 }
 

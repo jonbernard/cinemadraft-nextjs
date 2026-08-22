@@ -156,7 +156,7 @@ export function FilmSearch({
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       <label className="flex flex-col gap-2">
-        <span className="text-text-dim text-xs uppercase tracking-wide">{label}</span>
+        <span className="text-text-secondary text-sm">{label}</span>
         <input
           ref={inputRef}
           type="search"
@@ -248,9 +248,7 @@ function ResultRow({
         {/* Stated, not implied by dimming — the person must not have to
             remember what went three seats ago. */}
         {unavailable ? (
-          <span className="text-text-dim text-xs uppercase tracking-wide">
-            {unavailableLabel}
-          </span>
+          <span className="text-text-dim text-xs">{unavailableLabel}</span>
         ) : null}
       </button>
     </li>

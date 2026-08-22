@@ -44,7 +44,7 @@ export default async function SeasonSetupPage({
   if (!canManageLeague(view, user?.id)) notFound();
 
   return (
-    <main className="text-text-primary p-4 md:p-8">
+    <>
       <div className="mx-auto flex max-w-3xl flex-col gap-8">
         <header className="flex flex-col gap-2">
           <SectionHead as="h1" name eyebrow={`${view.year} · Setting up`}>
@@ -66,6 +66,6 @@ export default async function SeasonSetupPage({
           status={view.status}
         />
       </div>
-    </main>
+    </>
   );
 }

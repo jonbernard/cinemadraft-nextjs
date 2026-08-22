@@ -12,7 +12,7 @@ export default async function NewLeaguePage() {
   await requireUser();
 
   return (
-    <main className="text-text-primary p-4 md:p-8">
+    <>
       <div className="mx-auto flex max-w-lg flex-col gap-6">
         <SectionHead as="h1">Start a league</SectionHead>
 
@@ -23,6 +23,6 @@ export default async function NewLeaguePage() {
 
         <CreateLeagueForm />
       </div>
-    </main>
+    </>
   );
 }

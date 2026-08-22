@@ -1,24 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { LetterboxRule } from './LetterboxRule';
 import { PosterFrame } from './PosterFrame';
 
 const base = { title: 'Sinners', posterUrl: null, round: 1, points: 40 };
-
-describe('LetterboxRule', () => {
-  it('renders its heading as a heading', () => {
-    render(<LetterboxRule>Roster</LetterboxRule>);
-    expect(screen.getByRole('heading', { name: 'Roster', level: 2 })).toBeInTheDocument();
-  });
-
-  it('lets the caller own the heading level so page outlines stay valid', () => {
-    render(<LetterboxRule as="h3">Nominations</LetterboxRule>);
-    expect(
-      screen.getByRole('heading', { name: 'Nominations', level: 3 }),
-    ).toBeInTheDocument();
-  });
-});
 
 describe('PosterFrame', () => {
   it('pads the round to two digits', () => {

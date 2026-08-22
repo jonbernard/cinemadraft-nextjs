@@ -52,7 +52,7 @@ export default async function AwardShowPage({
   const isAdmin = user?.role === 'admin';
 
   return (
-    <main className="bg-bg-base text-text-primary min-h-dvh p-4 md:p-8">
+    <>
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-3">
           <SectionHead
@@ -134,6 +134,6 @@ export default async function AwardShowPage({
           ))
         )}
       </div>
-    </main>
+    </>
   );
 }

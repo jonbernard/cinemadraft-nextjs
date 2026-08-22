@@ -84,7 +84,7 @@ export default async function LeaguePage({
   const isPending = board.status === 'pending';
 
   return (
-    <main className="bg-bg-base text-text-primary min-h-dvh p-4 md:p-8">
+    <>
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-3">
           <SectionHead as="h1" name>
@@ -204,6 +204,6 @@ export default async function LeaguePage({
           ))
         )}
       </div>
-    </main>
+    </>
   );
 }

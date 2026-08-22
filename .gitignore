@@ -57,3 +57,6 @@ next-env.d.ts
 /playwright-report/
 
 storybook-static
+
+# Playwright MCP browser profile
+.playwright-mcp/

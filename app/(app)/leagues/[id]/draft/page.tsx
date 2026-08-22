@@ -60,7 +60,7 @@ export default async function DraftConsolePage({
   if (!canManageLeague(view, user?.id)) notFound();
 
   return (
-    <main className="bg-bg-base text-text-primary min-h-dvh p-8">
+    <>
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-2">
           <SectionHead
@@ -123,6 +123,6 @@ export default async function DraftConsolePage({
           onReorder={reorderPicks}
         />
       </div>
-    </main>
+    </>
   );
 }

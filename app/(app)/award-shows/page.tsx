@@ -30,7 +30,7 @@ export default async function AwardShowsPage() {
   const outstanding = shows.filter((show) => show.needsNominations || show.needsWinners);
 
   return (
-    <main className="bg-bg-base text-text-primary min-h-dvh p-4 md:p-8">
+    <>
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <SectionHead as="h1" right={String(year)}>
           Award shows
@@ -83,6 +83,6 @@ export default async function AwardShowsPage() {
           ))}
         </ul>
       </div>
-    </main>
+    </>
   );
 }

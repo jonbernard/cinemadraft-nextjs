@@ -1,6 +1,6 @@
 import { SignUp } from '@clerk/nextjs';
 
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
 
 /**
  * 🔴 The most important copy in the migration.
@@ -22,7 +22,7 @@ import { LetterboxRule } from '@/components/LetterboxRule';
 export default function RegisterPage() {
   return (
     <div className="flex w-full flex-col gap-6">
-      <LetterboxRule as="h1">Register</LetterboxRule>
+      <SectionHead as="h1">Register</SectionHead>
 
       <p className="text-text-secondary text-sm leading-relaxed">
         <span className="text-text-primary font-medium">Played before?</span> Register

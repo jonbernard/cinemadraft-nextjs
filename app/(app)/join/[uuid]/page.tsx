@@ -105,13 +105,13 @@ export default async function JoinPage({
 
 function Frame({ name, children }: { name: string; children: React.ReactNode }) {
   return (
-    <main className="text-text-primary p-4 md:p-8">
+    <>
       <div className="mx-auto flex max-w-lg flex-col gap-6">
         <SectionHead as="h1" name eyebrow="Invitation" className="pb-0">
           {name}
         </SectionHead>
         {children}
       </div>
-    </main>
+    </>
   );
 }

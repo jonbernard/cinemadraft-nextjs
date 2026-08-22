@@ -23,7 +23,7 @@ export default async function LeaguesPage() {
   const leagues = await getMyLeagues(user.id);
 
   return (
-    <main className="text-text-primary p-4 md:p-8">
+    <>
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <SectionHead
           as="h1"
@@ -79,6 +79,6 @@ export default async function LeaguesPage() {
           </ul>
         )}
       </div>
-    </main>
+    </>
   );
 }

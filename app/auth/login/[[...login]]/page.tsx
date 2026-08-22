@@ -1,6 +1,6 @@
 import { SignIn } from '@clerk/nextjs';
 
-import { LetterboxRule } from '@/components/LetterboxRule';
+import { SectionHead } from '@/components/SectionHead';
 
 /**
  * Logging in, for members who have already claimed their account.
@@ -17,7 +17,7 @@ import { LetterboxRule } from '@/components/LetterboxRule';
 export default function LoginPage() {
   return (
     <div className="flex w-full flex-col gap-6">
-      <LetterboxRule as="h1">Log in</LetterboxRule>
+      <SectionHead as="h1">Log in</SectionHead>
 
       <p className="text-text-secondary text-sm leading-relaxed">
         We email you a code — there is no password. First time back since the redesign?
