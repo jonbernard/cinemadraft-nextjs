@@ -127,4 +127,23 @@ describe('DraftBoard', () => {
     render(<DraftBoard rounds={0} seats={[]} />);
     expect(screen.getByText(/no seats in this group/i)).toBeInTheDocument();
   });
+
+  it('🔴 labels a phone seat with its position, exactly "Seat NN · Rounds 1–N"', () => {
+    // The one string the brief names verbatim. Zero-padded to two digits
+    // regardless of how many seats are in the group (D34: no roster size).
+    render(
+      <DraftBoard rounds={7} seats={[seat({ draftId: 1, order: 1, name: 'Ada' })]} />,
+    );
+
+    expect(phone().getByText('Seat 01 · Rounds 1–7')).toBeInTheDocument();
+  });
+
+  it('drops the seat number from the eyebrow when the caller has none to give', () => {
+    // `order` is optional: a caller that has not threaded it through still
+    // gets a sensible eyebrow rather than "Seat undefined".
+    render(<DraftBoard rounds={7} seats={[seat({ draftId: 1, name: 'Ada' })]} />);
+
+    expect(phone().getByText('Rounds 1–7')).toBeInTheDocument();
+    expect(phone().queryByText(/Seat/)).not.toBeInTheDocument();
+  });
 });

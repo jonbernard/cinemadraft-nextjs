@@ -82,7 +82,13 @@ export function DraftBoard({
         {seats.map((seat) => {
           const isViewer = viewerSeatId != null && seat.draftId === viewerSeatId;
           return (
-            <li key={seat.draftId} aria-current={isViewer ? true : undefined}>
+            <li
+              key={seat.draftId}
+              aria-current={isViewer ? true : undefined}
+              className={
+                isViewer ? 'border-l-accent-fill bg-bg-raised border-l-2 pl-3' : undefined
+              }
+            >
               <Shelf
                 eyebrow={
                   seat.order == null
@@ -91,7 +97,7 @@ export function DraftBoard({
                 }
                 heading={
                   <>
-                    <span className="font-serif">{seat.name}</span>
+                    <span className="font-serif font-normal">{seat.name}</span>
                     {isViewer ? (
                       <span className="text-accent-text ml-2 font-sans text-sm font-normal">
                         You

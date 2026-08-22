@@ -30,7 +30,7 @@ export default async function LeaguesPage() {
           right={
             <Link
               href="/leagues/new"
-              className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+              className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 font-sans text-sm focus-visible:outline-2"
             >
               Start a league
             </Link>

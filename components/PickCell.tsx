@@ -34,7 +34,7 @@ export function PickCell({
     return (
       <div
         className={cn(
-          'border-border-rule bg-bg-base/40 flex aspect-[2/3] items-center justify-center border border-dashed',
+          'poster-radius bg-bg-base/40 light:border-border-rule flex aspect-[2/3] items-center justify-center light:border light:border-dashed',
           className,
         )}
       >
@@ -48,7 +48,7 @@ export function PickCell({
 
   return (
     <figure className={cn('flex flex-col gap-1', className)}>
-      <div className="bg-bg-raised border-border-rule relative aspect-[2/3] overflow-hidden border">
+      <div className="poster-radius bg-bg-raised light:border-border-rule relative aspect-[2/3] overflow-hidden light:border">
         {film.posterUrl ? (
           // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11 with the media migration
           <img src={film.posterUrl} alt="" className="h-full w-full object-cover" />
