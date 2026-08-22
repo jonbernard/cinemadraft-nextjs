@@ -65,6 +65,11 @@ export default mergeConfig(base, {
       // Film ingest, which reads film 1 from the restored data to prove a
       // cached film is returned without asking TMDB.
       'lib/services/film-ingest.test.ts',
+      // The film page's scoring panel: La La Land's 335 points and the five
+      // picks behind its average draft position are restored rows. The cases
+      // that need no data — an un-ingested film, and every way OMDb or TMDB
+      // can fail — stayed in film.test.ts and run here.
+      'lib/services/film.production.test.ts',
       // Query-count guards, measured against the restored corpus — a season of
       // real nominations is what makes "one film costs the same as 123"
       // meaningful.
