@@ -65,6 +65,11 @@ export const theme = createTheme({
     h3: { fontFamily: SANS, fontWeight: 600, letterSpacing: '-0.01em' },
     h4: { fontFamily: SANS, fontWeight: 600, letterSpacing: '-0.01em' },
     button: { textTransform: 'none', fontWeight: 600 },
+    // MUI ships this variant uppercase by default. The plan allows uppercase
+    // in exactly one place — the 11px Eyebrow component — so this override
+    // stays even though nothing currently renders `overline`: do not delete
+    // it as a no-op.
+    overline: { textTransform: 'none' },
   },
   transitions: {
     duration: {

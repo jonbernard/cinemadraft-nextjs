@@ -54,9 +54,18 @@ describe('MUI theme is built from the tokens', () => {
 
 describe('the retired treatments are gone', () => {
   it('no typography variant is uppercase', () => {
-    const variants = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'button'] as const;
-    for (const v of variants) {
-      expect(theme.typography[v]?.textTransform).not.toBe('uppercase');
+    // Object-valued entries are variants (h1, button, overline, ...);
+    // fontFamily/fontSize/fontWeight*/htmlFontSize/pxToRem are not. Deriving
+    // the list from theme.typography itself — rather than a hand-written
+    // array — also catches a future MUI upgrade shipping a new uppercase
+    // default.
+    const variants = Object.entries(theme.typography).filter(
+      (entry): entry is [string, Record<string, unknown>] =>
+        typeof entry[1] === 'object' && entry[1] !== null,
+    );
+    expect(variants.length).toBeGreaterThan(0);
+    for (const [name, value] of variants) {
+      expect(value.textTransform, `${name}.textTransform`).not.toBe('uppercase');
     }
   });
 
