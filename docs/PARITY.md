@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 49 |
-| **deficient** | 20 |
+| **ported** | 52 |
+| **deficient** | 17 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
@@ -31,9 +31,10 @@ batch A added the navigation and the error boundaries; batch B closed the four
 league-formation rows — until it landed, **no new league could be created at
 all** — batch C closed the six for running a season, batch D closed the film
 page, similar films, browse and the watched mark, and batch E closed the four
-watchlist rows — the paged list and all three progress views — and both review
+watchlist rows — the paged list and all three progress views — both review
 rows, the first writes this app has made against a table with no production
-data behind it._
+data behind it, and the three profile rows: a member's page, and posting to and
+deleting from your own feed._
 
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
@@ -169,9 +170,9 @@ which is why so many rows are cheap and a few are not.
 |---|---|---|---|---|
 | Rate and review a film | **ported** | `/reviews/:tmdbId`, `POST /reviews/tmdbId/:tmdbId` | On the film page, not a page of its own: `app/(app)/films/[tmdbId]/page.tsx` → `components/ReviewForm.tsx` + `components/RatingInput.tsx`, `actions/reviews/save-review.ts` / `delete-review.ts`, `reviewRepository.saveForUserAndMovie`. 🔴 The 0–5 half-star scale is **validated**; the source's route stored whatever number arrived. *The source's "share on your profile" switch waits for the feed (T41)* | ✓ |
 | Read your own review | **ported** | `GET /reviews/tmdbId/:tmdbId` | `loadMyReview` → `components/ReviewCard.tsx`. 🔴 Scoped to the caller; the source filtered on the film alone once a session existed, so it could load a stranger's review into your edit form | ✓ |
-| **A member's profile and activity feed** | **deficient** | `/user/profile/:uuid`, `GET /profile/feed/user/:uuid` | **P10.T40** | ✓ |
-| Post to your feed | **deficient** | `POST /profile/feed` | **P10.T41** | — |
-| Delete a feed item | **deficient** | `DELETE /profile/feed/:id` | **P10.T42** | — |
+| **A member's profile and activity feed** | **ported** | `/user/profile/:uuid`, `GET /profile/feed/user/:uuid` | `app/(app)/members/[uuid]/page.tsx` → `lib/services/profile.ts`, `components/FeedPost.tsx`. 🔴 Route is `/members/[uuid]` (R16) and readable by any signed-in member, not public (R7). Trap 6: 89 of the 125 restored rows spell `components` double-escaped, and the source's getter threw on null — `parseComponents` reads both spellings and returns nothing for null | ✓ |
+| Post to your feed | **ported** | `POST /profile/feed` | `actions/profile/post-feed-item.ts` → `profileFeedRepository.create`, from `components/FeedComposer.tsx` on your own profile. 🔴 The target feed comes from the session, never from the request (R15) | ✓ |
+| Delete a feed item | **ported** | `DELETE /profile/feed/:id` | `actions/profile/delete-feed-item.ts` → `profileFeedRepository.deleteByIdAndUserUuid`, which matches the id and the caller's uuid in one statement (R15) | ✓ |
 | The profile tab strip | **dropped** | `users/UserProfile.js:109-117` | Every tab is commented out; it renders an empty strip. Reproducing a blank control is not parity | |
 
 ## Notifications

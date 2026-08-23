@@ -119,4 +119,55 @@ export const profileFeedRepository = {
     });
     return rows.map(toDto);
   },
+
+  /**
+   * Add one line to a member's feed.
+   *
+   * `components` is serialized here rather than by the caller so the column and
+   * `parseComponents` cannot drift apart: one function writes the string and one
+   * reads it. `JSON.stringify` emits the single-escaped spelling, which is the
+   * one 36 of the 125 restored rows use; the other 89 are the legacy
+   * double-escaped form and are read, never written.
+   *
+   * The timestamps are explicit because the columns carry no database default —
+   * the source set them in Sequelize, and a row inserted without them would sort
+   * last forever under `createdAt desc`.
+   */
+  async create(input: {
+    userUuid: string;
+    message: string;
+    icon?: string | null;
+    link?: string | null;
+    components?: readonly ProfileFeedComponent[];
+    createdAt?: Date;
+  }): Promise<ProfileFeed> {
+    const now = new Date();
+    const created = await db.profileFeed.create({
+      data: {
+        userUuid: input.userUuid,
+        message: input.message,
+        icon: input.icon ?? null,
+        link: input.link ?? null,
+        components: JSON.stringify(input.components ?? []),
+        createdAt: input.createdAt ?? now,
+        updatedAt: now,
+      },
+      select: SELECT,
+    });
+    return toDto(created);
+  },
+
+  /**
+   * Remove one line from one member's feed.
+   *
+   * 🔴 `deleteMany` scoped by both columns, and the uuid is not optional. A feed
+   * id arrives from the client, so it is a request rather than proof of
+   * ownership; matching on the pair means another member's row is not reachable
+   * from here even with a guessed id. Returns whether a row went, so a caller
+   * can tell "not yours" from "already gone" — `deleteMany` refuses silently.
+   */
+  async deleteByIdAndUserUuid(id: number, userUuid: string): Promise<boolean> {
+    const { count } = await db.profileFeed.deleteMany({ where: { id, userUuid } });
+    return count > 0;
+  },
 };

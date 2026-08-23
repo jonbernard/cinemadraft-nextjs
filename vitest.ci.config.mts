@@ -81,6 +81,12 @@ export default mergeConfig(base, {
       // shaping above the repository — grouping, the two totals, the ordering
       // — is `watchlist.test.ts`, which mocks the repositories and runs here.
       'lib/services/watchlist.production.test.ts',
+      // The 125 restored feed rows, including the 89 written in the legacy
+      // double-escaped spelling (trap 6). The scoping and ordering rules above
+      // the repository are `lib/services/profile.test.ts` and
+      // `actions/profile/feed-actions.test.ts`, which seed every row they touch
+      // and run here.
+      'lib/services/profile.production.test.ts',
       // Query-count guards, measured against the restored corpus — a season of
       // real nominations is what makes "one film costs the same as 123"
       // meaningful.
