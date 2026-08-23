@@ -21,11 +21,12 @@ const Input = z.array(z.int().positive()).min(1);
 export async function markNotificationsRead(
   ids: number[],
 ): Promise<ActionResult<number>> {
-  const parsed = Input.safeParse(ids);
-  if (!parsed.success) return fail('INVALID', 'that is not a list of notifications');
-
   try {
     const user = await requireUser();
+
+    const parsed = Input.safeParse(ids);
+    if (!parsed.success) return fail('INVALID', 'that is not a list of notifications');
+
     const count = await notificationRepository.markAsRead(parsed.data, user.id);
     return ok(count);
   } catch (error) {

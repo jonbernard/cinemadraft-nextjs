@@ -42,11 +42,11 @@ export type CreateCategoryInput = z.infer<typeof Input>;
 export async function createCategory(
   input: CreateCategoryInput,
 ): Promise<ActionResult<{ awardId: number }>> {
-  const parsed = Input.safeParse(input);
-  if (!parsed.success) return fail('INVALID', 'that category is not valid');
-
   try {
     const admin = await requireAdmin();
+
+    const parsed = Input.safeParse(input);
+    if (!parsed.success) return fail('INVALID', 'that category is not valid');
 
     const event = await eventRepository.findById(parsed.data.eventId);
 
