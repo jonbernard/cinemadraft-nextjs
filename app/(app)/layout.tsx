@@ -1,5 +1,5 @@
 import { AppShell } from '@/components/AppShell';
-import { getCurrentUser } from '@/lib/auth';
+import { AccountLinkError, getCurrentUser } from '@/lib/auth';
 import { notificationRepository } from '@/lib/repositories/notifications';
 
 /**
@@ -15,9 +15,20 @@ import { notificationRepository } from '@/lib/repositories/notifications';
  * under this layout is a member reaching the shell, so this is the one place
  * that sees every request without a page having to remember to ask for it.
  * Signed-out visitors get an empty list rather than a fetch against no user.
+ *
+ * 🔴 `getCurrentUser()` throws `AccountLinkError` for a collided account
+ * (D25), and a throw from this layout is not caught by `(app)/error.tsx` —
+ * that boundary only catches errors from its own children, not from the
+ * layout that renders alongside it, so an uncaught throw here bubbles past
+ * the shell entirely. That is exactly the member who most needs the shell
+ * standing: they can still reach the public pages, and the admin gear must
+ * not render for them. Caught here and treated as signed out.
  */
 export default async function AppLayout({ children }: LayoutProps<'/'>) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUser().catch((error) => {
+    if (error instanceof AccountLinkError) return null;
+    throw error;
+  });
 
   const [notifications, unreadCount] = user
     ? await Promise.all([
