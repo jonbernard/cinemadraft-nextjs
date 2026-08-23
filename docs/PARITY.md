@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 59 |
-| **deficient** | 10 |
+| **ported** | 62 |
+| **deficient** | 7 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
@@ -184,7 +184,7 @@ which is why so many rows are cheap and a few are not.
 |---|---|---|---|---|
 | Your recent notifications | **ported** | `GET /notifications` | `notificationRepository.findByUser`/`countUnreadByUser` → the bell in `components/NotificationBell.tsx`, rendered in `AppShell`'s desktop strip and in `MoreSheet` (T43). A notification with a `link` navigates; one without renders as plain text | ✓ |
 | Mark as read | **ported** | `PUT /notifications/read` | `actions/notifications/mark-as-read.ts` → `notificationRepository.markAsRead`, scoped `{ id: { in: ids }, userId }` in the repository's `where` rather than checked beforehand (T44) | — |
-| Admin: broadcast to everyone | **deficient** | `POST /notifications/type/:type` | **P10.T45** — the `:type` segment is ignored; it always sends to all | — |
+| Admin: broadcast to everyone | **ported** | `POST /notifications/type/:type` | `actions/notifications/broadcast.ts` → `notificationRepository.broadcast`, one `createMany` per send, from `/admin/broadcast` (T45). The `:type` segment is dropped (R9) — it was always ignored, and everyone was the only recipient list that ever ran. Irreversible from the UI (R8), so the form requires a confirmation naming the message and the recipient count | — |
 | Dismiss one notification | **dropped** | `DELETE /notifications/:id` (`routes/notifications.js:30`) | 🔴 **Dead as written.** No auth middleware, so `req.user` is never set, and the controller's guard throws on every call. It has never once succeeded in production. Rebuild it in P10.T44 only if the owner wants it | |
 
 ## Reference and admin

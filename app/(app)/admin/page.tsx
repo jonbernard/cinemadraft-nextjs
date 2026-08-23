@@ -31,6 +31,11 @@ export default async function AdminPage() {
             label: 'Relink an account',
             detail: 'Move an account between people. The only code that can.',
           },
+          {
+            href: '/admin/broadcast',
+            label: 'Broadcast a notification',
+            detail: 'Send one message to every member. Cannot be recalled.',
+          },
         ].map((entry) => (
           <li key={entry.href}>
             <Panel>
