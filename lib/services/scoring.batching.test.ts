@@ -5,11 +5,13 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '@/fixtures/movie-by-id.json';
 import { db } from '@/lib/db';
 import { clearCacheForTests } from '@/lib/external/cache';
+import { denseRank } from '@/lib/utils/rank';
 import { loadFixture } from '@/test/fixtures';
 import { countQueries } from '@/test/query-count';
 import { getDashboard } from './dashboard';
 import { getLeagueBoard } from './draft';
 import { loadFilmPage } from './film';
+import { getLeaderboard } from './leaderboard';
 import { pointsForMovieIds } from './scoring';
 
 afterAll(async () => {
@@ -101,6 +103,40 @@ describe('every page that shows a score loads them in bulk', () => {
 
     expect(queries).toBeLessThanOrEqual(15);
     expect(queries).toBeGreaterThan(0);
+  });
+
+  it('🔴 the season leaderboard (P10.T4) costs a fixed number of queries', async () => {
+    // 2025 has 529 nominations across ~123 films. An N+1 over nominations, or
+    // over the films they resolve to, would dwarf this bound.
+    const { queries } = await countQueries(() => getLeaderboard(2025));
+
+    expect(queries).toBeLessThanOrEqual(8);
+    expect(queries).toBeGreaterThan(0);
+  });
+
+  it('🔴 the leaderboard costs no more for a big season than a small one', async () => {
+    // 2025 has 529 nominations; 2022 has 110. If the count moves with the
+    // number of nominations or films, something is querying per row.
+    const big = await countQueries(() => getLeaderboard(2025));
+    const small = await countQueries(() => getLeaderboard(2022));
+
+    expect(big.queries).toBe(small.queries);
+  });
+
+  it('🔴 the league page’s standings section (P10.T10) adds no query beyond the board itself', async () => {
+    // The board's own seats and totals already carry everything the standings
+    // need; only a pure in-memory sort and dense-rank should sit on top.
+    const boardOnly = await countQueries(() => getLeagueBoard(1, 2026));
+    const withStandings = await countQueries(async () => {
+      const board = await getLeagueBoard(1, 2026);
+      const seats = [...board.groups.flatMap((group) => group.seats)].sort(
+        (a, b) => b.total - a.total,
+      );
+      denseRank(seats);
+      return board;
+    });
+
+    expect(withStandings.queries).toBe(boardOnly.queries);
   });
 });
 

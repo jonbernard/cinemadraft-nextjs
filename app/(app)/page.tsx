@@ -1,4 +1,7 @@
+import Link from 'next/link';
+
 import { EmptyState } from '@/components/EmptyState';
+import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { PosterFrame } from '@/components/PosterFrame';
 import { RosterStrip } from '@/components/RosterStrip';
 import { SeasonRail } from '@/components/SeasonRail';
@@ -8,6 +11,7 @@ import { StandingsPanel } from '@/components/StandingsPanel';
 import { getCurrentUser } from '@/lib/auth';
 import { recentPicks, type ShelfView, topScorers } from '@/lib/dashboard/shelves';
 import { type DashboardView, getDashboard } from '@/lib/services/dashboard';
+import { availableSeasons, getLeaderboard } from '@/lib/services/leaderboard';
 
 /**
  * The dashboard, with a public variant (D44).
@@ -41,9 +45,16 @@ import { type DashboardView, getDashboard } from '@/lib/services/dashboard';
  * second `<main>`, or a repeat of `bg-bg-base`, would fight the panel it is
  * sitting inside.
  */
-export default async function DashboardPage() {
-  const user = await getCurrentUser();
-  const view = await getDashboard(user?.id ?? null);
+export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
+  const { year: yearParam } = await searchParams;
+
+  const [user, seasons] = await Promise.all([getCurrentUser(), availableSeasons()]);
+  const year = toYear(typeof yearParam === 'string' ? yearParam : undefined, seasons);
+
+  const [view, leaderboard] = await Promise.all([
+    getDashboard(user?.id ?? null),
+    getLeaderboard(year),
+  ]);
 
   const shows = view.events.length;
   const complete = view.events.filter((event) => event.complete).length;
@@ -65,6 +76,39 @@ export default async function DashboardPage() {
         {/* Renders nothing when the season has no shows yet, so the heading
             above it is unconditional and the page always has an h1. */}
         <SeasonRail events={view.events} />
+      </section>
+
+      <NowPlayingShelf films={view.nowPlaying} />
+
+      <section className="flex flex-col gap-4">
+        <SectionHead
+          as="h2"
+          eyebrow="By award show"
+          right={
+            seasons.length > 1 ? (
+              <nav aria-label="Season" className="flex flex-wrap gap-3 text-sm">
+                {seasons.map((entry) => (
+                  <Link
+                    key={entry}
+                    href={`/?year=${entry}`}
+                    aria-current={entry === year ? 'page' : undefined}
+                    className={
+                      entry === year
+                        ? 'text-accent-text tabular font-mono'
+                        : 'text-text-secondary tabular font-mono underline'
+                    }
+                  >
+                    {entry}
+                  </Link>
+                ))}
+              </nav>
+            ) : undefined
+          }
+        >
+          Season leaderboard
+        </SectionHead>
+
+        <LeaderboardTable leaderboard={leaderboard} />
       </section>
 
       {user == null ? (
@@ -138,6 +182,49 @@ export default async function DashboardPage() {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * The leaderboard's own year, from `?year=` (D65).
+ *
+ * 🔴 `?year=abc` and `?year=-4` both arrive here, the same way `/browse`
+ * validates `?page=`. Falls back to the newest season on anything that is not
+ * one of the seasons `availableYearRepository` actually reports, rather than
+ * merely "a positive integer" — an unknown year would otherwise render an
+ * honestly-empty grid that looks like a bug rather than a bad link.
+ */
+function toYear(raw: string | undefined, seasons: readonly number[]): number {
+  const parsed = Number(raw);
+  if (Number.isSafeInteger(parsed) && seasons.includes(parsed)) return parsed;
+  return seasons[0] ?? new Date().getUTCFullYear();
+}
+
+/**
+ * "Films in cinemas now" (P10.T2), or nothing at all.
+ *
+ * Nothing rather than an empty frame: TMDB may be unconfigured in a preview
+ * deploy, or the request may have failed, and `getNowPlaying` already
+ * absorbed both into an empty list — the dashboard is a signed-out visitor's
+ * first page, and it must not degrade into a broken panel over a missing env
+ * var.
+ */
+function NowPlayingShelf({ films }: { films: DashboardView['nowPlaying'] }) {
+  if (films.length === 0) return null;
+
+  return (
+    <Shelf heading="In cinemas now">
+      {films.map((film) => (
+        <li key={film.tmdbId} className="w-40">
+          <Link
+            href={`/films/${film.tmdbId}`}
+            className="focus-visible:outline-accent-fill block focus-visible:outline-2"
+          >
+            <PosterFrame title={film.title} posterUrl={film.posterUrl} />
+          </Link>
+        </li>
+      ))}
+    </Shelf>
   );
 }
 

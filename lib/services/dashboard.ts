@@ -1,9 +1,12 @@
+import { getNowPlaying } from '@/lib/external/tmdb-now-playing';
 import { draftPickRepository } from '@/lib/repositories/draft-picks';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { eventRepository } from '@/lib/repositories/events';
 import { leagueRepository } from '@/lib/repositories/leagues';
 import { type Movie, movieRepository } from '@/lib/repositories/movies';
 import { userRepository } from '@/lib/repositories/users';
+import { posterUrl } from '@/lib/utils/poster';
+import { denseRank } from '@/lib/utils/rank';
 import { pointsForMovieIds, sumTotals } from './scoring';
 import { getActiveYear } from './season';
 
@@ -70,10 +73,24 @@ export type SeasonEvent = {
   complete: boolean;
 };
 
+/** One film in cinemas now, for the "In cinemas now" shelf (P10.T2). */
+export type NowPlayingFilm = {
+  tmdbId: string;
+  title: string;
+  posterUrl: string | null;
+};
+
 export type DashboardView = {
   year: number;
   leagues: LeagueView[];
   events: SeasonEvent[];
+  /**
+   * Empty rather than an error when TMDB is unconfigured or unreachable —
+   * `getNowPlaying` absorbs both into an empty list, and the dashboard is a
+   * signed-out visitor's first page: it must not degrade into a broken panel
+   * because a preview deploy has no TMDB key.
+   */
+  nowPlaying: NowPlayingFilm[];
 };
 
 /**
@@ -96,26 +113,6 @@ function displayName(user: {
 }
 
 /**
- * Dense ranking: equal totals share a position, and the next distinct total
- * skips accordingly (1, 1, 3). Ties are the normal state early in a season,
- * when nothing has been awarded and everyone is on zero — so this is the
- * common path, not an edge case.
- */
-function rank(rows: { total: number }[]): number[] {
-  const positions: number[] = [];
-  let position = 0;
-  let previous: number | null = null;
-
-  rows.forEach((row, index) => {
-    if (previous === null || row.total !== previous) position = index + 1;
-    positions.push(position);
-    previous = row.total;
-  });
-
-  return positions;
-}
-
-/**
  * Everything the dashboard renders, assembled once.
  *
  * The page does no data assembly of its own. That is what keeps the RSC
@@ -128,12 +125,13 @@ function rank(rows: { total: number }[]): number[] {
 export async function getDashboard(userId: number | null): Promise<DashboardView> {
   const year = await getActiveYear();
 
-  const [leagueIds, events] = await Promise.all([
+  const [leagueIds, events, nowPlaying] = await Promise.all([
     // A signed-out visitor has no leagues by definition. Skipping the query
     // rather than passing a sentinel id keeps it impossible for the public
     // page to accidentally resolve somebody else's leagues (D44).
     userId == null ? Promise.resolve([]) : draftRepository.findLeagueIdsByUserId(userId),
     eventRepository.findAll(),
+    getNowPlaying(),
   ]);
 
   const leagues =
@@ -165,6 +163,11 @@ export async function getDashboard(userId: number | null): Promise<DashboardView
         (a, b) =>
           (a.date ?? Number.POSITIVE_INFINITY) - (b.date ?? Number.POSITIVE_INFINITY),
       ),
+    nowPlaying: nowPlaying.map((film) => ({
+      tmdbId: film.tmdbId,
+      title: film.title,
+      posterUrl: posterUrl(film.posterPath, 'w342'),
+    })),
   };
 }
 
@@ -211,7 +214,7 @@ async function buildLeague(
     })
     .sort((a, b) => b.total - a.total);
 
-  const positions = rank(rows);
+  const positions = denseRank(rows);
   const standings: StandingsRow[] = rows.map((row, index) => ({
     ...row,
     position: positions[index] as number,

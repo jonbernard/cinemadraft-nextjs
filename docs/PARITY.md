@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 52 |
-| **deficient** | 17 |
+| **ported** | 55 |
+| **deficient** | 14 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
@@ -84,9 +84,9 @@ which is why so many rows are cheap and a few are not.
 | Upcoming ceremony dates | **ported** | `GET /dashboard` (`routes/dashboard.js:62`) | `components/SeasonRail.tsx` | ✓ |
 | See your roster and league standings at a glance | **ported** | — (source put this on the league page only) | `lib/services/dashboard.ts` — a betterment, not parity | ✓ |
 | Signed-out visitors see the season | **ported** | Dashboard was public (`src/routes/index.js:66`) | `app/(app)/page.tsx`, `getDashboard(null)` (D44) | ✓ |
-| Films in cinemas now | **deficient** | `NowShowing` carousel, `GET /movie/now-playing` | **P10.T2** — needs TMDB (Phase 8) | — |
+| Films in cinemas now | **ported** | `NowShowing` carousel, `GET /movie/now-playing` | `lib/external/tmdb-now-playing.ts` + the "In cinemas now" shelf on `app/(app)/page.tsx`. Renders nothing — not an error — when TMDB is unconfigured or the request fails | — |
 | "Watch live" banner during a ceremony | **deficient** | `dashboard/components/LiveCTA.js:35-63` | **P10.T3** — the only route into the live page | ✓ |
-| Season leaderboard by year | **deficient** | `MovieResultsByLeague`, `GET /points/year/:year` | **P10.T4** | ✓ |
+| Season leaderboard by year | **ported** | `MovieResultsByLeague`, `GET /points/year/:year` | `lib/services/leaderboard.ts` — one row per nominated film, one column per award show, zero-filled where the source's `defaultEvents` was; scored through `ledgerForMovies`, not a second rule (D41). `?year=` (D65) on `app/(app)/page.tsx` | ✓ |
 | Welcome callout card | **dropped** | `HeadCallout` | MUI Minimal template chrome, not a feature (D3) | |
 
 ## Films
@@ -108,7 +108,7 @@ which is why so many rows are cheap and a few are not.
 | The board is public | **ported** | Public in source — 🔴 the sibling `/leagues` routes are guarded, this one is not | `proxy.ts` lists `/leagues/(.*)` (D44/D45) | ✓ |
 | Switch season | **ported** | year `<Select>` on the league page | `app/(app)/leagues/[id]/page.tsx` | ✓ |
 | Groups | **ported** | `:activeGroup` segment | Every group renders; no pagination needed | ✓ |
-| **A league's standings, on the league page** | **deficient** | "League points" panel, `GET /points/league/...` | **P10.T10** — exists on the dashboard, but only for signed-in members, so a visitor on a shared link sees no scores | ✓ |
+| **A league's standings, on the league page** | **ported** | "League points" panel, `GET /points/league/...` | `app/(app)/leagues/[id]/page.tsx` renders `StandingsPanel` from `getLeagueBoard`'s own seats and totals — no new query. Dense ranking moved to `lib/utils/rank.ts`, shared with the dashboard. One view, not a total/event toggle: the source's own `:type` segment was ignored by both routes it named (source bug 9) | ✓ |
 | **Create a league** | **ported** | `src/pages/league/create.js`, `POST /league/add` | `app/(app)/leagues/new`, `actions/leagues/create-league.ts` — seats the creator, writes a parseable owner column (D47), generates the invite uuid | ✓ |
 | **Your leagues, and switching between them** | **ported** | `src/pages/league/redirect.js`, `GET /league/user` | `app/(app)/leagues/page.tsx` + `lib/services/my-leagues.ts`. 🔴 Shows a **list** rather than redirecting to the first league as the source did — that redirect meant no page ever answered "which leagues am I in" | ✓ |
 | Copy the invite link | **ported** | `JoinLink` on create + league panel | `components/InviteLink.tsx`, on the league page, **owners only** — the uuid is the join credential | ✓ |

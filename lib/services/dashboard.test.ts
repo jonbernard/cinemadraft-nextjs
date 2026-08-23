@@ -1,8 +1,9 @@
 // @vitest-environment node
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/lib/db';
+import { clearCacheForTests } from '@/lib/external/cache';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { getDashboard } from './dashboard';
 
@@ -159,5 +160,56 @@ describe('the public dashboard (D44)', () => {
 
     expect(view.leagues.flatMap((league) => league.roster)).toEqual([]);
     expect(view.leagues.flatMap((league) => league.standings)).toEqual([]);
+  });
+});
+
+/**
+ * "In cinemas now" (P10.T2). TMDB is stubbed; the database is real, since
+ * `getDashboard` runs the two side by side.
+ */
+describe('the now-playing shelf', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.TMDB_API_KEY;
+  });
+
+  it('🔴 is empty when TMDB is unconfigured, not an error', async () => {
+    delete process.env.TMDB_API_KEY;
+
+    const view = await getDashboard(null);
+
+    expect(view.nowPlaying).toEqual([]);
+  });
+
+  it('maps TMDB results into posters the shelf can render', async () => {
+    clearCacheForTests();
+    process.env.TMDB_API_KEY = 'test-tmdb-key';
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          ({
+            ok: true,
+            json: async () => ({
+              page: 1,
+              results: [
+                { id: 42, title: 'In Theaters', poster_path: '/42.jpg' },
+                // No poster: dropped, the same as `discoverFilms`.
+                { id: 43, title: 'No Poster', poster_path: null },
+              ],
+            }),
+          }) as Response,
+      ),
+    );
+
+    const view = await getDashboard(null);
+
+    expect(view.nowPlaying).toEqual([
+      {
+        tmdbId: '42',
+        title: 'In Theaters',
+        posterUrl: expect.stringContaining('/42.jpg'),
+      },
+    ]);
   });
 });

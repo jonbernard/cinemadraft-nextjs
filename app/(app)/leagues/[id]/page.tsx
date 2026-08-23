@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { DraftBoard } from '@/components/DraftBoard';
 import { InviteLink } from '@/components/InviteLink';
 import { SectionHead } from '@/components/SectionHead';
+import { StandingsPanel } from '@/components/StandingsPanel';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
@@ -11,6 +12,7 @@ import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
 import { canManageLeague } from '@/lib/services/league-access';
 import { getActiveYear } from '@/lib/services/season';
 import { posterUrl } from '@/lib/utils/poster';
+import { denseRank } from '@/lib/utils/rank';
 
 /**
  * The origin an invite link should carry.
@@ -83,6 +85,23 @@ export default async function LeaguePage({
 
   const isPending = board.status === 'pending';
 
+  // P10.T10: the same seats and totals `getLeagueBoard` already loaded, ranked
+  // rather than reused as a second query. `StandingsRow.userId` doubles as the
+  // React key and the `isViewer` comparison, so a dummy seat — which has no
+  // `userId` — gets a negative sentinel built from its `draftId`, which real
+  // user ids (positive DB ids) can never collide with.
+  const standingsRows = [...board.groups.flatMap((group) => group.seats)].sort(
+    (a, b) => b.total - a.total,
+  );
+  const standingsPositions = denseRank(standingsRows);
+  const standings = standingsRows.map((seat, index) => ({
+    userId: seat.userId ?? -seat.draftId,
+    name: seat.name,
+    total: seat.total,
+    position: standingsPositions[index] as number,
+    isViewer: user != null && seat.userId === user.id,
+  }));
+
   return (
     <>
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
@@ -140,6 +159,19 @@ export default async function LeaguePage({
             </nav>
           ) : null}
         </header>
+
+        {/* P10.T10: standings for whoever has this link, signed in or not —
+            the deficiency being closed is that the source only showed this on
+            the dashboard, to a signed-in member. One view, not a total/event
+            toggle: the source's own `:type` segment was ignored by both routes
+            it named (PARITY.md source bug 9), so a distinction it never
+            actually made is not one to port. */}
+        {standings.length > 0 ? (
+          <section className="flex max-w-sm flex-col gap-3">
+            <SectionHead as="h2">Standings</SectionHead>
+            <StandingsPanel rows={standings} />
+          </section>
+        ) : null}
 
         {board.groups.length === 0 ? (
           <p className="text-text-secondary text-sm">
