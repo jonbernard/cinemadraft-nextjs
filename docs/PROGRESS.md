@@ -606,6 +606,31 @@ Plan: _not yet written_ — 7 tasks, see `docs/PLAN.md`
 
 Plan: [`docs/superpowers/plans/2026-08-16-phase-10-parity.md`](superpowers/plans/2026-08-16-phase-10-parity.md)
 
+🔴 **Review budget when executing a plan with subagents** (owner direction,
+given twice — Phase 3.5 and again mid-Phase 10). Reviewer plus re-reviewer per
+task ran to ~40% of each task's subagent tokens, and the budget runs out long
+before the plan does. **No scoped re-reviews** — the controller verifies fix
+rounds by reading the diff and running the gates. **A per-task reviewer only
+where the task writes something security-bearing**; read-only pages get none.
+**Batch same-shape tasks into one dispatch.** **One review at the end over the
+whole branch**, not one per task.
+
+The rigour that replaced those seats costs nothing, because it is prose in the
+dispatch prompt, and it is what stopped the later batch-E tasks needing the fix
+rounds the earlier ones did: require mutation testing **before** the commit
+(delete the guard, run, confirm red, restore, verify byte-identical); name the
+traps that produce tests which cannot fail; and require **fixture adequacy** —
+a fixture with one of something cannot catch a missing predicate about that
+something, so a query scoped by two columns needs two distinct values of each.
+One task reported 18 of 18 mutations red and was still blind to a clause whose
+removal would have deleted every review its caller had ever written.
+
+🔴 **A mutation run can write to the restored production database.** A mutated
+guard is exactly a guard that lets writes through. One run left a null-uuid row
+in `profile_feeds`, caught only by `lib/db.test.ts`'s row count — so that test
+must pass before any mutation round is reported, and any row count measured
+during such a round must be re-measured after.
+
 🔴 **The app had no navigation at all** until P10 batch A. Every page was an
 island reachable only by typing its URL. The parity matrix could not see it —
 it records capabilities, and navigation is what makes capabilities findable.
