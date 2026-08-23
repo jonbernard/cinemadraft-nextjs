@@ -656,6 +656,45 @@ both places, and `global-error.tsx` for a failure in the root layout — that
 last one is deliberately plain and self-contained, because the providers and
 theme are exactly what may have failed.
 
+**Batches E, F, G and H done — Phase 10's parity work is complete.**
+`PARITY.md` reads **65 ported / 4 deficient / 15 dropped = 84**, and the four
+deficient rows are all Phase 14 deferrals: T3 (the live banner, which is the
+only route into the live page), T21, T31 and T32.
+
+- Batch E closed the personal surfaces (draft list, watchlist, reviews,
+  profiles and feeds), F the season surfaces (cinemas, the season leaderboard,
+  league standings on the league page), G the admin and reference rows (show
+  and category admin, notifications and broadcast, the active-season control,
+  relink, rules and the scoring rulebook), H the ical feed.
+- 🔴 **A row closes when a person can reach it** (D53). Two tasks shipped
+  working, correctly-gated surfaces that nothing linked to — the profile rows,
+  and then both admin control pages. Both needed a follow-up commit. **If a task
+  builds a surface, its brief must say where a person reaches it from.**
+- 🔴 **The ical feed is a public URL with no session.** It serves show names and
+  dates only, pinned by a test that asserts on the whole serialized body with a
+  member's email and uuid present in the database and reachable by a wrong join.
+  A test that checks only the fields you did include cannot catch one you should
+  not have.
+- 🔴 **`awards.points` is a foreign key into `points.id`**, not a point value,
+  and the category admin form is where that trap bites: writing a *value* there
+  scores "Performance by an Ensemble" as 1 instead of 5 and corrupts every total
+  silently. The admin picks a tier; the column stores that row's id.
+- 🔴 **Deleting a category refuses rather than orphaning.** Orphaned nominations
+  and winners do not vanish — they reach `scoring.ts`, whose `pointsByAward`
+  lookup misses and scores them zero, quietly rewriting a past season.
+- 🔴 **A throw from a segment layout escapes that segment's `error.tsx`.**
+  Resolving the user in `(app)/layout.tsx` for an admin-only affordance meant a
+  collided account lost every page under `(app)`, public ones included — the
+  member T49 exists to repair. The layout now catches `AccountLinkError` and
+  renders the shell signed-out.
+- 🔴 **`{ not: true }` is not "unread".** Prisma compiles it to SQL `<> true`,
+  and three-valued logic drops NULLs, so every never-touched notification was
+  missing from the bell's badge. The fixture-backed test could not catch it
+  because the user it seeds has no null rows.
+- **The verdict header drifted from the table five times in this phase**, always
+  the same direction: rows get edited, the header does not. It should be a CI
+  check, not a rule in a brief.
+
 **Batch D done — films are browsable and a film has a page.** `/films/[tmdbId]`
 and `/browse`, plus the watched mark that browse is built around. Closes
 `PARITY.md` T5, T6, T7, T9 and T34.
