@@ -50,7 +50,7 @@ describe('writing a review', () => {
   it('🔴 sends the rating and the words together', async () => {
     const { onSave } = renderForm();
 
-    await userEvent.click(screen.getByRole('radio', { name: '4.5' }));
+    await userEvent.click(screen.getByRole('radio', { name: '4.5 stars' }));
     await userEvent.type(
       screen.getByRole('textbox', { name: /Your review of La La Land/ }),
       'Held up.',
@@ -69,7 +69,7 @@ describe('writing a review', () => {
   it('confirms a save in a live region', async () => {
     renderForm();
 
-    await userEvent.click(screen.getByRole('radio', { name: '2.0' }));
+    await userEvent.click(screen.getByRole('radio', { name: '2.0 stars' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save review' }));
 
     expect(await screen.findByText('Review saved')).toBeInTheDocument();
@@ -88,7 +88,11 @@ describe('writing a review', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Save review' }));
 
-    expect(await screen.findByText('add a rating or a few words')).toBeInTheDocument();
+    // The refusal and the confirmation share one live region and one colour, so
+    // the opening words are the only thing marking this as a failure.
+    expect(
+      await screen.findByText('Not saved — add a rating or a few words'),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Review saved')).not.toBeInTheDocument();
   });
 });
@@ -100,7 +104,7 @@ describe('editing what is already there', () => {
     expect(
       screen.getByRole('textbox', { name: /Your review of La La Land/ }),
     ).toHaveValue('Better than the trailer promised.');
-    expect(screen.getByRole('radio', { name: '3.5' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: '3.5 stars' })).toBeChecked();
   });
 
   it('🔴 offers no Remove when there is nothing to remove', () => {

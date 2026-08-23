@@ -12,14 +12,13 @@ import { Fact, FilmFacts } from '@/components/FilmFacts';
 import { FilmPointsPanel } from '@/components/FilmPointsPanel';
 import { PosterCarousel } from '@/components/PosterCarousel';
 import { RatingChip } from '@/components/RatingChip';
-import { ReviewCard } from '@/components/ReviewCard';
-import { ReviewForm } from '@/components/ReviewForm';
 import { SectionHead } from '@/components/SectionHead';
 import { TrailerReel } from '@/components/TrailerReel';
 import { WatchedToggle } from '@/components/WatchedToggle';
+import { YourReview } from '@/components/YourReview';
 import { getCurrentUser } from '@/lib/auth';
 import { type FilmPage, isFilmWatched, loadFilmPage } from '@/lib/services/film';
-import { loadMyReview, type MyReview } from '@/lib/services/reviews';
+import { loadMyReview } from '@/lib/services/reviews';
 import { formatMoney, formatReleaseDate, formatRuntime } from '@/lib/utils/format';
 
 /**
@@ -136,7 +135,13 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
           </section>
 
           {user ? (
-            <YourReview tmdbId={film.tmdbId} title={film.title} review={myReview} />
+            <YourReview
+              tmdbId={film.tmdbId}
+              title={film.title}
+              review={myReview}
+              onSave={saveReview}
+              onDelete={deleteReview}
+            />
           ) : null}
 
           <CreditsPanel departments={film.crew} />
@@ -237,51 +242,6 @@ function FilmBanner({
         ) : null}
       </div>
     </header>
-  );
-}
-
-/**
- * Rating and reviewing a film, and reading back what you wrote (T38, T39).
- *
- * 🔴 **Your own review only.** The source's `GET /reviews/tmdbId/:tmdbId`
- * required a session and then filtered on the film alone, so a film anyone had
- * reviewed loaded a stranger's words into your form. Nothing on this page shows
- * another member's review, and there is no id here that could address one.
- *
- * The editor sits inside a `<details>` because the common visit to a film page
- * is not a visit to write about it — and a native disclosure opens before
- * hydration, keyboard included, which a built one would not.
- */
-function YourReview({
-  tmdbId,
-  title,
-  review,
-}: {
-  tmdbId: string;
-  title: string;
-  review: MyReview | null;
-}) {
-  return (
-    <section className="flex flex-col gap-4">
-      <SectionHead as="h2">Your review</SectionHead>
-
-      {review ? <ReviewCard review={review} /> : null}
-
-      <details className="bg-bg-surface rounded-md">
-        <summary className="focus-visible:outline-accent-fill text-text-primary flex min-h-11 cursor-pointer items-center px-4 text-sm focus-visible:outline-2">
-          {review ? 'Edit your review' : 'Write a review'}
-        </summary>
-        <div className="px-4 pt-2 pb-4">
-          <ReviewForm
-            tmdbId={tmdbId}
-            title={title}
-            review={review}
-            onSave={saveReview}
-            onDelete={deleteReview}
-          />
-        </div>
-      </details>
-    </section>
   );
 }
 

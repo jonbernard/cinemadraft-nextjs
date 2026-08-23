@@ -13,7 +13,9 @@ import { loadMyReview } from './reviews';
  * it had confirmed *somebody* was signed in, so it answered with whichever
  * review Sequelize found first. The author and the reader below therefore hold
  * different ratings and different words: a read that lost its `userId` clause
- * would return a populated review here, not an empty one.
+ * would return a populated review here, not an empty one. The author's two films
+ * differ the same way, so a read that lost its `movieId` clause would answer with
+ * the wrong film's words.
  */
 const TAG = 'review-service';
 
@@ -38,29 +40,43 @@ async function seed() {
   const author = await createUser('author');
   const reader = await createUser('reader');
 
-  const film = await db.movie.create({
-    data: {
-      title: `${TAG} Anatomy of a Fall`,
-      sortTitle: `${TAG} Anatomy of a Fall`,
-      tmdbId: `9${randomUUID().replace(/\D/g, '').slice(0, 8)}`,
-      createdAt: now,
-      updatedAt: now,
-    },
-    select: { id: true, tmdbId: true },
+  const [film, otherFilm] = await Promise.all(
+    ['Anatomy of a Fall', 'The Zone of Interest'].map((title) =>
+      db.movie.create({
+        data: {
+          title: `${TAG} ${title}`,
+          sortTitle: `${TAG} ${title}`,
+          tmdbId: `9${randomUUID().replace(/\D/g, '').slice(0, 8)}`,
+          createdAt: now,
+          updatedAt: now,
+        },
+        select: { id: true, tmdbId: true },
+      }),
+    ),
+  );
+
+  await db.review.createMany({
+    data: [
+      {
+        userId: author,
+        movieId: film.id,
+        rating: 4.5,
+        review: 'The author’s own words.',
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        userId: author,
+        movieId: otherFilm.id,
+        rating: 2,
+        review: 'The author on a different film.',
+        createdAt: now,
+        updatedAt: now,
+      },
+    ],
   });
 
-  await db.review.create({
-    data: {
-      userId: author,
-      movieId: film.id,
-      rating: 4.5,
-      review: 'The author’s own words.',
-      createdAt: now,
-      updatedAt: now,
-    },
-  });
-
-  return { author, reader, film };
+  return { author, reader, film, otherFilm };
 }
 
 async function cleanup() {
@@ -102,6 +118,15 @@ describe('loadMyReview', () => {
     const review = await loadMyReview(fixture.film.tmdbId as string, fixture.author);
 
     expect(review).toMatchObject({ rating: 4.5, review: 'The author’s own words.' });
+  });
+
+  it('🔴 answers with this film’s review, not another the member wrote', async () => {
+    const review = await loadMyReview(fixture.otherFilm.tmdbId as string, fixture.author);
+
+    expect(review).toMatchObject({
+      rating: 2,
+      review: 'The author on a different film.',
+    });
   });
 
   it('🔴 returns null for a member who has not reviewed the film', async () => {

@@ -90,6 +90,7 @@ export const reviewRepository = {
     const review = await db.review.findFirst({
       where: { userId, movieId: Number(movieId) },
       select: SELECT,
+      orderBy: { id: 'asc' },
     });
     return review === null ? null : toDto(review);
   },
@@ -101,7 +102,10 @@ export const reviewRepository = {
    * on a unique constraint, and `(user_id, movie_id)` has none — only two plain
    * indexes (schema.prisma:213-214). The source enforced one-per-pair in
    * application code (`utils/sequelize.upsert`), so the database would accept a
-   * duplicate pair and an `upsert` keyed on it would not compile.
+   * duplicate pair and an `upsert` keyed on it would not compile. Two concurrent
+   * saves can therefore both find nothing and both create; `orderBy` on the two
+   * lookups makes the member see and edit the same one of the pair every time
+   * rather than whichever the planner returned.
    */
   async saveForUserAndMovie(
     userId: number,
@@ -112,6 +116,7 @@ export const reviewRepository = {
     const existing = await db.review.findFirst({
       where: { userId, movieId: Number(movieId) },
       select: { id: true },
+      orderBy: { id: 'asc' },
     });
 
     if (existing) {

@@ -1,7 +1,3 @@
-import { movieRepository } from '@/lib/repositories/movies';
-import { reviewRepository } from '@/lib/repositories/reviews';
-import { ensureFilm } from '@/lib/services/film-ingest';
-
 /**
  * A member's own review of one film, keyed by TMDB id (P10.T38, T39).
  *
@@ -11,6 +7,10 @@ import { ensureFilm } from '@/lib/services/film-ingest';
  * into your edit form and overwritten on save. Every function here takes the
  * reader's own id and passes it to a repository method that scopes on it.
  */
+
+import { movieRepository } from '@/lib/repositories/movies';
+import { reviewRepository } from '@/lib/repositories/reviews';
+import { ensureFilm } from '@/lib/services/film-ingest';
 
 export type MyReview = {
   /** 0.5–5 at half-star precision, or null for words without a score. */

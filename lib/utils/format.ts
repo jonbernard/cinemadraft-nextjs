@@ -54,19 +54,19 @@ export function formatMoney(amount: number | null): string | null {
   }).format(amount);
 }
 
+/** A release date. */
+export function formatReleaseDate(date: Date | null): string | null {
+  return formatDay(date);
+}
+
 /**
- * A release date, in UTC.
+ * A calendar day a person reads — `August 22, 2026`, never `08/22/26`.
  *
  * 🔴 The time zone is explicit. Without it a film released on the 1st renders as
  * the previous month for every reader west of UTC — two people looking at the
  * same page would disagree about when a film came out, and the browse page's
  * month grouping would disagree with the film page's date.
  */
-export function formatReleaseDate(date: Date | null): string | null {
-  return formatDay(date);
-}
-
-/** A calendar day a person reads — `August 22, 2026`, never `08/22/26`. */
 export function formatDay(date: Date | null): string | null {
   if (!date) return null;
 

@@ -5,6 +5,7 @@ import { useCallback, useId, useState, useTransition } from 'react';
 import type { ActionResult } from '@/actions/result';
 import type { MyReview } from '@/lib/services/reviews';
 import { cn } from '@/lib/utils/cn';
+import { toRatingStep } from '@/lib/utils/rating';
 import { Button } from './Button';
 import { RatingInput } from './RatingInput';
 
@@ -44,7 +45,9 @@ export function ReviewForm({
   className?: string;
 }) {
   const textId = useId();
-  const [rating, setRating] = useState<number | null>(review?.rating ?? null);
+  const [rating, setRating] = useState<number | null>(
+    toRatingStep(review?.rating ?? null),
+  );
   const [text, setText] = useState(review?.review ?? '');
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +71,7 @@ export function ReviewForm({
       startTransition(async () => {
         const result = await onSave({ tmdbId, rating, review: text });
         if (!result.ok) {
-          setError(result.message);
+          setError(`Not saved — ${result.message}`);
           return;
         }
         setHasSaved(true);
@@ -86,7 +89,7 @@ export function ReviewForm({
     startTransition(async () => {
       const result = await onDelete({ tmdbId });
       if (!result.ok) {
-        setError(result.message);
+        setError(`Not removed — ${result.message}`);
         return;
       }
       setRating(null);
@@ -119,8 +122,8 @@ export function ReviewForm({
         />
       </label>
 
-      {/* One region for both outcomes: a failure and a confirmation are the same
-          question answered, and two live regions race each other. */}
+      {/* One region for both outcomes: two live regions race each other. A
+          failure is told apart by its opening words, not by colour (§6.7). */}
       <p aria-live="polite" className="text-text-secondary min-h-5 text-sm">
         {error ?? status}
       </p>

@@ -20,9 +20,10 @@ import { saveReview } from './save-review';
  * and `lib/services/reviews.test.ts` are the only evidence the feature has. Both
  * seed everything they touch and run on CI, where there is a schema and no data.
  *
- * The two members below write **different** values on purpose. A guard that
- * dropped its `userId` clause would still leave a row of the right shape behind,
- * so every scoping assertion here names a value only the correct code produces.
+ * The two members and the two films below carry **different** values on purpose.
+ * A query scoped on `(userId, movieId)` that lost either clause would still
+ * leave a row of the right shape behind, so every scoping assertion here names a
+ * value only the correct code produces.
  */
 const TAG = 'review-actions';
 const DOMAIN = '@example.test';
@@ -49,18 +50,22 @@ async function seed() {
 
   // Cached, so the ordinary path needs no TMDB call. The title carries the tag
   // because the restored database holds real films and cleanup must not take one.
-  const film = await db.movie.create({
-    data: {
-      title: `${TAG} The Brutalist`,
-      sortTitle: `${TAG} Brutalist`,
-      tmdbId: `9${randomUUID().replace(/\D/g, '').slice(0, 8)}`,
-      createdAt: now,
-      updatedAt: now,
-    },
-    select: { id: true, tmdbId: true },
-  });
+  const [film, otherFilm] = await Promise.all(
+    ['The Brutalist', 'Anora'].map((title) =>
+      db.movie.create({
+        data: {
+          title: `${TAG} ${title}`,
+          sortTitle: `${TAG} ${title}`,
+          tmdbId: `9${randomUUID().replace(/\D/g, '').slice(0, 8)}`,
+          createdAt: now,
+          updatedAt: now,
+        },
+        select: { id: true, tmdbId: true },
+      }),
+    ),
+  );
 
-  return { author, stranger, film };
+  return { author, stranger, film, otherFilm };
 }
 
 function signInAs(user: { clerkId: string | null; email: string } | null) {
@@ -260,6 +265,46 @@ describe('one review per member per film (R13)', () => {
     expect(revalidatePath.mock.calls.map((call) => call.at(0))).toContain(
       `/films/${tmdbId}`,
     );
+  });
+});
+
+describe('the same member’s review of a second film', () => {
+  const FIRST = { rating: 2, review: 'What I made of the first film.' };
+  const SECOND = { rating: 5, review: 'What I made of the second film.' };
+
+  beforeEach(async () => {
+    signInAs(fixture.author);
+    await saveReview({ tmdbId: fixture.film.tmdbId as string, ...FIRST });
+  });
+
+  it('🔴 saving a review of one film leaves the member’s review of another untouched', async () => {
+    // Without the `movieId` clause on the upsert's lookup, this second save
+    // would find the first film's row and overwrite it: one row, the second
+    // film's rating and words filed under the first film.
+    await saveReview({ tmdbId: fixture.otherFilm.tmdbId as string, ...SECOND });
+
+    const first = await rowsFor(fixture.film.id);
+    const second = await rowsFor(fixture.otherFilm.id);
+
+    expect(first).toHaveLength(1);
+    expect(second).toHaveLength(1);
+    expect(first[0]).toMatchObject({ userId: fixture.author.id, ...FIRST });
+    expect(second[0]).toMatchObject({ userId: fixture.author.id, ...SECOND });
+    expect(second[0].id).not.toBe(first[0].id);
+  });
+
+  it('🔴 removing one film’s review leaves the member’s other review standing', async () => {
+    // Without the `movieId` clause on the delete, this takes every review the
+    // member has ever written — caller-visible data loss reported as success.
+    await saveReview({ tmdbId: fixture.otherFilm.tmdbId as string, ...SECOND });
+
+    const result = await deleteReview({ tmdbId: fixture.film.tmdbId as string });
+
+    expect(result.ok).toBe(true);
+    expect(await rowsFor(fixture.film.id)).toEqual([]);
+    const survivors = await rowsFor(fixture.otherFilm.id);
+    expect(survivors).toHaveLength(1);
+    expect(survivors[0]).toMatchObject({ userId: fixture.author.id, ...SECOND });
   });
 });
 

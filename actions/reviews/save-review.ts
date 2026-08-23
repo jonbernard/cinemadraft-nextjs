@@ -11,9 +11,7 @@ import { type ActionResult, fail, ok, toActionResult } from '../result';
  * 🔴 Half-star precision, checked rather than assumed. The source's control was
  * a MUI `<Rating precision={0.5}>` and its route stored whatever arrived in
  * `req.body.data` — an unconstrained `numeric` column behind an unvalidated
- * POST, so `rating: 4.37` or `rating: 900` was a stored value. Doubling and
- * testing for an integer is exact for every value this accepts: 4.5 * 2 is 5,
- * and 2.3 * 2 is 4.6.
+ * POST, so `rating: 4.37` or `rating: 900` was a stored value.
  *
  * Zero is not a rating, it is the absence of one — MUI's control reports a
  * cleared star row as `null`, and that is what the "No rating" radio sends.

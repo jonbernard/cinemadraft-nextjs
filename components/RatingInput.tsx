@@ -3,10 +3,8 @@
 import { useCallback } from 'react';
 
 import { cn } from '@/lib/utils/cn';
+import { RATING_STEPS, toRatingStep } from '@/lib/utils/rating';
 import { RatingStars } from './RatingStars';
-
-/** Half a star to five, the precision the source's control offered. */
-const RATING_STEPS = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5] as const;
 
 /**
  * Choosing a rating.
@@ -35,6 +33,8 @@ export function RatingInput({
   disabled?: boolean;
   className?: string;
 }) {
+  const selected = toRatingStep(value);
+
   return (
     <fieldset className={cn('flex flex-col gap-3', className)} disabled={disabled}>
       <legend className="text-text-primary text-sm">Your rating</legend>
@@ -44,7 +44,7 @@ export function RatingInput({
           name={name}
           step={null}
           label="None"
-          checked={value === null}
+          checked={selected === null}
           onSelect={onChange}
         />
         {RATING_STEPS.map((step) => (
@@ -53,8 +53,8 @@ export function RatingInput({
             name={name}
             step={step}
             label={step.toFixed(1)}
-            mono
-            checked={value === step}
+            unit="stars"
+            checked={selected === step}
             onSelect={onChange}
           />
         ))}
@@ -62,10 +62,10 @@ export function RatingInput({
 
       {/* The preview, so the number chosen above is also the picture. */}
       <p role="status" className="min-h-5">
-        {value === null ? (
+        {selected === null ? (
           <span className="text-text-dim text-sm">No rating</span>
         ) : (
-          <RatingStars rating={value} />
+          <RatingStars rating={selected} />
         )}
       </p>
     </fieldset>
@@ -76,14 +76,15 @@ function Step({
   name,
   step,
   label,
-  mono,
+  unit,
   checked,
   onSelect,
 }: {
   name: string;
   step: number | null;
   label: string;
-  mono?: boolean;
+  /** Announced after the figure, so a screen reader hears "4.5 stars" not "4.5". */
+  unit?: string;
   checked: boolean;
   onSelect: (step: number | null) => void;
 }) {
@@ -103,15 +104,19 @@ function Step({
         checked
           ? 'bg-bg-raised text-text-primary border-text-secondary'
           : 'bg-bg-surface text-text-secondary border-transparent',
-        mono && 'tabular font-mono',
+        unit && 'tabular font-mono',
       )}
     >
+      {/* The unit rides on `aria-label`, not an `sr-only` span: the name is
+          computed by concatenating trimmed text nodes, so " stars" beside the
+          figure announces as "4.5stars". */}
       <input
         type="radio"
         name={name}
         value={label}
         checked={checked}
         onChange={select}
+        aria-label={unit ? `${label} ${unit}` : undefined}
         className="sr-only"
       />
       {label}
