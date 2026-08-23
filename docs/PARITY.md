@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 56 |
-| **deficient** | 13 |
+| **ported** | 57 |
+| **deficient** | 12 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
@@ -191,7 +191,7 @@ which is why so many rows are cheap and a few are not.
 | Rules and scoring explained | **deficient** | `/rules-and-scoring` — static copy | **P10.T46** — cheapest row here; it is two cards of prose | n/a |
 | The scoring rulebook by tier | **deficient** | `GET /points` | **P10.T47** | ✓ |
 | Admin: set the active season | **ported** | — (source read an env var; changing seasons was a redeploy) | `app/(app)/admin/season/page.tsx` + `setActiveYear` moved onto `ActionResult` (D22) | ✓ |
-| Admin: relink an account | **deficient** | — | **P10.T49** — action exists, no page | ✓ |
+| Admin: relink an account | **ported** | — | `app/(app)/admin/relink/page.tsx` — names the account found, relink and unlink are distinct confirmed actions (D25) | ✓ |
 | A 500 page | **ported** | `/500` | `app/error.tsx`, `app/(app)/error.tsx`, `app/global-error.tsx` + `components/ErrorPanel.tsx`. Four kinds, each with its own words and way out | n/a |
 | A 404 page | **ported** | `/404` | `not-found` — Next's, styled by the app shell | n/a |
 | Maintenance page | **dropped** | `/maintenance` | Unreachable in the source; nothing links to it | |
