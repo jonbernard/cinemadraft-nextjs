@@ -1,5 +1,6 @@
 import { isAppError } from '@/lib/errors';
 import { draftPickRepository } from '@/lib/repositories/draft-picks';
+import { draftRepository } from '@/lib/repositories/drafts';
 import { movieRepository } from '@/lib/repositories/movies';
 import {
   type ProfileFeedComponent,
@@ -117,18 +118,15 @@ function idsOfKind(rows: { componentsArray: ProfileFeedComponent[] }[], kind: st
  */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function toMember(
-  user: {
-    uuid: string | null;
-    firstName: string | null;
-    lastName: string | null;
-    image: string | null;
-    createdAt: Date | null;
-  },
-  uuid: string,
-): ProfileMember {
+function toMember(user: {
+  uuid: string;
+  firstName: string | null;
+  lastName: string | null;
+  image: string | null;
+  createdAt: Date | null;
+}): ProfileMember {
   return {
-    uuid: user.uuid ?? uuid,
+    uuid: user.uuid,
     name: displayName(user),
     image: user.image,
     memberSince: user.createdAt,
@@ -140,28 +138,38 @@ export async function loadProfileMember(uuid: string): Promise<ProfileMember | n
   if (!UUID.test(uuid)) return null;
 
   const user = await userRepository.findByUuid(uuid);
-  return user === null ? null : toMember(user, uuid);
+  // `uuid` is the unique key just looked up, so no row can carry null here; the
+  // check narrows `string | null` where a fallback would only ever be dead code.
+  return user?.uuid == null ? null : toMember({ ...user, uuid: user.uuid });
 }
 
 /**
  * Null when no member has that uuid — a mistyped or stale link, not a broken
  * invariant, so the page 404s rather than erroring.
  *
- * Four queries plus one per review attachment: the member, the feed, every
- * draft's picks in one batch, every referenced film in one batch. Review rows
- * are fetched singly because `reviewRepository` has no batch-by-id method and
- * this task may not add one; nothing writes a `review` component yet, so that
- * loop runs zero times against the restored data.
+ * Five queries plus one per review attachment: the member, the feed, the seats
+ * they hold, every owned draft's picks in one batch, every referenced film in
+ * one batch. Review rows are fetched singly because `reviewRepository` has no
+ * batch-by-id method and this task may not add one; nothing writes a `review`
+ * component yet, so that loop runs zero times against the restored data.
  */
 export async function loadMemberProfile(uuid: string): Promise<MemberProfile | null> {
   if (!UUID.test(uuid)) return null;
 
   const user = await userRepository.findByUuid(uuid);
-  if (!user) return null;
+  if (user?.uuid == null) return null;
 
-  const rows = await profileFeedRepository.findByUserUuid(uuid);
+  const [rows, owned] = await Promise.all([
+    profileFeedRepository.findByUserUuid(uuid),
+    draftRepository.findByUserId(user.id),
+  ]);
 
-  const draftIds = idsOfKind(rows, 'draft');
+  // 🔴 Same claim as the review guard below, for the kind that actually has
+  // rows: `findManyByDraftIds` scopes on `draftId` alone, so an id pointing at
+  // another member's seat would render their roster under this member's name
+  // beside a message saying they drafted it.
+  const ownedDraftIds = new Set(owned.map((draft) => draft.id));
+  const draftIds = idsOfKind(rows, 'draft').filter((id) => ownedDraftIds.has(id));
   const reviewIds = idsOfKind(rows, 'review');
 
   const [picks, reviews] = await Promise.all([
@@ -199,7 +207,7 @@ export async function loadMemberProfile(uuid: string): Promise<MemberProfile | n
   const reviewsById = new Map(found.map((review) => [review.id, review]));
 
   return {
-    member: toMember(user, uuid),
+    member: toMember({ ...user, uuid: user.uuid }),
     feed: rows.map((row) => ({
       id: row.id,
       message: row.message,

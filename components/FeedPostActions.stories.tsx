@@ -13,7 +13,7 @@ const refuse: DeleteFeedItem = async () => ({
 const meta = {
   title: 'Phase 10/FeedPostActions',
   component: FeedPostActions,
-  args: { id: 90, label: 'December 4, 2023', onDelete: accept },
+  args: { id: 90, label: 'Delete your post from December 4, 2023', onDelete: accept },
 } satisfies Meta<typeof FeedPostActions>;
 
 export default meta;

@@ -48,6 +48,22 @@ describe('getLeagueBoard', () => {
     }
   });
 
+  it('carries the profile uuid a seat links to, and none for a dummy', async () => {
+    const board = await getLeagueBoard(1, 2026);
+    const seats = board.groups.flatMap((group) => group.seats);
+    const held = seats.filter((seat) => !seat.isDummy);
+
+    expect(held).toHaveLength(13);
+    for (const seat of held) {
+      expect(seat.uuid).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
+    }
+    for (const seat of seats.filter((seat) => seat.isDummy)) {
+      expect(seat.uuid).toBeNull();
+    }
+  });
+
   it('🔴 pads each group to its longest seat, never to a constant (D34)', async () => {
     const board = await getLeagueBoard(1, 2026);
 

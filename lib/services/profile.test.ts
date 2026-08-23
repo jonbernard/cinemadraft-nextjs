@@ -67,6 +67,10 @@ async function seed() {
     data: { userId: alpha.id, year: 2099, createdAt: now, updatedAt: now },
     select: { id: true },
   });
+  const betaDraft = await db.draft.create({
+    data: { userId: beta.id, year: 2099, createdAt: now, updatedAt: now },
+    select: { id: true },
+  });
 
   // Seven, so the five-poster cap has two films to leave out.
   const films = [];
@@ -86,6 +90,18 @@ async function seed() {
       },
     });
   }
+
+  const betaFilm = await createFilm('Beta Only');
+  await db.draftPick.create({
+    data: {
+      draftId: betaDraft.id,
+      movieId: betaFilm.id,
+      userId: beta.id,
+      order: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
 
   const alphaReview = await db.review.create({
     data: {
@@ -110,11 +126,12 @@ async function seed() {
     select: { id: true },
   });
 
-  // Insertion order is the opposite of the expected order, so neither sort key
-  // can be dropped without the list coming back differently.
+  // Insertion order — which is also `id` order, and the physical order a bare
+  // `ORDER BY created_at DESC` is free to return the tied pair in — is the
+  // reverse of the expected order, so a lost sort key changes the list.
   const newest = await addRow(alpha.uuid, 'alpha newest', NEWEST);
-  const tiedFirst = await addRow(alpha.uuid, 'alpha tied first', TIED);
   const tiedSecond = await addRow(alpha.uuid, 'alpha tied second', TIED);
+  const tiedFirst = await addRow(alpha.uuid, 'alpha tied first', TIED);
   const oldest = await addRow(alpha.uuid, 'alpha oldest', OLDEST);
   await addRow(beta.uuid, 'beta only', NEWEST);
 
@@ -122,6 +139,8 @@ async function seed() {
     alpha,
     beta,
     draft,
+    betaDraft,
+    betaFilm,
     films,
     alphaReview,
     betaReview,
@@ -222,8 +241,8 @@ describe('loadMemberProfile', () => {
 
     expect(profile?.feed.map((item) => item.message)).toEqual([
       'alpha newest',
-      'alpha tied second',
       'alpha tied first',
+      'alpha tied second',
       'alpha oldest',
     ]);
   });
@@ -233,8 +252,8 @@ describe('loadMemberProfile', () => {
 
     expect(profile?.feed.map((item) => item.id)).toEqual([
       fixture.rows.newest,
-      fixture.rows.tiedSecond,
       fixture.rows.tiedFirst,
+      fixture.rows.tiedSecond,
       fixture.rows.oldest,
     ]);
   });
@@ -307,6 +326,20 @@ describe('loadMemberProfile', () => {
     if (attachment?.kind !== 'review') throw new Error('expected a review attachment');
     expect(attachment.review).toBe('alpha wrote this');
     expect(attachment.rating).toBe(4.5);
+  });
+
+  it('🔴 refuses to render another member’s draft under this member’s name', async () => {
+    const row = await profileFeedRepository.create({
+      userUuid: fixture.alpha.uuid as string,
+      message: 'alpha drafted these',
+      components: [['draft', fixture.betaDraft.id]],
+    });
+
+    const profile = await loadMemberProfile(fixture.alpha.uuid as string);
+    const item = profile?.feed.find((entry) => entry.id === row.id);
+
+    expect(item?.attachments).toEqual([]);
+    expect(JSON.stringify(profile)).not.toContain(`${TAG} Beta Only`);
   });
 
   it('🔴 refuses to render another member’s review under this member’s name', async () => {

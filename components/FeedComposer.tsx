@@ -11,11 +11,6 @@ export type PostFeedItem = (input: { message: string }) => Promise<ActionResult<
 /**
  * Post a line to your own feed (P10.T41).
  *
- * The source had this input commented out (`ProfilePostInput`), so the only way
- * a feed row was ever written was the draft announcement. Restored as the thing
- * T41 names, and only rendered on your own profile — the action re-checks that
- * against the session regardless of what the page decided to render.
- *
  * The action arrives as a prop, like `ReviewForm`'s: a component that reaches
  * for a Server Action by name cannot be rendered in a test or a story.
  */

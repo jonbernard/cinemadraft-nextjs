@@ -61,10 +61,21 @@ async function seed() {
   const unclaimed = await createUser('unclaimed', null);
 
   const authorPost = await addRow(author.uuid, `${TAG} the author wrote this`);
+  // A second post by the same author: without it the delete's `id` clause could
+  // be dropped and every assertion here would still pass.
+  const authorOtherPost = await addRow(author.uuid, `${TAG} the author also wrote this`);
   const intruderPost = await addRow(intruder.uuid, `${TAG} the intruder wrote this`);
   const orphanPost = await addRow(null, `${TAG} this row belongs to nobody`);
 
-  return { author, intruder, unclaimed, authorPost, intruderPost, orphanPost };
+  return {
+    author,
+    intruder,
+    unclaimed,
+    authorPost,
+    authorOtherPost,
+    intruderPost,
+    orphanPost,
+  };
 }
 
 function signInAs(user: { clerkId: string | null; email: string } | null) {
@@ -140,6 +151,7 @@ describe('postFeedItem', () => {
     expect(result.ok).toBe(false);
     expect(await messagesFor(fixture.author.uuid)).toEqual([
       `${TAG} the author wrote this`,
+      `${TAG} the author also wrote this`,
     ]);
   });
 
@@ -152,6 +164,7 @@ describe('postFeedItem', () => {
     if (!result.ok) expect(result.code).toBe('INVALID');
     expect(await messagesFor(fixture.author.uuid)).toEqual([
       `${TAG} the author wrote this`,
+      `${TAG} the author also wrote this`,
     ]);
   });
 
@@ -163,6 +176,7 @@ describe('postFeedItem', () => {
     expect(result.ok).toBe(true);
     expect(await messagesFor(fixture.author.uuid)).toEqual([
       `${TAG} the author wrote this`,
+      `${TAG} the author also wrote this`,
       `${TAG} the author posted just now`,
     ]);
     expect(await messagesFor(fixture.intruder.uuid)).toEqual([
@@ -193,13 +207,16 @@ describe('deleteFeedItem', () => {
     expect(await messageOf(fixture.authorPost)).toBe(`${TAG} the author wrote this`);
   });
 
-  it('removes the caller’s own post and leaves the other member’s alone', async () => {
+  it('removes the targeted post and leaves the caller’s other posts alone', async () => {
     signInAs(fixture.author);
 
     const result = await deleteFeedItem({ id: fixture.authorPost });
 
     expect(result.ok).toBe(true);
     expect(await messageOf(fixture.authorPost)).toBeNull();
+    expect(await messageOf(fixture.authorOtherPost)).toBe(
+      `${TAG} the author also wrote this`,
+    );
     expect(await messageOf(fixture.intruderPost)).toBe(`${TAG} the intruder wrote this`);
     expect(revalidatePath).toHaveBeenCalledWith(`/members/${fixture.author.uuid}`);
   });

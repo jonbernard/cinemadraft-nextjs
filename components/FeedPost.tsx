@@ -43,7 +43,11 @@ export function FeedPost({
         </div>
 
         {onDelete ? (
-          <FeedPostActions id={item.id} label={when ?? 'this post'} onDelete={onDelete} />
+          <FeedPostActions
+            id={item.id}
+            label={when ? `Delete your post from ${when}` : 'Delete this post'}
+            onDelete={onDelete}
+          />
         ) : null}
       </div>
 

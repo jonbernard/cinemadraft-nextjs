@@ -167,7 +167,16 @@ export default async function LeaguePage({
                       </span>
                       <span className="flex flex-wrap items-center gap-2">
                         <span className="text-text-primary text-sm">
-                          {seat.name}
+                          {seat.uuid ? (
+                            <Link
+                              href={`/members/${seat.uuid}`}
+                              className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
+                            >
+                              {seat.name}
+                            </Link>
+                          ) : (
+                            seat.name
+                          )}
                           {seat.draftId === viewerSeatId ? (
                             <span className="text-accent-text"> · You</span>
                           ) : null}

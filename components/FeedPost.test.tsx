@@ -101,6 +101,13 @@ describe('the delete control', () => {
     await waitFor(() => expect(onDelete).toHaveBeenCalledWith({ id: 90 }));
   });
 
+  it('names an undated post as a whole phrase, not as a fragment', () => {
+    const onDelete = vi.fn(async () => ({ ok: true as const, data: null }));
+    render(<FeedPost item={{ ...DRAFTED, createdAt: null }} onDelete={onDelete} />);
+
+    expect(screen.getByRole('button', { name: 'Delete this post' })).toBeTruthy();
+  });
+
   it('says why nothing happened when the delete is refused', async () => {
     const onDelete = vi.fn(async () => ({
       ok: false as const,

@@ -26,6 +26,8 @@ export type Seat = {
   draftId: number;
   /** Null for a dummy seat — a placeholder the owner drafts on behalf of. */
   userId: number | null;
+  /** The member's profile uuid, for `/members/[uuid]`. Null for a dummy seat. */
+  uuid: string | null;
   name: string;
   isDummy: boolean;
   order: number;
@@ -142,6 +144,7 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
         group: draft.group ?? 1,
         draftId: draft.id,
         userId: draft.userId,
+        uuid: draft.userId == null ? null : (userById.get(draft.userId)?.uuid ?? null),
         name: seatName(
           draft,
           draft.userId == null ? undefined : userById.get(draft.userId),
