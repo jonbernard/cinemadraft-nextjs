@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 57 |
-| **deficient** | 12 |
+| **ported** | 59 |
+| **deficient** | 10 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
@@ -34,7 +34,10 @@ page, similar films, browse and the watched mark, and batch E closed the four
 watchlist rows — the paged list and all three progress views — both review
 rows, the first writes this app has made against a table with no production
 data behind it, and the three profile rows: a member's page, and posting to and
-deleting from your own feed._
+deleting from your own feed. Batch G closed the four admin surfaces: editing a
+show's dates and live flags, adding or deleting a category (refusing rather
+than orphaning nominations), the active-season control, and the account
+relink page — each gated independently at the action and at the page._
 
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
@@ -140,8 +143,8 @@ which is why so many rows are cheap and a few are not.
 | **One show: its categories, point values, nominees and winners** | **ported** | `/award-shows/:abbr`, `GET /events/:abbr[/:year]` | `app/(app)/award-shows/[abbr]/page.tsx` — point values resolved through `pointsId` (D41) | ✓ |
 | Past seasons of a show | **ported** | year `<Select>` | Season nav on the show page | ✓ |
 | Subscribe to ceremony dates as a calendar | **deficient** | `GET /events/calendar.ics` | **P10.T25** — one of the three `/api` routes D8 permits | ✓ |
-| Admin: edit a show's dates and live flags | **deficient** | `PUT /events/:abbr` (`restrictToAdmin`) | **P10.T26** | — |
-| Admin: add or delete a category | **deficient** | `POST/DELETE /awards` (`restrictToAdmin`) | **P10.T27** | — |
+| Admin: edit a show's dates and live flags | **ported** | `PUT /events/:abbr` (`restrictToAdmin`) | `actions/admin/update-event.ts` + `EventAdmin` on the show page — 🔴 an explicit field whitelist, closing the source's unfiltered mass assignment | — |
+| Admin: add or delete a category | **ported** | `POST/DELETE /awards` (`restrictToAdmin`) | `actions/awards/create-category.ts` (tier chosen from `pointRepository`, never a raw number, D41) and `delete-category.ts` — 🔴 delete refuses rather than orphaning nominations (`CONFLICT`, names the count) | — |
 | Admin: enter nominations | **ported** | `nominations` sub-view, `POST /nominations` | `actions/awards/attach-nominee.ts` — 🔴 admin-gated, closing bug 1 | ✓ |
 | Admin: pick winners during the ceremony | **ported** | `winner` sub-view, `POST /winners` | `actions/awards/set-winner.ts` — 🔴 admin-gated, closing bug 1. Correcting is the same action; live *broadcast* is phase 14 | ✓ |
 | Admin: which shows still need entering | **ported** | "Events needing updates" card | `app/(app)/award-shows/page.tsx`, from the source's own `nom_active` / `awards_active` flags | ✓ |

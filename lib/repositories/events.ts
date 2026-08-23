@@ -100,6 +100,38 @@ function toEvent(row: Row): Event {
   };
 }
 
+/**
+ * The columns a caller may change — deliberately narrower than `Event`.
+ *
+ * `id`, `fbId`, `createdAt`, `updatedAt` are absent on purpose: the source
+ * controller was `Events.update(req.body, …)`, unfiltered mass assignment,
+ * and whatever the client posted was written verbatim (D-brief T26). This
+ * type is the whitelist; the action layer is what enforces it against an
+ * untyped payload, but the repository only *accepts* these fields, so a
+ * caller cannot widen it by constructing the input differently.
+ */
+export type EventUpdate = Partial<{
+  name: string;
+  abbreviation: string;
+  image: string | null;
+  nomActive: boolean;
+  nomDate: number | null;
+  nomTime: number | null;
+  nomDuration: number | null;
+  awardsActive: boolean;
+  awardsDate: number | null;
+  awardsTime: number | null;
+  awardsDuration: number | null;
+  liveResults: boolean;
+}>;
+
+/** Postgres/Prisma "record to update not found". */
+function isRecordNotFound(error: unknown): boolean {
+  return (
+    !!error && typeof error === 'object' && (error as { code?: unknown }).code === 'P2025'
+  );
+}
+
 export const eventRepository = {
   /** Throws NotFoundError rather than returning null — callers would forget to check. */
   async findById(id: number): Promise<Event> {
@@ -160,5 +192,52 @@ export const eventRepository = {
       orderBy: { name: 'asc' },
     });
     return events.map(toEvent);
+  },
+
+  /**
+   * Change a show's editable fields (T26).
+   *
+   * The six schedule columns are bigint in the database; `null` clears one,
+   * `undefined` (the field simply absent from `input`) leaves it alone. Every
+   * other field behaves the same way — this is a `PATCH`, not a `PUT`, so an
+   * admin editing just the live flags does not have to resend the whole row.
+   *
+   * Throws NotFoundError rather than letting Prisma's P2025 escape as a raw
+   * error — the same reason every other write in this layer catches it.
+   */
+  async update(id: number, input: EventUpdate): Promise<Event> {
+    const {
+      nomDate,
+      nomTime,
+      nomDuration,
+      awardsDate,
+      awardsTime,
+      awardsDuration,
+      ...rest
+    } = input;
+
+    const toBigInt = (value: number | null | undefined) =>
+      value === undefined ? undefined : value === null ? null : BigInt(value);
+
+    try {
+      const row = await db.event.update({
+        where: { id },
+        data: {
+          ...rest,
+          nomDate: toBigInt(nomDate),
+          nomTime: toBigInt(nomTime),
+          nomDuration: toBigInt(nomDuration),
+          awardsDate: toBigInt(awardsDate),
+          awardsTime: toBigInt(awardsTime),
+          awardsDuration: toBigInt(awardsDuration),
+          updatedAt: new Date(),
+        },
+        select: SELECT,
+      });
+      return toEvent(row);
+    } catch (error) {
+      if (isRecordNotFound(error)) throw new NotFoundError('event', id);
+      throw error;
+    }
   },
 };

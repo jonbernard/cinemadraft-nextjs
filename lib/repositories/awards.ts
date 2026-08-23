@@ -137,4 +137,51 @@ export const awardRepository = {
     const rows = await db.award.findMany({ select: SELECT, orderBy: { id: 'asc' } });
     return rows.map(toAward);
   },
+
+  /**
+   * Add a category to a show (T27).
+   *
+   * `pointsId` is written straight into the `points` column — the same
+   * foreign key the read side resolves back through `pointRepository`. The
+   * caller is trusted to have already picked a real tier id; validating that
+   * a tier exists is the action's job, the same split every other write in
+   * this app makes between "the shape is right" (action) and "the row lands"
+   * (repository).
+   */
+  async create(input: {
+    name: string;
+    eventId: number;
+    pointsId: number | null;
+    active: boolean;
+    requiresNomineeName: boolean;
+  }): Promise<Award> {
+    const now = new Date();
+    const row = await db.award.create({
+      data: {
+        name: input.name,
+        eventId: BigInt(input.eventId),
+        points: input.pointsId,
+        active: input.active,
+        requiresNomineeName: input.requiresNomineeName,
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: SELECT,
+    });
+    return toAward(row);
+  },
+
+  /**
+   * Remove a category.
+   *
+   * Unconditional — the caller (`actions/awards/delete-category.ts`) is where
+   * the orphan check lives, because refusing belongs beside the reason it
+   * refuses, not buried in a repository nobody reads before trusting it.
+   * Throws NotFoundError rather than returning silently, like every other
+   * delete in this layer.
+   */
+  async deleteById(id: number): Promise<void> {
+    const deleted = await db.award.deleteMany({ where: { id } });
+    if (deleted.count === 0) throw new NotFoundError('award', id);
+  },
 };

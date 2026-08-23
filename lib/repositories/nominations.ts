@@ -240,6 +240,20 @@ export const nominationRepository = {
     return toNomination(row);
   },
 
+  /**
+   * How many nominations still reference an award.
+   *
+   * The orphan check in front of a category delete (T27): `Nomination.awardId`
+   * has no foreign key, so deleting the award would leave these rows pointing
+   * at nothing. They would not vanish from the app — `scoring.ts`'s
+   * `pointsByAward` lookup would simply miss and score them zero, silently
+   * rewriting a season's totals. A count rather than the rows themselves,
+   * because the caller only needs to know whether — and how many — not which.
+   */
+  async countByAwardId(awardId: number): Promise<number> {
+    return db.nomination.count({ where: { awardId: BigInt(awardId) } });
+  },
+
   /** Removes a nomination. Throws NotFoundError if it is already gone. */
   async deleteById(id: number): Promise<void> {
     const deleted = await db.nomination.deleteMany({ where: { id } });

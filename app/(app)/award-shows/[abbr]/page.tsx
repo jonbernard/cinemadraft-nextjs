@@ -2,12 +2,17 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { CategoryAdmin } from '@/components/CategoryAdmin';
+import { CategoryCreate } from '@/components/CategoryCreate';
 import { EmptyState } from '@/components/EmptyState';
+import { EventAdmin } from '@/components/EventAdmin';
 import { NomineeGrid } from '@/components/NomineeGrid';
+import { Panel } from '@/components/Panel';
 import { SectionHead } from '@/components/SectionHead';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
+import { eventRepository } from '@/lib/repositories/events';
+import { pointRepository } from '@/lib/repositories/points';
 import { getAwardShow } from '@/lib/services/award-show';
 import { getActiveYear, getSeasons } from '@/lib/services/season';
 
@@ -51,6 +56,15 @@ export default async function AwardShowPage({
   // behind these controls checks the session itself.
   const isAdmin = user?.role === 'admin';
 
+  // Only fetched for an admin — the event's raw row and the tier table are
+  // for the edit controls below, not anything a member's view needs.
+  const [event, tiers] = isAdmin
+    ? await Promise.all([
+        eventRepository.findByAbbreviation(abbr),
+        pointRepository.findAll(),
+      ])
+    : [null, []];
+
   return (
     <>
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
@@ -90,6 +104,31 @@ export default async function AwardShowPage({
           ) : null}
         </header>
 
+        {isAdmin && event ? (
+          <Panel tone="raised" as="section" className="flex flex-col gap-4 p-4">
+            <SectionHead as="h2" className="pb-0">
+              Edit this show
+            </SectionHead>
+            <EventAdmin
+              event={{
+                id: event.id,
+                name: event.name,
+                abbreviation: event.abbreviation,
+                image: event.image,
+                nomActive: event.nomActive,
+                nomDate: event.nomDate,
+                nomTime: event.nomTime,
+                nomDuration: event.nomDuration,
+                awardsActive: event.awardsActive,
+                awardsDate: event.awardsDate,
+                awardsTime: event.awardsTime,
+                awardsDuration: event.awardsDuration,
+                liveResults: event.liveResults,
+              }}
+            />
+          </Panel>
+        ) : null}
+
         {show.categories.length === 0 ? (
           <EmptyState title="No categories yet">
             Nothing has been entered for this show and season.
@@ -120,6 +159,7 @@ export default async function AwardShowPage({
               {isAdmin ? (
                 <CategoryAdmin
                   awardId={category.awardId}
+                  categoryName={category.name}
                   year={show.year}
                   requiresNomineeName={category.requiresNomineeName}
                   nominees={category.nominees.map((nominee) => ({
@@ -133,6 +173,23 @@ export default async function AwardShowPage({
             </section>
           ))
         )}
+
+        {isAdmin && event ? (
+          <Panel tone="raised" as="section" className="flex flex-col gap-3 p-4">
+            <SectionHead as="h2" className="pb-0">
+              Add a category
+            </SectionHead>
+            <CategoryCreate
+              eventId={event.id}
+              tiers={tiers.map((tier) => ({
+                id: tier.id,
+                level: tier.level ?? 'Untiered',
+                tier: tier.tier ?? 0,
+                points: tier.points ?? 0,
+              }))}
+            />
+          </Panel>
+        ) : null}
       </div>
     </>
   );

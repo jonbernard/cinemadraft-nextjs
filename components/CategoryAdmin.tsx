@@ -3,6 +3,7 @@
 import { useCallback, useState, useTransition } from 'react';
 
 import { attachNominee } from '@/actions/awards/attach-nominee';
+import { deleteCategory } from '@/actions/awards/delete-category';
 import { removeNominee } from '@/actions/awards/remove-nominee';
 import { setWinner } from '@/actions/awards/set-winner';
 import { findFilmsAction } from '@/actions/search/find-films';
@@ -36,12 +37,15 @@ export type AdminNominee = {
  */
 export function CategoryAdmin({
   awardId,
+  categoryName,
   year,
   nominees,
   requiresNomineeName,
   className,
 }: {
   awardId: number;
+  /** For the delete confirmation — naming what is about to go, not just "this". */
+  categoryName: string;
   year: number;
   nominees: readonly AdminNominee[];
   requiresNomineeName: boolean;
@@ -118,6 +122,24 @@ export function CategoryAdmin({
     });
   }, []);
 
+  const removeCategory = useCallback(() => {
+    // 🔴 Deleting a category never cascades — a refusal names how many
+    // nominations are in the way, and the confirmation says so up front so
+    // the admin is not surprised by it.
+    if (
+      !window.confirm(
+        `Delete "${categoryName}"? This refuses if any films are still nominated in it — remove those first.`,
+      )
+    ) {
+      return;
+    }
+    setMessage(null);
+    startTransition(async () => {
+      const result = await deleteCategory(awardId);
+      if (!result.ok) setMessage(result.message);
+    });
+  }, [awardId, categoryName]);
+
   return (
     <div
       className={cn('border-border-rule flex flex-col gap-3 border-l-2 pl-4', className)}
@@ -161,6 +183,15 @@ export function CategoryAdmin({
           ))}
         </ul>
       ) : null}
+
+      <button
+        type="button"
+        onClick={removeCategory}
+        disabled={pending}
+        className="text-text-dim hover:text-text-primary w-fit text-xs underline disabled:opacity-60"
+      >
+        Delete category
+      </button>
     </div>
   );
 }
