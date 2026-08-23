@@ -1,6 +1,5 @@
-import { auth } from '@clerk/nextjs/server';
-
 import { AppShell } from '@/components/AppShell';
+import { getCurrentUser } from '@/lib/auth';
 
 /**
  * The application shell.
@@ -12,6 +11,10 @@ import { AppShell } from '@/components/AppShell';
  * Clerk loads.
  */
 export default async function AppLayout({ children }: LayoutProps<'/'>) {
-  const { userId } = await auth();
-  return <AppShell isSignedIn={userId != null}>{children}</AppShell>;
+  const user = await getCurrentUser();
+  return (
+    <AppShell isSignedIn={user != null} isAdmin={user?.role === 'admin'}>
+      {children}
+    </AppShell>
+  );
 }

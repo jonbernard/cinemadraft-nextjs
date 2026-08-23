@@ -33,12 +33,14 @@ export function MoreSheet({
   ref,
   pathname,
   isSignedIn,
+  isAdmin = false,
   yours = YOURS_LINKS,
 }: {
   id: string;
   ref?: Ref<HTMLDialogElement>;
   pathname: string;
   isSignedIn: boolean;
+  isAdmin?: boolean;
   yours?: NavLink[];
 }) {
   // A nav entry pointing at a 404 is worse than a missing one — the same gate
@@ -80,6 +82,18 @@ export function MoreSheet({
               })}
             </ul>
 
+            <div className="border-border-rule border-t" />
+          </>
+        ) : null}
+
+        {isAdmin ? (
+          <>
+            <Link
+              href="/admin"
+              className="focus-visible:outline-accent-fill text-text-secondary hover:text-text-primary hover:bg-bg-raised flex min-h-11 items-center rounded-sm px-2 text-sm focus-visible:outline-2"
+            >
+              Admin
+            </Link>
             <div className="border-border-rule border-t" />
           </>
         ) : null}

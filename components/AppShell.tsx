@@ -37,9 +37,11 @@ import { ThemeToggle } from './ThemeToggle';
  */
 export function AppShell({
   isSignedIn,
+  isAdmin = false,
   children,
 }: {
   isSignedIn: boolean;
+  isAdmin?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -80,7 +82,7 @@ export function AppShell({
       </div>
 
       <div className="min-w-0 flex-1 xl:flex xl:flex-col xl:gap-2.5">
-        <Strip isSignedIn={isSignedIn} />
+        <Strip isSignedIn={isSignedIn} isAdmin={isAdmin} />
         {/* Bottom padding below `xl` reserves room for the fixed tab bar
             (44px targets plus the safe-area inset), or the last row of every
             page would sit underneath it. At `xl` the tab bar is hidden, so
@@ -99,7 +101,13 @@ export function AppShell({
         isMoreOpen={isMoreOpen}
         moreId={moreId}
       />
-      <MoreSheet id={moreId} ref={sheet} pathname={pathname} isSignedIn={isSignedIn} />
+      <MoreSheet
+        id={moreId}
+        ref={sheet}
+        pathname={pathname}
+        isSignedIn={isSignedIn}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }
@@ -112,7 +120,7 @@ export function AppShell({
  * No page supplies a countdown yet, so the slot renders nothing rather than
  * a placeholder — an empty box inviting content is worse than no box.
  */
-function Strip({ isSignedIn }: { isSignedIn: boolean }) {
+function Strip({ isSignedIn, isAdmin }: { isSignedIn: boolean; isAdmin: boolean }) {
   return (
     <div className="hidden h-[52px] shrink-0 items-center gap-2 px-2 xl:flex">
       <Link
@@ -135,6 +143,15 @@ function Strip({ isSignedIn }: { isSignedIn: boolean }) {
           one (a draft's start time, an awards ceremony's air date). */}
 
       <div className="ml-auto flex items-center gap-2">
+        {isAdmin ? (
+          <Link
+            href="/admin"
+            className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center focus-visible:outline-2"
+          >
+            <GearIcon />
+            <span className="sr-only">Admin</span>
+          </Link>
+        ) : null}
         <ThemeToggle />
         <AccountControl isSignedIn={isSignedIn} />
       </div>
@@ -197,5 +214,24 @@ function AccountControl({ isSignedIn }: { isSignedIn: boolean }) {
     >
       Log in
     </Link>
+  );
+}
+
+function GearIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      focusable="false"
+      viewBox="0 0 24 24"
+      className="h-5 w-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 4.6V4a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5.9Z" />
+    </svg>
   );
 }
