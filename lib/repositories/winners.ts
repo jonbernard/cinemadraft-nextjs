@@ -165,6 +165,11 @@ export const winnerRepository = {
     return rows.map(toWinner);
   },
 
+  /** How many wins are recorded for a category, across every year. */
+  async countByAwardId(awardId: number): Promise<number> {
+    return db.winner.count({ where: { awardId: BigInt(awardId) } });
+  },
+
   /** Batch-load by id, skipping ids that do not resolve. */
   async findManyByIds(ids: readonly (number | bigint)[]): Promise<Winner[]> {
     if (ids.length === 0) return [];

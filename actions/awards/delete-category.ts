@@ -3,9 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { requireAdmin } from '@/lib/auth';
 import { ConflictError } from '@/lib/errors';
 import { awardRepository } from '@/lib/repositories/awards';
 import { nominationRepository } from '@/lib/repositories/nominations';
+import { winnerRepository } from '@/lib/repositories/winners';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 import { authorizeAward } from './guard';
 
@@ -22,18 +24,29 @@ const Input = z.int().positive();
  * that anything changed. This mirrors the ruling already made for seats and
  * picks — an admin who genuinely wants the nominations gone deletes them
  * first, deliberately, rather than having a delete decide it for them.
+ *
+ * The orphan check also counts `winners` alongside `nominations`: a winner
+ * carries its own unenforced `awardId` and pays the category's points a
+ * second time (D41), so an orphaned winner row is the same class of silent
+ * score rewrite as an orphaned nomination.
  */
 export async function deleteCategory(awardId: number): Promise<ActionResult> {
-  const parsed = Input.safeParse(awardId);
-  if (!parsed.success) return fail('INVALID', 'that category is not valid');
-
   try {
+    await requireAdmin();
+
+    const parsed = Input.safeParse(awardId);
+    if (!parsed.success) return fail('INVALID', 'that category is not valid');
+
     const { award, abbreviation } = await authorizeAward(parsed.data);
 
-    const count = await nominationRepository.countByAwardId(award.id);
+    const [nominations, winners] = await Promise.all([
+      nominationRepository.countByAwardId(award.id),
+      winnerRepository.countByAwardId(award.id),
+    ]);
+    const count = nominations + winners;
     if (count > 0) {
       throw new ConflictError(
-        `${award.name} has ${count} ${count === 1 ? 'nomination' : 'nominations'}; remove ${count === 1 ? 'it' : 'them'} first`,
+        `${award.name} has ${count} ${count === 1 ? 'nomination or winner' : 'nominations or winners'}; remove ${count === 1 ? 'it' : 'them'} first`,
       );
     }
 

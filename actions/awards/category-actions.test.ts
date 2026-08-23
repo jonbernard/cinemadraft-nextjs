@@ -120,6 +120,9 @@ async function cleanup() {
   await db.nomination.deleteMany({
     where: { OR: [{ awardId: { in: awardIds } }, { year: YEAR }] },
   });
+  await db.winner.deleteMany({
+    where: { OR: [{ awardId: { in: awardIds } }, { year: YEAR }] },
+  });
   await db.award.deleteMany({ where: { id: { in: awards.map((a) => a.id) } } });
   await db.event.deleteMany({ where: { id: { in: events.map((e) => e.id) } } });
   await db.point.deleteMany({ where: { level: { startsWith: TAG } } });
@@ -281,6 +284,34 @@ describe('deleteCategory — refusals', () => {
 
     expect(result).toMatchObject({ ok: false, code: 'CONFLICT' });
     expect(result.ok === false && result.message).toMatch(/1/);
+    expect(await db.award.findUnique({ where: { id: award.id } })).not.toBeNull();
+  });
+
+  it('🔴 refuses to delete a category with a winner but no nomination', async () => {
+    // F7: `Winner.awardId` is its own unenforced reference, and a win pays
+    // the category's points a second time (D41) — the same class of silent
+    // score rewrite an orphaned nomination is. This is unreachable through
+    // the app's own paths (removing a winning nominee clears the winner too),
+    // but the predicate should catch it anyway.
+    const event = await makeEvent();
+    const award = await makeAward(event.id, null);
+    const movie = await makeMovie();
+    await db.winner.create({
+      data: {
+        movieId: movie.id,
+        awardId: award.id,
+        nominationId: 999_999_999,
+        year: YEAR,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+    const admin = await makeUser('admin');
+    signInAs(admin);
+
+    const result = await deleteCategory(award.id);
+
+    expect(result).toMatchObject({ ok: false, code: 'CONFLICT' });
     expect(await db.award.findUnique({ where: { id: award.id } })).not.toBeNull();
   });
 });
