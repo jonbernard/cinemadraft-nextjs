@@ -1,12 +1,30 @@
 import Link from 'next/link';
 
 import { Eyebrow } from '@/components/Eyebrow';
+import { InviteLink } from '@/components/InviteLink';
 import { Panel } from '@/components/Panel';
 import { SectionHead } from '@/components/SectionHead';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { getAwardShows } from '@/lib/services/award-show';
 import { getActiveYear } from '@/lib/services/season';
+
+/**
+ * The origin the calendar subscribe URL should carry.
+ *
+ * Read from the request rather than an env var, the same reasoning as the
+ * league invite link: it has to work from localhost, a preview and
+ * production without configuration, and a preview deploy must not hand
+ * someone a link into production.
+ */
+async function requestOrigin(): Promise<string> {
+  const { headers } = await import('next/headers');
+  const list = await headers();
+  const host = list.get('x-forwarded-host') ?? list.get('host') ?? '';
+  const proto =
+    list.get('x-forwarded-proto') ?? (host.startsWith('localhost') ? 'http' : 'https');
+  return `${proto}://${host}`;
+}
 
 /**
  * Every award show (§12).
@@ -18,12 +36,18 @@ import { getActiveYear } from '@/lib/services/season';
  * derived or guessed: `nom_active` and `awards_active` are the source's own
  * flags for exactly this, set when a show's nominations or winners are being
  * worked on.
+ *
+ * 🔴 The calendar feed (T25) is reachable from here, not just from a route
+ * that happens to exist. `InviteLink` gives it exactly the shape it needs: a
+ * URL a person copies into a calendar app, not a link a browser would try to
+ * download.
  */
 export default async function AwardShowsPage() {
-  const [shows, year, user] = await Promise.all([
+  const [shows, year, user, origin] = await Promise.all([
     getAwardShows(),
     getActiveYear(),
     getCurrentUser(),
+    requestOrigin(),
   ]);
 
   const isAdmin = user?.role === 'admin';
@@ -82,6 +106,17 @@ export default async function AwardShowsPage() {
             </li>
           ))}
         </ul>
+
+        <Panel tone="raised" as="section" className="flex flex-col gap-3 p-4">
+          <SectionHead as="h2" className="pb-0">
+            Subscribe to ceremony dates
+          </SectionHead>
+          <p className="text-text-secondary text-sm">
+            Add every show's nomination and awards dates to your own calendar app. Paste
+            this URL wherever it asks for a calendar subscription, not a file to download.
+          </p>
+          <InviteLink url={`${origin}/api/ical`} />
+        </Panel>
       </div>
     </>
   );
