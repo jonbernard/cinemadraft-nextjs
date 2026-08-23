@@ -63,6 +63,11 @@ export function formatMoney(amount: number | null): string | null {
  * month grouping would disagree with the film page's date.
  */
 export function formatReleaseDate(date: Date | null): string | null {
+  return formatDay(date);
+}
+
+/** A calendar day a person reads — `August 22, 2026`, never `08/22/26`. */
+export function formatDay(date: Date | null): string | null {
   if (!date) return null;
 
   return new Intl.DateTimeFormat('en-US', {

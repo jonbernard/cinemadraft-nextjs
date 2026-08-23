@@ -3,12 +3,13 @@
  *
  * The table and its Sequelize model shipped, but the feature was never used:
  * `GET /reviews/tmdbId/313369` was captured as `{}`, which is the response
- * wrapper turning a null into an object, not a failed capture. Phase 7 decides
- * whether reviews ship at all, so this repository is deliberately minimal and
- * is **unproven against real data** — nothing here has ever run over a
- * production row, and the shapes below are inferred from the schema and the
- * source controller rather than confirmed by a fixture. Treat it accordingly
- * if the feature is revived.
+ * wrapper turning a null into an object, not a failed capture. So nothing here
+ * has ever run over a production row, and there is no fixture to check a shape
+ * against — the tests under `actions/reviews/` and `lib/services/reviews.test.ts`
+ * seed their own rows and are the only evidence this feature has.
+ *
+ * Phase 10 shipped it anyway (P10.T38, T39): the source offered it, so the port
+ * owes it.
  */
 
 import type { ReviewModel } from '@/generated/prisma/models';
@@ -91,6 +92,60 @@ export const reviewRepository = {
       select: SELECT,
     });
     return review === null ? null : toDto(review);
+  },
+
+  /**
+   * Write this user's review of this film, creating it or replacing it.
+   *
+   * 🔴 A find-then-write rather than `db.review.upsert`. Prisma keys an upsert
+   * on a unique constraint, and `(user_id, movie_id)` has none — only two plain
+   * indexes (schema.prisma:213-214). The source enforced one-per-pair in
+   * application code (`utils/sequelize.upsert`), so the database would accept a
+   * duplicate pair and an `upsert` keyed on it would not compile.
+   */
+  async saveForUserAndMovie(
+    userId: number,
+    movieId: number | bigint,
+    input: { rating: number | null; review: string | null },
+  ): Promise<Review> {
+    const now = new Date();
+    const existing = await db.review.findFirst({
+      where: { userId, movieId: Number(movieId) },
+      select: { id: true },
+    });
+
+    if (existing) {
+      const updated = await db.review.update({
+        where: { id: existing.id },
+        data: { rating: input.rating, review: input.review, updatedAt: now },
+        select: SELECT,
+      });
+      return toDto(updated);
+    }
+
+    const created = await db.review.create({
+      data: {
+        userId,
+        movieId: Number(movieId),
+        rating: input.rating,
+        review: input.review,
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: SELECT,
+    });
+    return toDto(created);
+  },
+
+  /**
+   * Remove this user's review of this film.
+   *
+   * `deleteMany` scoped by both columns: a review is addressed by whose it is
+   * and what it is about, never by a row id off the wire, so another member's
+   * row is not reachable from here at all.
+   */
+  async deleteByUserAndMovie(userId: number, movieId: number | bigint): Promise<void> {
+    await db.review.deleteMany({ where: { userId, movieId: Number(movieId) } });
   },
 
   /**

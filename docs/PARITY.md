@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 47 |
-| **deficient** | 22 |
+| **ported** | 49 |
+| **deficient** | 20 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
@@ -31,7 +31,9 @@ batch A added the navigation and the error boundaries; batch B closed the four
 league-formation rows — until it landed, **no new league could be created at
 all** — batch C closed the six for running a season, batch D closed the film
 page, similar films, browse and the watched mark, and batch E closed the four
-watchlist rows — the paged list and all three progress views._
+watchlist rows — the paged list and all three progress views — and both review
+rows, the first writes this app has made against a table with no production
+data behind it._
 
 🔴 **Read this the right way round.** The port has the harder half done — auth,
 the data layer for every table, scoring, the draft — and the *broad* half
@@ -165,8 +167,8 @@ which is why so many rows are cheap and a few are not.
 
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
-| Rate and review a film | **deficient** | `/reviews/:tmdbId`, `POST /reviews/tmdbId/:tmdbId` | **P10.T38** | — |
-| Read your own review | **deficient** | `GET /reviews/tmdbId/:tmdbId` | **P10.T39** | ✓ |
+| Rate and review a film | **ported** | `/reviews/:tmdbId`, `POST /reviews/tmdbId/:tmdbId` | On the film page, not a page of its own: `app/(app)/films/[tmdbId]/page.tsx` → `components/ReviewForm.tsx` + `components/RatingInput.tsx`, `actions/reviews/save-review.ts` / `delete-review.ts`, `reviewRepository.saveForUserAndMovie`. 🔴 The 0–5 half-star scale is **validated**; the source's route stored whatever number arrived. *The source's "share on your profile" switch waits for the feed (T41)* | ✓ |
+| Read your own review | **ported** | `GET /reviews/tmdbId/:tmdbId` | `loadMyReview` → `components/ReviewCard.tsx`. 🔴 Scoped to the caller; the source filtered on the film alone once a session existed, so it could load a stranger's review into your edit form | ✓ |
 | **A member's profile and activity feed** | **deficient** | `/user/profile/:uuid`, `GET /profile/feed/user/:uuid` | **P10.T40** | ✓ |
 | Post to your feed | **deficient** | `POST /profile/feed` | **P10.T41** | — |
 | Delete a feed item | **deficient** | `DELETE /profile/feed/:id` | **P10.T42** | — |
