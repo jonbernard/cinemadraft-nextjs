@@ -15,8 +15,8 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 62 |
-| **deficient** | 7 |
+| **ported** | 65 |
+| **deficient** | 4 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
