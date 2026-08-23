@@ -5,6 +5,7 @@ import type { Ref } from 'react';
 import { type NavLink, YOURS_LINKS } from '@/lib/nav/links';
 import { cn } from '@/lib/utils/cn';
 import { Eyebrow } from './Eyebrow';
+import { type NotificationItem, NotificationsSection } from './NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
 
 /**
@@ -34,6 +35,8 @@ export function MoreSheet({
   pathname,
   isSignedIn,
   isAdmin = false,
+  notifications = [],
+  unreadCount = 0,
   yours = YOURS_LINKS,
 }: {
   id: string;
@@ -41,6 +44,8 @@ export function MoreSheet({
   pathname: string;
   isSignedIn: boolean;
   isAdmin?: boolean;
+  notifications?: NotificationItem[];
+  unreadCount?: number;
   yours?: NavLink[];
 }) {
   // A nav entry pointing at a 404 is worse than a missing one — the same gate
@@ -82,6 +87,16 @@ export function MoreSheet({
               })}
             </ul>
 
+            <div className="border-border-rule border-t" />
+          </>
+        ) : null}
+
+        {isSignedIn ? (
+          <>
+            <NotificationsSection
+              initialItems={notifications}
+              initialUnreadCount={unreadCount}
+            />
             <div className="border-border-rule border-t" />
           </>
         ) : null}

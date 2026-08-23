@@ -8,6 +8,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { MoreSheet } from './MoreSheet';
 import { NavRail } from './NavRail';
+import { NotificationBell, type NotificationItem } from './NotificationBell';
 import { Panel } from './Panel';
 import { TabBar } from './TabBar';
 import { ThemeToggle } from './ThemeToggle';
@@ -38,10 +39,14 @@ import { ThemeToggle } from './ThemeToggle';
 export function AppShell({
   isSignedIn,
   isAdmin = false,
+  notifications = [],
+  unreadCount = 0,
   children,
 }: {
   isSignedIn: boolean;
   isAdmin?: boolean;
+  notifications?: NotificationItem[];
+  unreadCount?: number;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -82,7 +87,12 @@ export function AppShell({
       </div>
 
       <div className="min-w-0 flex-1 xl:flex xl:flex-col xl:gap-2.5">
-        <Strip isSignedIn={isSignedIn} isAdmin={isAdmin} />
+        <Strip
+          isSignedIn={isSignedIn}
+          isAdmin={isAdmin}
+          notifications={notifications}
+          unreadCount={unreadCount}
+        />
         {/* Bottom padding below `xl` reserves room for the fixed tab bar
             (44px targets plus the safe-area inset), or the last row of every
             page would sit underneath it. At `xl` the tab bar is hidden, so
@@ -107,6 +117,8 @@ export function AppShell({
         pathname={pathname}
         isSignedIn={isSignedIn}
         isAdmin={isAdmin}
+        notifications={notifications}
+        unreadCount={unreadCount}
       />
     </div>
   );
@@ -120,7 +132,17 @@ export function AppShell({
  * No page supplies a countdown yet, so the slot renders nothing rather than
  * a placeholder — an empty box inviting content is worse than no box.
  */
-function Strip({ isSignedIn, isAdmin }: { isSignedIn: boolean; isAdmin: boolean }) {
+function Strip({
+  isSignedIn,
+  isAdmin,
+  notifications,
+  unreadCount,
+}: {
+  isSignedIn: boolean;
+  isAdmin: boolean;
+  notifications: NotificationItem[];
+  unreadCount: number;
+}) {
   return (
     <div className="hidden h-[52px] shrink-0 items-center gap-2 px-2 xl:flex">
       <Link
@@ -143,6 +165,12 @@ function Strip({ isSignedIn, isAdmin }: { isSignedIn: boolean; isAdmin: boolean 
           one (a draft's start time, an awards ceremony's air date). */}
 
       <div className="ml-auto flex items-center gap-2">
+        {isSignedIn ? (
+          <NotificationBell
+            initialItems={notifications}
+            initialUnreadCount={unreadCount}
+          />
+        ) : null}
         {isAdmin ? (
           <Link
             href="/admin"

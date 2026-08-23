@@ -182,7 +182,7 @@ which is why so many rows are cheap and a few are not.
 
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
-| Your recent notifications | **deficient** | `GET /notifications` | **P10.T43** | ✓ |
+| Your recent notifications | **ported** | `GET /notifications` | `notificationRepository.findByUser`/`countUnreadByUser` → the bell in `components/NotificationBell.tsx`, rendered in `AppShell`'s desktop strip and in `MoreSheet` (T43). A notification with a `link` navigates; one without renders as plain text | ✓ |
 | Mark as read | **deficient** | `PUT /notifications/read` | **P10.T44** | — |
 | Admin: broadcast to everyone | **deficient** | `POST /notifications/type/:type` | **P10.T45** — the `:type` segment is ignored; it always sends to all | — |
 | Dismiss one notification | **dropped** | `DELETE /notifications/:id` (`routes/notifications.js:30`) | 🔴 **Dead as written.** No auth middleware, so `req.user` is never set, and the controller's guard throws on every call. It has never once succeeded in production. Rebuild it in P10.T44 only if the owner wants it | |
