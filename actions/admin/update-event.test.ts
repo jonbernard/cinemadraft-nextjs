@@ -120,6 +120,38 @@ describe('updateEvent — refusals', () => {
     const result = await updateEvent({ eventId: 999_999_999, name: 'Whatever' });
     expect(result).toMatchObject({ ok: false, code: 'NOT_FOUND' });
   });
+
+  it('🔴 refuses an abbreviation another show already uses, and writes nothing', async () => {
+    // F4: `abbreviation` has no `@unique` in the schema and `findByAbbreviation`
+    // is `findFirst` — a collision would silently shadow the other show.
+    const taken = await makeEvent();
+    const event = await makeEvent();
+    const admin = await makeUser('admin');
+    signInAs(admin);
+
+    const result = await updateEvent({
+      eventId: event.id,
+      abbreviation: taken.abbreviation,
+    });
+
+    expect(result).toMatchObject({ ok: false, code: 'CONFLICT' });
+    const row = await db.event.findUnique({ where: { id: event.id } });
+    expect(row?.abbreviation).toBe(event.abbreviation);
+  });
+
+  it('allows an event to keep its own abbreviation', async () => {
+    const event = await makeEvent();
+    const admin = await makeUser('admin');
+    signInAs(admin);
+
+    const result = await updateEvent({
+      eventId: event.id,
+      abbreviation: event.abbreviation,
+      name: 'Renamed but same slug',
+    });
+
+    expect(result.ok).toBe(true);
+  });
 });
 
 describe('updateEvent', () => {
@@ -212,6 +244,56 @@ describe('updateEvent', () => {
     expect(row?.nomDate).toBeNull();
     // Untouched by the second call, which did not mention it.
     expect(row?.nomTime).toBe(1000n);
+  });
+
+  it('🔴 writes all thirteen whitelisted fields, each distinguishable from every other', async () => {
+    // F1: the repository's `update` hand-assembles the six schedule columns
+    // one by one. A copy-paste swap (e.g. `awardsDate: toBigInt(nomDate)`) or
+    // a dropped line must fail this test — so every column here gets its own
+    // value, and no `nom*` value equals its `awards*` counterpart.
+    const event = await makeEvent();
+    const admin = await makeUser('admin');
+    signInAs(admin);
+
+    const input = {
+      eventId: event.id,
+      name: 'Distinguishable name',
+      abbreviation: `${TAG}-${randomUUID().slice(0, 8)}`,
+      image: 'https://example.test/distinguishable.png',
+      nomActive: true,
+      nomDate: Date.UTC(2026, 0, 1),
+      nomTime: 11_000,
+      nomDuration: 111_000,
+      awardsActive: false,
+      awardsDate: Date.UTC(2026, 1, 2),
+      awardsTime: 22_000,
+      awardsDuration: 222_000,
+      liveResults: true,
+    } as const;
+
+    const result = await updateEvent(input);
+    expect(result.ok).toBe(true);
+
+    const row = await db.event.findUnique({ where: { id: event.id } });
+    expect(row?.name).toBe(input.name);
+    expect(row?.abbreviation).toBe(input.abbreviation);
+    expect(row?.image).toBe(input.image);
+    expect(row?.nomActive).toBe(input.nomActive);
+    expect(row?.awardsActive).toBe(input.awardsActive);
+    expect(row?.liveResults).toBe(input.liveResults);
+    expect(row?.nomDate).toBe(BigInt(input.nomDate));
+    expect(row?.nomTime).toBe(BigInt(input.nomTime));
+    expect(row?.nomDuration).toBe(BigInt(input.nomDuration));
+    expect(row?.awardsDate).toBe(BigInt(input.awardsDate));
+    expect(row?.awardsTime).toBe(BigInt(input.awardsTime));
+    expect(row?.awardsDuration).toBe(BigInt(input.awardsDuration));
+
+    // The point of the test: a nom/awards swap would still pass if any pair
+    // shared a value.
+    expect(row?.nomDate).not.toBe(row?.awardsDate);
+    expect(row?.nomTime).not.toBe(row?.awardsTime);
+    expect(row?.nomDuration).not.toBe(row?.awardsDuration);
+    expect(row?.nomActive).not.toBe(row?.awardsActive);
   });
 
   it('revalidates the show page and the index', async () => {
