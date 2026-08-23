@@ -191,8 +191,8 @@ which is why so many rows are cheap and a few are not.
 
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
-| Rules and scoring explained | **deficient** | `/rules-and-scoring` — static copy | **P10.T46** — cheapest row here; it is two cards of prose | n/a |
-| The scoring rulebook by tier | **deficient** | `GET /points` | **P10.T47** | ✓ |
+| Rules and scoring explained | **ported** | `/rules-and-scoring` — static copy | `app/(app)/rules-and-scoring/page.tsx` — nav entry's `ready` flag flipped now the page exists. 🔴 Corrects the source's "a nomination and a win are worth the same value": `lib/services/scoring.ts` doubles a win, so the page says that instead | n/a |
+| The scoring rulebook by tier | **ported** | `GET /points` | `app/(app)/rules-and-scoring/page.tsx`, same surface as T46 → `lib/services/scoring-table.ts` groups `pointRepository.findAll()` by level (descending value) then tier (ascending) — a rendering decision the repository's own doc comment says belongs to its caller, not the repository | ✓ |
 | Admin: set the active season | **ported** | — (source read an env var; changing seasons was a redeploy) | `app/(app)/admin/season/page.tsx` + `setActiveYear` moved onto `ActionResult` (D22) | ✓ |
 | Admin: relink an account | **ported** | — | `app/(app)/admin/relink/page.tsx` — names the account found, relink and unlink are distinct confirmed actions (D25) | ✓ |
 | A 500 page | **ported** | `/500` | `app/error.tsx`, `app/(app)/error.tsx`, `app/global-error.tsx` + `components/ErrorPanel.tsx`. Four kinds, each with its own words and way out | n/a |
