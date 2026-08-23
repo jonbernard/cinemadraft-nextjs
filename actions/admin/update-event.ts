@@ -58,6 +58,20 @@ export async function updateEvent(input: UpdateEventInput): Promise<ActionResult
 
     const { eventId, ...fields } = parsed.data;
 
+    // 🔴 `abbreviation` has no `@unique` in the schema, and it is also the
+    // primary lookup key (`findByAbbreviation` is `findFirst`): a collision
+    // would silently shadow another show, whose URL would then render this
+    // one's data. Refuse rather than let two shows share a slug.
+    if (fields.abbreviation !== undefined) {
+      const collision = await eventRepository.findByAbbreviation(fields.abbreviation);
+      if (collision && collision.id !== eventId) {
+        return fail(
+          'CONFLICT',
+          `"${fields.abbreviation}" is already used by another show`,
+        );
+      }
+    }
+
     const updated = await eventRepository.update(eventId, fields);
 
     console.warn('[events] admin edit', { by: admin.id, eventId });
