@@ -83,10 +83,73 @@ export const notificationRepository = {
     return rows.map(toDto);
   },
 
-  /** The bell's badge. `read` is nullable, and a null has never been read. */
+  /**
+   * The bell's badge. `read` is nullable, and a null has never been read.
+   *
+   * 🔴 Written as `OR: [{ read: false }, { read: null }]`, not
+   * `read: { not: true }`. Prisma compiles `not: true` on a nullable Boolean
+   * to SQL `<> true`, and three-valued SQL logic makes `null <> true`
+   * evaluate to `null` rather than true — so that filter silently excludes
+   * every null row instead of including it. Measured directly against this
+   * column: a null and a `false` row must count the same, and only the `OR`
+   * form does.
+   */
   async countUnreadByUser(userId: number | bigint): Promise<number> {
     return db.notification.count({
-      where: { userId: BigInt(userId), read: { not: true } },
+      where: { userId: BigInt(userId), OR: [{ read: false }, { read: null }] },
     });
+  },
+
+  /**
+   * Mark some of a user's own notifications read (T44).
+   *
+   * 🔴 `userId` is in the `where`, not checked beforehand and then trusted —
+   * a check-then-write can be got around by a request that lands between the
+   * two, a scoped write cannot. Ids in `ids` that belong to someone else, or
+   * to nobody, simply match zero rows; the caller never learns which.
+   *
+   * Returns the count of rows the `where` matched — Prisma's `updateMany`
+   * count, not a count of rows whose value actually changed — rather than the
+   * ids requested, so a caller cannot tell "all of these were yours" from
+   * "some were not" — the one thing this method must not leak. An
+   * already-read row still counts here; it is not distinguishable from one
+   * this call newly marked.
+   */
+  async markAsRead(ids: readonly number[], userId: number | bigint): Promise<number> {
+    if (ids.length === 0) return 0;
+    const { count } = await db.notification.updateMany({
+      where: { id: { in: [...ids] }, userId: BigInt(userId) },
+      data: { read: true },
+    });
+    return count;
+  },
+
+  /**
+   * Admin broadcast: one row per user, in a single statement (T45).
+   *
+   * One `createMany` rather than a loop of `create` calls, matching the
+   * source's single `bulkCreate` — `findByUser`'s `id` tiebreak exists
+   * because this path writes every recipient's row with the *same*
+   * `createdAt`, and a loop of individual writes would give each its own
+   * timestamp and quietly stop exercising that tiebreak.
+   */
+  async broadcast(
+    userIds: readonly number[],
+    input: { message: string; icon: string | null; link: string | null },
+  ): Promise<number> {
+    if (userIds.length === 0) return 0;
+    const now = new Date();
+    const { count } = await db.notification.createMany({
+      data: userIds.map((userId) => ({
+        userId: BigInt(userId),
+        message: input.message,
+        icon: input.icon,
+        link: input.link,
+        read: false,
+        createdAt: now,
+        updatedAt: now,
+      })),
+    });
+    return count;
   },
 };

@@ -227,6 +227,16 @@ export const userRepository = {
   },
 
   /**
+   * Every user id, for the admin broadcast (T45) — it writes one row per
+   * user, and pulling a whole row per user to discard everything but the id
+   * is a waste that only grows with the table.
+   */
+  async findAllIds(): Promise<number[]> {
+    const rows = await db.user.findMany({ select: { id: true }, orderBy: { id: 'asc' } });
+    return rows.map((row) => row.id);
+  },
+
+  /**
    * Admin repair: move an account to a different Clerk identity, or detach it.
    *
    * Deliberately unconditional, unlike `claim`. This exists precisely for the
