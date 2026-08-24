@@ -27,7 +27,12 @@ describe('ShowLogo', () => {
   // 🔴 The show's name is beside the logo in every placement, so the logo is
   // decorative and must not repeat it to a screen reader.
   it('gives the logo empty alt text', () => {
-    render(<ShowLogo name="Academy Awards" imageUrl="https://x.public.blob.vercel-storage.com/a.jpg" />);
+    render(
+      <ShowLogo
+        name="Academy Awards"
+        imageUrl="https://x.public.blob.vercel-storage.com/a.jpg"
+      />,
+    );
     expect(screen.getByTestId('image')).toHaveAttribute('alt', '');
   });
 

@@ -10,7 +10,10 @@ const meta = {
 export default meta;
 
 export const Small: StoryObj<typeof meta> = {
-  args: { name: 'Academy Awards', imageUrl: 'https://image.tmdb.org/t/p/w92/placeholder.jpg' },
+  args: {
+    name: 'Academy Awards',
+    imageUrl: 'https://image.tmdb.org/t/p/w92/placeholder.jpg',
+  },
 };
 
 export const Missing: StoryObj<typeof meta> = {

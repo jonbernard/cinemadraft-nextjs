@@ -214,6 +214,22 @@ test.describe('award shows', () => {
     await expect(page.getByText('7 pts')).toBeVisible();
   });
 
+  test('a show wears its mark, served from Blob', async ({ page }) => {
+    // Reads the real Oscars row, not the scratch show — the twelve logos
+    // uploaded in Task 3 are exactly the rows this suite otherwise avoids
+    // touching, and this test only reads.
+    await page.goto('/award-shows/oscars');
+    // The optimizer is in the path for Blob images (they are not TMDB), so the
+    // rendered src is a /_next/image URL wrapping the Blob one. Assert on what
+    // decodes out of it, and on what the browser actually fetched.
+    const logo = page.locator('header img').first();
+    await expect(logo).toBeVisible();
+    const src = await logo.getAttribute('src');
+    expect(decodeURIComponent(src ?? '')).toContain('blob.vercel-storage.com');
+    const response = await page.request.get(src ?? '');
+    expect(response.status()).toBe(200);
+  });
+
   test.describe('as an admin', () => {
     test.skip(!hasClerk, 'Clerk keys not configured');
 

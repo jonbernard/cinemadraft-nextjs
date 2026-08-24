@@ -207,6 +207,15 @@ test.describe('browse', () => {
 
     await expect(page.getByRole('button', { name: /Mark .* as watched/ })).toHaveCount(0);
   });
+
+  test('posters come straight from TMDB, not the optimizer', async ({ page }) => {
+    await page.goto('/browse');
+    const poster = page.locator('img[src*="image.tmdb.org"]').first();
+    await expect(poster).toBeVisible();
+    // 🔴 The bill lands here: browse renders dozens of posters at once. A src
+    // that starts /_next/image means the pass-through rule regressed.
+    expect(await poster.getAttribute('src')).not.toContain('/_next/image');
+  });
 });
 
 test.describe('marking a film watched', () => {

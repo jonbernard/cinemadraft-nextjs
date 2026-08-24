@@ -292,14 +292,37 @@ flag, so nothing else has to change, and until it flips the nav cannot link to a
 
 ### Phase 11 — Media
 
-- T1: Vercel Blob client wrapper; uploads use `access: 'public'` (D24); auth is OIDC, not a read-write token
-- T2: Upload path switched from the Cloudinary widget to Blob
-- T3: **Replace Cloudinary's on-the-fly resizing with `next/image`** — Blob does not transform images, and `useUserImage` currently requests a 128×128 fill from Cloudinary
-- T4: Migration for existing assets. **Default to a deployed one-shot route**, not a local script — OIDC is environment-scoped and the Blob store is connected to Production/Preview only, so a local dev identity is unauthorized. Handles **both** stored forms — full URLs and bare Cloudinary public IDs (`useUserImage` branches on `startsWith('http')`)
-- T5: Rewrite stored values to Blob URLs
-- T6: `next/image` `remotePatterns` configured for the Blob hostname
+🔴 **There was no Cloudinary to migrate.** Measured against the Neon copy on
+2026-08-24, `users.image` held 323 `img.clerk.com`, 51 `s.gravatar.com` and 4
+`googleusercontent` URLs, and zero Cloudinary values or bare public IDs — the
+Clerk webhook has been writing `image_url` since Phase 4, so the avatars
+migrated themselves before this phase started. The task list below is what
+actually shipped, not the plan as originally written; **T2 (upload path) and
+T5 (rewrite stored avatar values) had no work in them** for that reason and
+are recorded as vacuous rather than dropped silently.
 
-**Gate:** images render from Blob; no Cloudinary request remains in the network log.
+- T1: `lib/images.ts` — the optimization rule (`shouldOptimize`: `false` for
+  `image.tmdb.org`, `true` otherwise), `next.config.ts` `remotePatterns` for
+  every host actually present in the data (TMDB, Clerk, Gravatar,
+  `googleusercontent`, and the Blob hostname), and `RemoteImage` wrapping
+  `next/image` with that rule applied
+- T2: *(vacuous — no upload path exists in the port; see above)*
+- T3: Twelve `<img>` sites swapped to `next/image` — one more than planned
+  (`app/(app)/watchlist/page.tsx`); zero `noImgElement` biome-ignores remain
+  outside the two test files that mock `next/image`
+- T4: `scripts/upload-award-logos.mjs` — the twelve award-show logos
+  (`events.image`, previously `/images/awards/*.jpg` paths served from the
+  source app's `public/`, which this repo does not have) uploaded to Blob and
+  `events.image` rewritten, run against **both** the local database and Neon;
+  12/12 rows migrated, re-run is a no-op. `ShowLogo` renders the mark on
+  `/award-shows` and the show page
+- T5: *(vacuous — no stored avatar values needed rewriting; see above)*
+- T6: `next.config.ts` `remotePatterns` for the Blob hostname
+  (`5d9wubvvsbkemktm.public.blob.vercel-storage.com`, `/award-shows/**`);
+  `next.config.test.ts` pins all five allowed hosts
+
+**Gate:** images render through `next/image`; the logos are served from Blob;
+no `noImgElement` ignore remains.
 
 🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
 
@@ -323,6 +346,15 @@ flag, so nothing else has to change, and until it flips the nav cannot link to a
 
 - T1: Swap Clerk to its Production instance — create it for `cinemadraft.com`, add DNS records, set `pk_live_`/`sk_live_` in Vercel Production, recreate the webhook and its signing secret (all per-instance)
 - T2: Final `pg_dump` from Heroku → Neon
+  - 🔴 **This restore overwrites the Phase 11 Blob migration.** `events.image`
+    is data, and the dump being restored still holds the old
+    `/images/awards/*.jpg` paths — the final `pg_dump` will clobber all twelve
+    Blob URLs written by `scripts/upload-award-logos.mjs`, and it will also
+    turn `lib/repositories/events.test.ts` red. **Re-run
+    `scripts/upload-award-logos.mjs` against Neon immediately after this
+    restore, before T3's verification pass** — the script is idempotent, so
+    running it again after a genuinely-fresh restore is exactly correct and
+    running it twice by mistake is a no-op.
 - T2: Add `cinemadraft.com` to the Vercel project and point its DNS at Vercel; add or repoint the Clerk webhook to the apex
 - T3: Verify production sign-in, draft, and scoring
 - T4: Monitor for 48 hours

@@ -22,7 +22,12 @@ const DIMENSIONS = { sm: 40, lg: 72 } as const;
  * mark, and a screen reader announcing "Academy Awards, Academy Awards" is
  * worse than announcing it once.
  */
-export function ShowLogo({ name: _name, imageUrl, size = 'sm', className }: ShowLogoProps) {
+export function ShowLogo({
+  name: _name,
+  imageUrl,
+  size = 'sm',
+  className,
+}: ShowLogoProps) {
   if (!imageUrl) return null;
 
   const px = DIMENSIONS[size];

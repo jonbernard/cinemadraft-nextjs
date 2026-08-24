@@ -1005,8 +1005,51 @@ the source app's `public/`, a directory this repo does not have.
 - [x] P11.T1 The optimization rule, the remote-host allowlist, and `RemoteImage`
 - [x] P11.T2 Swap the `<img>` sites to `next/image` — twelve, not eleven: `app/(app)/watchlist/page.tsx` was missing from the plan's list and the zero-`biome-ignore` check caught it
 - [x] P11.T3 Upload the twelve logos to Blob and rewrite `events.image` — run against the local restored copy and against Neon; 12/12 rows migrated, re-run is a no-op
-- [ ] P11.T4 Render a show's mark on the index and the show page
-- [ ] P11.T5 E2E, and close the phase
+- [x] P11.T4 Render a show's mark on the index and the show page — `ShowLogo`, wired through `AwardShowSummary.imageUrl` / `AwardShowView.imageUrl`
+- [x] P11.T5 E2E, and close the phase
+
+**Gate met.** Images render through `next/image`; the logos are served from
+Blob; zero `noImgElement` ignores remain outside the two test files that mock
+`next/image`. 14/14 E2E green against a production build (`e2e/award-shows.spec.ts`,
+`e2e/browse.spec.ts`); the empty-database check (`ci_sim`, migrated but
+unseeded) passes 1061/1061; `npm run verify` is all green.
+
+### Phase 11 notes
+
+- 🔴 **There was no Cloudinary to migrate.** Measured against the Neon copy on
+  2026-08-24: `users.image` holds exactly 323 `img.clerk.com`, 51
+  `s.gravatar.com` and 4 `googleusercontent` URLs — zero Cloudinary values or
+  bare public IDs. The Clerk webhook has been writing `image_url` since Phase
+  4, so the avatars migrated themselves before this phase started; `PLAN.md`
+  T2 (upload path) and T5 (rewrite stored avatar values) have no work in them.
+- 🔴 **`search: ''` rejects Gravatar's query string.** The documented
+  `remotePatterns` example for the object form sets `search: ''`, which means
+  "the URL must carry no query string" — but Gravatar avatars are stored as
+  `?s=480&r=pg&d=mp`. Copying the example verbatim would silently 400 51 of
+  the 378 stored avatars from `/_next/image`, only on the member pages that
+  render them. `next.config.ts` omits `search` entirely.
+- 🔴 **`raz` hotlinked GQ's CDN**, not the source app's own `public/`. Its
+  stored path did not match the abbreviation-basename convention the other
+  eleven logos followed, so `scripts/upload-award-logos.mjs` falls back to
+  matching by event abbreviation when the basename lookup misses.
+- 🔴 **`afi.jpg` is a PNG.** Detected from magic bytes, not the extension —
+  the uploaded Blob object is correctly `afi.png`. A migration that trusted
+  the filename's extension would have written a JPEG that is actually PNG
+  data.
+- 🔴 **TMDB passes through the optimizer deliberately, and browse is where
+  that bill would land.** `lib/images.ts`'s `shouldOptimize` returns `false`
+  for `image.tmdb.org` — TMDB already serves pre-sized artwork, so re-encoding
+  it through `/_next/image` would only add Vercel's per-transformation cost
+  for no quality gain. `/browse` renders dozens of posters on one page load,
+  so it is the surface a regression here would hit hardest;
+  `e2e/browse.spec.ts`'s "posters come straight from TMDB, not the optimizer"
+  test pins it.
+- 🔴 **The Blob write token is local-only and is deleted at the end of the
+  phase.** `BLOB_READ_WRITE_TOKEN` was needed only to run
+  `scripts/upload-award-logos.mjs` once against each database; nothing in the
+  running app writes to Blob, it only reads public URLs. A live write
+  credential past that point is exposure with no purpose — remove it from
+  `.env.local` and revoke it in the Vercel dashboard.
 
 ## Phase 12 — Parallel run
 
