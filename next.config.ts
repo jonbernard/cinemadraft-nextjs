@@ -52,6 +52,11 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'img.clerk.com' },
       { protocol: 'https', hostname: 's.gravatar.com' },
       { protocol: 'https', hostname: '**.googleusercontent.com' },
+      {
+        protocol: 'https',
+        hostname: '5d9wubvvsbkemktm.public.blob.vercel-storage.com',
+        pathname: '/award-shows/**',
+      },
     ],
   },
 };

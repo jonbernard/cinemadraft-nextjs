@@ -1001,7 +1001,7 @@ phase, and `images.remotePatterns` is empty) and the twelve award-show logos,
 which `events.image` points at as `/images/awards/*.jpg` — paths served from
 the source app's `public/`, a directory this repo does not have.
 
-- [ ] P11.T0 Record the Blob **public hostname** — needed for `next/image` `remotePatterns`. Read it off the first uploaded blob's URL
+- [x] P11.T0 Record the Blob **public hostname** — needed for `next/image` `remotePatterns`. Read it off the first uploaded blob's URL: `5d9wubvvsbkemktm.public.blob.vercel-storage.com`
 - [ ] P11.T1 The optimization rule, the remote-host allowlist, and `RemoteImage`
 - [ ] P11.T2 Swap the eleven `<img>` sites to `next/image`
 - [ ] P11.T3 Upload the twelve logos to Blob and rewrite `events.image`

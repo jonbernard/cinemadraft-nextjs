@@ -17,6 +17,7 @@ const PRODUCTION_IMAGE_URLS = [
   'https://img.clerk.com/eyJ0eXBlIjoiZGVmYXVsdCIsImlpZCI6Imluc18zSHNSUDRPeUhkUWlNZXNMMmdWWEJlIn0',
   'https://s.gravatar.com/avatar/12b5fcf15a6c8314007bdb3840999f68?s=480&r=pg&d=mp',
   'https://lh6.googleusercontent.com/-hFz9f6lgKus/AAAAAAAAAAI/photo.jpg',
+  'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/ace.jpg',
 ];
 
 describe('images.remotePatterns', () => {
