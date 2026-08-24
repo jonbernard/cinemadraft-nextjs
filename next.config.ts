@@ -51,7 +51,12 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'image.tmdb.org', pathname: '/t/p/**' },
       { protocol: 'https', hostname: 'img.clerk.com' },
       { protocol: 'https', hostname: 's.gravatar.com' },
-      { protocol: 'https', hostname: '**.googleusercontent.com' },
+      // The phase measured 4 rows, all lh*.googleusercontent.com (Google
+      // profile photos). `**` would match any depth of subdomain under a
+      // domain that hosts arbitrary user content, and every entry in this
+      // list is a target the optimizer proxy will fetch on our behalf — so
+      // it stays as narrow as the data that justified adding it.
+      { protocol: 'https', hostname: 'lh*.googleusercontent.com' },
       {
         protocol: 'https',
         hostname: '5d9wubvvsbkemktm.public.blob.vercel-storage.com',

@@ -18,6 +18,7 @@
 
 import { readFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const BLOB_HOST_MARK = '.public.blob.vercel-storage.com';
 
@@ -53,22 +54,46 @@ async function main() {
     process.exit(1);
   }
 
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error(
+      'DATABASE_URL is not set. This script writes to it directly with pg, which — ' +
+        'unlike the token check above — fails with an opaque socket error rather than ' +
+        'a written message if it falls back to libpq defaults.',
+    );
+    process.exit(1);
+  }
+
   const srcDir = resolve(
     process.argv[2] ??
       join(import.meta.dirname, '..', '..', 'cinemadraft', 'public', 'images', 'awards'),
   );
   const files = readdirSync(srcDir);
 
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: databaseUrl });
   await client.connect();
+  // A script that rewrites production rows should say which database it is
+  // about to write to, before it writes anything.
+  const target = new URL(databaseUrl);
+  console.log(`→ writing to ${target.host}${target.pathname}`);
   try {
     const { rows } = await client.query(
       'select id, abbreviation, image from events order by abbreviation',
     );
 
+    let uploaded = 0;
+    let alreadyBlob = 0;
+    let unmatched = 0;
+
     for (const row of rows) {
+      const image = row.image ?? '';
       const file = sourceFileFor(row, files);
       if (!file) {
+        if (image.includes(BLOB_HOST_MARK)) {
+          alreadyBlob += 1;
+        } else {
+          unmatched += 1;
+        }
         console.log(`· ${row.abbreviation} — skipped (${row.image ?? 'no image'})`);
         continue;
       }
@@ -95,12 +120,30 @@ async function main() {
 
       await client.query('update events set image = $1 where id = $2', [url, row.id]);
       console.log(`✓ ${row.abbreviation} — ${url}`);
+      uploaded += 1;
+    }
+
+    console.log(
+      `\n${uploaded} uploaded, ${alreadyBlob} already on Blob, ${unmatched} unmatched.`,
+    );
+
+    // uploaded === 0 alone is not enough to fail on — that is also what a
+    // correct idempotent re-run looks like, every row already alreadyBlob.
+    // What distinguishes "nothing to do" from "wrong source directory" (a
+    // stale checkout, a renamed folder) is that the latter also leaves every
+    // row unmatched instead of recognized as already-migrated.
+    if (uploaded === 0 && alreadyBlob === 0) {
+      console.error(
+        `✗ nothing matched in ${srcDir} — wrong source directory, or the files are named ` +
+          'differently than expected. Check srcDir before assuming this run was a no-op.',
+      );
+      process.exitCode = 1;
     }
   } finally {
     await client.end();
   }
 }
 
-if (process.argv[1] && import.meta.url.endsWith(basename(process.argv[1]))) {
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) {
   await main();
 }

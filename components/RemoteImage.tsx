@@ -17,5 +17,5 @@ export type RemoteImageProps = Omit<ImageProps, 'src' | 'unoptimized'> & {
  * component exists to make impossible.
  */
 export function RemoteImage({ src, alt, ...rest }: RemoteImageProps) {
-  return <Image src={src} alt={alt} unoptimized={!shouldOptimize(src)} {...rest} />;
+  return <Image alt={alt} {...rest} src={src} unoptimized={!shouldOptimize(src)} />;
 }

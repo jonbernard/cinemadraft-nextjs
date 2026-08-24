@@ -223,6 +223,25 @@ jobs:
           fi
           echo "no raw hex outside the token system"
 
+      - name: Only RemoteImage imports next/image
+        run: |
+          set -uo pipefail
+          # RemoteImage's whole reason to exist is that the optimization
+          # decision for a remote host lives in one place (lib/images.ts). A
+          # call site that reaches for next/image directly bypasses that
+          # decision silently — it compiles, passes every other check, and
+          # opts its page into billed transformations (or an unoptimized
+          # fetch that should have been billed) with nobody noticing until a
+          # Vercel invoice or a broken image does the noticing instead.
+          offenders=$(grep -rlE "from ['\"]next/image['\"]" app lib actions components 2>/dev/null \
+            | grep -v -e '^components/RemoteImage\.tsx$' -e '\.test\.tsx?$' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::only components/RemoteImage.tsx may import next/image directly"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "next/image import boundary intact"
+
   # package-lock.json must be generated on Linux.
   #
   # lightningcss (via Tailwind 4 and Vite) declares optional per-platform

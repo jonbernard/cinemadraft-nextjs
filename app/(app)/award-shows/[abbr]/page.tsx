@@ -71,7 +71,7 @@ export default async function AwardShowPage({
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-3">
           <div className="flex items-start gap-4">
-            <ShowLogo name={show.name} imageUrl={show.imageUrl} size="lg" />
+            <ShowLogo imageUrl={show.imageUrl} size="lg" />
             <SectionHead
               as="h1"
               name

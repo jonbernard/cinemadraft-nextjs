@@ -50,4 +50,14 @@ check "no raw hex outside the token system" \
      --include='*.tsx' --include='*.ts' --include='*.mdx' 2>/dev/null \
      | grep -v '^app/global-error\.tsx:' || true)"
 
+# RemoteImage's whole reason to exist is that the optimization decision for a
+# remote host lives in one place (lib/images.ts). A call site that reaches for
+# `next/image` directly bypasses that decision silently — it compiles, passes
+# every other check, and opts its page into billed transformations (or an
+# unoptimized fetch that should have been billed) with nobody noticing until a
+# Vercel invoice or a broken image does the noticing instead.
+check "no next/image import outside RemoteImage" \
+  "$(grep -rlE "from ['\"]next/image['\"]" app lib actions components 2>/dev/null \
+     | grep -v -e '^components/RemoteImage\.tsx$' -e '\.test\.tsx?$' || true)"
+
 exit $fail

@@ -346,19 +346,45 @@ no `noImgElement` ignore remains.
 
 - T1: Swap Clerk to its Production instance — create it for `cinemadraft.com`, add DNS records, set `pk_live_`/`sk_live_` in Vercel Production, recreate the webhook and its signing secret (all per-instance)
 - T2: Final `pg_dump` from Heroku → Neon
-  - 🔴 **This restore overwrites the Phase 11 Blob migration.** `events.image`
-    is data, and the dump being restored still holds the old
-    `/images/awards/*.jpg` paths — the final `pg_dump` will clobber all twelve
-    Blob URLs written by `scripts/upload-award-logos.mjs`, and it will also
-    turn `lib/repositories/events.test.ts` red. **Re-run
-    `scripts/upload-award-logos.mjs` against Neon immediately after this
-    restore, before T3's verification pass** — the script is idempotent, so
-    running it again after a genuinely-fresh restore is exactly correct and
-    running it twice by mistake is a no-op.
-- T2: Add `cinemadraft.com` to the Vercel project and point its DNS at Vercel; add or repoint the Clerk webhook to the apex
-- T3: Verify production sign-in, draft, and scoring
-- T4: Monitor for 48 hours
-- T5: Retire Heroku
+- T3: **Restore the twelve award-show logo URLs that T2 just clobbered.**
+  `events.image` is data: the dump restored in T2 still holds the old
+  `/images/awards/*.jpg` paths, so it overwrites every Blob URL Phase 11's
+  `scripts/upload-award-logos.mjs` wrote, and turns
+  `lib/repositories/events.test.ts` red the next time it runs against Neon.
+  By this phase, `scripts/upload-award-logos.mjs` cannot fix it — the write
+  token was deleted and revoked at the end of Phase 11 (deliberately: nothing
+  in the running app writes to Blob), and its default `srcDir`,
+  `../cinemadraft/public/images/awards`, is a checkout of the app this phase
+  retires, not guaranteed to exist here. The Blob objects, though, are
+  untouched — Phase 11 uploaded them to deterministic paths — so this is a
+  plain, idempotent SQL update against the twelve rows, run before T4's
+  verification pass:
+
+  ```sql
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/ace.jpg'    WHERE abbreviation = 'ace';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/adg.jpg'    WHERE abbreviation = 'adg';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/afi.png'    WHERE abbreviation = 'afi';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/asc.jpg'    WHERE abbreviation = 'asc';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/bafta.jpg'  WHERE abbreviation = 'bafta';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/dga.jpg'    WHERE abbreviation = 'dga';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/gg.jpg'     WHERE abbreviation = 'gg';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/oscars.jpg' WHERE abbreviation = 'oscars';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/pga.jpg'    WHERE abbreviation = 'pga';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/raz.jpg'    WHERE abbreviation = 'raz';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/sag.jpg'    WHERE abbreviation = 'sag';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/wga.jpg'    WHERE abbreviation = 'wga';
+  ```
+
+  These URLs were read back from the local restored database on 2026-08-24,
+  after Phase 11's upload ran against it — verify a couple against Neon (or
+  the Blob dashboard) before trusting them again if much time has passed.
+  Idempotent: running this against a database that already has these values
+  is a no-op, so re-running it by mistake is harmless. Needs neither the Blob
+  write token (deleted) nor a checkout of the app being retired.
+- T4: Add `cinemadraft.com` to the Vercel project and point its DNS at Vercel; add or repoint the Clerk webhook to the apex
+- T5: Verify production sign-in, draft, and scoring — plus the award-show logos, which T3 restores
+- T6: Monitor for 48 hours
+- T7: Retire Heroku
 
 **Gate:** site live on Vercel; Heroku scaled to zero.
 

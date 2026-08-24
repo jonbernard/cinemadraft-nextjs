@@ -1055,6 +1055,19 @@ unseeded) passes 1061/1061; `npm run verify` is all green.
 
 - [ ] P12 not started
 
+### Phase 12 notes
+
+- 🔴 **`e2e/award-shows.spec.ts`'s "a show wears its mark, served from Blob" test
+  reads production-copy data** — it navigates to `/award-shows/oscars` and
+  asserts the real Oscars row carries a Blob-hosted logo, rather than seeding
+  its own scratch show the way the rest of that suite does. Acceptable for
+  E2E, which already runs against a restored production copy, but it means
+  E2E cannot run clean against a freshly migrated-but-unseeded database (the
+  `oscars` row would have no `image` at all) — only against one that has had
+  `scripts/upload-award-logos.mjs` (P11.T3) run against it. Keep this in mind
+  when validating a fresh restore during the parallel run: a red result on
+  that one test does not necessarily mean a regression.
+
 ## Phase 13 — Cutover
 
 - [ ] P13 not started

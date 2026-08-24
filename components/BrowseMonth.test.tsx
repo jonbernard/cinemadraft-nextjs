@@ -27,7 +27,10 @@ describe('BrowseMonth', () => {
     render(<BrowseMonth month={month} isSignedIn={false} />);
     const poster = document.querySelector('img');
     expect(poster).not.toBeNull();
-    expect(poster).toHaveAttribute('src', expect.stringContaining('image.tmdb.org'));
+    // The unoptimized path serves the URL byte-for-byte; an optimized one
+    // would still contain "image.tmdb.org" as a substring of the encoded
+    // query string, so equality is the only assertion that can fail.
+    expect(poster).toHaveAttribute('src', month.films[0]?.posterUrl);
   });
 
   it('links the title to the film page', () => {

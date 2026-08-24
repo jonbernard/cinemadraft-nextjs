@@ -2,8 +2,6 @@ import { RemoteImage } from '@/components/RemoteImage';
 import { cn } from '@/lib/utils/cn';
 
 export type ShowLogoProps = {
-  /** The show's name. Used for sizing decisions only — the logo is decorative. */
-  name: string;
   imageUrl: string | null;
   size?: 'sm' | 'lg';
   className?: string;
@@ -22,12 +20,7 @@ const DIMENSIONS = { sm: 40, lg: 72 } as const;
  * mark, and a screen reader announcing "Academy Awards, Academy Awards" is
  * worse than announcing it once.
  */
-export function ShowLogo({
-  name: _name,
-  imageUrl,
-  size = 'sm',
-  className,
-}: ShowLogoProps) {
+export function ShowLogo({ imageUrl, size = 'sm', className }: ShowLogoProps) {
   if (!imageUrl) return null;
 
   const px = DIMENSIONS[size];

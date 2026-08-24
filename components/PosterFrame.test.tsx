@@ -64,7 +64,10 @@ describe('PosterFrame', () => {
     // there is nothing to query it by except the tag.
     const poster = document.querySelector('img');
     expect(poster).toHaveAttribute('alt', '');
-    expect(poster).toHaveAttribute('src', expect.stringContaining('image.tmdb.org'));
+    // The unoptimized path serves the URL byte-for-byte; an optimized one
+    // would still contain "image.tmdb.org" as a substring of the encoded
+    // query string, so equality is the only assertion that can fail.
+    expect(poster).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w500/abc.jpg');
   });
 
   it('shows an initials placeholder when there is no poster', () => {

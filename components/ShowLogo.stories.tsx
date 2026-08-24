@@ -11,11 +11,14 @@ export default meta;
 
 export const Small: StoryObj<typeof meta> = {
   args: {
-    name: 'Academy Awards',
-    imageUrl: 'https://image.tmdb.org/t/p/w92/placeholder.jpg',
+    // Blob-shaped, not TMDB: award-show logos are the unoptimized-vs-optimized
+    // opposite of posters (lib/images.ts), and a TMDB URL here would exercise
+    // the wrong branch of RemoteImage.
+    imageUrl:
+      'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/oscars.jpg',
   },
 };
 
 export const Missing: StoryObj<typeof meta> = {
-  args: { name: 'Academy Awards', imageUrl: null },
+  args: { imageUrl: null },
 };

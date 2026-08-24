@@ -1,3 +1,8 @@
+// A private Next internal — there is no public equivalent that evaluates a
+// remotePatterns entry the same way `/_next/image` does. Acceptable, but a
+// Next minor can move or rename this path, and the failure mode is a
+// module-not-found error here that has nothing to do with what actually
+// changed.
 import { matchRemotePattern } from 'next/dist/shared/lib/match-remote-pattern';
 import { describe, expect, it } from 'vitest';
 
@@ -33,6 +38,31 @@ describe('images.remotePatterns', () => {
     expect(
       patterns.some((pattern) =>
         matchRemotePattern(pattern, new URL('https://evil.test/avatar.png')),
+      ),
+    ).toBe(false);
+  });
+
+  // `**.googleusercontent.com` would match both of these — an unbounded
+  // wildcard matches any depth of subdomain, so it does not stop an attacker
+  // suffixing the real domain, and it does not require the specific `lh*`
+  // prefix Google actually serves profile photos from.
+  it('does not allow a host that merely suffixes googleusercontent.com', () => {
+    const patterns = nextConfig.images?.remotePatterns ?? [];
+    expect(
+      patterns.some((pattern) =>
+        matchRemotePattern(
+          pattern,
+          new URL('https://evil.googleusercontent.com.attacker.test/x.png'),
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  it('does not allow a googleusercontent.com subdomain outside lh*', () => {
+    const patterns = nextConfig.images?.remotePatterns ?? [];
+    expect(
+      patterns.some((pattern) =>
+        matchRemotePattern(pattern, new URL('https://evil.googleusercontent.com/x.png')),
       ),
     ).toBe(false);
   });

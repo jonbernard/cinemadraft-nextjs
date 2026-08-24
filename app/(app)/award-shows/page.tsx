@@ -96,7 +96,7 @@ export default async function AwardShowsPage() {
                 href={`/award-shows/${show.abbreviation}?year=${year}`}
                 className="bg-bg-surface hover:bg-bg-raised focus-visible:outline-accent-fill flex h-full flex-col gap-1 rounded-md p-4 focus-visible:outline-2"
               >
-                <ShowLogo name={show.name} imageUrl={show.imageUrl} className="mb-2" />
+                <ShowLogo imageUrl={show.imageUrl} className="mb-2" />
                 <Eyebrow>{show.abbreviation}</Eyebrow>
                 <span className="text-text-primary font-serif text-base tracking-[-0.02em]">
                   {show.name}
