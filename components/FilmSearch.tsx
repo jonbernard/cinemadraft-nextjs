@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { RemoteImage } from '@/components/RemoteImage';
 import { cn } from '@/lib/utils/cn';
 
 export type SearchedFilm = {
@@ -232,8 +233,13 @@ function ResultRow({
         )}
       >
         {film.posterUrl ? (
-          // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11 with the media migration
-          <img src={film.posterUrl} alt="" className="h-12 w-8 object-cover" />
+          <RemoteImage
+            src={film.posterUrl}
+            alt=""
+            width={32}
+            height={48}
+            className="h-12 w-8 object-cover"
+          />
         ) : (
           <span className="bg-bg-raised text-text-dim grid h-12 w-8 place-items-center font-mono text-[0.6rem]">
             {film.title.slice(0, 2).toUpperCase()}

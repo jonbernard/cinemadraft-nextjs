@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { RemoteImage } from '@/components/RemoteImage';
 import { cn } from '@/lib/utils/cn';
 
 /**
@@ -101,10 +102,11 @@ export function PosterCarousel({
         <ul className="flex gap-4">
           {posterUrls.map((url, position) => (
             <li key={url} className="w-full shrink-0 snap-start">
-              {/* biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11, which needs the remote host allowlist configured first */}
-              <img
+              <RemoteImage
                 src={url}
                 alt={`Poster ${position + 1} for ${title}`}
+                width={500}
+                height={750}
                 // Explicit ratio so the strip does not reflow as images arrive
                 // (Core Web Vitals: CLS). Every TMDB poster is 2:3.
                 className="poster-radius bg-bg-raised light:border light:border-border-rule aspect-[2/3] w-full object-contain"

@@ -1,4 +1,5 @@
 import { type LedgerRow, PointsLedger } from '@/components/PointsLedger';
+import { RemoteImage } from '@/components/RemoteImage';
 import { cn } from '@/lib/utils/cn';
 
 export type PickCellFilm = {
@@ -50,8 +51,13 @@ export function PickCell({
     <figure className={cn('flex flex-col gap-1', className)}>
       <div className="poster-radius bg-bg-raised light:border-border-rule relative aspect-[2/3] overflow-hidden light:border">
         {film.posterUrl ? (
-          // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11 with the media migration
-          <img src={film.posterUrl} alt="" className="h-full w-full object-cover" />
+          <RemoteImage
+            src={film.posterUrl}
+            alt=""
+            fill
+            sizes="96px"
+            className="object-cover"
+          />
         ) : (
           <span className="text-text-dim absolute inset-0 grid place-items-center font-mono text-xs">
             {film.title.slice(0, 2).toUpperCase()}

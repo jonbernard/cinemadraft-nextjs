@@ -1,6 +1,7 @@
 'use client';
 
 import type { ActionResult } from '@/actions/result';
+import { RemoteImage } from '@/components/RemoteImage';
 import { cn } from '@/lib/utils/cn';
 import { ReorderableList } from './ReorderableList';
 
@@ -51,8 +52,13 @@ export function PickList({
             {String(row.index + 1).padStart(2, '0')}
           </span>
           {pick.posterUrl ? (
-            // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11 with the media migration
-            <img src={pick.posterUrl} alt="" className="h-10 w-7 object-cover" />
+            <RemoteImage
+              src={pick.posterUrl}
+              alt=""
+              width={28}
+              height={40}
+              className="h-10 w-7 object-cover"
+            />
           ) : null}
           <span className="text-text-primary flex-1 text-sm">{pick.title}</span>
         </div>

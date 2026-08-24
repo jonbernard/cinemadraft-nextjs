@@ -57,10 +57,14 @@ describe('PosterFrame', () => {
   });
 
   it('gives the poster an empty alt so the visible title is not announced twice', () => {
-    render(<PosterFrame {...base} posterUrl="https://example.test/p.jpg" />);
+    // 🔴 The poster is decorative: the title is beside it in the figcaption, and
+    // a screen reader announcing the film twice is worse than not at all.
+    render(<PosterFrame {...base} posterUrl="https://image.tmdb.org/t/p/w500/abc.jpg" />);
     // An empty-alt img is presentational and exposes no accessible role, so
     // there is nothing to query it by except the tag.
-    expect(document.querySelector('img')).toHaveAttribute('alt', '');
+    const poster = document.querySelector('img');
+    expect(poster).toHaveAttribute('alt', '');
+    expect(poster).toHaveAttribute('src', expect.stringContaining('image.tmdb.org'));
   });
 
   it('shows an initials placeholder when there is no poster', () => {

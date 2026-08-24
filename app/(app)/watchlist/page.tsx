@@ -5,6 +5,7 @@ import { setWatched } from '@/actions/watchlist/set-watched';
 import { EmptyState } from '@/components/EmptyState';
 import { Pagination } from '@/components/Pagination';
 import { Panel } from '@/components/Panel';
+import { RemoteImage } from '@/components/RemoteImage';
 import { SectionHead } from '@/components/SectionHead';
 import { SeenMeter } from '@/components/SeenMeter';
 import { StatusChip } from '@/components/StatusChip';
@@ -211,10 +212,11 @@ function WatchedFilms({
               className="border-border-rule flex items-center gap-4 border-b py-3 last:border-b-0"
             >
               {film.posterUrl ? (
-                // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11, which needs the remote host allowlist configured first
-                <img
+                <RemoteImage
                   src={film.posterUrl}
                   alt=""
+                  width={44}
+                  height={64}
                   className="poster-radius bg-bg-raised light:border light:border-border-rule h-16 w-11 shrink-0 object-cover"
                   loading="lazy"
                 />

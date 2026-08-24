@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { FeedComposer } from '@/components/FeedComposer';
 import { FeedPost } from '@/components/FeedPost';
 import { Panel } from '@/components/Panel';
+import { RemoteImage } from '@/components/RemoteImage';
 import { SectionHead } from '@/components/SectionHead';
 import { requireUser } from '@/lib/auth';
 import { loadMemberProfile, loadProfileMember } from '@/lib/services/profile';
@@ -102,10 +103,11 @@ export default async function MemberProfilePage({
 function Avatar({ name, image }: { name: string; image: string | null }) {
   if (image) {
     return (
-      // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11, which needs the remote host allowlist configured first
-      <img
+      <RemoteImage
         src={image}
         alt=""
+        width={56}
+        height={56}
         className="bg-bg-raised h-14 w-14 shrink-0 rounded-full object-cover"
       />
     );

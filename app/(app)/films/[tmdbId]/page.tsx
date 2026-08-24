@@ -12,6 +12,7 @@ import { Fact, FilmFacts } from '@/components/FilmFacts';
 import { FilmPointsPanel } from '@/components/FilmPointsPanel';
 import { PosterCarousel } from '@/components/PosterCarousel';
 import { RatingChip } from '@/components/RatingChip';
+import { RemoteImage } from '@/components/RemoteImage';
 import { SectionHead } from '@/components/SectionHead';
 import { TrailerReel } from '@/components/TrailerReel';
 import { WatchedToggle } from '@/components/WatchedToggle';
@@ -190,14 +191,15 @@ function FilmBanner({
     <header className="relative mb-8">
       <CinemaFrame className="bg-bg-raised">
         {film.backdropUrl ? (
-          // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11, which needs the remote host allowlist configured first
-          <img
+          <RemoteImage
             src={film.backdropUrl}
             alt=""
-            className="h-full w-full object-cover"
+            fill
+            sizes="100vw"
             // The banner is the largest thing above the fold, so it is the LCP
             // element and must not be lazy.
-            loading="eager"
+            priority
+            className="object-cover"
           />
         ) : null}
         <div className="from-bg-base absolute inset-0 bg-gradient-to-t via-transparent" />
@@ -285,14 +287,15 @@ function SimilarFilms({ films }: { films: FilmPage['similar'] }) {
               href={`/films/${film.tmdbId}`}
               className="focus-visible:outline-accent-fill group flex flex-col gap-2 focus-visible:outline-2"
             >
-              <span className="poster-radius bg-bg-raised light:border light:border-border-rule block aspect-[2/3] overflow-hidden">
+              <span className="poster-radius bg-bg-raised light:border light:border-border-rule relative block aspect-[2/3] overflow-hidden">
                 {film.posterUrl ? (
-                  // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11, which needs the remote host allowlist configured first
-                  <img
+                  <RemoteImage
                     src={film.posterUrl}
                     alt=""
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(min-width: 640px) 12vw, 33vw"
                     loading="lazy"
+                    className="object-cover"
                   />
                 ) : null}
               </span>

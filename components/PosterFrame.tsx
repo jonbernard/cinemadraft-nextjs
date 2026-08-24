@@ -1,3 +1,4 @@
+import { RemoteImage } from '@/components/RemoteImage';
 import { cn } from '@/lib/utils/cn';
 
 export type PosterStatus = 'none' | 'nominated' | 'won';
@@ -87,8 +88,13 @@ export function PosterFrame({
         )}
       >
         {posterUrl ? (
-          // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 5, which needs the remote host allowlist configured first
-          <img src={posterUrl} alt="" className="h-full w-full object-cover" />
+          <RemoteImage
+            src={posterUrl}
+            alt=""
+            fill
+            sizes="(min-width: 1024px) 16vw, (min-width: 640px) 25vw, 50vw"
+            className="object-cover"
+          />
         ) : (
           <span className="text-text-dim absolute inset-0 grid place-items-center font-mono text-xs">
             {title.slice(0, 2).toUpperCase()}

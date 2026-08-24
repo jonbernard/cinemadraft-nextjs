@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { setWatched } from '@/actions/watchlist/set-watched';
+import { RemoteImage } from '@/components/RemoteImage';
 import { SectionHead } from '@/components/SectionHead';
 import { WatchedToggle } from '@/components/WatchedToggle';
 import type { BrowseMonth as BrowseMonthData } from '@/lib/services/browse';
@@ -58,14 +59,15 @@ export function BrowseMonth({
             <div className="relative">
               <Link
                 href={`/films/${film.tmdbId}`}
-                className="focus-visible:outline-accent-fill group block focus-visible:outline-2"
+                className="focus-visible:outline-accent-fill group relative block aspect-[2/3] focus-visible:outline-2"
               >
-                {/* biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11, which needs the remote host allowlist configured first */}
-                <img
+                <RemoteImage
                   src={film.posterUrl}
                   alt=""
-                  className="poster-radius bg-bg-raised light:border light:border-border-rule aspect-[2/3] w-full object-cover transition-opacity group-hover:opacity-90"
+                  fill
+                  sizes="(min-width: 1024px) 16vw, (min-width: 640px) 25vw, 50vw"
                   loading="lazy"
+                  className="poster-radius bg-bg-raised light:border light:border-border-rule object-cover transition-opacity group-hover:opacity-90"
                 />
               </Link>
 

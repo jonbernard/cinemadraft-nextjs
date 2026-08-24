@@ -5,6 +5,7 @@ import { useCallback, useState, useTransition } from 'react';
 import type { ActionResult } from '@/actions/result';
 import { EmptyState } from '@/components/EmptyState';
 import { FilmSearch, type SearchedFilm } from '@/components/FilmSearch';
+import { RemoteImage } from '@/components/RemoteImage';
 import { ReorderableList, type ReorderableRow } from '@/components/ReorderableList';
 import { StatusChip } from '@/components/StatusChip';
 import { cn } from '@/lib/utils/cn';
@@ -213,8 +214,13 @@ function EntryRow({
           {String(row.index + 1).padStart(2, '0')}
         </span>
         {entry.posterUrl ? (
-          // biome-ignore lint/performance/noImgElement: swapped for next/image in Phase 11 with the media migration
-          <img src={entry.posterUrl} alt="" className="h-10 w-7 object-cover" />
+          <RemoteImage
+            src={entry.posterUrl}
+            alt=""
+            width={28}
+            height={40}
+            className="h-10 w-7 object-cover"
+          />
         ) : (
           <span className="bg-bg-raised text-text-dim grid h-10 w-7 place-items-center font-mono text-[0.6rem]">
             {entry.title.slice(0, 2).toUpperCase()}
