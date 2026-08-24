@@ -8,6 +8,7 @@ import { EventAdmin } from '@/components/EventAdmin';
 import { NomineeGrid } from '@/components/NomineeGrid';
 import { Panel } from '@/components/Panel';
 import { SectionHead } from '@/components/SectionHead';
+import { ShowLogo } from '@/components/ShowLogo';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
@@ -69,15 +70,18 @@ export default async function AwardShowPage({
     <>
       <div className="mx-auto flex max-w-5xl flex-col gap-8">
         <header className="flex flex-col gap-3">
-          <SectionHead
-            as="h1"
-            name
-            eyebrow={show.abbreviation}
-            right={String(show.year)}
-            className="pb-0"
-          >
-            {show.name}
-          </SectionHead>
+          <div className="flex items-start gap-4">
+            <ShowLogo name={show.name} imageUrl={show.imageUrl} size="lg" />
+            <SectionHead
+              as="h1"
+              name
+              eyebrow={show.abbreviation}
+              right={String(show.year)}
+              className="pb-0"
+            >
+              {show.name}
+            </SectionHead>
+          </div>
 
           <p className="text-text-secondary text-sm">
             {show.categories.length}{' '}

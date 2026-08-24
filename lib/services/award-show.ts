@@ -42,6 +42,8 @@ export type AwardShowView = {
   /** The source's own flags for "this show still needs entering". */
   needsNominations: boolean;
   needsWinners: boolean;
+  /** The show's mark, a Blob URL since Phase 11. */
+  imageUrl: string | null;
 };
 
 export type AwardShowSummary = {
@@ -51,6 +53,8 @@ export type AwardShowSummary = {
   categoryCount: number;
   needsNominations: boolean;
   needsWinners: boolean;
+  /** The show's mark, a Blob URL since Phase 11. */
+  imageUrl: string | null;
 };
 
 /**
@@ -169,6 +173,7 @@ export async function getAwardShow(
     categories,
     needsNominations: event.nomActive === true,
     needsWinners: event.awardsActive === true,
+    imageUrl: event.image,
   };
 }
 
@@ -189,5 +194,6 @@ export async function getAwardShows(): Promise<AwardShowSummary[]> {
     categoryCount: countByEvent.get(event.id) ?? 0,
     needsNominations: event.nomActive === true,
     needsWinners: event.awardsActive === true,
+    imageUrl: event.image,
   }));
 }

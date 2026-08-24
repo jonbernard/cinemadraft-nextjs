@@ -150,16 +150,18 @@ describe('the DTO matches the captured contract', () => {
     expect(event.createdAt).toBeInstanceOf(Date);
   });
 
-  it('returns the stored image path, which the fixture does not preserve', async () => {
+  it('returns the stored image URL, which the fixture does not preserve', async () => {
     // Every `image` field is rewritten by scripts/scrub-fixtures.mjs, because
     // the same key holds user avatar URLs elsewhere. The fixture's
-    // example.test URL is the scrubber's, not the source API's — the real
-    // column is a path into the app's own /public.
+    // example.test URL is the scrubber's, not the source API's. Since
+    // `scripts/upload-award-logos.mjs` (P11.T3) ran against this database,
+    // the real column is an absolute Vercel Blob URL, not the path-shaped
+    // value the source API used to serve.
     const event = await eventRepository.findById(oscars.id);
 
     expect(oscars.image).toMatch(/^https:\/\/example\.test\//);
     expect(event.image).not.toContain('example.test');
-    expect(event.image).toMatch(/^\/images\//);
+    expect(event.image).toMatch(/^https:\/\/.+\/award-shows\//);
   });
 
   it('returns no Prisma internals', async () => {
