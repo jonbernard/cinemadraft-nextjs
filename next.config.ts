@@ -34,6 +34,26 @@ const nextConfig: NextConfig = {
     // this honest about what it removes.
     reactRemoveProperties: keepTestIds ? false : { properties: ['^data-testid$'] },
   },
+
+  images: {
+    /**
+     * Every host the database actually holds a URL for.
+     *
+     * 🔴 No `search` key anywhere. In the object form, `search: ''` means "the
+     * URL must carry no query string" — and Gravatar avatars carry
+     * `?s=480&r=pg&d=mp`. Copying the documented example verbatim would reject
+     * 51 of the 378 stored avatars, on the member pages only.
+     *
+     * Avatars are written by the Clerk webhook, not by us, so the shapes here
+     * are measured from the restored data rather than chosen.
+     */
+    remotePatterns: [
+      { protocol: 'https', hostname: 'image.tmdb.org', pathname: '/t/p/**' },
+      { protocol: 'https', hostname: 'img.clerk.com' },
+      { protocol: 'https', hostname: 's.gravatar.com' },
+      { protocol: 'https', hostname: '**.googleusercontent.com' },
+    ],
+  },
 };
 
 export default nextConfig;
