@@ -1002,9 +1002,9 @@ which `events.image` points at as `/images/awards/*.jpg` — paths served from
 the source app's `public/`, a directory this repo does not have.
 
 - [x] P11.T0 Record the Blob **public hostname** — needed for `next/image` `remotePatterns`. Read it off the first uploaded blob's URL: `5d9wubvvsbkemktm.public.blob.vercel-storage.com`
-- [ ] P11.T1 The optimization rule, the remote-host allowlist, and `RemoteImage`
-- [ ] P11.T2 Swap the eleven `<img>` sites to `next/image`
-- [ ] P11.T3 Upload the twelve logos to Blob and rewrite `events.image`
+- [x] P11.T1 The optimization rule, the remote-host allowlist, and `RemoteImage`
+- [x] P11.T2 Swap the `<img>` sites to `next/image` — twelve, not eleven: `app/(app)/watchlist/page.tsx` was missing from the plan's list and the zero-`biome-ignore` check caught it
+- [x] P11.T3 Upload the twelve logos to Blob and rewrite `events.image` — run against the local restored copy and against Neon; 12/12 rows migrated, re-run is a no-op
 - [ ] P11.T4 Render a show's mark on the index and the show page
 - [ ] P11.T5 E2E, and close the phase
 
