@@ -7,6 +7,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import type { ReactNode } from 'react';
 
+import { SIGN_IN_URL, SIGN_UP_URL } from '@/lib/auth-routes';
 import { theme } from '@/theme';
 
 /**
@@ -29,6 +30,10 @@ import { theme } from '@/theme';
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ClerkProvider
+      // The same two routes the proxy redirects to, from one source, so the
+      // server's answer and the client's cannot drift. See lib/auth-routes.ts.
+      signInUrl={SIGN_IN_URL}
+      signUpUrl={SIGN_UP_URL}
       // 🔴 Clerk's components say "Sign in" and "Sign out" out of the box; the
       // app says "log in" and "log out" (D61). Its component *names* stay as
       // they are — `SignIn`, `UserButton` — because those are its API, not our

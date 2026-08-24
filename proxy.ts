@@ -1,5 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
+import { SIGN_IN_URL, SIGN_UP_URL } from '@/lib/auth-routes';
+
 /**
  * Next 16 renamed this file convention from `middleware` to `proxy`. Both
  * still resolve, but `middleware.ts` logs a deprecation warning and having
@@ -68,9 +70,16 @@ const isPublic = createRouteMatcher([
   '/join/(.*)',
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
-  if (!isPublic(request)) await auth.protect();
-});
+export default clerkMiddleware(
+  async (auth, request) => {
+    if (!isPublic(request)) await auth.protect();
+  },
+  // 🔴 Naming the app's own pages here is what keeps the redirect same-origin.
+  // Left unset, Clerk sends a logged-out visitor to its hosted portal on
+  // `*.accounts.dev`, and every RSC prefetch of a protected route then follows
+  // a cross-origin redirect and fails CORS. See lib/auth-routes.ts.
+  { signInUrl: SIGN_IN_URL, signUpUrl: SIGN_UP_URL },
+);
 
 export const config = {
   matcher: [
