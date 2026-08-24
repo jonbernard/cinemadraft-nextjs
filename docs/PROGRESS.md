@@ -823,15 +823,15 @@ Remaining, grouped as the plan batches them:
 | **Phase 14** | T21, T31, T32 | Realtime. Deferred by D23 and not on the cutover path |
 
 - [x] **P10.T1** Join a league from an invite link — _batch B_
-- [ ] **P10.T2** Films in cinemas now — _needs repository_
-- [ ] **P10.T3** "Watch live" banner during a ceremony — _repo ready_
-- [ ] **P10.T4** Season leaderboard by year — _repo ready_
+- [x] **P10.T2** Films in cinemas now — _batch F_
+- [ ] **P10.T3** "Watch live" banner during a ceremony — _deficient; deferred to phase 14 with the live page (D48)_
+- [x] **P10.T4** Season leaderboard by year — _batch F_
 - [x] **P10.T5** A film's page — synopsis, cast, crew, trailers, images, ratings, box office — _batch D_
 - [x] **P10.T6** A film's points by award show, and its average draft position — _batch D_
 - [x] **P10.T7** Browse upcoming and recent releases — _batch D_
 - [x] **P10.T8** Search for a film by title — _phase 8_
 - [x] **P10.T9** Similar films — _batch D_
-- [ ] **P10.T10** A league's standings, on the league page — _repo ready_
+- [x] **P10.T10** A league's standings, on the league page — _batch F_
 - [x] **P10.T11** Create a league — _batch B_
 - [x] **P10.T12** Your leagues, and switching between them — _batch B_
 - [x] **P10.T13** Copy the invite link — _batch B_
@@ -841,37 +841,38 @@ Remaining, grouped as the plan batches them:
 - [x] **P10.T17** Start the draft / mark it complete — _batch C_
 - [x] **P10.T18** Stage next season's draft — _batch C_
 - [x] **P10.T19** League settings — _batch C_
-- [ ] **P10.T20** A private ranked pre-draft list — add films, drag to rank, mark taken or unavailable — _needs repository_
+- [x] **P10.T20** A private ranked pre-draft list — add films, drag to rank, mark taken or unavailable — _batch E_
 - [ ] **P10.T21** Live board updates while the draft runs — _deferred to phase 14 (D23)_
 - [x] **P10.T22** Every award show — _phase 8_
 - [x] **P10.T23** One show: its categories, point values, nominees and winners — _phase 8_
 - [x] **P10.T24** Past seasons of a show — _phase 8_
-- [ ] **P10.T25** Subscribe to ceremony dates as a calendar — _repo ready_
-- [ ] **P10.T26** Admin: edit a show's dates and live flags — _needs repository_
-- [ ] **P10.T27** Admin: add or delete a category — _needs repository_
+- [x] **P10.T25** Subscribe to ceremony dates as a calendar — _batch H_
+- [x] **P10.T26** Admin: edit a show's dates and live flags — _batch G_
+- [x] **P10.T27** Admin: add or delete a category — _batch G_
 - [x] **P10.T28** Admin: enter nominations — _phase 8_
 - [x] **P10.T29** Admin: pick winners during the ceremony — _phase 8_
 - [x] **P10.T30** Admin: which shows still need entering — _phase 8_
 - [ ] **P10.T31** Watch results land in real time, with league standings beside them — _deferred to phase 14 (D23)_
 - [ ] **P10.T32** The admin's selection drives every watcher's screen — _deferred to phase 14 (D23)_
-- [ ] **P10.T33** Your watched films, paged and sorted — _repo ready_
+- [x] **P10.T33** Your watched films, paged and sorted — _batch E_
 - [x] **P10.T34** Mark a film watched, or unmark it — _batch D_
-- [ ] **P10.T35** Progress against this year's nominees, by show — _repo ready_
-- [ ] **P10.T36** Progress against the year's nominated films — _repo ready_
-- [ ] **P10.T37** Which drafted films you have seen — _repo ready_
-- [ ] **P10.T38** Rate and review a film — _needs repository_
-- [ ] **P10.T39** Read your own review — _repo ready_
-- [ ] **P10.T40** A member's profile and activity feed — _repo ready_
-- [ ] **P10.T41** Post to your feed — _needs repository_
-- [ ] **P10.T42** Delete a feed item — _needs repository_
-- [ ] **P10.T43** Your recent notifications — _repo ready_
-- [ ] **P10.T44** Mark as read — _needs repository_
-- [ ] **P10.T45** Admin: broadcast to everyone — _needs repository_
-- [ ] **P10.T46** Rules and scoring explained — _no data layer needed_
-- [ ] **P10.T47** The scoring rulebook by tier — _repo ready_
-- [ ] **P10.T48** Admin: set the active season — _repo ready_
-- [ ] **P10.T49** Admin: relink an account — _repo ready_
+- [x] **P10.T35** Progress against this year's nominees, by show — _batch E_
+- [x] **P10.T36** Progress against the year's nominated films — _batch E_
+- [x] **P10.T37** Which drafted films you have seen — _batch E_
+- [x] **P10.T38** Rate and review a film — _batch E_
+- [x] **P10.T39** Read your own review — _batch E_
+- [x] **P10.T40** A member's profile and activity feed — _batch E_
+- [x] **P10.T41** Post to your feed — _batch E_
+- [x] **P10.T42** Delete a feed item — _batch E_
+- [x] **P10.T43** Your recent notifications — _batch G_
+- [x] **P10.T44** Mark as read — _batch G_
+- [x] **P10.T45** Admin: broadcast to everyone — _batch G_
+- [x] **P10.T46** Rules and scoring explained — _batch G_
+- [x] **P10.T47** The scoring rulebook by tier — _batch G_
+- [x] **P10.T48** Admin: set the active season — _batch G_
+- [x] **P10.T49** Admin: relink an account — _batch G_
 - [x] **P10.T50** A 500 page — _batch A_
+- [x] **Phase 10 complete.** Every row closed except the four Phase 14 deferrals — T3, T21, T31 and T32. `PARITY.md` reads **65 ported / 4 deficient / 15 dropped = 84**.
 
 
 ---
@@ -987,8 +988,25 @@ code at the close of Phase 3.5, not copied from the spec.
 
 ## Phase 11 — Media → Vercel Blob
 
+Plan: [`docs/superpowers/plans/2026-08-24-phase-11-media.md`](superpowers/plans/2026-08-24-phase-11-media.md)
+
+🔴 **There is no Cloudinary to migrate.** Measured against the Neon copy on
+2026-08-24: `users.image` holds 323 `img.clerk.com`, 51 `s.gravatar.com` and 4
+`googleusercontent` URLs, and **zero** Cloudinary values or bare public IDs —
+the Clerk webhook has been writing `image_url` since Phase 4, so the avatars
+migrated themselves. No upload UI exists in the port either. `PLAN.md` T2 and
+T5 therefore have no work in them, and the phase is instead the two things that
+are genuinely undone: `next/image` (eleven `noImgElement` ignores defer to this
+phase, and `images.remotePatterns` is empty) and the twelve award-show logos,
+which `events.image` points at as `/images/awards/*.jpg` — paths served from
+the source app's `public/`, a directory this repo does not have.
+
 - [ ] P11.T0 Record the Blob **public hostname** — needed for `next/image` `remotePatterns`. Read it off the first uploaded blob's URL
-- [ ] P11 not started
+- [ ] P11.T1 The optimization rule, the remote-host allowlist, and `RemoteImage`
+- [ ] P11.T2 Swap the eleven `<img>` sites to `next/image`
+- [ ] P11.T3 Upload the twelve logos to Blob and rewrite `events.image`
+- [ ] P11.T4 Render a show's mark on the index and the show page
+- [ ] P11.T5 E2E, and close the phase
 
 ## Phase 12 — Parallel run
 
