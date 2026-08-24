@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The five layering checks, exactly as CI runs them.
+# The six layering checks, exactly as CI runs them.
 #
 # 🔴 These exist as a script because running them "by hand, roughly" is how two
 # CI failures got pushed: a grep typed slightly differently locally passes while

@@ -14,7 +14,8 @@ const DIMENSIONS = { sm: 40, lg: 72 } as const;
  *
  * Renders nothing at all when the show has no logo. `events.image` is
  * nullable, and an empty frame in a grid reads as a failure to load rather
- * than as an absence — the name alone is the honest fallback.
+ * than as an absence — the show's name, which every placement prints beside
+ * this mark, is the honest fallback.
  *
  * `alt=""` is deliberate: every placement puts the show's name next to the
  * mark, and a screen reader announcing "Academy Awards, Academy Awards" is
