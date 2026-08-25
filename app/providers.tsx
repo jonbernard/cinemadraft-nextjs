@@ -42,7 +42,11 @@ export function Providers({ children }: { children: ReactNode }) {
         formButtonPrimary: 'Continue',
         signIn: {
           start: {
-            title: 'Log in',
+            // The instance runs the combined sign-in-or-up flow (P15.T4), so
+            // this one card is both doors: a title that said only "Log in"
+            // would read as the wrong place to a member who has never
+            // registered — which is every member, until their first visit.
+            title: 'Log in or register',
             subtitle: 'to continue to Cinemadraft',
             // Default is "Don't have an account? Sign up" — "Sign up" is the
             // one word that has to change; the question itself is fine.
