@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 const usePathname = vi.hoisted(() => vi.fn(() => '/'));
-vi.mock('next/navigation', () => ({ usePathname }));
+const push = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation', () => ({ usePathname, useRouter: () => ({ push }) }));
 vi.mock('@clerk/nextjs', () => ({
   UserButton: () => <button type="button">Account</button>,
 }));
@@ -169,6 +170,18 @@ describe('AppShell', () => {
     for (const link of within(tabs()).getAllByRole('link')) {
       expect(link.textContent?.trim().length).toBeGreaterThan(0);
     }
+  });
+
+  it('🔴 search opens the panel rather than linking to the release calendar', () => {
+    // `/browse` is ordered by date and cannot answer "where is *Sinners*",
+    // which is the one question the icon promises (P15.T3).
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+
+    const trigger = screen.getAllByRole('button', { name: 'Search' })[0];
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(screen.queryByRole('link', { name: 'Search' })).toBeNull();
+    expect(screen.getByLabelText('Search films').tagName).toBe('DIALOG');
   });
 
   it('shows the account menu when signed in', () => {

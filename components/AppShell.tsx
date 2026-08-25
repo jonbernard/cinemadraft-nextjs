@@ -10,6 +10,7 @@ import { MoreSheet } from './MoreSheet';
 import { NavRail } from './NavRail';
 import { NotificationBell, type NotificationItem } from './NotificationBell';
 import { Panel } from './Panel';
+import { SearchOverlay } from './SearchOverlay';
 import { TabBar } from './TabBar';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -54,12 +55,39 @@ export function AppShell({
   // the second instance of a component, and `aria-controls` has to point at
   // the right one.
   const moreId = useId();
+  const searchId = useId();
   const sheet = useRef<HTMLDialogElement>(null);
+  const search = useRef<HTMLDialogElement>(null);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const openMore = useCallback(() => {
     sheet.current?.showModal();
     setIsMoreOpen(true);
+  }, []);
+
+  const openSearch = useCallback(() => {
+    // The sheet and the panel are both modal dialogs, and two open at once
+    // leaves the reader trapped behind the wrong one.
+    sheet.current?.close();
+    search.current?.showModal();
+  }, []);
+
+  // `/` and ⌘K, the two shortcuts every reader already tries. Ignored while a
+  // field has focus, or `/` would be swallowed mid-title on every form in the app.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target?.isContentEditable ||
+        ['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName ?? '');
+      const isSlash = event.key === '/' && !typing;
+      const isCommandK = event.key === 'k' && (event.metaKey || event.ctrlKey);
+      if (!isSlash && !isCommandK) return;
+      event.preventDefault();
+      search.current?.showModal();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, []);
 
   // `close` also fires for Escape and for the backdrop, so the trigger's
@@ -78,6 +106,7 @@ export function AppShell({
   // biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the trigger, not a value read here
   useEffect(() => {
     sheet.current?.close();
+    search.current?.close();
   }, [pathname]);
 
   return (
@@ -92,6 +121,8 @@ export function AppShell({
           isAdmin={isAdmin}
           notifications={notifications}
           unreadCount={unreadCount}
+          onSearch={openSearch}
+          searchId={searchId}
         />
         {/* Bottom padding below `xl` reserves room for the fixed tab bar
             (44px targets plus the safe-area inset), or the last row of every
@@ -119,7 +150,10 @@ export function AppShell({
         isAdmin={isAdmin}
         notifications={notifications}
         unreadCount={unreadCount}
+        onSearch={openSearch}
+        searchId={searchId}
       />
+      <SearchOverlay id={searchId} ref={search} />
     </div>
   );
 }
@@ -137,21 +171,30 @@ function Strip({
   isAdmin,
   notifications,
   unreadCount,
+  onSearch,
+  searchId,
 }: {
   isSignedIn: boolean;
   isAdmin: boolean;
   notifications: NotificationItem[];
   unreadCount: number;
+  onSearch: () => void;
+  searchId: string;
 }) {
   return (
     <div className="hidden h-[52px] shrink-0 items-center gap-2 px-2 xl:flex">
-      <Link
-        href="/browse"
+      {/* Was a link to `/browse` — a release calendar ordered by date, which
+          cannot answer "where is *Sinners*". It opens the search panel now. */}
+      <button
+        type="button"
+        onClick={onSearch}
+        aria-haspopup="dialog"
+        aria-controls={searchId}
         className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center focus-visible:outline-2"
       >
         <SearchIcon />
         <span className="sr-only">Search</span>
-      </Link>
+      </button>
 
       <Link
         href="/leagues/new"

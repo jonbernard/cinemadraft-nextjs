@@ -1060,7 +1060,7 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [ ] P15.T0 — renumber the plan, record D79–D82
 - [x] P15.T1 — leaderboard: top 10 + "Show 10 more", and the mobile layout (D79)
 - [x] P15.T2 — `SeasonStepper`: a box per show phase, anchored to the end (D81)
-- [ ] P15.T3 — global search panel
+- [x] P15.T3 — global search panel
 - [ ] P15.T4 — Clerk combined sign-in-or-up flow, and the login copy
 - [ ] P15.T5 — brand mark, icons, favicon (records D83)
 - [ ] P15.T6 — SEO: metadata, canonicals, robots, sitemap, OG images, JSON-LD
