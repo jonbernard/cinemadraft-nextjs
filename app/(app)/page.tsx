@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { PosterFrame } from '@/components/PosterFrame';
 import { RosterStrip } from '@/components/RosterStrip';
-import { SeasonRail } from '@/components/SeasonRail';
+import { SeasonStepper } from '@/components/SeasonStepper';
 import { SectionHead } from '@/components/SectionHead';
 import { Shelf } from '@/components/Shelf';
 import { StandingsPanel } from '@/components/StandingsPanel';
@@ -56,8 +56,13 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
     getLeaderboard(year),
   ]);
 
-  const shows = view.events.length;
-  const complete = view.events.filter((event) => event.complete).length;
+  // `view.events` is one entry per show *phase* (D81), so the eyebrow counts
+  // shows through their ids and calls a show complete once its ceremony has
+  // passed — otherwise a season would report twice as many "shows" as it has.
+  const shows = new Set(view.events.map((phase) => phase.eventId)).size;
+  const complete = view.events.filter(
+    (phase) => phase.phase === 'ceremony' && phase.complete,
+  ).length;
 
   return (
     <div className="text-text-primary mx-auto flex max-w-6xl flex-col gap-10">
@@ -75,7 +80,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
 
         {/* Renders nothing when the season has no shows yet, so the heading
             above it is unconditional and the page always has an h1. */}
-        <SeasonRail events={view.events} />
+        <SeasonStepper phases={view.events} />
       </section>
 
       <NowPlayingShelf films={view.nowPlaying} />
@@ -245,7 +250,7 @@ function standingLabel(league: DashboardView['leagues'][number]): string {
  * team" is answered anywhere else in the product.
  *
  * "Upcoming deadlines" and "the leagues you are in" were the plan's other two
- * candidates and are deliberately absent: `SeasonRail` at the top of this page
+ * candidates and are deliberately absent: `SeasonStepper` at the top of this page
  * already renders every show date-sorted with a countdown on the next one, and
  * every league is rendered above in full. A shelf of either would be the same
  * content twice.

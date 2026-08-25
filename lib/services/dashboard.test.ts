@@ -119,6 +119,27 @@ describe('getDashboard', () => {
     }
   });
 
+  it('emits one entry per show phase, in date order', async () => {
+    const view = await getDashboard(null);
+    const oscars = view.events.filter((phase) => phase.abbreviation === 'oscars');
+
+    expect(oscars.map((phase) => phase.phase)).toEqual(['nominations', 'ceremony']);
+    expect(oscars[0]?.key).toBe(`${oscars[0]?.eventId}-nominations`);
+    // Nominations always precede their own ceremony.
+    expect(oscars[0]?.date ?? 0).toBeLessThan(oscars[1]?.date ?? 0);
+  });
+
+  it('keeps an undated phase rather than dating it 1970', async () => {
+    const view = await getDashboard(null);
+    const undated = view.events.filter((phase) => phase.date == null);
+
+    // Undated phases are kept and sorted last — a show with no announced
+    // nominations date is a real state, and hiding it makes the season look
+    // shorter than it is.
+    for (const phase of undated) expect(phase.complete).toBe(false);
+    if (undated.length > 0) expect(view.events.at(-1)?.date).toBeNull();
+  });
+
   it('sorts events by date, with unscheduled shows last', async () => {
     const view = await getDashboard(await aMemberOfLeague1());
     const dated = view.events

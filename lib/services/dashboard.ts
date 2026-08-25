@@ -29,7 +29,7 @@ export type RosterEntry = {
    * apart and monotonic in `order` — which is why `round` still orders the
    * roster strip and this exists only for the cross-league shelves.
    *
-   * Epoch milliseconds rather than a `Date`, matching `SeasonEvent.date`: the
+   * Epoch milliseconds rather than a `Date`, matching `SeasonPhase.date`: the
    * dashboard's DTOs cross the RSC boundary and this file normalizes every
    * temporal column the same way.
    *
@@ -59,15 +59,19 @@ export type LeagueView = {
   position: number | null;
 };
 
-export type SeasonEvent = {
-  id: number;
+export type SeasonPhase = {
+  /** `${eventId}-nominations` / `${eventId}-ceremony` — unique per box, stable across renders. */
+  key: string;
+  eventId: number;
+  phase: 'nominations' | 'ceremony';
   name: string | null;
   abbreviation: string | null;
   /**
    * Epoch milliseconds, not a Date. The events repository normalizes six
    * bigint schedule columns this way — the underlying columns store
    * milliseconds, and a bigint DTO would throw on JSON.stringify the first
-   * time it crossed the RSC boundary.
+   * time it crossed the RSC boundary. `null` means the phase is not
+   * scheduled yet.
    */
   date: number | null;
   complete: boolean;
@@ -83,7 +87,7 @@ export type NowPlayingFilm = {
 export type DashboardView = {
   year: number;
   leagues: LeagueView[];
-  events: SeasonEvent[];
+  events: SeasonPhase[];
   /**
    * Empty rather than an error when TMDB is unconfigured or unreachable —
    * `getNowPlaying` absorbs both into an empty list, and the dashboard is a
@@ -147,18 +151,41 @@ export async function getDashboard(userId: number | null): Promise<DashboardView
     // page — they may be mid-draft, or the season may not have started.
     leagues: leagues.filter((league) => league !== null),
     events: events
-      .map((event) => ({
-        id: event.id,
-        name: event.name,
-        abbreviation: event.abbreviation,
-        date: event.awardsDate,
-        // "Complete" means the ceremony has happened, which is a date
-        // comparison rather than a flag — `awardsActive` marks the live
-        // broadcast window, not whether the show is over.
-        complete: event.awardsDate != null && event.awardsDate < Date.now(),
-      }))
-      // Undated shows sort last rather than to 1970: a missing date means the
-      // ceremony is not scheduled yet, which is the far future, not the past.
+      .flatMap((event) => {
+        // One box per scoring moment, not one per show. `nom_date` and
+        // `awards_date` are separate columns; emitting only the second is why
+        // the dashboard never showed a nominations date, though nominations
+        // are half of what scores.
+        //
+        // `complete` is a date comparison, per phase. `nomActive` /
+        // `awardsActive` mark the live broadcast window, not whether the
+        // moment has passed, and using them here would light up "complete" for
+        // a ceremony that is on air right now.
+        const now = Date.now();
+        const shared = {
+          eventId: event.id,
+          name: event.name,
+          abbreviation: event.abbreviation,
+        };
+        return [
+          {
+            ...shared,
+            key: `${event.id}-nominations`,
+            phase: 'nominations' as const,
+            date: event.nomDate,
+            complete: event.nomDate != null && event.nomDate < now,
+          },
+          {
+            ...shared,
+            key: `${event.id}-ceremony`,
+            phase: 'ceremony' as const,
+            date: event.awardsDate,
+            complete: event.awardsDate != null && event.awardsDate < now,
+          },
+        ];
+      })
+      // Undated phases sort last rather than to 1970: a missing date means the
+      // moment is not scheduled yet, which is the far future, not the past.
       .sort(
         (a, b) =>
           (a.date ?? Number.POSITIVE_INFINITY) - (b.date ?? Number.POSITIVE_INFINITY),
