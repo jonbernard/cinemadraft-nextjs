@@ -12,5 +12,10 @@ import { defineConfig } from 'prisma/config';
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: { path: 'prisma/migrations' },
-  datasource: { url: process.env.DATABASE_URL },
+  // 🔴 `DIRECT_URL` first, `DATABASE_URL` second. Migrations take a Postgres
+  // advisory lock and issue DDL, neither of which survives a PgBouncer pool in
+  // transaction mode — which is exactly what Neon's `-pooler` host is. The
+  // running app wants the pooled URL; the CLI wants the direct one. Where only
+  // one is set (local Docker, a developer's shell) this is the same string.
+  datasource: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL },
 });

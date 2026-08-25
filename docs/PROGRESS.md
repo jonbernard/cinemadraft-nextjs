@@ -1071,6 +1071,31 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [ ] P15.T11 — E2E: the league lifecycle, nominations, winners, points
 - [ ] P15.T12 — group randomisation ceremony
 
+### Phase 15 notes
+
+- 🔴 **Nothing ever ran migrations on Vercel.** The build command was a plain
+  `next build`, there is no `vercel.json`, and no deploy step called Prisma —
+  so the Neon Preview branch had only the two migrations someone applied by
+  hand (`0_init`, `20260814130000_app_columns`). The two after them
+  (`20260815160000_movie_title_search`, `20260816120000_nominations_year_integer`)
+  had never run there: no `pg_trgm`, no `movies_title_trgm` index, and
+  `nominations.year` still the wrong type. That is why the search panel 500s on
+  `next.cinemadraft.com` with `function word_similarity(unknown, text) does not
+  exist` while it works against local Docker — the defect predates P15.T3,
+  which only made the failing query reachable from every page instead of the
+  draft console alone.
+
+  Fixed by a `vercel-build` script — `prisma migrate deploy && next build` —
+  which Vercel prefers over `build`, so every deploy that carries a new
+  migration applies it before the app boots. `npm run build` locally is
+  unchanged and still touches no database. `prisma.config.ts` now prefers
+  `DIRECT_URL` over `DATABASE_URL`: migrations take an advisory lock and issue
+  DDL, and neither survives Neon's `-pooler` host.
+
+  🔴 **Owner:** set `DIRECT_URL` in Vercel (Preview and Production) to the
+  non-pooled Neon connection string before the next deploy, or the build step
+  runs against the pooler and may hang on the lock.
+
 ---
 
 ## Phase 12 — Parallel run
