@@ -1,6 +1,8 @@
 import { SignIn } from '@clerk/nextjs';
+import type { Metadata } from 'next';
 
 import { SectionHead } from '@/components/SectionHead';
+import { NOINDEX } from '@/lib/seo';
 
 /**
  * Logging in, for members who have already claimed their account.
@@ -18,6 +20,12 @@ import { SectionHead } from '@/components/SectionHead';
  * component is still called `SignIn`; that is its API, not our vocabulary, and
  * its visible strings are overridden in `app/providers.tsx`.
  */
+export const metadata: Metadata = {
+  // A sign-in form is not a search result anybody wants (P15.T6).
+  robots: NOINDEX,
+  title: 'Log in',
+};
+
 export default function LoginPage() {
   return (
     <div className="flex w-full flex-col gap-6">

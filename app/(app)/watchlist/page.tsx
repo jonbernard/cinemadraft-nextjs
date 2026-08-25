@@ -11,6 +11,7 @@ import { SeenMeter } from '@/components/SeenMeter';
 import { StatusChip } from '@/components/StatusChip';
 import { WatchedToggle } from '@/components/WatchedToggle';
 import { requireUser } from '@/lib/auth';
+import { NOINDEX } from '@/lib/seo';
 import { getActiveYear } from '@/lib/services/season';
 import {
   type LeagueProgress,
@@ -47,6 +48,9 @@ import { formatReleaseDate } from '@/lib/utils/format';
  */
 
 export const metadata: Metadata = {
+  // One member's private page. Public routes are the proxy's call (D44); this
+  // only keeps the page out of search results.
+  robots: NOINDEX,
   title: 'Watchlist',
   description: 'The films you have seen, and how much of the season is left.',
 };

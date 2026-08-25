@@ -65,7 +65,10 @@
               "runtime",
               "preferredRegion",
               "maxDuration",
-              "experimental_ppr"
+              "experimental_ppr",
+              "alt",
+              "size",
+              "contentType"
             ]
           }
         }
@@ -95,6 +98,16 @@
         "rules": {
           "suspicious": {
             "noConsole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["app/**/opengraph-image.tsx", "app/**/twitter-image.tsx"],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noImgElement": "off"
           }
         }
       }

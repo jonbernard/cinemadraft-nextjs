@@ -18,6 +18,7 @@ import { TrailerReel } from '@/components/TrailerReel';
 import { WatchedToggle } from '@/components/WatchedToggle';
 import { YourReview } from '@/components/YourReview';
 import { getCurrentUser } from '@/lib/auth';
+import { canonical } from '@/lib/seo';
 import { type FilmPage, isFilmWatched, loadFilmPage } from '@/lib/services/film';
 import { loadMyReview } from '@/lib/services/reviews';
 import { formatMoney, formatReleaseDate, formatRuntime } from '@/lib/utils/format';
@@ -70,10 +71,17 @@ export async function generateMetadata({
   return {
     title: `${film.title}${year}`,
     description,
+    // The app's most-shared URL, and the one most likely to be found by
+    // search — so it is the one that most needs a stable canonical (P15.T6).
+    alternates: { canonical: canonical(`/films/${id}`) },
     openGraph: {
       title: `${film.title}${year}`,
       description,
-      images: film.backdropUrl ? [film.backdropUrl] : undefined,
+      // 🔴 No `images` here on purpose. An explicit list overrides the
+      // `opengraph-image.tsx` beside this file, and that card carries the
+      // poster, the title and the mark — a bare TMDB backdrop carries none of
+      // them and is indistinguishable from any other site's share of the same
+      // still (P15.T6).
     },
   };
 }

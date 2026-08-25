@@ -8,6 +8,7 @@ import { SectionHead } from '@/components/SectionHead';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import type { BrowseWhen } from '@/lib/external/tmdb-discover';
+import { canonical } from '@/lib/seo';
 import { loadBrowse } from '@/lib/services/browse';
 import { cn } from '@/lib/utils/cn';
 
@@ -28,6 +29,9 @@ import { cn } from '@/lib/utils/cn';
 export const metadata: Metadata = {
   title: 'Browse',
   description: 'Films in and out of cinemas, month by month.',
+  // Query-free on purpose: `?when=` and `?page=` are the same document from a
+  // different angle, and one canonical keeps them from competing (P15.T6).
+  alternates: { canonical: canonical('/browse') },
 };
 
 /**

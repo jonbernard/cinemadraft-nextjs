@@ -1,6 +1,8 @@
 import { SignUp } from '@clerk/nextjs';
+import type { Metadata } from 'next';
 
 import { SectionHead } from '@/components/SectionHead';
+import { NOINDEX } from '@/lib/seo';
 
 /**
  * 🔴 The most important copy in the migration.
@@ -19,6 +21,12 @@ import { SectionHead } from '@/components/SectionHead';
  * "log out" (D61) — mixing *sign* and *log* across three adjacent actions is
  * exactly the inconsistency that makes an interface feel assembled from parts.
  */
+export const metadata: Metadata = {
+  // A sign-in form is not a search result anybody wants (P15.T6).
+  robots: NOINDEX,
+  title: 'Register',
+};
+
 export default function RegisterPage() {
   return (
     <div className="flex w-full flex-col gap-6">

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -8,6 +9,7 @@ import { StandingsPanel } from '@/components/StandingsPanel';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
+import { NOINDEX } from '@/lib/seo';
 import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
 import { canManageLeague } from '@/lib/services/league-access';
 import { getActiveYear } from '@/lib/services/season';
@@ -43,6 +45,31 @@ async function inviteBase(): Promise<string> {
  * the owner runs the call (D49). `DraftBoard` carries that: stacked seats on a
  * phone, the aligned grid on a desktop.
  */
+/**
+ * A league's name in the tab, and out of the index (P15.T6).
+ *
+ * 🔴 `NOINDEX` is not a guard. The page is public on purpose — the link people
+ * paste into a group chat has to open for whoever taps it (D44/D45) — but a
+ * private league's board has no business in a stranger's search results.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const leagueId = Number(id);
+  if (!Number.isSafeInteger(leagueId) || leagueId <= 0)
+    return { title: 'Not here', robots: NOINDEX };
+
+  try {
+    const board = await getLeagueBoard(leagueId, await getActiveYear());
+    return { title: board.leagueName ?? `League ${leagueId}`, robots: NOINDEX };
+  } catch {
+    return { title: 'Not here', robots: NOINDEX };
+  }
+}
+
 export default async function LeaguePage({
   params,
   searchParams,

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -14,6 +15,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { eventRepository } from '@/lib/repositories/events';
 import { pointRepository } from '@/lib/repositories/points';
+import { canonical } from '@/lib/seo';
 import { getAwardShow } from '@/lib/services/award-show';
 import { getActiveYear, getSeasons } from '@/lib/services/season';
 
@@ -30,6 +32,37 @@ import { getActiveYear, getSeasons } from '@/lib/services/season';
  * confident wrong number in front of every reader, and this is the page they
  * would check it on.
  */
+/**
+ * The show's own name in the tab and in a shared link (P15.T6).
+ *
+ * Resolved through `getAwardShow` rather than the abbreviation, because
+ * "oscars" is a URL and "Academy Awards" is what the page is about. A season
+ * that does not exist answers the same "Not here" the page itself renders,
+ * rather than leaking the abbreviation into a title.
+ */
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProps<'/award-shows/[abbr]'>): Promise<Metadata> {
+  const { abbr } = await params;
+  const { year } = await searchParams;
+  const requested = Number(year);
+  const season =
+    Number.isSafeInteger(requested) && requested > 0 ? requested : await getActiveYear();
+
+  try {
+    const show = await getAwardShow(abbr, season);
+    const name = show.name;
+    return {
+      title: `${name} ${season}`,
+      description: `Every category at the ${name} for the ${season} season, what each is worth, and who is nominated.`,
+      alternates: { canonical: canonical(`/award-shows/${abbr}`) },
+    };
+  } catch {
+    return { title: 'Not here' };
+  }
+}
+
 export default async function AwardShowPage({
   params,
   searchParams,

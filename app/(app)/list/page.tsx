@@ -9,10 +9,14 @@ import { DraftListEditor, type DraftListStatus } from '@/components/DraftListEdi
 import { Panel } from '@/components/Panel';
 import { SectionHead } from '@/components/SectionHead';
 import { requireUser } from '@/lib/auth';
+import { NOINDEX } from '@/lib/seo';
 import { getDraftList } from '@/lib/services/draft-list';
 import { getActiveYear } from '@/lib/services/season';
 
 export const metadata: Metadata = {
+  // One member's private page. Public routes are the proxy's call (D44); this
+  // only keeps the page out of search results.
+  robots: NOINDEX,
   title: 'Draft list',
   description: 'Your private ranked shortlist for the next draft.',
 };

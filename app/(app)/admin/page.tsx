@@ -1,8 +1,10 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { Panel } from '@/components/Panel';
 import { SectionHead } from '@/components/SectionHead';
 import { requireAdmin } from '@/lib/auth';
+import { NOINDEX } from '@/lib/seo';
 
 /**
  * Where the admin-only controls are reachable from (D22).
@@ -12,6 +14,13 @@ import { requireAdmin } from '@/lib/auth';
  * them — a row is closed when a person can do the thing, not when the action
  * exists (D53).
  */
+export const metadata: Metadata = {
+  // Nothing behind this page is for a stranger, and the proxy already answers
+  // for it (D44). This only keeps it out of search results.
+  robots: NOINDEX,
+  title: 'Admin',
+};
+
 export default async function AdminPage() {
   await requireAdmin();
 

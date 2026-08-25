@@ -68,6 +68,14 @@ const isPublic = createRouteMatcher([
   // Protecting it would bounce them to a login page that cannot say what they
   // were invited to.
   '/join/(.*)',
+  // 🔴 Crawler and scraper endpoints, which are useless behind a redirect: a
+  // bot asking for robots.txt or a sitemap gets a 307 to the login page, and a
+  // scraper building a link preview gets one for the share card. All three are
+  // generated from public data only (P15.T6) — the sitemap lists nothing that
+  // is not already in this list, and its own test asserts that.
+  '/robots.txt',
+  '/sitemap.xml',
+  '/opengraph-image',
 ]);
 
 export default clerkMiddleware(

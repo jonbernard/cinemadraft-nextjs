@@ -109,6 +109,28 @@ export const movieRepository = {
     });
   },
 
+  /**
+   * Every film the app holds that has a TMDB id, for `app/sitemap.ts`.
+   *
+   * Ordered by id so the file is stable between builds — a sitemap that
+   * reshuffles on every deploy tells a crawler the whole catalogue changed.
+   * Rows with no `tmdbId` are excluded because `/films/[tmdbId]` is the only
+   * public film URL and there is nothing to link to without one.
+   */
+  async listForSitemap(
+    limit: number,
+  ): Promise<{ tmdbId: string; updatedAt: Date | null }[]> {
+    const rows = await db.movie.findMany({
+      where: { tmdbId: { not: null } },
+      select: { tmdbId: true, updatedAt: true },
+      orderBy: { id: 'asc' },
+      take: limit,
+    });
+    return rows.flatMap((row) =>
+      row.tmdbId == null ? [] : [{ tmdbId: row.tmdbId, updatedAt: row.updatedAt }],
+    );
+  },
+
   /** Local-first title search, ordered for display (D20). */
   async search(query: string, limit = 20): Promise<Movie[]> {
     return db.movie.findMany({
