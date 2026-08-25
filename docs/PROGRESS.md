@@ -1051,6 +1051,28 @@ unseeded) passes 1061/1061; `npm run verify` is all green.
   credential past that point is exposure with no purpose — remove it from
   `.env.local` and revoke it in the Vercel dashboard.
 
+## Phase 15 — Pre-cutover polish
+
+🔴 **Runs here, before Phase 12, despite its number** — see `docs/PLAN.md`.
+Design: `docs/superpowers/specs/2026-08-24-phase-15-pre-cutover-polish-design.md`.
+Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
+
+- [ ] P15.T0 — renumber the plan, record D79–D82
+- [ ] P15.T1 — leaderboard: top 10 + "Show 10 more", and the mobile layout (D79)
+- [ ] P15.T2 — `SeasonStepper`: a box per show phase, anchored to the end (D81)
+- [ ] P15.T3 — global search panel
+- [ ] P15.T4 — Clerk combined sign-in-or-up flow, and the login copy
+- [ ] P15.T5 — brand mark, icons, favicon (records D83)
+- [ ] P15.T6 — SEO: metadata, canonicals, robots, sitemap, OG images, JSON-LD
+- [ ] P15.T7 — `/browse` auto-append (D80)
+- [ ] P15.T8 — `/browse` header photo
+- [ ] P15.T9 — the discover query: future returns pre-release films only, and the quality floors move server-side
+- [ ] P15.T10 — 🔴 test-only auth cookie (D82) — security-bearing, reviewer pass
+- [ ] P15.T11 — E2E: the league lifecycle, nominations, winners, points
+- [ ] P15.T12 — group randomisation ceremony
+
+---
+
 ## Phase 12 — Parallel run
 
 - [ ] P12 not started
@@ -1076,9 +1098,9 @@ unseeded) passes 1061/1061; `npm run verify` is all green.
 
 - [ ] P14 not started
 
-## Phase 15 — New features
+## Phase 16 — New features
 
-- [ ] P15 not started
+- [ ] P16 not started
 
 ---
 
@@ -1087,7 +1109,7 @@ unseeded) passes 1061/1061; `npm run verify` is all green.
 - **`NEXT_PUBLIC_ACTIVE_YEAR` still set in Vercel.** Delete it once P5.T0 ships the database-backed read path (D22). It was last touched 510 days ago — this is the variable that forces an annual rebuild.
 - **Neon injected unused auth variables.** `NEON_AUTH_BASE_URL` and `VITE_NEON_AUTH_URL` are Neon Auth (Stack Auth), which this project does not use — auth is Clerk (D7). Delete them so no one later infers a second auth system. The `VITE_` prefix is also wrong for a Next app.
 - **`BLOB_WEBHOOK_PUBLIC_KEY` is not set in Development**, only Production/Preview. Only matters if Blob webhooks are handled locally; Phase 11 already routes around the OIDC environment constraint.
-- **Clerk keys are Development instance (`pk_test_`) in all environments.** Correct for the build — the Production instance needs a verified domain. At release, create it, swap Production to `pk_live_`/`sk_live_`, and recreate the webhook (endpoints and signing secrets are per-instance).
+- **Clerk keys are Development instance (`pk_test_`) in all environments.** This is also the source of the `Development mode` banner on the hosted sign-in card — expected, not a defect, and it goes when the keys swap. Correct for the build — the Production instance needs a verified domain. At release, create it, swap Production to `pk_live_`/`sk_live_`, and recreate the webhook (endpoints and signing secrets are per-instance).
 - **Realtime transport undecided** — deferred to phase 14 by D23. Not on the cutover path.
 - **Logo mark undecided.** Wordmark-only until resolved. See `docs/DECISIONS.md` → Still open.
 - **The desktop `DraftBoard` compresses instead of scrolling.** A 10-seat board

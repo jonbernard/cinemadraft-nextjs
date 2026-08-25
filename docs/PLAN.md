@@ -413,7 +413,44 @@ Replaces the polling fallback (D13).
 
 ---
 
-### Phase 15 — New features
+### Phase 15 — Pre-cutover polish
+
+🔴 **This phase runs before Phase 12, despite its number.** Everything in it
+was found by the owner using `next.cinemadraft.com`, or is release work a live
+site needs and a port did not. The number is 15 because phase numbers are
+referenced from `PROGRESS.md`, `PARITY.md` and a year of commit messages, and
+renumbering 12–14 to make room would invalidate every one of them. The old
+Phase 15 moved to Phase 16 unchanged.
+
+Design: `docs/superpowers/specs/2026-08-24-phase-15-pre-cutover-polish-design.md`.
+
+🔴 **Clerk stays split.** P13.T1 still owns creating the Production instance
+and swapping `pk_live_`/`sk_live_` — that needs a verified apex domain, which
+does not exist yet. T4 below owns only the sign-in flow defect, which is
+reproducible today on the Development instance.
+
+- T0: Renumber the plan — this phase, old 15 → 16, `PROGRESS.md` rows, D79–D82 in `DECISIONS.md`
+- T1: Leaderboard — top 10 with "Show 10 more", and the mobile layout (Film + Total below `lg`, year nav beneath the heading) (D79)
+- T2: `SeasonRail` → `SeasonStepper` — a box per show *phase* from `nom_date` and `awards_date`, anchored to the end, `‹`/`›` stepping three (D81)
+- T3: Global search panel — a `<dialog>` overlay over `FilmSearch`, poster-first top results, `/` and `⌘K`, replacing the search icon's link to `/browse`
+- T4: Clerk — enable the combined sign-in-or-up flow so an unknown email transitions into registration, and rewrite the login copy
+- T5: Brand mark — three SVG options, owner picks, then `app/icon.svg`, apple icon, favicon, and the `NavRail` lockup (closes the open item; records D83)
+- T6: SEO — `metadataBase`, title template, per-route `generateMetadata`, canonicals, `robots.ts`, `sitemap.ts`, `next/og` OG images, `Movie` JSON-LD
+- T7: `/browse` auto-appends pages; the "Show more" link is dropped, a `<noscript>` next-page link stays (D80)
+- T8: `/browse` header photo — a TMDB backdrop hero band with a gradient scrim
+- T9: `/browse` discover query — `?when=future` returns pre-release films only (`primary_release_date`), plus quality floors moved into the query: `with_runtime.gte=40`, `with_release_type=2|3`, and a per-side popularity floor (10 back, 25 forward)
+- T10: 🔴 Test-only auth — a signed cookie behind `E2E_TEST_AUTH=1` and `NODE_ENV !== 'production'` (D82). **Security-bearing; gets its own reviewer pass**
+- T11: E2E — create league, seats, dummies, order and groups, start draft, search and pick, snake order, finalize, nominations, winners, points landing
+- T12: Group randomisation ceremony — full-screen takeover, shuffle reel, staggered group reveal, confetti, skippable, with an instant path under `prefers-reduced-motion`
+
+**Gate:** every defect above verified fixed in a browser at 1440px and 390px in
+both schemes; `npm run verify` green; the new E2E specs green in CI.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+
+---
+
+### Phase 16 — New features
 
 
 > **Possible future enhancement, not planned work:** a self-service timed draft (clock, on-the-clock cell, per-turn deadline). The owner confirmed that entering picks during a video call is the intended workflow (D46), so this would be a change in how the product works, not a gap to close. Only build it if the owner asks.

@@ -204,6 +204,30 @@ queries `primary_release_date.gte` and sorts `primary_release_date.asc`, plus a
 defensive drop in `toFilm` of any film whose parsed date is before today.
 Covered by a fixture test built from a real response containing a re-release.
 
+The same task tunes the query's **quality floors**, since it is already
+rewriting this function. The owner's separate report — "The future" surfaces
+micro-budget titles with no chance of a wide release — has four causes worth
+fixing and one tempting fix that is a trap:
+
+- The future side's only quality signal is `POPULARITY_FLOOR = 10`, which sits
+  *inside* the band of films nobody will distribute (5–15) while real upcoming
+  theatrical titles run 50–500. The floor becomes per side: 10 back, 25 forward.
+- `with_runtime.gte=40` on both sides removes shorts and catalogue filler.
+- 🔴 **The floors move into the query.** Today posterless and unpopular results
+  are dropped in `toFilm`, *after* TMDB paginates, so a page of 20 can render
+  six films while the counter says `3/500` — and with §7's auto-append, a
+  six-film page fires the sentinel again immediately. TMDB has no
+  `popularity.gte`, so that one drop stays client-side; runtime and the vote
+  floors move up.
+- `with_release_type=2|3` rather than `3` alone: awards contenders open in
+  qualifying limited runs, which a wide-only query misses or mis-dates.
+
+**Not done:** `with_original_language=en` would end the problem and also end
+*Parasite* and *Drive My Car*; `without_genres=99` would drop documentaries,
+which get nominated. Raising the past side's `vote_count.gte` from 200 to ~400
+is left as a recorded open question — it would also thin out good
+foreign-language releases.
+
 ---
 
 ## 8. End-to-end coverage (T10, T11)
