@@ -25,6 +25,7 @@ export function SectionHead({
   as: Tag = 'h2',
   name = false,
   right,
+  rightStacksOnMobile = false,
   className,
 }: {
   eyebrow?: ReactNode;
@@ -32,10 +33,28 @@ export function SectionHead({
   as?: 'h1' | 'h2' | 'h3' | 'h4';
   name?: boolean;
   right?: ReactNode;
+  /**
+   * Drops the right slot beneath the heading below `sm`.
+   *
+   * The default row layout assumes the right slot is a short count. A wide one
+   * — the season's year links — renders over a heading that has wrapped to two
+   * lines on a phone, which is the defect D79 records. Opt-in rather than
+   * automatic: a mono count on the right *is* the design at every width, and
+   * stacking it would cost every section its scannable right edge.
+   */
+  rightStacksOnMobile?: boolean;
   className?: string;
 }) {
   return (
-    <div className={cn('flex items-end justify-between gap-4 pb-3', className)}>
+    <div
+      className={cn(
+        'flex gap-4 pb-3',
+        rightStacksOnMobile
+          ? 'flex-col items-start sm:flex-row sm:items-end sm:justify-between'
+          : 'items-end justify-between',
+        className,
+      )}
+    >
       <div className="min-w-0">
         {eyebrow ? <Eyebrow className="mb-1">{eyebrow}</Eyebrow> : null}
         <Tag
@@ -50,7 +69,14 @@ export function SectionHead({
         </Tag>
       </div>
       {right ? (
-        <div className="text-text-dim font-mono tabular shrink-0 text-sm">{right}</div>
+        <div
+          className={cn(
+            'text-text-dim font-mono tabular text-sm',
+            rightStacksOnMobile ? 'sm:shrink-0' : 'shrink-0',
+          )}
+        >
+          {right}
+        </div>
       ) : null}
     </div>
   );

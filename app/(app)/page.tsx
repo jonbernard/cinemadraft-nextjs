@@ -84,6 +84,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
         <SectionHead
           as="h2"
           eyebrow="By award show"
+          rightStacksOnMobile
           right={
             seasons.length > 1 ? (
               <nav aria-label="Season" className="flex flex-wrap gap-3 text-sm">

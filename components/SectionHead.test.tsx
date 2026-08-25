@@ -31,4 +31,16 @@ describe('SectionHead', () => {
     render(<SectionHead>Roster</SectionHead>);
     expect(screen.getByRole('heading')).not.toHaveClass('uppercase');
   });
+  it('stacks the right slot beneath the heading when asked', () => {
+    const { container } = render(
+      <SectionHead right={<span>2026</span>} rightStacksOnMobile>
+        Season leaderboard
+      </SectionHead>,
+    );
+
+    // Column below `sm`, row from `sm` up: the collision the owner hit at 390px
+    // is the row layout applying at every width.
+    expect(container.firstElementChild?.className).toContain('flex-col');
+    expect(container.firstElementChild?.className).toContain('sm:flex-row');
+  });
 });
