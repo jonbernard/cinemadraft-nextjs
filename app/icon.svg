@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Cinemadraft">
+  <!--
+    The Cinemadraft mark (P15.T5, D83): a reel whose ring is broken on the
+    right, so the same shape reads as a film reel and as the C of the name.
+
+    Two colours only, and no gradients or raster, so the file is legible at
+    16px and scales to any icon slot. The ink follows the browser chrome
+    rather than the app: a favicon sits on a surface this document does not
+    control, and a fixed dark ink disappears on a dark tab strip.
+  -->
+  <style>
+    .ring { stroke: #1a151f; }
+    .hub { fill: #9b2f3c; }
+    @media (prefers-color-scheme: dark) {
+      .ring { stroke: #efece9; }
+      .hub { fill: #c03d4e; }
+    }
+  </style>
+  <circle class="ring" cx="16" cy="16" r="10.8" fill="none" stroke-width="6.4"
+          stroke-dasharray="46.18 21.68" transform="rotate(57.5 16 16)"/>
+  <circle class="hub" cx="16" cy="16" r="4"/>
+</svg>

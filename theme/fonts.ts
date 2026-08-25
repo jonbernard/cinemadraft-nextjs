@@ -1,7 +1,13 @@
-import { Archivo, IBM_Plex_Mono, Instrument_Serif, Newsreader } from 'next/font/google';
+import {
+  Archivo,
+  IBM_Plex_Mono,
+  Instrument_Serif,
+  Newsreader,
+  Sora,
+} from 'next/font/google';
 
 /**
- * Four roles, four families (D70, D71).
+ * Four roles, four families (D70, D71), plus the wordmark's own face (D83).
  *
  * 🔴 Archivo no longer requests the `wdth` axis. The expanded display
  * treatment is retired: measured against ten reference products, big type in
@@ -56,10 +62,29 @@ export const plexMono = IBM_Plex_Mono({
   variable: '--font-plex-mono',
 });
 
-/** Applied to <html> so all four faces are reachable as custom properties. */
+/**
+ * The wordmark, and nothing else (D83).
+ *
+ * 🔴 Never use this for UI text. Sora and Archivo are both geometric-ish
+ * grotesques with different skeletons, and mixing them in running copy reads
+ * as a mistake rather than as a pairing — the lockup gets away with it because
+ * it is a fixed piece of art the eye reads as a logo, not as type. Only
+ * `components/Wordmark.tsx` may reference `--font-sora`.
+ *
+ * One weight is requested, because the lockup only ever sets one.
+ */
+export const sora = Sora({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: '600',
+  variable: '--font-sora',
+});
+
+/** Applied to <html> so all five faces are reachable as custom properties. */
 export const fontVariables = [
   archivo.variable,
   instrumentSerif.variable,
   newsreader.variable,
   plexMono.variable,
+  sora.variable,
 ].join(' ');

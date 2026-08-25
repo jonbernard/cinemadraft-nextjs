@@ -68,6 +68,9 @@
   --font-sans: var(--font-archivo);
   --font-prose: var(--font-newsreader);
   --font-mono: var(--font-plex-mono);
+  /* The lockup only (D83). `components/Wordmark.tsx` is the sole consumer;
+   * see theme/fonts.ts for why it must not spread into UI text. */
+  --font-wordmark: var(--font-sora);
 }
 
 /* Every number in this product sits in a column — points, standings, dates,

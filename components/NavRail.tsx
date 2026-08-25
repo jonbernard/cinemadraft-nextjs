@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { type NavLink, PRIMARY_LINKS, YOURS_LINKS } from '@/lib/nav/links';
 import { cn } from '@/lib/utils/cn';
 import { Eyebrow } from './Eyebrow';
+import { Wordmark } from './Wordmark';
 
 /**
  * The desktop rail (D67).
@@ -51,9 +52,10 @@ export function NavRail({
     >
       <Link
         href="/"
-        className="font-serif text-text-primary focus-visible:outline-accent-fill px-2 py-1 text-xl tracking-[-0.02em] focus-visible:outline-2"
+        aria-label="Cinemadraft, home"
+        className="text-text-primary focus-visible:outline-accent-fill px-2 py-1 focus-visible:outline-2"
       >
-        Cinemadraft
+        <Wordmark size="sm" />
       </Link>
       <Group links={primary} pathname={pathname} />
       <Group links={yours} pathname={pathname} label="Yours" />
