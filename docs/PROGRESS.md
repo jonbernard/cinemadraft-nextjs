@@ -1065,20 +1065,42 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [x] P15.T5 — brand mark, icons, favicon (records D83)
 - [x] P15.T6 — SEO: metadata, canonicals, robots, sitemap, OG images, JSON-LD
 - [x] P15.T7 — `/browse` auto-append (D80) — _landed in `41405b0`, not its own commit; see the note below_
-- [ ] P15.T8 — `/browse` header photo
-- [ ] P15.T9 — the discover query: future returns pre-release films only, and the quality floors move server-side
+- [x] P15.T8 — `/browse` header photo
+- [x] P15.T9 — the discover query: future returns pre-release films only, and the quality floors move server-side
 - [ ] P15.T10 — 🔴 test-only auth cookie (D82) — security-bearing, reviewer pass
 - [ ] P15.T11 — E2E: the league lifecycle, nominations, winners, points
 - [ ] P15.T12 — group randomisation ceremony
 
 ### Phase 15 notes
 
-- 🔴 **`e2e/browse.spec.ts`'s "the months reverse when looking forward" is red,
-  and was red before T7.** `?when=future` returns no films at all — the page
-  renders "Nothing is scheduled for release yet." while the discover response
-  still reports 22 pages. Confirmed by re-running the page against a stashed
-  tree, so T7's auto-append did not cause it. **This is P15.T9's subject**; the
-  spec should go green as part of that task rather than being touched here.
+- ✅ **"The future" was empty, and T9 fixed it — but not the way the plan said.**
+  The plan's cause (re-releases matching `release_date.gte`) was real and is
+  fixed with `primary_release_date`. It was not why the page was empty. Measured
+  against the live API: sorting by date ascending returns *today's* long tail
+  first — on pages 1 and 3, **none** of the twenty films cleared any usable
+  quality floor, so every one was dropped client-side and the shelf rendered
+  "Nothing is scheduled" under a counter claiming 71 pages.
+
+  Two plan values were wrong against the current API and were changed on
+  evidence rather than followed:
+
+  - **Sort:** `popularity.desc`, not `primary_release_date.asc`. Ranking by date
+    is ranking by junk; the months are still ordered by date in the service, so
+    the page reads the same.
+  - **Future popularity floor: 5, not 25.** TMDB's popularity scale for
+    unreleased films is an order of magnitude below the plan's assumption — the
+    whole upcoming slate ran 236, 42, 42, 26, 26, 20, 18, … and was under 8 by
+    rank 21, with *Whalefall*, *Wildwood* and *Shaun the Sheep* sitting there. A
+    floor of 25 would have kept five films and cut real studio releases.
+
+  `e2e/browse.spec.ts`'s "months reverse when looking forward" is green again;
+  the whole browse suite is 10 of 10.
+
+  **No `fixtures/tmdb/` file was added**, against the plan's step. `fixtures/` is
+  a flat mirror that `scripts/scrub-fixtures.mjs` regenerates and would wipe a
+  hand-added subdirectory, and a TMDB discover response carries nothing to
+  scrub. The two-title re-release case is an inline mock in
+  `lib/external/tmdb-discover.test.ts` instead, which tests the same guard.
 
 - ⚠️ **Another agent session is committing in this working tree.** While T7 was
   in progress, `f441354 "adjust caching limits"` swept in `actions/browse/*`
@@ -1146,6 +1168,14 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 
 ## Open questions carried forward
 
+- **Raise the past side's `vote_count.gte` from 200 to ~400?** It would sharpen
+  "films anybody has heard of" and would also thin out genuinely good
+  foreign-language releases. Left at 200 rather than guessed at (P15.T9).
+- **The future shelf ends after about three pages.** Sorted by popularity with a
+  floor of 5, TMDB's 71 pages of upcoming titles yield 20 films, then 19, then 5,
+  then nothing (measured 2026-09-12). `BrowseList` now stops on the first empty
+  page, so this reads as a list that ends rather than a broken scroll — but if
+  the shelf should be longer, the floor is the knob, not the sort.
 - **`NEXT_PUBLIC_ACTIVE_YEAR` still set in Vercel.** Delete it once P5.T0 ships the database-backed read path (D22). It was last touched 510 days ago — this is the variable that forces an annual rebuild.
 - **Neon injected unused auth variables.** `NEON_AUTH_BASE_URL` and `VITE_NEON_AUTH_URL` are Neon Auth (Stack Auth), which this project does not use — auth is Clerk (D7). Delete them so no one later infers a second auth system. The `VITE_` prefix is also wrong for a Next app.
 - **`BLOB_WEBHOOK_PUBLIC_KEY` is not set in Development**, only Production/Preview. Only matters if Blob webhooks are handled locally; Phase 11 already routes around the OIDC environment constraint.

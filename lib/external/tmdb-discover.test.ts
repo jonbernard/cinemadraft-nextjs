@@ -58,17 +58,109 @@ describe('the past side', () => {
     expect(query.get('vote_average.gte')).toBe('4');
     expect(query.get('vote_count.gte')).toBe('200');
   });
+
+  it('keeps asking by any release date, which is right looking back', async () => {
+    // Only the future side moved to `primary_release_date` (P15.T9). Looking
+    // back, a re-release really did play in a cinema on that date, and the
+    // vote floors already keep the page to films anybody has heard of.
+    const fetchMock = mockDiscover(EMPTY);
+
+    await discoverFilms({ when: 'past', page: 1 });
+    const query = lastQuery(fetchMock);
+
+    expect(query.get('release_date.lte')).toBe(new Date().toISOString().slice(0, 10));
+    expect(query.has('primary_release_date.gte')).toBe(false);
+  });
 });
 
 describe('the future side', () => {
-  it('asks for unreleased films, soonest first', async () => {
+  it('🔴 asks TMDB for primary release dates, not any release date', async () => {
+    // With `with_release_type` set, `release_date.gte` matches *any* theatrical
+    // release — including a re-release. A 2006 film with a 2026 re-issue
+    // therefore landed on "The future" while its card rendered 2006, which is
+    // the bug reported from page 3 of the deployed site. The sort had the same
+    // fault: it ordered by a different date than the one displayed.
     const fetchMock = mockDiscover(EMPTY);
 
     await discoverFilms({ when: 'future', page: 1 });
     const query = lastQuery(fetchMock);
 
-    expect(query.get('sort_by')).toBe('release_date.asc');
-    expect(query.get('release_date.gte')).toBe(new Date().toISOString().slice(0, 10));
+    expect(query.get('primary_release_date.gte')).toBe(
+      new Date().toISOString().slice(0, 10),
+    );
+    expect(query.has('release_date.gte')).toBe(false);
+  });
+
+  it('🔴 asks for the most notable upcoming films, not the soonest', async () => {
+    // Measured against the live API on 2026-09-12: sorted by date, pages 1 and
+    // 3 held twenty films apiece of which none cleared any usable quality floor
+    // — on any given day the obscure releases outnumber the ones anybody will
+    // see, so "soonest first" is "junk first". That is why this page rendered
+    // "Nothing is scheduled" while the counter claimed 71 pages.
+    const fetchMock = mockDiscover(EMPTY);
+
+    await discoverFilms({ when: 'future', page: 1 });
+
+    expect(lastQuery(fetchMock).get('sort_by')).toBe('popularity.desc');
+  });
+
+  it('🔴 drops a film whose primary release is in the past, whatever TMDB says', async () => {
+    // Defensive, and cheap. TMDB's date semantics have moved before, and a film
+    // dated in the past has no business on a page titled "The future".
+    mockDiscover({
+      page: 1,
+      total_pages: 1,
+      results: [
+        {
+          id: 1,
+          title: 'A 2006 film re-issued this year',
+          poster_path: '/a.jpg',
+          popularity: 90,
+          release_date: '2006-07-14',
+        },
+        {
+          id: 2,
+          title: 'Actually unreleased',
+          poster_path: '/b.jpg',
+          popularity: 90,
+          release_date: '2027-01-08',
+        },
+      ],
+    });
+
+    const page = await discoverFilms({ when: 'future', page: 1 });
+
+    expect(page.films.map((film) => film.releaseDate?.getUTCFullYear())).toEqual([2027]);
+  });
+
+  it('🔴 holds unreleased films to a LOWER popularity floor than released ones', async () => {
+    // Backwards-looking at first glance, and measured rather than guessed.
+    // TMDB's popularity numbers for unreleased films are an order of magnitude
+    // below released ones — on 2026-09-12 the entire upcoming slate ran 236,
+    // 42, 42, 26, … and was under 8 by rank 21, with real studio releases
+    // sitting there. The future side's sort does the ranking now, so its floor
+    // only has to trim the 0.x noise; the past side still uses its floor to
+    // sweep up the unrated tail its vote floors let through.
+    const middling = (releaseDate: string) => ({
+      page: 1,
+      total_pages: 1,
+      results: [
+        {
+          id: 1,
+          title: 'Middling',
+          poster_path: '/a.jpg',
+          popularity: 8,
+          release_date: releaseDate,
+        },
+      ],
+    });
+
+    mockDiscover(middling('2027-01-01'));
+    expect((await discoverFilms({ when: 'future', page: 1 })).films).toHaveLength(1);
+
+    clearCacheForTests();
+    mockDiscover(middling('2001-01-01'));
+    expect((await discoverFilms({ when: 'past', page: 1 })).films).toHaveLength(0);
   });
 
   it('🔴 sends no vote floor at all', async () => {
@@ -100,7 +192,23 @@ describe('both sides', () => {
       const query = lastQuery(fetchMock);
 
       expect(query.get('region')).toBe('US');
-      expect(query.get('with_release_type')).toBe('3');
+      // 🔴 `2|3`, not `3`. Limited *and* wide: awards contenders routinely open
+      // in a qualifying limited run, and a wide-only query misses or mis-dates
+      // exactly the films this app exists to score.
+      expect(query.get('with_release_type')).toBe('2|3');
+    },
+  );
+
+  it.each(['past', 'future'] as const)(
+    'asks TMDB to exclude shorts on the %s side',
+    async (when) => {
+      // Server-side, so it costs nothing and removes catalogue filler before
+      // TMDB paginates rather than after.
+      const fetchMock = mockDiscover(EMPTY);
+
+      await discoverFilms({ when, page: 1 });
+
+      expect(lastQuery(fetchMock).get('with_runtime.gte')).toBe('40');
     },
   );
 });

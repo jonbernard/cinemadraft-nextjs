@@ -45,6 +45,14 @@ export function BrowseList({
   const [months, setMonths] = useState<BrowseMonthData[]>(initial.months);
   const [page, setPage] = useState(initial.page);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * 🔴 A page that came back with no films ends the list, whatever the page
+   * count says. The future side is sorted by popularity and trimmed by a floor
+   * (P15.T9), so its 71 pages hold films for about three of them — without
+   * this, every further scroll fires a request that returns nothing, which is
+   * precisely the failure D80 traded the "Show more" link away to avoid.
+   */
+  const [ended, setEnded] = useState(false);
   const [announcement, setAnnouncement] = useState('');
 
   // The page in hand, in a form the observer callback can read without being
@@ -56,7 +64,7 @@ export function BrowseList({
   const pageCount = initial.pageCount;
   // No sentinel while an error is showing: the retry button is the way back,
   // and an observer left in place would hammer a failing upstream instead.
-  const hasMore = page < pageCount && error === null;
+  const hasMore = page < pageCount && error === null && !ended;
 
   const loadMore = useCallback(async () => {
     if (loading.current) return;
@@ -78,6 +86,7 @@ export function BrowseList({
 
       loaded.current = result.data.page;
       setPage(result.data.page);
+      if (result.data.months.length === 0) setEnded(true);
       setMonths((current) => merge(current, result.data.months));
 
       const added = result.data.months.reduce(

@@ -91,11 +91,23 @@ describe('grouping by month', () => {
   it('🔴 orders soonest first when looking forward', async () => {
     // And looking forward it is the other way round. A single sort would have
     // put next year's releases above next month's.
-    mockDiscover(ACROSS_MONTHS);
+    //
+    // Dated ahead rather than reusing ACROSS_MONTHS: since P15.T9 the future
+    // side drops a film whose release date has already passed, so a fixture
+    // set in the past now yields an empty shelf here — correctly.
+    mockDiscover([
+      result(1, 'Autumn film', '2099-10-15'),
+      result(2, 'Summer film', '2099-06-04'),
+      result(3, 'Winter film', '2099-12-20'),
+    ]);
 
     const page = await loadBrowse({ when: 'future', page: 1, userId: null });
 
-    expect(page.months.at(0)?.label).toBe('06/2026');
+    expect(page.months.map((month) => month.label)).toEqual([
+      '06/2099',
+      '10/2099',
+      '12/2099',
+    ]);
   });
 
   it('🔴 labels months in UTC', async () => {

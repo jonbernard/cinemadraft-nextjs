@@ -198,6 +198,29 @@ describe('BrowseList', () => {
     expect(loadBrowsePage).toHaveBeenCalledTimes(1);
   });
 
+  it('🔴 stops when a page comes back with no films, whatever the page count says', async () => {
+    // The future side reports 71 pages and holds films for about three of them
+    // (P15.T9). Trusting the count alone would fire a request on every scroll
+    // for the other sixty-eight.
+    loadBrowsePage.mockResolvedValue({
+      ok: true,
+      data: { when: 'future', page: 2, pageCount: 71, months: [], hero: null },
+    });
+    render(
+      <BrowseList
+        when="future"
+        initial={{ when: 'future', page: 1, pageCount: 71, months: [], hero: null }}
+        isSignedIn={false}
+      />,
+    );
+
+    intersect();
+    await waitFor(() => expect(screen.queryByTestId('browse-sentinel')).toBeNull());
+
+    intersect();
+    expect(loadBrowsePage).toHaveBeenCalledTimes(1);
+  });
+
   it('offers a retry when a page fails, rather than silently ending the list', async () => {
     loadBrowsePage.mockResolvedValue({
       ok: false,
