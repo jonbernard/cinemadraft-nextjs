@@ -695,6 +695,52 @@ Per §7, all post-cutover.
 - Points ledger (already built in phase 9 — extend)
 - Head-to-head roster comparison, with shared vs unique picks called out
 - Public logged-out league board replacing the welcome card
+- **Film URLs carry a slug, not a TMDB id** — `/films/coyote-vs-acme` rather
+  than `/films/1204680`. Researched 2026-09-12; the findings below are the
+  reason this is a Phase 16 item and not a one-line change.
+
+  🔴 **The constraint is that the film page is keyed by TMDB id on purpose.**
+  `movies` holds the 1,355 films this league has drafted or nominated; the page
+  works for the *entire* TMDB catalogue, and `/browse` links to films we have
+  never cached. So a slug the app can resolve exists only for films it holds,
+  and slug-only-for-everything would need a TMDB-wide slug index — their daily
+  ID export, ~1M rows refreshed nightly, which is precisely the prefetch this
+  is meant to avoid.
+
+  **Measured against the restored data:** all 1,355 rows carry a `tmdb_id`;
+  1,339 distinct titles, so 16 titles repeat; adding the release year leaves
+  **8** colliding groups, and **7 of those 8 are the same film stored twice**
+  (one `tmdb_id` across both rows — see the defect note below). The single
+  genuine collision is *Sing* (2016): the animated feature and the Hungarian
+  live-action short that won the 2017 Oscar — both award-relevant, both ours.
+  So `title-year` is a unique, stable slug for **1,354 of 1,355** films, with
+  one case needing a tiebreaker.
+
+  **Two shapes, and the trade is real:**
+
+  1. **Slug for films we hold, id for the rest** — `movies` gains a unique
+     `slug`, generated from title and release year, written on ingest and
+     backfilled once. One dynamic segment: numeric resolves as a TMDB id,
+     anything else as a slug. A held film reached by its id **301s to its
+     slug**, so there is one canonical URL per film. The long tail keeps
+     numeric URLs. Clean where it matters — a drafted or nominated film is
+     exactly the one that gets pasted into the league chat — but URLs are not
+     uniform, and it costs a migration, a backfill and an ingest hook.
+  2. **Slug and id together** — `/films/coyote-vs-acme-1204680`, which is what
+     TMDB itself serves. Zero new data, works for every film including
+     uncached ones, the id stays authoritative so a stale or wrong slug still
+     resolves and redirects to the canonical spelling. The number is still
+     there, which is the thing the owner objected to.
+
+  Recommended: **(1)**, with the tiebreaker appending the TMDB id
+  (`sing-2016-297762`) on the rare real collision. It is the only option that
+  delivers what was actually asked for, and its blind spot — the uncached long
+  tail — is the half of the catalogue nobody shares.
+
+  Not free either way: `app/sitemap.ts`, the canonical in `generateMetadata`,
+  the OG image route, and every internal `/films/${tmdbId}` link move with it,
+  and old numeric URLs must keep resolving forever — they are in a year of
+  league chat history.
 
 **Gate:** per-feature E2E green.
 

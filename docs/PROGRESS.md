@@ -1260,7 +1260,7 @@ order, the tranche boundaries and the browser-verification protocol.
 
 - [ ] P17.T8 — a11y batch: 17 unnamed poster links, skip link, focus-ring token on the rail and the theme toggle
 - [x] P17.T9 — 🔴 Clerk appearance tokens break the fill-only rule (2.45:1 light, 3.79:1 dark); extend `contrast.test.ts` to cover the appearance map
-- [ ] P17.T10 — `/films/[tmdbId]` 390px light overflow (430/390) and the 46px light-vs-dark intrinsic-width delta
+- [x] P17.T10 — `/films/[tmdbId]` 390px light overflow (430/390) and the 46px light-vs-dark intrinsic-width delta
 
 ### Visual
 
@@ -1522,7 +1522,7 @@ Plan: _not yet written — write it before starting T0._
 prove one thing; none of them walks the product the way a member does. These
 five journeys are the confidence layer, recorded and paced so a person can
 watch them. The slice specs stay as the diagnostic layer.
-Plan: _not yet written — write it before starting T0._
+Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 - [ ] P19.T0 — journey harness: `DEMO_PACE` (0 in CI), an on-screen step caption, video config, `npm run e2e:journeys`, scratch-data discipline
 - [ ] P19.T1 — 🔴 **finish the draft**: `completeDraft` exists and no UI calls it, so journey 1 has no end. Build the control or record why there isn't one
@@ -1573,6 +1573,18 @@ Plan: _not yet written — write it before starting T0._
 - [ ] P14 not started
 
 ## Phase 16 — New features
+
+- 🔴 **Seven duplicate `movies` rows**, found while researching film slugs
+  (2026-09-12). Eight title+year groups collide; seven of them carry a single
+  `tmdb_id` across both rows, so they are the same film stored twice:
+  `allegiant` 2016, `anaconda` 2025, `michael` 2026, `obsession` 2025,
+  `ready player one` 2018, `solo: a star wars story` 2018, `the housemaid`
+  2025. The eighth, `sing` 2016, is two genuinely different films — the
+  animated feature and the Hungarian live-action short that won the 2017
+  Oscar. Duplicates mean a film can hold two sets of nominations and two
+  scores, so this is worth a look before the slug work makes them collide
+  loudly. Not fixed: `lib/db.test.ts` asserts exactly 1,355 rows, so deleting
+  any of them is a deliberate change with a test to update.
 
 - [ ] P16 not started
 
