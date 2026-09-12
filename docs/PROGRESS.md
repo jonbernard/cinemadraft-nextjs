@@ -1069,9 +1069,24 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [x] P15.T9 — the discover query: future returns pre-release films only, and the quality floors move server-side
 - [x] P15.T10 — 🔴 test-only auth cookie (D82) — security-bearing, reviewer pass **done** (`05e2a4c` + `1ab3702`)
 - [x] P15.T11 — E2E: the league lifecycle, nominations, winners, points — _done in `d78485b`; box ticked retroactively 2026-09-12_
-- [ ] P15.T12 — group randomisation ceremony
+- [x] P15.T12 — group randomisation ceremony — `6c26361`, layout corrected for the real shape in `9038e17`
 
 ### Phase 15 notes
+
+- 🔴 **The ceremony was built and watched with two groups; the real shape is
+  four.** `drafts` says league 1 has run 4 groups every year from 2018 to 2026
+  (5 in 2017, 3 in 2024), 12–20 seats. At four, the settled listing rendered
+  three cards and then a 896px full-width banner, and at 390px it put 916px of
+  content in an 844px viewport — the Done button below the fold. The listing is
+  now a grid whose column count is `ceil(sqrt(n))`, capped at 2 at phone width:
+  4 lands 2×2, 5 lands 3+2, 20 lands four rows of five, and nothing overflows.
+  The tests now pin the column count at 1, 3, 5 and 20 — they had only ever
+  passed 1 or 2 groups, which is why this reached a recording before anyone saw
+  it. Measured click-to-settled: 3.94s at four groups, 4.45s at five.
+
+  Two things left open, both cosmetic: the confetti is dense enough over the
+  centre card for ~200ms to make its names hard to read, and the listing
+  re-centres vertically as each row of cards lands (`justify-center`).
 
 - 🔴 **T11 starts with five red e2e specs, and that is the plan's own sequencing.**
   `season-setup`, `draft`, `leagues`, `dashboard` and `award-shows` gate on the
