@@ -1053,7 +1053,9 @@ unseeded) passes 1061/1061; `npm run verify` is all green.
 
 ## Phase 15 — Pre-cutover polish
 
-🔴 **Runs here, before Phase 12, despite its number** — see `docs/PLAN.md`.
+🔴 **Runs where it sits here, before the go-live phases** — `docs/PLAN.md` now
+reads in execution order, with Phase 12 and 13 last. The number is an
+identifier, not a position.
 Design: `docs/superpowers/specs/2026-08-24-phase-15-pre-cutover-polish-design.md`.
 Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 
@@ -1322,7 +1324,9 @@ recorded here, so the change is a number rather than an impression._
 
 ## Phase 18 — How it works
 
-🔴 **Runs here, before Phase 12, despite its number** — see `docs/PLAN.md`.
+🔴 **Runs where it sits here, before the go-live phases** — `docs/PLAN.md` now
+reads in execution order, with Phase 12 and 13 last. The number is an
+identifier, not a position.
 Replaces `/rules-and-scoring` with a public `/how-it-works`. Every number on
 the page must trace to `lib/services/scoring.ts` or the `points` table; no
 invented claims.
