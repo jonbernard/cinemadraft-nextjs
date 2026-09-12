@@ -60,3 +60,20 @@ describe('globals.css agrees with the radius scale', () => {
     expect(found).toEqual(new Map(Object.entries(radius)));
   });
 });
+
+describe('the type scale is the one D71 was amended to (P17.T18)', () => {
+  /**
+   * 🔴 `text-sm` is 15px and `text-xs` is 13px. The names are Tailwind's and
+   * no longer describe their values, which is the price of changing the scale
+   * in one place instead of in every class site across the app — see the
+   * comment in globals.css. This test is what stops the names being believed.
+   */
+  it.each([
+    ['sm', '15px', 'calc(21 / 15)'],
+    ['xs', '13px', 'calc(18 / 13)'],
+  ])('--text-%s', (step, size, lineHeight) => {
+    const block = css.match(/@theme\s*\{([^}]*)\}/)?.[1] ?? '';
+    expect(block).toContain(`--text-${step}: ${size};`);
+    expect(block).toContain(`--text-${step}--line-height: ${lineHeight};`);
+  });
+});

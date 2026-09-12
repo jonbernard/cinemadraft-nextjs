@@ -1278,7 +1278,7 @@ order, the tranche boundaries and the browser-verification protocol.
 `docs/PLAN.md` carries the chosen answer, not a choice. Two amend a locked
 decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
 
-- [ ] P17.T18 — body size to **15px / 13px small** (amends D71)
+- [x] P17.T18 — body size to **15px / 13px small** (amends D71)
 - [ ] P17.T19 — 🔴 poster captions get **serif at 15px** — `PosterFrame.tsx:120` and `BrowseMonth.tsx:89` set film titles in Archivo, which D70 says are names. Newsreader deferred to after Phase 18
 - [ ] P17.T20 — `beam` **spent on live + the `Next · date TBA` chip**; not done until it renders
 - [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 **Unblocked by P17.T35**: brass means an award outcome only, and the "already means drafted" reading rested on a figure that does not reproduce
@@ -1659,6 +1659,72 @@ recorded here, so the change is a number rather than an impression._
   Archivo 1088 · Plex Mono 182 · Instrument Serif 37 · Sora 4 · Newsreader 1.
   Gaps: 12px ×250, 8px ×103, 4px ×57, 16px ×36, 6px ×26, 24px+ ×11.
   Radii: poster-clamp ×158, 10px ×58, 6px ×36, pill ×28, 16px ×0.
+
+- 🔴 **The 2026-09-12 baseline above is not the before-number tranche 4 reports
+  against, and it cannot be.** Its method is unrecorded and its own figures do
+  not reconcile: 1,272 visible text elements against a font histogram summing
+  to 1,312. `e2e/inventory.spec.ts` (P17.T18) is the method, written down and
+  re-runnable, and the tranche's before-number is **that harness run on the
+  pre-sweep tree** at `a623f15`, so before and after come from the same code.
+  Both are recorded here; where they disagree, the harness is the measurement
+  and the hand baseline is history.
+
+  **Before — `e2e/inventory.spec.ts` at `a623f15`, `/`, `/browse`,
+  `/award-shows`, `/films/313369`, 1440px, both schemes, production build:**
+  - Fonts: `Archivo ×1572, IBM Plex Mono ×522, Instrument Serif ×76, Sora ×8, Newsreader ×2`
+  - Sizes: `14px ×1068, 12px ×920, 16px ×98, 11px ×46, 20px ×32, 28px ×6, 30px ×6, 17px ×2, 48px ×2`
+  - Gaps: `8px ×792, 12px ×280, 4px ×274, 16px ×202, 6px ×104, 2px ×36, 10px ×32, 24px ×20, 32px ×16, 40px ×12`
+  - Radii: `poster-clamp ×216, 6px ×116, 10px ×94, 999px ×56`
+
+  The font and size histograms both sum to **2,180**, which is the internal
+  check the hand baseline failed.
+
+- **P17.T18 — body 15px, small 13px. Four custom properties, not 261 edits.**
+  The plan's key finding reproduces exactly: Tailwind 4 reads its type scale
+  from `@theme` custom properties, so `--text-sm: 15px` and `--text-xs: 13px`
+  move every `text-sm`/`text-xs` in `app/`, `components/` and `.storybook/` in
+  one diff. 🔴 **Amends D71** (awaiting a number; P17.T26 assigns D85+): the
+  face reasoning stands — Archivo stays — the density conclusion does not.
+
+  **After T18, same harness, same routes:**
+  - Sizes: `15px ×1068, 13px ×920, 16px ×98, 11px ×46, 20px ×32, 28px ×6, 30px ×6, 17px ×2, 48px ×2`
+  - Fonts, Gaps and Radii: **unchanged**, as predicted — this task changes no
+    face, no gap and no radius.
+
+  The two dominant buckets moved intact: `14px ×1068 → 15px ×1068` and
+  `12px ×920 → 13px ×920`. Not one element changed bucket.
+
+  **The browser-only half, as a number rather than an impression.** A
+  throwaway spec captured, at 4 routes × 4 widths (1440/1280/1024/390) × 2
+  schemes: document horizontal overflow, nav-rail overflow past its 208px
+  column (D67), tab-bar destination heights, and the list of elements whose
+  scroll width exceeds their client width. The report is **byte-identical
+  before and after** across all 32 combinations — page overflow 0 everywhere,
+  rail overflow 0 everywhere, tab destinations 49px (≥44px) everywhere the bar
+  is painted. Nothing wraps that did not wrap before.
+
+  **The guard: `check "text sizes come from the scale"`** in
+  `scripts/layering.sh` and `.github/workflows/ci.yml`. Proven to bite by
+  deliberate re-introduction — `text-[13px]` added to `components/Panel.tsx`
+  turns it red and naming the file and line, then green again on restore.
+  It found and closed four sub-scale forks: `PickCell` `text-[0.65rem]`
+  (P17.T33's finding, now partly closed), `NotificationBell` `text-[10px]`,
+  and `FilmSearch` / `DraftListEditor` `text-[0.6rem]` — the last two are new
+  since the plan was written and are the same fault.
+
+  🔴 **Five files are exempt, and two of those exemptions are deviations from
+  the plan, which named only Eyebrow and SectionHead.** Each owns a documented
+  value: `Eyebrow` the 11px floor (D74); `SectionHead` the 28/20/17 ramp
+  (P17.T1); `Wordmark` the lockup (D83, a mark rather than text on the scale);
+  `TabBar` its 11px labels — **P17.T2's own measurement in these notes is why**
+  (five 78px slots at 390px, "Award shows" at 64.8px, no slack; 13px wraps the
+  label and grows the bar 48.5px → 65px, past the 56px ceiling its spec
+  asserts); and `EmptyState`'s `text-[17px]`, which is SectionHead's h3 value
+  copied into another file. 🔴 **`EmptyState` is named debt, not a clean
+  exemption:** the right fix is `SectionHead as="h3"`, a structural change this
+  sweep may not make, and the alternative — 16px — is D70's serif-names step
+  and would be wrong on a second axis. Whoever owns `EmptyState` next should
+  close it.
 
 ---
 

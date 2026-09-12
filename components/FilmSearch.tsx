@@ -241,7 +241,7 @@ function ResultRow({
             className="h-12 w-8 object-cover"
           />
         ) : (
-          <span className="bg-bg-raised text-text-dim grid h-12 w-8 place-items-center font-mono text-[0.6rem]">
+          <span className="bg-bg-raised text-text-dim grid h-12 w-8 place-items-center font-mono text-xs">
             {film.title.slice(0, 2).toUpperCase()}
           </span>
         )}

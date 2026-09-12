@@ -63,7 +63,7 @@ export function PickCell({
             {film.title.slice(0, 2).toUpperCase()}
           </span>
         )}
-        <span className="text-text-dim tabular absolute left-1 top-1 font-mono text-[0.65rem]">
+        <span className="text-text-dim tabular absolute left-1 top-1 font-mono text-xs">
           {String(round).padStart(2, '0')}
         </span>
       </div>

@@ -222,7 +222,7 @@ function EntryRow({
             className="h-10 w-7 object-cover"
           />
         ) : (
-          <span className="bg-bg-raised text-text-dim grid h-10 w-7 place-items-center font-mono text-[0.6rem]">
+          <span className="bg-bg-raised text-text-dim grid h-10 w-7 place-items-center font-mono text-xs">
             {entry.title.slice(0, 2).toUpperCase()}
           </span>
         )}

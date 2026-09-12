@@ -60,6 +60,38 @@
   --radius-lg: 16px;
   --radius-pill: 999px;
 
+  /* The type scale (P17.T18, amending D71).
+   *
+   * 🔴 `text-sm` is the BODY size and `text-xs` is the small step. The names
+   * are Tailwind's own and they no longer describe their values — that is
+   * deliberate. Redefining two custom properties moves every `text-sm` and
+   * `text-xs` in app/, components/ and .storybook/ at once; renaming the
+   * classes would have been hundreds of edits across ~75 files with no test
+   * able to prove the sweep complete, which is the exact objection D77 raised
+   * about renaming tokens and is still correct.
+   *
+   * D71 kept Archivo for its x-height "at 11-13px, which is where a league app
+   * lives". The face reasoning stands — Archivo stays. The density does not:
+   * measured pre-sweep, 1068 of 2180 rendered text elements were at 14px and
+   * 920 at 12px, and at 14px body against an 11px Eyebrow there is no step at
+   * all. Archivo carries 15px at almost no width cost, and 13px keeps a real
+   * gap above the eyebrow floor.
+   *
+   * `text-base` (16px) is untouched and is NOT the body size: it renders serif
+   * proper nouns (D70), which is a different axis.
+   *
+   * 🔴 Signed-in routes inherit this for free (P17.T33) — there is no second
+   * pass and there must not be one. The one thing T33 still owns is the
+   * `text-[0.65rem]` arbitrary value, which scripts/layering.sh now rejects.
+   *
+   * Line heights are ratios rather than lengths so the pairing survives if a
+   * size is ever nudged again. theme/tokens.test.ts pins all four values.
+   */
+  --text-sm: 15px;
+  --text-sm--line-height: calc(21 / 15);
+  --text-xs: 13px;
+  --text-xs--line-height: calc(18 / 13);
+
   /* Faces. Named so they cannot self-reference: `--font-serif` and
    * `--font-mono` are Tailwind's own theme keys, so a loader must never be
    * given those variable names — the cycle resolves to the guaranteed-invalid

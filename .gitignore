@@ -60,3 +60,8 @@ storybook-static
 
 # Playwright MCP browser profile
 .playwright-mcp/
+
+# P17.T18/T22 — the visual harness baselines are captured and thrown away in one
+# sitting (e2e/visual.spec.ts). Committing them would make every deliberate
+# visual change a red build.
+/e2e/visual.spec.ts-snapshots

@@ -69,4 +69,39 @@ check "only the journey pacing helper waits on a clock" \
   "$(grep -rn 'waitForTimeout' e2e 2>/dev/null \
      | grep -v '^e2e/journeys/support/pace\.ts:' || true)"
 
+# P17.T18. The type scale lives in globals.css and nowhere else.
+#
+# An arbitrary `text-[13px]` compiles, looks fine, and quietly forks the scale
+# — which is how 117 elements came to render at 10.4px from a single
+# `text-[0.65rem]`, below the 11px Eyebrow floor and outside the scale
+# entirely. The exceptions are files that OWN a documented value, and they are
+# named here rather than tolerated silently:
+#
+#   Eyebrow      11px, D74 — the floor itself.
+#   SectionHead  the 28/20/17 heading ramp, P17.T1.
+#   Wordmark     the lockup, D83 — a mark, not text on the scale.
+#   TabBar       11px labels. 🔴 P17.T2 measured this: at 390px the five slots
+#                have 78px each and "Award shows" renders 64.8px wide, so the
+#                row has no slack. 13px wraps the label and grows the bar
+#                48.5px -> 65px. The number is the design, and a check that
+#                demands a wrong edit gets deleted.
+#   EmptyState   17px, which is SectionHead's h3 value copied into another
+#                file. 🔴 The real fix is to compose `SectionHead as="h3"`,
+#                which is a structural change this sweep may not make; it is
+#                exempted with the debt named rather than downgraded to 16px,
+#                the serif-names step (D70), which would be wrong on two axes.
+#
+# `.test.` and `.stories.` files are exempt because their arbitrary sizes are
+# assertions about the files above, not new call sites.
+#
+# No {n,m} interval: see the `set +B` note at the top of this file.
+check "text sizes come from the scale" \
+  "$(grep -rnE "text-\[[0-9.]+(px|rem|em)\]" components app .storybook \
+     --include='*.tsx' --include='*.ts' --include='*.mdx' 2>/dev/null \
+     | grep -v -e '^components/Eyebrow\.tsx:' -e '^components/SectionHead\.tsx:' \
+               -e '^components/Wordmark\.tsx:' -e '^components/TabBar\.tsx:' \
+               -e '^components/EmptyState\.tsx:' \
+               -e '\.test\.tsx\?:' -e '\.stories\.tsx\?:' \
+     || true)"
+
 exit $fail

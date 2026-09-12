@@ -275,6 +275,37 @@ jobs:
           fi
           echo "next/image import boundary intact"
 
+      - name: Text sizes come from the scale
+        run: |
+          set -uo pipefail
+          # P17.T18. The type scale lives in app/globals.css and nowhere else.
+          #
+          # An arbitrary `text-[13px]` compiles, looks fine, and quietly forks
+          # the scale — which is how 117 elements came to render at 10.4px from
+          # a single `text-[0.65rem]`, below the 11px Eyebrow floor and outside
+          # the scale entirely.
+          #
+          # The exempt files each OWN a documented value: Eyebrow the 11px floor
+          # (D74), SectionHead the 28/20/17 heading ramp (P17.T1), Wordmark the
+          # lockup (D83), TabBar its 11px tab labels (P17.T2 measured the 390px
+          # row at 78px a slot with no slack — 13px wraps it), and EmptyState a
+          # copy of SectionHead's h3 that should become `SectionHead as="h3"`.
+          # Test and story files are exempt because their arbitrary sizes are
+          # assertions about those files, not new call sites.
+          offenders=$(grep -rnE "text-\[[0-9.]+(px|rem|em)\]" components app .storybook \
+            --include='*.tsx' --include='*.ts' --include='*.mdx' 2>/dev/null \
+            | grep -v -e '^components/Eyebrow\.tsx:' -e '^components/SectionHead\.tsx:' \
+                      -e '^components/Wordmark\.tsx:' -e '^components/TabBar\.tsx:' \
+                      -e '^components/EmptyState\.tsx:' \
+                      -e '\.test\.tsx\?:' -e '\.stories\.tsx\?:' \
+            || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::arbitrary text sizes fork the scale; use text-xs/text-sm/text-base from app/globals.css"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "text sizes come from the scale"
+
   # package-lock.json must be generated on Linux.
   #
   # lightningcss (via Tailwind 4 and Vite) declares optional per-platform
