@@ -158,10 +158,14 @@ const Randomise = z.object({
  * 🔴 Refuses once the draft has started. Reshuffling groups mid-draft would
  * move people away from the picks they already made, and the board reads a
  * seat's group to decide which board it belongs on.
+ *
+ * Returns the assignments alongside the count. Additive, so the existing
+ * callers keep compiling, and it is what lets `GroupCeremony` animate a result
+ * that is already saved rather than inventing one.
  */
 export async function randomiseGroups(
   input: z.infer<typeof Randomise>,
-): Promise<ActionResult<{ assigned: number }>> {
+): Promise<ActionResult<{ assigned: number; assignments: Assignment[] }>> {
   const parsed = Randomise.safeParse(input);
   if (!parsed.success) return fail('INVALID', 'that arrangement is not valid');
 
@@ -183,7 +187,10 @@ export async function randomiseGroups(
     await draftRepository.assignSeats(parsed.data.leagueId, assignments);
 
     revalidatePath(`/leagues/${parsed.data.leagueId}`, 'layout');
-    return ok({ assigned: assignments.length });
+    // 🔴 The groups are decided here and nowhere else. The caller animates
+    // these rows (P15.T12); it never rolls its own, so a viewer who reloads
+    // mid-animation sees exactly what the page beneath already holds.
+    return ok({ assigned: assignments.length, assignments });
   } catch (error) {
     return toActionResult(error);
   }

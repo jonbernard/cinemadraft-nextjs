@@ -288,6 +288,52 @@ describe('groups', () => {
     expect(seats.every((seat) => seat.group != null && seat.order != null)).toBe(true);
   });
 
+  it('returns the assignments it made, so the ceremony can show them', async () => {
+    signInAs(fixture.owner);
+    /**
+     * Six seats, not the fixture's two.
+     *
+     * 🔴 The size is the test. With two seats dealt into two groups there are
+     * only two possible outcomes, so a server that rolled a *second* time
+     * before answering would return the saved layout half the time and this
+     * test would pass on a coin toss. Six seats into two groups is 720
+     * outcomes, so a second roll is caught ~719 times out of 720.
+     */
+    for (const name of ['Ada', 'Grace', 'Katherine', 'Margaret']) {
+      await addDummySeat({ leagueId: fixture.league.id, year: YEAR, dummyName: name });
+    }
+
+    const result = await randomiseGroups({
+      leagueId: fixture.league.id,
+      year: YEAR,
+      groupCount: 2,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.assignments).toHaveLength(result.data.assigned);
+    // Every seat lands in exactly one group, and the groups are 1..n.
+    const groups = new Set(result.data.assignments.map((entry) => entry.group));
+    expect([...groups].sort()).toEqual([1, 2]);
+
+    /**
+     * 🔴 The returned assignments ARE the saved ones.
+     *
+     * This is the property the whole ceremony rests on: the client animates
+     * what the server already wrote, so a viewer who reloads mid-animation
+     * sees the same groups. A return value that merely *looked* plausible —
+     * the right count, the right group numbers — would satisfy everything
+     * above and still be a second, divergent roll. Comparing seat-by-seat
+     * against the database is the only assertion that rules that out.
+     */
+    const saved = (await seatsOf(fixture.league.id))
+      .map((seat) => ({ draftId: seat.id, group: seat.group, order: seat.order }))
+      .sort((a, b) => a.draftId - b.draftId);
+    expect([...result.data.assignments].sort((a, b) => a.draftId - b.draftId)).toEqual(
+      saved,
+    );
+  });
+
   it('🔴 refuses once the draft has started', async () => {
     // Reshuffling mid-draft moves people away from picks they already made,
     // and the board reads `group` to decide which board a seat is on.

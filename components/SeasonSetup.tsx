@@ -8,7 +8,9 @@ import {
   randomiseGroups,
   removeSeat,
 } from '@/actions/leagues/manage-seats';
+import type { Assignment } from '@/lib/services/group-assignment';
 import { cn } from '@/lib/utils/cn';
+import { type CeremonyGroup, GroupCeremony } from './GroupCeremony';
 
 export type SetupSeatView = {
   draftId: number;
@@ -57,6 +59,7 @@ export function SeasonSetup({
   const [message, setMessage] = useState<string | null>(null);
   const [dummyName, setDummyName] = useState('');
   const [groupCount, setGroupCount] = useState(suggestedGroupCount);
+  const [ceremony, setCeremony] = useState<CeremonyGroup[] | null>(null);
   const [pending, startTransition] = useTransition();
 
   const isPending = status === 'pending';
@@ -115,11 +118,39 @@ export function SeasonSetup({
   );
 
   const deal = useCallback(() => {
-    run(
-      () => randomiseGroups({ leagueId, year, groupCount }),
-      'Everyone dealt into groups',
-    );
-  }, [leagueId, year, groupCount, run]);
+    setMessage(null);
+    startTransition(async () => {
+      const result = await randomiseGroups({ leagueId, year, groupCount });
+      if (!result.ok) {
+        setMessage(result.message ?? 'That did not work');
+        return;
+      }
+
+      /**
+       * 🔴 The groups are already saved by the time this line runs.
+       *
+       * The ceremony animates what the server decided; it never decides
+       * anything itself. That is why the assignments come back from the action
+       * rather than being re-derived here — a client-side shuffle would give
+       * two people watching the same league two different draws, and the one
+       * they saw would not be the one in the database.
+       */
+      const dealt = toCeremonyGroups(result.data.assignments, seats);
+      // A league with nobody in it has nothing to show; say so and stop.
+      if (dealt.length === 0) {
+        setMessage('Everyone dealt into groups');
+        return;
+      }
+      setCeremony(dealt);
+    });
+  }, [leagueId, year, groupCount, seats]);
+
+  // The takeover lifts onto a page that is already right: `revalidatePath` in
+  // the action refreshed the rows beneath while the reel was still spinning.
+  const endCeremony = useCallback(() => {
+    setCeremony(null);
+    setMessage('Everyone dealt into groups');
+  }, []);
 
   return (
     <div className={cn('flex flex-col gap-8', className)}>
@@ -214,8 +245,39 @@ export function SeasonSetup({
       <p aria-live="polite" className="text-text-secondary min-h-5 text-sm">
         {pending ? 'Saving…' : (message ?? '')}
       </p>
+
+      {ceremony ? <GroupCeremony groups={ceremony} onDone={endCeremony} /> : null}
     </div>
   );
+}
+
+/**
+ * The saved assignments, as the ceremony wants to show them.
+ *
+ * Purely a reshape — draft ids become names and the flat list becomes groups.
+ * Nothing is reordered beyond the `order` the server already chose, because the
+ * order it chose is the one the board will use.
+ */
+function toCeremonyGroups(
+  assignments: readonly Assignment[],
+  seats: readonly SetupSeatView[],
+): CeremonyGroup[] {
+  const nameOf = new Map(seats.map((seat) => [seat.draftId, seat.name]));
+  const byGroup = new Map<number, { order: number; name: string }[]>();
+
+  for (const entry of assignments) {
+    if (entry.group == null) continue;
+    const members = byGroup.get(entry.group) ?? [];
+    members.push({ order: entry.order ?? 0, name: nameOf.get(entry.draftId) ?? 'Seat' });
+    byGroup.set(entry.group, members);
+  }
+
+  return [...byGroup.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([group, members]) => ({
+      group,
+      names: members.sort((a, b) => a.order - b.order).map((member) => member.name),
+    }));
 }
 
 /**

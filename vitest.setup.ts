@@ -101,3 +101,36 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
     // No layout in jsdom, so there is nothing to scroll. Tests spy on the call.
   };
 }
+
+/**
+ * 🔴 jsdom has no `matchMedia` — the property is simply absent on `window`.
+ *
+ * `GroupCeremony` reads `(prefers-reduced-motion: reduce)` in its initial
+ * state rather than in an effect, so that a reader who asked for less motion
+ * never sees a frame of the reel. That makes the call unconditional, and an
+ * environment without `matchMedia` would throw on render.
+ *
+ * Defined here rather than guarded in the component, for the reason the
+ * `<dialog>` polyfill above gives: a component should not carry checks that
+ * exist only because a test environment is thinner than a browser. The stub
+ * answers "no" to everything, which is the browser default and the state the
+ * ceremony's animated path needs; a test that wants the other answer passes
+ * the `reducedMotion` prop, which is why that prop exists.
+ *
+ * The listener methods are real no-ops rather than missing: React and MUI both
+ * subscribe to media queries, and an absent `addEventListener` throws where a
+ * no-op simply never fires.
+ */
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as MediaQueryList;
+}

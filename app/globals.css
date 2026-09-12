@@ -71,6 +71,19 @@
   /* The lockup only (D83). `components/Wordmark.tsx` is the sole consumer;
    * see theme/fonts.ts for why it must not spread into UI text. */
   --font-wordmark: var(--font-sora);
+
+  /* The deal (P15.T12). `GroupCeremony` sets a per-row `animation-delay` so a
+   * group's names land 40ms apart. `both` is load-bearing: it holds the
+   * from-state across the delay, so a staggered row starts invisible instead
+   * of appearing, blinking out and fading back in. */
+  --animate-deal-in: deal-in 320ms ease-out both;
+}
+
+@keyframes deal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 
 /* Every number in this product sits in a column — points, standings, dates,

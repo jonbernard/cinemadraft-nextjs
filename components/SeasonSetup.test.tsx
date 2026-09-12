@@ -6,8 +6,25 @@ const assignSeats = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null }
 const addDummySeat = vi.hoisted(() =>
   vi.fn(async () => ({ ok: true, data: { draftId: 9 } })),
 );
+/**
+ * 🔴 The mock stands in for the server's decision, so it must have the shape of
+ * one: the action writes these assignments and hands back the rows it wrote
+ * (P15.T12). Ada into group 2, Grace and Guest into group 1 — deliberately not
+ * the order the seats are listed in, so a component that quietly re-derived the
+ * groups from `seats` instead of using the result would show something else.
+ */
 const randomiseGroups = vi.hoisted(() =>
-  vi.fn(async () => ({ ok: true, data: { assigned: 4 } })),
+  vi.fn(async () => ({
+    ok: true,
+    data: {
+      assigned: 3,
+      assignments: [
+        { draftId: 2, group: 1, order: 1 },
+        { draftId: 3, group: 1, order: 2 },
+        { draftId: 1, group: 2, order: 1 },
+      ],
+    },
+  })),
 );
 const removeSeat = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
 const startDraft = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
@@ -171,6 +188,46 @@ describe('SeasonSetup', () => {
         year: 2026,
         groupCount: 2,
       }),
+    );
+  });
+
+  it('🔴 celebrates the groups the server returned, not a second shuffle', async () => {
+    /**
+     * The load-bearing assertion of the whole ceremony. The action has already
+     * written these rows; the takeover animates them. If the client rolled its
+     * own groups, the listing here would not match the mock's assignments — and
+     * a viewer who reloaded mid-animation would see the other answer.
+     */
+    const user = setup();
+
+    await user.click(screen.getByRole('button', { name: 'Deal at random' }));
+
+    const ceremony = await screen.findByRole('dialog', { hidden: true });
+    await user.click(within(ceremony).getByRole('button', { name: /skip/i }));
+
+    expect(
+      within(ceremony)
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual(['Group 1', 'Group 2']);
+    // Group 1 is Grace then Guest, in the order the server chose; Ada is alone
+    // in group 2. Reading the rendered rows back is what pins that.
+    const namesIn = (group: string) =>
+      within(
+        within(ceremony)
+          .getByRole('heading', { name: group })
+          .closest('li') as HTMLElement,
+      )
+        .getAllByRole('listitem')
+        .map((row) => row.textContent);
+
+    expect(namesIn('Group 1')).toEqual(['Grace', 'Guest']);
+    expect(namesIn('Group 2')).toEqual(['Ada']);
+
+    // Dismissing the takeover leaves the page saying what happened.
+    await user.click(within(ceremony).getByRole('button', { name: /done/i }));
+    await waitFor(() =>
+      expect(screen.getByText('Everyone dealt into groups')).toBeInTheDocument(),
     );
   });
 
