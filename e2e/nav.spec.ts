@@ -110,6 +110,12 @@ async function openSearchPanel(page: Page, width: number): Promise<void> {
  * Signed out throughout: the dashboard and league boards are public (D44), and
  * a visitor on a shared link must be able to move around.
  */
+/** `rgb(192, 61, 78)` → `#c03d4e`, so a computed colour can be compared to a token. */
+function toHex(rgb: string): string {
+  const parts = rgb.match(/\d+/g)?.slice(0, 3) ?? [];
+  return `#${parts.map((n) => Number(n).toString(16).padStart(2, '0')).join('')}`;
+}
+
 test.describe('navigation', () => {
   const DESKTOP = { width: 1440, height: 900 };
   const RAIL_EDGE = { width: 1280, height: 900 };
@@ -515,5 +521,55 @@ test.describe('navigation', () => {
     // calc, not the inset term — a real device is the only place the inset is
     // non-zero.
     expect(geometry.padding).toBeGreaterThanOrEqual(barBox?.height ?? 0);
+  });
+
+  /**
+   * 🔴 Focus rings, measured after they settle.
+   *
+   * Both halves of this failed for different reasons: the theme toggle drew
+   * Chrome's default ring because it declared none, and the rail links drew a
+   * grey one for the first 150ms because `transition-colors` animates
+   * `outline-color`. Neither is visible to jsdom, and reading the computed
+   * style in the same frame as `focus()` reports the transition's start value —
+   * which is how the ring was first misdiagnosed as a broken token.
+   */
+  test('🔴 every focus ring is the product\u2019s own', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/browse');
+
+    const accent = await page.evaluate(() =>
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-accent-fill')
+        .trim(),
+    );
+
+    const settled = async (locator: ReturnType<typeof page.locator>) => {
+      await locator.focus();
+      // Longer than the 150ms motion budget, so the transition has finished.
+      await page.waitForTimeout(300);
+      return locator.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return {
+          color: style.outlineColor,
+          style: style.outlineStyle,
+          width: style.outlineWidth,
+        };
+      });
+    };
+
+    const railLink = page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('link', { name: 'Award shows' });
+    const ring = await settled(railLink);
+    expect(ring.style).toBe('solid'); // not 'auto', which is the browser's
+    expect(ring.width).toBe('2px');
+    expect(toHex(ring.color)).toBe(accent);
+
+    const toggleRing = await settled(
+      page.getByRole('button', { name: /switch to .* theme/i }),
+    );
+    expect(toggleRing.style).toBe('solid');
+    expect(toggleRing.width).toBe('2px');
+    expect(toHex(toggleRing.color)).toBe(accent);
   });
 });

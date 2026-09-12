@@ -124,6 +124,21 @@ export function AppShell({
 
   return (
     <div className="bg-bg-base min-h-dvh xl:flex xl:gap-2.5 xl:p-2.5">
+      {/* 🔴 First focusable element on every page, by DOM order rather than by
+          styling — a skip link that is not first is not a skip link. Visible
+          only when focused: `sr-only` until `focus:not-sr-only` brings it back.
+          Before this, a keyboard reader crossed up to eleven chrome controls to
+          reach the content on every single navigation.
+
+          Anchored to "first child of the shell", not to a line: P17.T2 moved the
+          strip's contents into the tab bar row, and this survives that. */}
+      <a
+        href="#content"
+        className="focus:bg-bg-raised focus:text-text-primary focus:outline-accent-fill sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:flex focus:min-h-11 focus:items-center focus:rounded-sm focus:px-4 focus:text-sm focus:outline-2"
+      >
+        Skip to content
+      </a>
+
       <div className="hidden xl:block">
         <NavRail pathname={pathname} />
       </div>
@@ -141,8 +156,15 @@ export function AppShell({
             (44px targets plus the safe-area inset), or the last row of every
             page would sit underneath it. At `xl` the tab bar is hidden, so
             the padding drops back to match the top/side padding. */}
+        {/* biome-ignore lint/correctness/useUniqueElementIds: the skip link's target has to be a stable, well-known fragment, and `useId()` emits React 19's «r0» form — not something to put in a URL fragment or a CSS selector. The rule guards against a component rendered twice; this shell renders exactly once per page, which is the same invariant that makes `<main>` unique. */}
         <Panel
           as="main"
+          id="content"
+          // 🔴 Without this the fragment target is not focusable, so the browser
+          // moves the *sequential focus navigation starting point* but not focus
+          // itself — which means a screen reader keeps reading from the chrome.
+          // -1 keeps it out of Tab; only the skip link ever lands here.
+          tabIndex={-1}
           className="min-w-0 flex-1 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] xl:p-6"
         >
           {children}

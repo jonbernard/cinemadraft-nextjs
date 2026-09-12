@@ -41,9 +41,26 @@ describe('BrowseMonth', () => {
     );
   });
 
-  it('links the poster to the film page too', () => {
+  it('🔴 the poster wrapper is not a second, nameless stop', () => {
+    // Two links per film point at the same page and only one of them says
+    // where it goes. Measured on /browse: 17 of 54 links announced nothing.
     render(<BrowseMonth month={month} isSignedIn={false} />);
-    const poster = document.querySelector('img');
-    expect(poster?.closest('a')).toHaveAttribute('href', '/films/603');
+
+    const named = screen.getAllByRole('link');
+    expect(named).toHaveLength(1);
+    expect(named[0]).toHaveAccessibleName('The Matrix');
+  });
+
+  it('the poster is still reachable by mouse and still shows the image', () => {
+    // Hidden from assistive tech and from Tab, not from the page: the poster
+    // is the obvious thing to press with a thumb.
+    const { container } = render(<BrowseMonth month={month} isSignedIn={false} />);
+    const poster = container.querySelector('a[aria-hidden="true"]');
+
+    expect(poster).toHaveAttribute('href', '/films/603');
+    // aria-hidden on a focusable element is itself a violation; the two
+    // attributes only make sense together.
+    expect(poster).toHaveAttribute('tabindex', '-1');
+    expect(poster?.querySelector('img')).not.toBeNull();
   });
 });

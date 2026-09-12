@@ -220,4 +220,29 @@ describe('AppShell', () => {
     expect(screen.getAllByRole('link', { name: 'Log in' }).length).toBeGreaterThan(0);
     expect(within(rail()).getAllByRole('link').length).toBeGreaterThan(1);
   });
+
+  it('🔴 the skip link is the first focusable element, and it points at <main>', () => {
+    // Structural, not positional: whatever P17.T2 does to the shell's layout,
+    // this link has to stay first in DOM order and `<main>` has to stay its
+    // target. If this goes red in someone else's task, that is this test
+    // working.
+    const { container } = render(
+      <AppShell isSignedIn={false}>
+        <p>Board</p>
+      </AppShell>,
+    );
+
+    const focusable = container.querySelectorAll<HTMLElement>(
+      'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable[0];
+
+    expect(first).toHaveAccessibleName('Skip to content');
+    expect(first).toHaveAttribute('href', '#content');
+
+    const main = screen.getByRole('main');
+    expect(main).toHaveAttribute('id', 'content');
+    // Focusable by script so focus actually moves, never by Tab.
+    expect(main).toHaveAttribute('tabindex', '-1');
+  });
 });

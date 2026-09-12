@@ -86,11 +86,19 @@ function Group({
           const current = isCurrent(link.href, pathname);
           return (
             <li key={link.href}>
+              {/* 🔴 `transition-[color,background-color]`, not `transition-colors`.
+                  Tailwind 4 expands `transition-colors` to include `outline-color`,
+                  so the focus ring animated from `currentColor` to carmine over
+                  150ms and every Tab showed a grey ring first. Measured: the rail
+                  links read `rgb(92, 85, 102)` at focus and `accent.fill` 500ms
+                  later, while the wordmark link above — same focus classes, no
+                  transition — read `accent.fill` immediately. The token was always
+                  correct; only the ring's first frame was wrong. */}
               <Link
                 href={link.href}
                 aria-current={current ? 'page' : undefined}
                 className={cn(
-                  'focus-visible:outline-accent-fill flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-colors focus-visible:outline-2',
+                  'focus-visible:outline-accent-fill flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-[color,background-color] focus-visible:outline-2',
                   current
                     ? // Two signals: the surface step and the carmine edge.
                       'bg-bg-raised text-text-primary shadow-[inset_2px_0_0_0_var(--color-accent-fill)]'

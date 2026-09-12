@@ -21,14 +21,22 @@ export function Panel({
   as: Tag = 'div' as ElementType,
   tone = 'surface',
   className,
+  id,
+  tabIndex,
 }: {
   children: ReactNode;
   as?: ElementType;
   tone?: 'surface' | 'raised';
   className?: string;
+  /** For the shell's skip-link target; `<main>` is the only caller that needs it. */
+  id?: string;
+  /** `-1` makes a non-interactive landmark focusable by script, never by Tab. */
+  tabIndex?: number;
 }) {
   return (
     <Tag
+      id={id}
+      tabIndex={tabIndex}
       className={cn(
         'rounded-md',
         tone === 'raised' ? 'bg-bg-raised' : 'bg-bg-surface',

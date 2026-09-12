@@ -59,6 +59,14 @@ export function BrowseMonth({
             <div className="relative">
               <Link
                 href={`/films/${film.tmdbId}`}
+                // 🔴 The same href as the title below it, and nothing to
+                // announce — an `alt=""` poster inside a link is a link with no
+                // accessible name. Measured on /browse: 17 of 54 links. Hidden
+                // from assistive tech and from Tab, still pressable with a
+                // mouse or a thumb. `tabindex` is not optional: aria-hidden on
+                // a focusable element is its own violation.
+                aria-hidden="true"
+                tabIndex={-1}
                 className="focus-visible:outline-accent-fill group relative block aspect-[2/3] focus-visible:outline-2"
               >
                 <RemoteImage

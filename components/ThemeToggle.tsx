@@ -11,6 +11,13 @@ import { useCallback } from 'react';
  * `InitColorSchemeScript` exists to prevent. Rendering the button disabled at
  * the same size holds the layout and stops a click landing before the handler
  * knows what it is switching from.
+ *
+ * 🔴 The focus ring is explicit because without it this control fell back to
+ * Chrome's default — measured `outline-style: auto`, `rgb(0, 95, 204)` — on a
+ * palette where every neighbouring control in the same strip draws a 2px
+ * carmine outline. `min-h-11` is the 44px target the same strip's buttons
+ * already carry; this one rendered at 28px, which matters most in `MoreSheet`,
+ * where it is pressed with a thumb.
  */
 export function ThemeToggle() {
   const { mode, setMode } = useColorScheme();
@@ -23,7 +30,7 @@ export function ThemeToggle() {
       disabled={!mode}
       onClick={toggle}
       aria-label={mode ? `Switch to ${next} theme` : 'Theme'}
-      className="text-text-secondary hover:text-text-primary rounded-sm min-w-24 px-3 py-1 text-sm"
+      className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill rounded-sm flex min-h-11 min-w-24 items-center justify-center px-3 py-1 text-sm focus-visible:outline-2"
     >
       {mode ? `→ ${next}` : ' '}
     </button>
