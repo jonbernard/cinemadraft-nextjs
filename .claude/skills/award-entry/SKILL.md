@@ -13,6 +13,34 @@ Three modes, one procedure. Mode comes from the ask:
 | "Oscars winners" | winners — one listing, every category at once |
 | "run the Oscars live" | live — one category at a time, as they are announced |
 
+## One-time setup
+
+Two environment values, needed once per machine. Everything else works from the
+checkout.
+
+**`REVALIDATE_SECRET`** — the shared secret for `/api/revalidate`. Without it
+`refresh` refuses to run rather than skipping the cache clear silently, so
+nothing in this skill works end to end until it is set. Generate one, put it in
+`.env.local` (gitignored), and set the *same value* on Vercel:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+# → paste it into .env.local as REVALIDATE_SECRET=…
+vercel env add REVALIDATE_SECRET production
+```
+
+The local copy and the Vercel copy must match: the script reads the local one
+and posts it to the deployed route, which compares it against its own. A
+mismatch answers 404 — deliberately indistinguishable from the route not
+existing — so if `refresh` reports 404 with a secret set, they have drifted.
+
+**`TMDB_API_KEY`** — already in `.env.local` for normal development. `apply`
+needs it only to ingest a film the app has never cached, which is the common
+case in January.
+
+Redeploy after adding the Vercel variable; an existing deployment does not pick
+it up.
+
 ## Before anything else
 
 ```bash

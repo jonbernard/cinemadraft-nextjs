@@ -33,4 +33,6 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
   by hand through the admin UI. It drives `scripts/award-import.mjs`, which is
   the only thing that writes scoring inputs to production, and always ends with
   `refresh` — the script cannot call `revalidatePath`, so
-  `app/api/revalidate/route.ts` does it on the script's behalf.
+  `app/api/revalidate/route.ts` does it on the script's behalf. The skill file
+  (`.claude/skills/award-entry/SKILL.md`) is the runbook, including the
+  one-time `REVALIDATE_SECRET` setup without which `refresh` refuses to run.
