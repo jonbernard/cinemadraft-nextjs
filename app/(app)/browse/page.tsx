@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { BrowseMonth } from '@/components/BrowseMonth';
+import { BrowseList } from '@/components/BrowseList';
 import { EmptyState } from '@/components/EmptyState';
 import { SectionHead } from '@/components/SectionHead';
 import { StatusChip } from '@/components/StatusChip';
@@ -15,13 +15,18 @@ import { cn } from '@/lib/utils/cn';
 /**
  * Browse the catalogue (P10.T7).
  *
- * 🔴 **The state is in the URL, not in the component** (D65). The source held
- * both the past/future choice and the accumulated pages in `useState` and
- * appended pages with an intersection observer
- * (`src/pages/browse/index.js:29-70`), which cost four things: a film could not
- * be linked, the back button lost the reader's place, page 12 was unreachable
- * from a keyboard, and the sentinel re-fired on every re-render. `?when=&page=`
- * fixes all four, works before hydration, and is crawlable.
+ * 🔴 **The past/future choice is in the URL; the pages append** (D65, amended
+ * by D80). D65 replaced the source's intersection observer with `?page=` links
+ * and bought four things: a linkable view, a working Back button, keyboard
+ * reachability, and crawlability. The owner was shown that list and chose
+ * auto-append anyway — browse is grazed by scrolling, and a button every twenty
+ * films is the wrong friction on the one page whose job is grazing.
+ *
+ * Three of the four are genuinely traded away. The fourth is kept for nothing:
+ * the `<noscript>` link below is a crawl path into pages 2..N, and `?page=`
+ * still works as an entry point, so a shared link to page 3 lands on page 3 and
+ * appends from there. The *side* stays in the URL either way — that part of D65
+ * is untouched.
  *
  * Public (D44), like the film pages it links to.
  */
@@ -67,7 +72,6 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
 
   const shelf = await loadBrowse({ when, page, userId: user?.id ?? null });
   const hasMore = shelf.page < shelf.pageCount;
-  const films = shelf.months.reduce((total, month) => total + month.films.length, 0);
 
   return (
     // No ground and no padding of its own: `AppShell`'s content panel owns
@@ -76,15 +80,11 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
     <>
       <div className="mx-auto flex max-w-6xl flex-col gap-10">
         <header className="flex flex-col gap-4">
-          <SectionHead
-            as="h1"
-            eyebrow={
-              films === 0 ? undefined : `${films} ${films === 1 ? 'film' : 'films'}`
-            }
-            right={shelf.pageCount > 0 ? `${shelf.page}/${shelf.pageCount}` : undefined}
-          >
-            Browse
-          </SectionHead>
+          {/* No film count and no page indicator here. Both were true of the
+              first page only, and the list now grows underneath them — a header
+              reading "20 films · 1/9" above forty films is worse than no header
+              at all. Each month still counts its own. */}
+          <SectionHead as="h1">Browse</SectionHead>
 
           {/* 🔴 Two links, not a switch. The source used a single `<Switch>`
               labelled "The Future/The Past", which does not say which side it is
@@ -112,28 +112,18 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
               : 'The film catalogue could not be reached. Try again in a moment.'}
           </EmptyState>
         ) : (
-          <div className="flex flex-col gap-10">
-            {shelf.months.map((month) => (
-              <BrowseMonth key={month.label} month={month} isSignedIn={userId != null} />
-            ))}
-          </div>
+          <BrowseList when={when} initial={shelf} isSignedIn={userId != null} />
         )}
 
-        {/* 🔴 A real link, not an intersection observer. It works before
-            hydration, it can be opened in a new tab, and it is reachable with a
-            keyboard — none of which was true of the source's infinite scroll. */}
+        {/* 🔴 The crawl path D80 kept. Readers never see it — it exists so the
+            sitemap (P15.T6) has a way into pages 2..N, which the intersection
+            sentinel does not provide to anything without JavaScript. */}
         {hasMore ? (
-          <nav aria-label="More films" className="flex justify-center">
-            <Link
-              href={`/browse?when=${when}&page=${shelf.page + 1}`}
-              className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 items-center gap-2 rounded-sm px-6 text-sm transition-colors focus-visible:outline-2"
-            >
-              Show more
-              <span className="text-text-dim tabular font-mono text-xs">
-                {shelf.page + 1}/{shelf.pageCount}
-              </span>
-            </Link>
-          </nav>
+          <noscript>
+            <a href={`/browse?when=${when}&page=${shelf.page + 1}`}>
+              More films, page {shelf.page + 1} of {shelf.pageCount}
+            </a>
+          </noscript>
         ) : null}
       </div>
     </>

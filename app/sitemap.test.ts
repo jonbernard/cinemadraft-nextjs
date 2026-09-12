@@ -35,16 +35,7 @@ describe('sitemap', () => {
     }
   });
 
-  it('lists the films the app actually holds, not invented TMDB ids', async () => {
-    const entries = await sitemap();
-    const films = entries.filter((entry) =>
-      new URL(entry.url).pathname.startsWith('/films/'),
-    );
-
-    expect(films.length).toBeGreaterThan(0);
-    // Every film URL ends in a TMDB id, never a local row id or a slug.
-    for (const film of films.slice(0, 20)) {
-      expect(new URL(film.url).pathname).toMatch(/^\/films\/\d+$/);
-    }
-  });
+  // The film list itself is asserted in `sitemap.production.test.ts`: it needs
+  // rows, and CI has the schema without them. Everything above holds on an
+  // empty database, which is what makes it safe to run on every push.
 });

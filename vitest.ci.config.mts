@@ -87,6 +87,11 @@ export default mergeConfig(base, {
       // `actions/profile/feed-actions.test.ts`, which seed every row they touch
       // and run here.
       'lib/services/profile.production.test.ts',
+      // The sitemap's film list, which is only non-empty against the restored
+      // 1,355 titles. The privacy guard that shares the route — no league,
+      // member, auth or admin URL may ever be published — is `sitemap.test.ts`,
+      // which holds on an empty database and runs here.
+      'app/sitemap.production.test.ts',
       // Query-count guards, measured against the restored corpus — a season of
       // real nominations is what makes "one film costs the same as 123"
       // meaningful.

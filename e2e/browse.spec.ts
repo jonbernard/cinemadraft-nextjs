@@ -4,10 +4,10 @@ import { expect, type Page, test } from '@playwright/test';
 /**
  * Browse, in a real browser.
  *
- * Two things are proven here and nowhere else: that the past/future choice and
- * the page number really do live in the URL (D65), and that marking a film
- * watched survives a reload — which is the whole point of the badge, and which a
- * component test with a stubbed action cannot show.
+ * Two things are proven here and nowhere else: that the past/future choice
+ * really does live in the URL (D65) while the pages now append (D80), and that
+ * marking a film watched survives a reload — which is the whole point of the
+ * badge, and which a component test with a stubbed action cannot show.
  *
  * 🔴 The watched test **puts the row back**. It marks a real film against a
  * throwaway identity, reloads, unmarks it, and then deletes the account — so the
@@ -182,17 +182,44 @@ test.describe('browse', () => {
     expect(order(newestPast)).toBeLessThanOrEqual(order(soonestFuture));
   });
 
-  test('🔴 "Show more" is a real link to the next page', async ({ page }) => {
-    // Not an intersection observer: it works before hydration, can be opened in a
-    // new tab, and is reachable with a keyboard.
-    await page.goto('/browse?when=future');
+  test('🔴 the shelf appends when the reader reaches the bottom', async ({ page }) => {
+    // D80 traded the "Show more" link for auto-append. Proven in a browser
+    // because a component test supplies its own IntersectionObserver — whether
+    // a real one fires is exactly what it cannot say.
+    await page.goto('/browse?when=past');
 
-    const more = page.getByRole('link', { name: /Show more/ });
-    await more.scrollIntoViewIfNeeded();
-    await expect(more).toHaveAttribute('href', '/browse?when=future&page=2');
+    const films = page.locator('section ul > li');
+    const before = await films.count();
+    expect(before).toBeGreaterThan(0);
 
-    await more.click();
-    await expect(page).toHaveURL(/page=2/);
+    await page.getByTestId('browse-sentinel').scrollIntoViewIfNeeded();
+    await expect.poll(() => films.count(), { timeout: 15_000 }).toBeGreaterThan(before);
+
+    // 🔴 No month appears twice. Two pages routinely carry films from the same
+    // month, and a second "October 2026" section is the bug the merge prevents.
+    const months = await page.getByRole('heading', { level: 2 }).allTextContents();
+    expect(new Set(months).size).toBe(months.length);
+  });
+
+  test('🔴 a crawler still has a path into page 2', async ({ page }) => {
+    // The one property of D65 that auto-append keeps. The sitemap (P15.T6)
+    // leads here, and the sentinel offers nothing to a client without
+    // JavaScript — so the link stays, in a <noscript> readers never see.
+    await page.goto('/browse?when=past');
+
+    // `textContent` of a <noscript> in a JS-enabled browser is the raw markup,
+    // ampersand still entity-escaped — so the href is matched, not compared.
+    const crawlPath = await page.locator('noscript').last().textContent();
+    expect(crawlPath).toMatch(/href="\/browse\?when=past&(amp;)?page=2"/);
+  });
+
+  test('?page= still works as an entry point', async ({ page }) => {
+    // A shared link or a crawler landing on page 3 gets page 3, and appends
+    // 4, 5, … from there.
+    await page.goto('/browse?when=past&page=3');
+
+    await expect(page.locator('section ul > li').first()).toBeVisible();
+    await expect(page.getByTestId('browse-sentinel')).toBeAttached();
   });
 
   test('a poster links to the film’s page', async ({ page }) => {
