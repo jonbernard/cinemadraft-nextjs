@@ -126,4 +126,16 @@ describe('yearCheck', () => {
   it('passes when nothing was nominated', () => {
     expect(yearCheck({ nominatedYears: [], seasonYears: [2025] }).ok).toBe(true);
   });
+
+  // 🔴 Pins the majority threshold itself. Exactly half outside is not a
+  // majority, so it passes — and this is the case that fails if the
+  // comparison ever drifts (outside * 3 <= known, say, would refuse here).
+  it('passes when exactly half the nominated films fall outside the range', () => {
+    expect(
+      yearCheck({
+        nominatedYears: [2025, 2025, 2019, 2019],
+        seasonYears: [2025],
+      }).ok,
+    ).toBe(true);
+  });
 });
