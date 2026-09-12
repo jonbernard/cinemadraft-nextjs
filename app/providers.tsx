@@ -28,6 +28,17 @@ import { theme } from '@/theme';
  * this needs no theme branch — the same one-attribute switch drives it (D36).
  */
 export function Providers({ children }: { children: ReactNode }) {
+  // 🔴 No publishable key, no ClerkProvider (D84). The e2e run boots with Clerk
+  // absent entirely and signs in through a test cookie instead, and mounting
+  // the provider without a key is a hard render failure, not a degraded one.
+  //
+  // Deliberately keyed on the *publishable* key rather than on
+  // `isTestAuthEnabled()`: this is a client component, and the flag lives in
+  // the server environment. The difference is safe here because the worst a
+  // missing key can do at this layer is fail to render the sign-in UI. Route
+  // protection is the dangerous one, and `proxy.ts` guards that on the flag.
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return <Shell>{children}</Shell>;
+
   return (
     <ClerkProvider
       // The same two routes the proxy redirects to, from one source, so the
@@ -82,19 +93,30 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }}
     >
-      <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-        <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="dark" />
-        {/* `defaultMode` must be set here as well as on the script above, and
-          must match it. The theme's `defaultColorScheme` only names which
-          palette CSS falls back to — the *mode* defaults to "system", so
-          without this a first-time visitor whose OS is set to light gets the
-          light theme. D15 makes dark the default regardless of the OS; the
-          visitor can still choose, and their choice is what gets stored. */}
-        <ThemeProvider theme={theme} defaultMode="dark">
-          <CssBaseline />
-          {children}
-        </ThemeProvider>
-      </AppRouterCacheProvider>
+      <Shell>{children}</Shell>
     </ClerkProvider>
+  );
+}
+
+/**
+ * Everything that is not Clerk. Extracted so the two branches above cannot
+ * drift: the MUI providers, the layer option and the colour-scheme default are
+ * the app's own and are identical with Clerk mounted or absent.
+ */
+function Shell({ children }: { children: ReactNode }) {
+  return (
+    <AppRouterCacheProvider options={{ enableCssLayer: true }}>
+      <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="dark" />
+      {/* `defaultMode` must be set here as well as on the script above, and
+        must match it. The theme's `defaultColorScheme` only names which
+        palette CSS falls back to — the *mode* defaults to "system", so
+        without this a first-time visitor whose OS is set to light gets the
+        light theme. D15 makes dark the default regardless of the OS; the
+        visitor can still choose, and their choice is what gets stored. */}
+      <ThemeProvider theme={theme} defaultMode="dark">
+        <CssBaseline />
+        {children}
+      </ThemeProvider>
+    </AppRouterCacheProvider>
   );
 }

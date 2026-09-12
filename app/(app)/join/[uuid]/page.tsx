@@ -1,4 +1,3 @@
-import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -40,9 +39,15 @@ export default async function JoinPage({
   // mistake, and it reveals nothing about which uuids are real.
   if (!league) notFound();
 
-  const { userId } = await auth();
+  // 🔴 `getCurrentUser()` rather than Clerk's `auth()`, which throws when
+  // `clerkMiddleware` is absent — and under `E2E_TEST_AUTH` it is (D82/D84).
+  // It also asks the right question: joining needs an account row, and a
+  // session whose address is not yet verified has none, so "register first" is
+  // the correct thing to show that visitor rather than a join button that
+  // cannot work.
+  const user = await getCurrentUser();
 
-  if (!userId) {
+  if (!user) {
     return (
       <Frame name={league.name}>
         <p className="text-text-secondary text-sm leading-relaxed">
@@ -69,10 +74,7 @@ export default async function JoinPage({
     );
   }
 
-  const user = await getCurrentUser();
-  const existing = user
-    ? await draftRepository.findByLeagueIdAndUserId(league.id, user.id)
-    : null;
+  const existing = await draftRepository.findByLeagueIdAndUserId(league.id, user.id);
 
   if (existing) {
     // Not an error, and worth saying plainly: following your own invite twice,

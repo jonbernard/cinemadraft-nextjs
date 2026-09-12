@@ -4,6 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const currentUser = vi.hoisted(() => vi.fn());
 vi.mock('@clerk/nextjs/server', () => ({ currentUser }));
 
+// Stands in for the request's cookie jar, so the test below can assert that
+// the test-session branch never reaches for it when the flag is unset.
+const cookies = vi.hoisted(() =>
+  vi.fn(async () => ({ get: () => ({ value: 'anything' }) })),
+);
+vi.mock('next/headers', () => ({ cookies }));
+
 import { db } from '@/lib/db';
 import { AccountLinkError, getCurrentUser, requireAdmin, requireUser } from './auth';
 
@@ -45,6 +52,20 @@ describe('getCurrentUser', () => {
   it('returns null when signed out', async () => {
     currentUser.mockResolvedValue(null);
     expect(await getCurrentUser()).toBeNull();
+  });
+
+  it('🔴 does not consult the test session when the flag is unset', async () => {
+    // The regression this guards: a refactor that reads the cookie first and
+    // only then checks the flag. Every existing test in this file must still
+    // pass unchanged, which is the other half of the assertion — the suite
+    // runs with E2E_TEST_AUTH absent, so `getCurrentUser` here is the same
+    // function it was before lib/test-auth.ts existed.
+    currentUser.mockResolvedValue(null);
+
+    await expect(getCurrentUser()).resolves.toBeNull();
+
+    expect(cookies).not.toHaveBeenCalled();
+    expect(currentUser).toHaveBeenCalled();
   });
 
   it('returns the linked account without writing anything', async () => {

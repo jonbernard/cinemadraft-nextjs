@@ -77,34 +77,33 @@ jobs:
       - name: Build
         run: npm run build
 
-      # E2E does not run here, by decision (D43). The owner declined to store
-      # Clerk credentials in GitHub, and the app cannot render without them:
-      # ClerkProvider needs a publishable key and the proxy needs a secret key.
+      # E2E runs here, with Clerk absent rather than credentialled (D84).
       #
-      # The steps stay, guarded, so the absence is visible in the job list
-      # rather than silently missing — and so this turns on the day the keys
-      # exist. A spec that skips itself reports green while proving nothing.
+      # D43 kept this a local gate: the owner declined to store Clerk
+      # credentials in GitHub, and the app could not render without them.
+      # D82's test session removes the premise rather than overruling the
+      # objection — under `E2E_TEST_AUTH=1` the app boots with no Clerk at all,
+      # so there is nothing to store. The Clerk-driven specs stay local-only
+      # and skip themselves visibly here, because they test Clerk itself and
+      # nothing can stand in for it.
       #
-      # 🔴 `npm run test:e2e` is therefore a LOCAL gate. Run it before any
-      # release; it is on the pre-cutover checklist (Phase 12) and covers both
-      # the auth flow and the Phase 1 cascade-layer assertions.
+      # 🔴 The flag is a boot failure on Vercel, not a setting. `lib/test-auth.ts`
+      # throws at import if `VERCEL_ENV` is set alongside it, so it cannot be
+      # carried from here into a deployment by copying an env block.
+      - name: A signing secret for the test session
+        # Generated per run rather than stored: nothing outside this job ever
+        # needs to verify it, and a secret nobody keeps is a secret nobody
+        # leaks. 64 hex characters, comfortably over the 32 the module demands.
+        run: echo "E2E_TEST_AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
       - name: Install Playwright browsers
-        if: env.CLERK_SECRET_KEY != ''
         run: npx playwright install --with-deps chromium
-        env:
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
       # Playwright's webServer builds and starts the app itself. The build
       # above is not redundant: it fails fast with a readable error before
       # the browser download, rather than surfacing as a webServer timeout.
       - name: E2E tests
-        if: env.CLERK_SECRET_KEY != ''
         run: npm run test:e2e
-        env:
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_CLERK_SIGN_IN_URL: /auth/sign-in
-          NEXT_PUBLIC_CLERK_SIGN_UP_URL: /auth/sign-up
 
       - uses: actions/upload-artifact@v5
         if: failure()

@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { logOutOfTestSession } from '@/actions/auth/log-out';
+
 import { MoreSheet } from './MoreSheet';
 import { NavRail } from './NavRail';
 import { NotificationBell, type NotificationItem } from './NotificationBell';
@@ -274,18 +276,39 @@ function PlusIcon() {
  * `MoreSheet`'s own `AccountControl` — the same small component already
  * exists twice in the reviewed code this task composes, and a shared export
  * is not this task's call to make.
+ *
+ * 🔴 `UserButton` throws outside a `<ClerkProvider>`, and the e2e run mounts
+ * none (D84) — so the same key `app/providers.tsx` branches on decides this
+ * too, and the two cannot disagree. The plain control carries the same
+ * accessible name Clerk's menu item does, so a spec asserting on "Log out"
+ * reads either world.
  */
 function AccountControl({ isSignedIn }: { isSignedIn: boolean }) {
-  if (isSignedIn) return <UserButton />;
+  if (!isSignedIn) {
+    return (
+      <Link
+        href="/auth/login"
+        className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+      >
+        Log in
+      </Link>
+    );
+  }
 
-  return (
-    <Link
-      href="/auth/login"
-      className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
-    >
-      Log in
-    </Link>
-  );
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    return (
+      <form action={logOutOfTestSession}>
+        <button
+          type="submit"
+          className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+        >
+          Log out
+        </button>
+      </form>
+    );
+  }
+
+  return <UserButton />;
 }
 
 function GearIcon() {

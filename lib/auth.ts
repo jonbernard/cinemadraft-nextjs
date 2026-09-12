@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { ForbiddenError } from '@/lib/errors';
 import { type User, userRepository } from '@/lib/repositories/users';
 import { syncClerkIdentity } from '@/lib/services/clerk-identity';
+import { isTestAuthEnabled, testSessionUserId } from '@/lib/test-auth';
 
 /**
  * The session holds a valid Clerk identity, but it cannot be resolved to an
@@ -37,6 +38,25 @@ export class AccountLinkError extends Error {
  * confirmed address), not a failure.
  */
 export async function getCurrentUser(): Promise<User | null> {
+  // 🔴 Test-only (D82/D84), and a *replacement* for the Clerk path rather than
+  // a fallback in front of it. Under the flag the app runs with no Clerk at
+  // all — `proxy.ts` installs a pass-through instead of `clerkMiddleware`, and
+  // `currentUser()` throws outright when that middleware is absent. So this
+  // branch has to answer for every request in a test run, signed in or not;
+  // falling through would crash every anonymous page view.
+  //
+  // `isTestAuthEnabled()` is false in every deployed environment and the module
+  // refuses to load at all on Vercel, so this branch does not exist in
+  // production — see lib/test-auth.ts.
+  if (isTestAuthEnabled()) {
+    const testUserId = await testSessionUserId();
+    if (testUserId == null) return null;
+    // `findById` throws on a miss; `findManyByIds` does not. A cookie that has
+    // outlived its row is a signed-out browser, not a 500.
+    const [user] = await userRepository.findManyByIds([testUserId]);
+    return user ?? null;
+  }
+
   const clerk = await currentUser();
   if (!clerk) return null;
 

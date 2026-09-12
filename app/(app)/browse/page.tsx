@@ -1,4 +1,3 @@
-import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -68,8 +67,13 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
   const page = toPage(typeof params.page === 'string' ? params.page : undefined);
 
   // The badge renders only for a signed-in reader, and the marks are theirs.
-  const { userId } = await auth();
-  const user = userId ? await getCurrentUser() : null;
+  //
+  // 🔴 `getCurrentUser()` rather than Clerk's `auth()`: it already answers null
+  // when there is no session, and it is the one place that knows how a session
+  // is resolved — which under `E2E_TEST_AUTH` is not Clerk at all (D82/D84).
+  // `auth()` throws outright when `clerkMiddleware` is absent, so calling it
+  // here would take down every anonymous view of this page in a test run.
+  const user = await getCurrentUser();
 
   const shelf = await loadBrowse({ when, page, userId: user?.id ?? null });
   const hasMore = shelf.page < shelf.pageCount;
@@ -136,7 +140,7 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
               : 'The film catalogue could not be reached. Try again in a moment.'}
           </EmptyState>
         ) : (
-          <BrowseList when={when} initial={shelf} isSignedIn={userId != null} />
+          <BrowseList when={when} initial={shelf} isSignedIn={user != null} />
         )}
 
         {/* 🔴 The crawl path D80 kept. Readers never see it — it exists so the

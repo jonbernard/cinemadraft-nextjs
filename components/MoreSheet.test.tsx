@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { createRef } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@clerk/nextjs', () => ({
   UserButton: () => <button type="button">Account</button>,
@@ -55,6 +55,12 @@ const unreadyYours: NavLink[] = readyYours.map((link) => ({ ...link, ready: fals
  * the reason every query below passes `{ hidden: true }` rather than
  * asserting through a real `showModal()` open, which jsdom cannot do.
  */
+// `AccountControl` renders Clerk's `UserButton` only when a publishable key is
+// present (D84). Stated here rather than inherited from .env.local, so the
+// suite behaves the same on CI, which has no Clerk key, as on a laptop.
+beforeEach(() => vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', 'pk_test_sheet'));
+afterEach(() => vi.unstubAllEnvs());
+
 describe('MoreSheet', () => {
   it('is a dialog with an accessible name', () => {
     render(<MoreSheet id={MORE_ID} ref={createRef()} pathname="/" isSignedIn={false} />);

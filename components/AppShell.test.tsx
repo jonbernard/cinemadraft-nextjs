@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const usePathname = vi.hoisted(() => vi.fn(() => '/'));
 const push = vi.hoisted(() => vi.fn());
@@ -43,6 +43,14 @@ async function openMore() {
   await userEvent.setup().click(screen.getByRole('button', { name: 'More' }));
   return sheet();
 }
+
+// 🔴 `AccountControl` renders Clerk's `UserButton` only when a publishable key
+// is present (D84), so these tests state which world they are in rather than
+// inherit it from whichever .env.local the machine running them happens to
+// have. Without this the suite would behave differently on CI, where no Clerk
+// key exists, than on a developer's laptop, where one does.
+beforeEach(() => vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', 'pk_test_shell'));
+afterEach(() => vi.unstubAllEnvs());
 
 describe('AppShell', () => {
   it('renders the children inside the content panel', () => {
@@ -190,6 +198,17 @@ describe('AppShell', () => {
 
     expect(screen.getAllByRole('button', { name: 'Account' }).length).toBeGreaterThan(0);
     expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+  });
+
+  it('🔴 offers a plain log-out control when Clerk is not configured', () => {
+    // What makes the e2e run boot at all (D84): `UserButton` throws outside a
+    // `<ClerkProvider>`, and under the test session there is none to mount.
+    vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '');
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    expect(screen.getAllByRole('button', { name: 'Log out' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Account' })).toBeNull();
   });
 
   it('🔴 shows a logged-out visitor the whole nav, plus a way in', () => {

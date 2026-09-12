@@ -2,6 +2,7 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import type { Ref } from 'react';
 
+import { logOutOfTestSession } from '@/actions/auth/log-out';
 import { type NavLink, YOURS_LINKS } from '@/lib/nav/links';
 import { cn } from '@/lib/utils/cn';
 import { Eyebrow } from './Eyebrow';
@@ -168,16 +169,37 @@ function SheetIcon({ path }: { path: string }) {
   );
 }
 
-/** Vocabulary: log in / log out / register — never "sign in". */
+/**
+ * Vocabulary: log in / log out / register — never "sign in".
+ *
+ * 🔴 `UserButton` throws outside a `<ClerkProvider>`, and the e2e run mounts
+ * none (D84) — the same key `app/providers.tsx` branches on decides this too.
+ * `AppShell`'s copy of this component is the desktop half of the same rule.
+ */
 function AccountControl({ isSignedIn }: { isSignedIn: boolean }) {
-  if (isSignedIn) return <UserButton />;
+  if (!isSignedIn) {
+    return (
+      <Link
+        href="/auth/login"
+        className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+      >
+        Log in
+      </Link>
+    );
+  }
 
-  return (
-    <Link
-      href="/auth/login"
-      className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
-    >
-      Log in
-    </Link>
-  );
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    return (
+      <form action={logOutOfTestSession}>
+        <button
+          type="submit"
+          className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+        >
+          Log out
+        </button>
+      </form>
+    );
+  }
+
+  return <UserButton />;
 }

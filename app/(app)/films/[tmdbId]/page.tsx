@@ -1,4 +1,3 @@
-import { auth } from '@clerk/nextjs/server';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -97,8 +96,12 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
   // The session decides whether the watched badge renders at all — the source
   // hid it for anonymous readers too. Resolved on the server because Clerk 7
   // removed `<SignedIn>`, and because it avoids the badge flickering in.
-  const { userId } = await auth();
-  const user = userId ? await getCurrentUser() : null;
+  //
+  // 🔴 `getCurrentUser()` rather than Clerk's `auth()`, which throws when
+  // `clerkMiddleware` is absent — and under `E2E_TEST_AUTH` it is (D82/D84).
+  // It is also the more honest question: the badge's action needs an account
+  // row, not merely an identity provider that has heard of the reader.
+  const user = await getCurrentUser();
   const [watched, myReview] = await Promise.all([
     isFilmWatched(id, user?.id ?? null),
     loadMyReview(id, user?.id ?? null),
@@ -106,7 +109,7 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
 
   return (
     <>
-      <FilmBanner film={film} isSignedIn={userId != null} watched={watched} />
+      <FilmBanner film={film} isSignedIn={user != null} watched={watched} />
 
       <div className="mx-auto grid max-w-6xl gap-8 px-4 md:grid-cols-2 md:px-8">
         <div className="flex flex-col gap-8">

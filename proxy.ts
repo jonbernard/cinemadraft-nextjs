@@ -1,6 +1,8 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 
 import { SIGN_IN_URL, SIGN_UP_URL } from '@/lib/auth-routes';
+import { isTestAuthEnabled } from '@/lib/test-auth';
 
 /**
  * Next 16 renamed this file convention from `middleware` to `proxy`. Both
@@ -78,16 +80,36 @@ const isPublic = createRouteMatcher([
   '/opengraph-image',
 ]);
 
-export default clerkMiddleware(
-  async (auth, request) => {
-    if (!isPublic(request)) await auth.protect();
-  },
-  // 🔴 Naming the app's own pages here is what keeps the redirect same-origin.
-  // Left unset, Clerk sends a logged-out visitor to its hosted portal on
-  // `*.accounts.dev`, and every RSC prefetch of a protected route then follows
-  // a cross-origin redirect and fails CORS. See lib/auth-routes.ts.
-  { signInUrl: SIGN_IN_URL, signUpUrl: SIGN_UP_URL },
-);
+/**
+ * 🔴 The test run has no Clerk, so it cannot have `clerkMiddleware` either
+ * (D84) — that helper needs a secret key, and installing it without one fails
+ * every request rather than passing it through.
+ *
+ * What is given up is route protection, and only for a run where every spec
+ * drives a seeded session of its own; the pages under `(app)` still resolve
+ * that session themselves, and every write still checks it. What is *not*
+ * given up is the guard: this branch is keyed on `isTestAuthEnabled()` rather
+ * than on whether a Clerk key happens to be present, because a key that went
+ * missing from a deployed environment would then silently unprotect the whole
+ * app. The flag cannot be set on Vercel — lib/test-auth.ts refuses to load.
+ *
+ * `config.matcher` below is shared by both branches, so the set of paths this
+ * file sees never depends on which one is active.
+ */
+const passThrough = () => NextResponse.next();
+
+export default isTestAuthEnabled()
+  ? passThrough
+  : clerkMiddleware(
+      async (auth, request) => {
+        if (!isPublic(request)) await auth.protect();
+      },
+      // 🔴 Naming the app's own pages here is what keeps the redirect same-origin.
+      // Left unset, Clerk sends a logged-out visitor to its hosted portal on
+      // `*.accounts.dev`, and every RSC prefetch of a protected route then follows
+      // a cross-origin redirect and fails CORS. See lib/auth-routes.ts.
+      { signInUrl: SIGN_IN_URL, signUpUrl: SIGN_UP_URL },
+    );
 
 export const config = {
   matcher: [
