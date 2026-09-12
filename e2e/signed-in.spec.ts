@@ -101,4 +101,55 @@ test.describe('signed-in surfaces', () => {
     });
     expect(after).toBe(before);
   });
+
+  test('🔴 a single-column page has one left edge, not three', async ({ page }) => {
+    // 🔴 Its own address. Two tests in this file sharing one email means two
+    // workers running the same `insert … on conflict` on `users` at the same
+    // moment, and the lock that takes blocks every page in the suite that reads
+    // a user — measured as two 30s timeouts in `dashboard.spec.ts`, 60 lines
+    // and one file away from anything this test touches.
+    await signInAs(page, { email: `${TAG}-edges-list@example.test`, firstName: 'Edges' });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/list');
+
+    const heading = await page.getByRole('heading', { name: 'Draft list' }).boundingBox();
+    const field = await page.getByLabel('Add a film').boundingBox();
+    if (!heading || !field) throw new Error('no layout');
+
+    // Nested containers each adding their own gutter produced 445 / 469 / 493.
+    // The column has one edge; a card's internal padding is a card's business.
+    expect(Math.abs(heading.x - field.x)).toBeLessThan(2);
+  });
+
+  test('🔴 the empty state is a card on the column, not a third edge', async ({
+    page,
+  }) => {
+    // 445 / 469 / 493 was heading / search field / empty state. Deleting the
+    // page's own Panel removes the middle edge; the empty state's *card edge*
+    // then lands on the column and only its text is inset, which is a card's
+    // business.
+    //
+    // 🔴 This replaces the plan's structural sweep, which could not do this
+    // job. Its "no element inside main repeats main's background with padding"
+    // rule flags `EmptyState` exactly as hard as it flags the deleted wrapper —
+    // both are `bg-bg-surface` with padding at the column's full width, and
+    // nothing in the DOM distinguishes "card" from "duplicate column". (The
+    // plan's own version could not fail at all: its 90%-of-main width floor
+    // excluded a `max-w-3xl` column inside a ~1154px content box.)
+    await signInAs(page, {
+      email: `${TAG}-edges-empty@example.test`,
+      firstName: 'Edges',
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/list');
+
+    const heading = await page.getByRole('heading', { name: 'Draft list' }).boundingBox();
+    const title = page.getByRole('heading', { level: 3 }).first();
+    const card = await title.locator('..').boundingBox();
+    const titleBox = await title.boundingBox();
+    if (!heading || !card || !titleBox) throw new Error('no layout');
+
+    expect(Math.abs(card.x - heading.x)).toBeLessThan(2);
+    expect(titleBox.x - card.x).toBeGreaterThan(8);
+  });
 });

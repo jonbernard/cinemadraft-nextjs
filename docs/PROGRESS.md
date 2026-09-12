@@ -1303,7 +1303,7 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 - [ ] P17.T33 — 88% of signed-in text is 12px; kill the `text-[0.65rem]` arbitrary value (117 elements at 10.4px)
 - [ ] P17.T34 — `text-dim` outnumbers `text-primary` 3.6:1; audit what deserves it
 - [ ] P17.T35 — 🔴 brass already means "drafted" (320 instances on the draft board). **Blocks P18.T6** until its meaning is decided
-- [ ] P17.T36 — `/list` has three left edges (445 / 469 / 493)
+- [x] P17.T36 — `/list` has three left edges (445 / 469 / 493). Re-measured at 1440px before touching anything and the review's numbers reproduce exactly: heading 445, search field 469, empty state 493. The middle edge was a `Panel` wrapping the whole page body at the same `surface` tone as `AppShell`'s content panel — invisible, worth only a 24px gutter. Deleted; heading and field now both sit at 445. Audited the other single-column pages at 1440px: `/leagues` h1 445, `/admin` h1 445 / first card 445, `/leagues/new` h1 573 / first field 573, `/members/[uuid]` column 445 — all aligned. 🔴 `/watchlist` measured and left alone (h1 x=381)
 
 ### Recording the decisions
 

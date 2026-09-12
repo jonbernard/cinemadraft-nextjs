@@ -6,7 +6,6 @@ import { reorderList } from '@/actions/draft-list/reorder-list';
 import { setListStatus } from '@/actions/draft-list/set-status';
 import { findFilmsAction } from '@/actions/search/find-films';
 import { DraftListEditor, type DraftListStatus } from '@/components/DraftListEditor';
-import { Panel } from '@/components/Panel';
 import { SectionHead } from '@/components/SectionHead';
 import { requireUser } from '@/lib/auth';
 import { NOINDEX } from '@/lib/seo';
@@ -53,46 +52,51 @@ export default async function DraftListPage() {
           </p>
         ) : null}
 
-        <Panel className="p-4 sm:p-6">
-          <DraftListEditor
-            entries={entries.map((entry) => ({
-              entryId: entry.entryId,
-              movieId: entry.movieId,
-              title: entry.title,
-              posterUrl: entry.posterUrl,
-              releaseYear: entry.releaseYear,
-              status: entry.status,
-            }))}
-            // biome-ignore lint/performance/noJsxPropsBind: a Server Action in a Server Component — this compiles to a stable action reference, not a client closure rebuilt on render
-            onSearch={async (query: string) => {
-              'use server';
-              return findFilmsAction({
-                query,
-                context: { kind: 'draft', year, takenMovieIds: onList },
-              });
-            }}
-            // biome-ignore lint/performance/noJsxPropsBind: as above
-            onAdd={async (film: { movieId?: number; tmdbId?: string }) => {
-              'use server';
-              return addFilmToList({ year, ...film });
-            }}
-            // biome-ignore lint/performance/noJsxPropsBind: as above
-            onRemove={async (entryId: number) => {
-              'use server';
-              return removeFilmFromList({ entryId });
-            }}
-            // biome-ignore lint/performance/noJsxPropsBind: as above
-            onSetStatus={async (entryId: number, status: DraftListStatus) => {
-              'use server';
-              return setListStatus({ entryId, status });
-            }}
-            // biome-ignore lint/performance/noJsxPropsBind: as above
-            onReorder={async (entryIds: number[]) => {
-              'use server';
-              return reorderList({ year, entryIds });
-            }}
-          />
-        </Panel>
+        {/* 🔴 No `Panel` here (P17.T36). AppShell already renders the page's
+            content in `Panel as="main"` at the same `surface` tone, so a second
+            one is invisible and contributes only a 24px gutter — which is what
+            put this page's heading, search field and empty state on three
+            different left edges (445 / 469 / 493 at 1440px). A Panel around a
+            list *item* is a card; a Panel around the whole page body is a
+            duplicate column. */}
+        <DraftListEditor
+          entries={entries.map((entry) => ({
+            entryId: entry.entryId,
+            movieId: entry.movieId,
+            title: entry.title,
+            posterUrl: entry.posterUrl,
+            releaseYear: entry.releaseYear,
+            status: entry.status,
+          }))}
+          // biome-ignore lint/performance/noJsxPropsBind: a Server Action in a Server Component — this compiles to a stable action reference, not a client closure rebuilt on render
+          onSearch={async (query: string) => {
+            'use server';
+            return findFilmsAction({
+              query,
+              context: { kind: 'draft', year, takenMovieIds: onList },
+            });
+          }}
+          // biome-ignore lint/performance/noJsxPropsBind: as above
+          onAdd={async (film: { movieId?: number; tmdbId?: string }) => {
+            'use server';
+            return addFilmToList({ year, ...film });
+          }}
+          // biome-ignore lint/performance/noJsxPropsBind: as above
+          onRemove={async (entryId: number) => {
+            'use server';
+            return removeFilmFromList({ entryId });
+          }}
+          // biome-ignore lint/performance/noJsxPropsBind: as above
+          onSetStatus={async (entryId: number, status: DraftListStatus) => {
+            'use server';
+            return setListStatus({ entryId, status });
+          }}
+          // biome-ignore lint/performance/noJsxPropsBind: as above
+          onReorder={async (entryIds: number[]) => {
+            'use server';
+            return reorderList({ year, entryIds });
+          }}
+        />
       </div>
     </>
   );
