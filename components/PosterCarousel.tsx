@@ -92,12 +92,22 @@ export function PosterCarousel({
           accessible name carries the `region` role natively, which is what makes
           the focus stop announce itself instead of arriving as an anonymous
           `<div>`. The list stays a plain list inside it. */}
+      {/* 🔴 `contain: inline-size` is load-bearing, not an optimisation. The
+          strip is `flex gap-4` with one full-width poster per item: the items
+          contribute nothing to intrinsic width, but the *gaps* do — 16px × (n-1),
+          which for a 77-poster film is 1216px, plus 2px of `light:border` per
+          poster on top in light. A `1fr` grid track takes its minimum from its
+          item's min-content, so that number became the width of the whole column
+          and the page scrolled sideways to 1402px at a 390px viewport. Inline-size
+          containment says the one thing that is actually true here: this strip is
+          as wide as its parent and never as wide as its contents. Measured in a
+          browser; jsdom reports every width as 0 and saw none of it. */}
       <section
         ref={strip}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG 2.1.1 requires a scrollable region to be keyboard-reachable, and only a focusable element can be scrolled with the arrow keys. The rule has no exception for that, and its offered fix deletes the keyboard path outright. The named <section> is what makes the focus stop announce itself.
         tabIndex={0}
         aria-label={`Posters for ${title}`}
-        className="focus-visible:outline-accent-fill snap-x snap-mandatory overflow-x-auto focus-visible:outline-2"
+        className="focus-visible:outline-accent-fill snap-x snap-mandatory overflow-x-auto [contain:inline-size] focus-visible:outline-2"
       >
         <ul className="flex gap-4">
           {posterUrls.map((url, position) => (

@@ -14,6 +14,9 @@ import { expect, test } from '@playwright/test';
  */
 const LA_LA_LAND = '313369';
 
+/** 77 posters and 32 trailers — the film that made the overflow measurable. */
+const PARASITE = '496243';
+
 /** A TMDB id nothing will ever own. */
 const UNKNOWN = '999999999';
 
@@ -133,6 +136,79 @@ test.describe('a film page', () => {
 
     const first = page.locator('a[href^="/films/"]').last();
     await expect(first).toBeVisible();
+  });
+  /**
+   * 🔴 Geometry, which is why this is here and not in a component test.
+   *
+   * Below `md` the page is one grid column, and a `1fr` track takes its minimum
+   * from the item's min-content. `PosterCarousel`'s strip contributed the sum of
+   * its 16px gaps — 76 of them for this film — so the single column measured far
+   * wider than its 358px container, and light added 2px of poster border per
+   * poster on top of that.
+   *
+   * Both schemes, because the failure is worse in light and a dark-only
+   * assertion would have called it fixed.
+   */
+  test('🔴 fits a 390px phone in both schemes', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    const widths: Record<string, { doc: number; columns: number[] }> = {};
+
+    for (const scheme of ['dark', 'light'] as const) {
+      // InitColorSchemeScript reads this key before paint; setting it as an
+      // init script means the page never renders in the other scheme first.
+      await page.addInitScript(
+        (mode) => window.localStorage.setItem('mui-mode', mode),
+        scheme,
+      );
+      await page.goto(`/films/${PARASITE}`);
+      await expect(
+        page.getByRole('heading', { name: 'Parasite', level: 1 }),
+      ).toBeVisible();
+
+      widths[scheme] = await page.evaluate(() => {
+        const grid = document.querySelector('main .grid');
+        return {
+          doc: document.documentElement.scrollWidth,
+          columns: [...(grid?.children ?? [])].map((c) =>
+            Math.round(c.getBoundingClientRect().width),
+          ),
+        };
+      });
+
+      // The page never scrolls sideways. 390 exactly: one pixel more is the
+      // defect, and `<=` would let a 1px regression through as "close enough".
+      expect(widths[scheme]?.doc, `${scheme} document width`).toBe(390);
+
+      // Both columns sit inside the 326px the shell's p-4 and the page's px-4
+      // leave them.
+      for (const width of widths[scheme]?.columns ?? []) {
+        expect(width, `${scheme} column width`).toBeLessThanOrEqual(326);
+      }
+    }
+
+    // 🔴 The light-versus-dark delta itself. A `light:` variant may change
+    // colour; it may not change how wide anything is.
+    expect(widths.light?.columns).toEqual(widths.dark?.columns);
+  });
+
+  /**
+   * The trailer rows are `w-full` with horizontal padding, and the button
+   * computes `box-sizing: content-box` — so the padding landed outside the 100%
+   * and every row rendered 342px inside a 326px list item. Scheme-independent.
+   */
+  test('🔴 a trailer row fits its list item', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/films/${PARASITE}`);
+
+    const overflow = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('main li')].filter(
+          (li) => li.clientWidth > 100 && li.scrollWidth > li.clientWidth + 1,
+        ).length,
+    );
+
+    expect(overflow).toBe(0);
   });
 });
 

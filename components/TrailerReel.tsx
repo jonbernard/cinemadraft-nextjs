@@ -120,12 +120,19 @@ function TrailerButton({
   // arrow in a prop, and passing the trailer down keeps the handler stable.
   const play = useCallback(() => onPlay(trailer), [onPlay, trailer]);
 
+  // 🔴 `box-border` is not redundant. MUI's CssBaseline emits
+  // `*, *::before, *::after { box-sizing: inherit }` into the `mui` cascade
+  // layer, which sits above `base` where Tailwind preflight's `border-box`
+  // lives — and this button computes `content-box` as a result, so `w-full`
+  // plus `px-2` rendered 342px inside a 326px list item. The app-wide version
+  // of that (756 of 1287 elements inside <main> on this page) is not this
+  // task's to fix; this is the one place it overflows.
   return (
     <button
       type="button"
       onClick={play}
       aria-current={isPlaying ? 'true' : undefined}
-      className="focus-visible:outline-accent-fill hover:bg-bg-raised flex min-h-11 w-full items-center gap-3 px-2 text-left text-sm focus-visible:outline-2"
+      className="focus-visible:outline-accent-fill hover:bg-bg-raised box-border flex min-h-11 w-full items-center gap-3 px-2 text-left text-sm focus-visible:outline-2"
     >
       {/* 🔴 The triangle needs the circle around it. On its own, at 16px and in
           a vertical list, a filled triangle reads as a disclosure caret rather
