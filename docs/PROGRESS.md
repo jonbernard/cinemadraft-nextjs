@@ -1251,7 +1251,7 @@ order, the tranche boundaries and the browser-verification protocol.
 - [x] P17.T1 — `SectionHead` sizes **28 / 20 / 17** keyed to `as`; fix the `h1 → h3 → h2` order on `/`
 - [x] P17.T2 — `AppShell` breakpoints: close the 1024–1280px dead zone; **decided — identity, search and sign-in fold into the tab bar row**, wordmark left, search right. Watch that the chrome does not read as a sixth tab
 - [x] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
-- [ ] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
+- [x] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
 - [x] P17.T5 — signed-out lede above `SeasonStepper`
 - [x] P17.T6 — `/browse` **`replaceState`s the cursor as you scroll** — auto-append stays exactly as D80 wanted, Back and shareability come back, no new UI. Narrowest possible amendment to D80
 - [x] P17.T7 — draft console never returns silently from `assign`
@@ -1397,6 +1397,28 @@ recorded here, so the change is a number rather than an impression._
   would put two identical Register buttons 2,000px apart. **P17.T29 rebuilds
   the signed-in half of `/` and should revisit this block's ending.**
 
+- **P17.T4, the leaderboard's measured numbers.** Production build,
+  `/` signed out, 1440 / 1280 / 1024 / 390px, both schemes.
+  - **The year control.** Ten links measured at 33.6 × 20px became one 49 × 44px
+    `<summary>` and, opened, **ten 44px targets** at every width in both
+    schemes. Opening it does not move the table: its top is 472px before and
+    472px after at 390px. The open list sits on `bg-bg-raised` —
+    `rgb(33,28,41)` dark, `rgb(231,225,215)` light. Checked in WebKit as well:
+    `list-style-type: none` plus the `::-webkit-details-marker` rule leaves no
+    stray triangle.
+  - **The legend.** `display: flex` at 1440, 1280 and 1024 and `none` at 390,
+    matching the columns it explains. No `<th>` carries `title` at any width.
+  - **The mobile breakdown.** Every row's title is a 165 × 44px disclosure at
+    390px; opening one lists the shows that film scored at, by full name, and
+    `scrollWidth` stays 390.
+  - 🔴 **The `text-dim` legend's contrast at 12px, as an input to P17.T34 and
+    not fixed here: 5.18:1 dark, 5.88:1 light** on the surface ground. Both
+    clear 4.5:1, so this pairing is not the one T34 will find wanting.
+  - **The sticky film column.** `position: sticky` at 1440, 1280 and 1024,
+    `static` at 390. Its `bg-bg-surface` matches the `Panel as="main"` ground
+    exactly in both schemes — `rgb(22,19,28)` dark, `rgb(251,249,246)` light —
+    so nothing shows through it.
+
 - **Amendments awaiting a D-number (recorded by P17.T26, from D85 up).** The
   ledger is complete through D84; nothing in tranche 1 edits `DECISIONS.md`,
   because picking a number per task would force a renumber when T26 records all
@@ -1484,6 +1506,27 @@ Plan: _not yet written — write it before starting T0._
 ---
 
 ## Open questions carried forward
+
+- **🔴 Found by P17.T4's browser pass, not reproducible — the leaderboard does
+  not overflow at 1024px.** The 2026-09-12 review recorded that twelve per-show
+  columns overflow the content panel at `lg` "taking the document with them",
+  and T4 was written to restore a scroll container there. Measured against a
+  production build (`npm run start`), that overflow does not exist: the
+  wrapper's `scrollWidth` and `clientWidth` are both **992** at 1024px, **994**
+  at 1280 and **1152** at 1440, and `document.scrollingElement.scrollWidth`
+  equals the viewport at every width. Fourteen columns fit; they are merely
+  tight. The review ran against a dev server at 1440 and 390 only, so the 1024
+  claim looks inferred rather than measured — the same class of artefact as the
+  "detached avatar" that turned out to be Next's dev indicator.
+  **What shipped anyway, and why:** `lg:overflow-x-auto` on the wrapper and
+  `lg:sticky` on the film column, so a table that grows a column per award show
+  owns its own overflow instead of handing it to the document. **No
+  `lg:min-w-*`** — the plan specified `48rem`, which is below 992 and therefore
+  can never bind at `lg`; a floor high enough to bind would manufacture the
+  scroll rather than survive it. The e2e test was written to assert the
+  rendered `position` (`sticky` at 1024, `static` at 390), which is falsifiable,
+  rather than a scroll that cannot happen — a scroll assertion passed with
+  `lg:sticky` deleted.
 
 - **🔴 Found by P17.T1's browser pass, not fixed — `Group N` on
   `/leagues/[id]` is a 12px `h2` above 17px `h3`s.** `app/(app)/leagues/[id]/page.tsx:210`

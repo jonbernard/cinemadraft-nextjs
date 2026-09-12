@@ -40,3 +40,57 @@ export const Long: StoryObj<typeof meta> = {
 export const Empty: StoryObj<typeof meta> = {
   args: { leaderboard: { year: 2026, events: [], rows: [] } },
 };
+
+/**
+ * 🔴 Twelve shows — the real count, and the case the sticky film column and
+ * the legend both exist for. At 1024px twelve per-show columns overflow the
+ * content panel; inside this story's frame the table scrolls and Film stays.
+ */
+export const TwelveShows: StoryObj<typeof meta> = {
+  args: {
+    leaderboard: {
+      year: 2026,
+      events: [
+        { abbreviation: 'gg', name: 'Golden Globes' },
+        { abbreviation: 'dga', name: 'Directors Guild' },
+        { abbreviation: 'bafta', name: 'BAFTA' },
+        { abbreviation: 'ace', name: 'ACE Eddie' },
+        { abbreviation: 'adg', name: 'Art Directors Guild' },
+        { abbreviation: 'pga', name: 'Producers Guild' },
+        { abbreviation: 'sag', name: 'Screen Actors Guild' },
+        { abbreviation: 'wga', name: 'Writers Guild' },
+        { abbreviation: 'asc', name: 'American Society of Cinematographers' },
+        { abbreviation: 'raz', name: 'Razzies' },
+        { abbreviation: 'oscars', name: 'Academy Awards' },
+        { abbreviation: 'afi', name: 'American Film Institute' },
+      ],
+      rows: Array.from({ length: 6 }, (_, index) => {
+        const events = Object.fromEntries(
+          [
+            'gg',
+            'dga',
+            'bafta',
+            'ace',
+            'adg',
+            'pga',
+            'sag',
+            'wga',
+            'asc',
+            'raz',
+            'oscars',
+            'afi',
+          ].map((abbreviation, column) => [
+            abbreviation,
+            (column + index) % 4 === 0 ? 0 : 5 * (6 - index),
+          ]),
+        );
+        return {
+          movieId: index + 1,
+          title: `Film ${index + 1}`,
+          events,
+          total: Object.values(events).reduce((sum, points) => sum + points, 0),
+        };
+      }),
+    },
+  },
+};

@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { PosterFrame } from '@/components/PosterFrame';
 import { RosterStrip } from '@/components/RosterStrip';
+import { SeasonPicker } from '@/components/SeasonPicker';
 import { SeasonStepper } from '@/components/SeasonStepper';
 import { SectionHead } from '@/components/SectionHead';
 import { Shelf } from '@/components/Shelf';
@@ -121,26 +122,11 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
           as="h2"
           eyebrow="By award show"
           rightStacksOnMobile
-          right={
-            seasons.length > 1 ? (
-              <nav aria-label="Season" className="flex flex-wrap gap-3 text-sm">
-                {seasons.map((entry) => (
-                  <Link
-                    key={entry}
-                    href={`/?year=${entry}`}
-                    aria-current={entry === year ? 'page' : undefined}
-                    className={
-                      entry === year
-                        ? 'text-accent-text tabular font-mono'
-                        : 'text-text-secondary tabular font-mono underline'
-                    }
-                  >
-                    {entry}
-                  </Link>
-                ))}
-              </nav>
-            ) : undefined
-          }
+          // 🔴 A picker, not a flat row (P17.T4). Ten seasons was ten links
+          // measured at 33.6 × 20px, wrapping across this slot. The
+          // `seasons.length > 1` guard moved into the component rather than
+          // living in both places.
+          right={<SeasonPicker year={year} seasons={seasons} />}
         >
           Season leaderboard
         </SectionHead>

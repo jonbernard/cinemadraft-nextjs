@@ -198,6 +198,72 @@ test.describe('dashboard', () => {
     expect(await px('main h1')).toBeGreaterThan(24);
   });
 
+  test('🔴 every season target clears 44px', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    // The defect: ten year links at 33.6 × 20px. Rendered geometry is the only
+    // place that number was ever real, which is why no test caught it.
+    const picker = page.getByRole('group', { name: 'Season' });
+    const summary = await picker.locator('summary').boundingBox();
+    expect(summary?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+    await picker.locator('summary').click();
+    for (const link of await picker.getByRole('link').all()) {
+      const box = await link.boundingBox();
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test('🔴 the table owns its overflow, and the film column pins (1024px)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1024, height: 800 });
+    await page.goto('/');
+
+    // 🔴 Rendered `position`, not a scroll. The review reported that twelve
+    // per-show columns overflow the content panel at 1024 and take the
+    // document sideways; measured against a production build on 2026-09-12
+    // that is **not reproducible** — the wrapper's scrollWidth and clientWidth
+    // are both 992, so there is nothing to scroll and a scroll assertion here
+    // would pass whether or not the cell were sticky. What is falsifiable is
+    // that the cell *is* sticky at `lg`, ready for the season that does not
+    // fit, and that the document is never the thing that scrolls.
+    const film = page.getByRole('rowheader').first();
+    expect(await film.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
+
+    const wrapper = page.locator('.lg\\:overflow-x-auto').first();
+    expect(await wrapper.evaluate((el) => getComputedStyle(el).overflowX)).toBe('auto');
+
+    // Whatever the table does, the document does not move.
+    await wrapper.evaluate((el) => {
+      el.scrollLeft = 400;
+    });
+    expect(
+      await page.evaluate(() => document.scrollingElement?.scrollWidth ?? 0),
+    ).toBeLessThanOrEqual(1024);
+
+    // And below `lg` the cell is static and the container does not scroll —
+    // D79, unchanged.
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await film.evaluate((el) => getComputedStyle(el).position)).toBe('static');
+    expect(await wrapper.evaluate((el) => getComputedStyle(el).overflowX)).toBe(
+      'visible',
+    );
+  });
+
+  test('🔴 a phone can see where a total came from', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    await page.getByRole('rowheader').first().getByRole('button').click();
+
+    await expect(page.locator('[data-testid^="breakdown-"]').first()).toBeVisible();
+    expect(
+      await page.evaluate(() => document.scrollingElement?.scrollWidth ?? 0),
+    ).toBeLessThanOrEqual(390);
+  });
+
   test.describe('signed in', () => {
     /**
      * 🔴 These four need the restored member, and only these four — the
