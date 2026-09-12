@@ -47,6 +47,41 @@ test.describe('a film page', () => {
     expect(topmost).toContain('La La Land');
   });
 
+  test('🔴 the year is part of the title, inside the scrim', async ({ page }) => {
+    // A film is identified by name AND year. The year used to sit below the
+    // banner in 14px dim mono, cut from the name by the image's hard edge.
+    await page.goto(`/films/${LA_LA_LAND}`);
+
+    const heading = page.getByRole('heading', { level: 1 });
+    await expect(heading).toContainText('La La Land');
+    await expect(heading).toContainText('2016');
+
+    // Geometry, because that is the actual defect. The year's box must share a
+    // line with the title's, not sit on the row beneath it: same top within a
+    // few px, and a bottom inside the heading's own bottom.
+    const title = await heading.boundingBox();
+    const year = await heading.getByText('2016', { exact: true }).boundingBox();
+    // Thrown rather than asserted: a null box makes every number below
+    // meaningless, and `noNonNullAssertion` is on in this repo.
+    if (title === null || year === null) throw new Error('the lockup has no box');
+
+    // Optically smaller type sits lower in the line box, never below it.
+    expect(year.y).toBeGreaterThanOrEqual(title.y - 2);
+    expect(year.y + year.height).toBeLessThanOrEqual(title.y + title.height + 2);
+
+    // 🔴 And the YEAR is inside the scrim, which is the other half of the
+    // defect — the title always was. On its old row below the heading it
+    // cleared the frame's bottom edge by about a dozen pixels and sat on bare
+    // ground; in the line box it does not. Measured on the year rather than on
+    // the heading, because the heading's box would pass either way.
+    const frameBottom = await page.evaluate(() => {
+      const frame = document.querySelector('main header > div');
+      return frame ? frame.getBoundingClientRect().bottom + window.scrollY : null;
+    });
+    if (frameBottom === null) throw new Error('the banner frame has no box');
+    expect(year.y + year.height).toBeLessThanOrEqual(frameBottom);
+  });
+
   test('shows the real runtime, not the source’s hard-coded one', async ({ page }) => {
     // The live site prints 1 hour 41 minutes for every film in the catalogue
     // (PARITY bug 12). La La Land is 2 hours 9 minutes.

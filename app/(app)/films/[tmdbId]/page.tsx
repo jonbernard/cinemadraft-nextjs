@@ -241,25 +241,39 @@ function FilmBanner({
           nothing in jsdom could have caught it. */}
       <div className="relative mx-auto -mt-16 flex max-w-6xl flex-wrap items-end justify-between gap-4 px-4 md:px-8">
         <div className="flex flex-col gap-2">
+          {/* 🔴 The year is part of the name, so it is inside the h1 rather
+              than on the row below it. Two inline boxes in one line box share a
+              baseline for free — no flex, no `items-baseline`. It also makes
+              the accessible name "La La Land 2016", which is exactly what
+              `generateMetadata` already puts on the share card, and it keeps the
+              year inside the scrim instead of below the image's hard edge.
+
+              The serif at a smaller optical size rather than mono: D70 renders
+              names in Instrument Serif and this is half of one. No `tabular` —
+              a year is static, so there is no column to stop jittering. */}
           <h1 className="font-serif text-text-primary text-3xl font-bold tracking-[-0.02em] md:text-5xl">
             {film.title}
-          </h1>
-          <div className="flex flex-wrap items-center gap-3">
             {film.year ? (
-              <span className="text-text-secondary tabular font-mono text-sm">
+              <span className="text-text-secondary ml-3 text-xl font-normal md:text-3xl">
                 {film.year}
               </span>
             ) : null}
-            {/* The MPAA rating in a bordered box, as the screenshot shows — but
-                as type in a rule, not one of the source's eleven trademarked
-                rating glyphs (`src/pages/movie/icons`), which would have to be
-                redrawn to no benefit. */}
-            {film.facts?.mpaaRating ? (
+          </h1>
+          {/* 🔴 The row now renders only when there is a rating. It used to be
+              an empty flex row for every film with neither, which is a
+              correctness fix rather than a spacing decision — no gap value
+              changes here. */}
+          {film.facts?.mpaaRating ? (
+            <div className="flex flex-wrap items-center gap-3">
+              {/* The MPAA rating in a bordered box, as the screenshot shows —
+                  but as type in a rule, not one of the source's eleven
+                  trademarked rating glyphs (`src/pages/movie/icons`), which
+                  would have to be redrawn to no benefit. */}
               <span className="border-border-rule text-text-secondary border px-2 py-0.5 font-sans text-xs">
                 {film.facts.mpaaRating}
               </span>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
 
         {isSignedIn ? (
