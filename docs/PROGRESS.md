@@ -1279,7 +1279,7 @@ order, the tranche boundaries and the browser-verification protocol.
 decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
 
 - [x] P17.T18 — body size to **15px / 13px small** (amends D71)
-- [ ] P17.T19 — 🔴 poster captions get **serif at 15px** — `PosterFrame.tsx:120` and `BrowseMonth.tsx:89` set film titles in Archivo, which D70 says are names. Newsreader deferred to after Phase 18
+- [x] P17.T19 — 🔴 poster captions get **serif at 15px** — `PosterFrame.tsx:120` and `BrowseMonth.tsx:89` set film titles in Archivo, which D70 says are names. Newsreader deferred to after Phase 18
 - [ ] P17.T20 — `beam` **spent on live + the `Next · date TBA` chip**; not done until it renders
 - [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 **Unblocked by P17.T35**: brass means an award outcome only, and the "already means drafted" reading rested on a figure that does not reproduce
 - [ ] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
@@ -1725,6 +1725,34 @@ recorded here, so the change is a number rather than an impression._
   sweep may not make, and the alternative — 16px — is D70's serif-names step
   and would be wrong on a second axis. Whoever owns `EmptyState` next should
   close it.
+
+- **P17.T19 — poster captions are names, so they are set in the serif.** Two
+  `font-serif` classes, `components/PosterFrame.tsx:145` (the `<figcaption>`
+  title every poster grid renders) and `components/BrowseMonth.tsx:95` (the
+  release calendar renders its own `<Link>` and does not use `PosterFrame`'s
+  caption, so one without the other leaves half the product in Archivo).
+  D70's sub-15px escape stops applying by arithmetic: after T18 `text-sm` is
+  15px, so the captions are above the floor and the rule is unconditional.
+
+  **Measured, same harness and routes:**
+  - Fonts before: `Archivo ×1572, IBM Plex Mono ×522, Instrument Serif ×76, Sora ×8, Newsreader ×2`
+  - Fonts after: `Archivo ×1498, IBM Plex Mono ×522, Instrument Serif ×150, Sora ×8, Newsreader ×2`
+  - **Instrument Serif +74, Archivo −74** — the same 74 elements, moved. Serif
+    goes from 3.5% to 6.9% of rendered text. Sizes, gaps and radii unchanged.
+
+  🔴 **The browser-only half is the half the plan said could go wrong, and it
+  went the other way.** Instrument Serif is narrower than Archivo at the same
+  size, so captions that wrapped now fit:
+  - `/` caption heights: `{19px ×16, 38px ×4}` → `{19px ×19, 38px ×1}`
+  - `/browse` grid rows @1440: `{295px ×11, 314px ×6}` → `{295px ×17}`
+  - `/browse` grid rows @390: `{283px ×15, 302px ×2}` → `{283px ×17}`
+
+  Two-line titles still clamp at two lines (38px is still exactly 2 × 19px),
+  no row grew, and the shelves are more uniform than before. No page overflow,
+  no nav-rail overflow, tab destinations 49px at every width in both schemes.
+
+  🔴 Newsreader untouched and still deferred (`--font-prose`, `theme/fonts.ts`),
+  to be re-judged after Phase 18, per the task.
 
 ---
 

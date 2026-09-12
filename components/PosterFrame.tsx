@@ -142,7 +142,7 @@ export function PosterFrame({
       </div>
 
       <figcaption className="flex flex-col gap-1">
-        <span className="text-text-primary line-clamp-2 text-sm leading-tight">
+        <span className="text-text-primary line-clamp-2 font-serif text-sm leading-tight">
           {title}
         </span>
         {points == null ? null : (

@@ -92,7 +92,7 @@ export function BrowseMonth({
 
             <Link
               href={`/films/${film.tmdbId}`}
-              className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill text-sm leading-tight focus-visible:outline-2"
+              className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill font-serif text-sm leading-tight focus-visible:outline-2"
             >
               {film.title}
             </Link>

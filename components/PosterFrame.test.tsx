@@ -124,4 +124,14 @@ describe('PosterFrame', () => {
     render(<PosterFrame {...base} title="Marty Supreme" />);
     expect(screen.getByText('MA')).toBeInTheDocument();
   });
+
+  it('sets the film title in the serif — it is a name (D70, P17.T19)', () => {
+    render(<PosterFrame {...base} />);
+
+    const caption = screen.getByText('Sinners');
+    // 🔴 D70's sub-15px escape no longer applies: `text-sm` is 15px (P17.T18),
+    // so a poster caption is above the floor and the rule is unconditional.
+    expect(caption.className).toContain('font-serif');
+    expect(caption.className).toContain('text-sm');
+  });
 });

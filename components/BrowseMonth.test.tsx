@@ -63,4 +63,11 @@ describe('BrowseMonth', () => {
     expect(poster).toHaveAttribute('tabindex', '-1');
     expect(poster?.querySelector('img')).not.toBeNull();
   });
+
+  it('sets the film title in the serif — it is a name (D70, P17.T19)', () => {
+    render(<BrowseMonth month={month} isSignedIn={false} />);
+
+    const link = screen.getByRole('link', { name: 'The Matrix' });
+    expect(link.className).toContain('font-serif');
+  });
 });
