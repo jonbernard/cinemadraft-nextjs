@@ -45,7 +45,6 @@ every show — ask which one.
    {
      "kind": "nominations",
      "eventAbbreviation": "DGA",
-     "eventId": 7,
      "year": 2025,
      "sources": ["https://…"],
      "unmatched": [],
@@ -69,17 +68,11 @@ every show — ask which one.
    ```
 
 6. **STOP. Wait for approval.** Nothing writes until the owner says go.
-7. **Commit**, then refresh:
+7. **Commit**:
 
    ```bash
    DATABASE_URL="$PROD" TMDB_API_KEY="…" node scripts/award-import.mjs apply <plan> --commit
-   DATABASE_URL="$PROD" REVALIDATE_SECRET="$(grep -m1 '^REVALIDATE_SECRET' .env.local | cut -d= -f2-)" \
-     node scripts/award-import.mjs refresh DGA --titles "Sinners,One Battle After Another"
    ```
-
-   `refresh` is not optional. It is the only thing that clears the cache the
-   server actions clear, and it fails loudly if the new nominees are not
-   actually on the live page.
 
 8. **Draft the announcement** — one sentence, from the counts in the plan, e.g.
    *"One Battle After Another leads the DGA nominations with four."* Show it,
@@ -90,6 +83,23 @@ every show — ask which one.
    ```
 
    This is irreversible — the app has no notification deletion.
+
+9. **Refresh**, last, after `finish`:
+
+   ```bash
+   DATABASE_URL="$PROD" REVALIDATE_SECRET="$(grep -m1 '^REVALIDATE_SECRET' .env.local | cut -d= -f2-)" \
+     node scripts/award-import.mjs refresh DGA
+   ```
+
+   Titles are derived from what is in the database for that show and season —
+   no need to pass `--titles` by hand; it is only an override.
+
+   `refresh` runs after `finish`, not before: `finish` is what flips
+   `nom_active`, which drives `needsNominations` on the show page, so running
+   `refresh` earlier would clear the cache before that last change lands.
+   `refresh` is not optional. It is the only thing that clears the cache the
+   server actions clear, and it fails loudly if the nominees are not actually
+   on the live page.
 
 ## The year
 
@@ -116,7 +126,9 @@ nominated holds points no page can explain.
 
 No research. The owner says a winner; you write a one-category plan and run
 `apply --commit` then `refresh` immediately, so the site is current within
-seconds. Run `finish --winners --commit` once, at the end of the night.
+seconds. Run `finish --winners --commit` once, at the end of the night, then
+`refresh` once more — `finish` is the last write of the night and the cache
+should reflect it too.
 
 ## Never
 

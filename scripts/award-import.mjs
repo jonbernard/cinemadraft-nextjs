@@ -12,27 +12,6 @@
 // 🔴 It never loads a .env file. Reaching production stays a conscious act,
 // which is the same rule the header of .env states.
 
-/** Category headings vary by publication; the `awards` row is the authority. */
-export function normalizeCategory(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-}
-
-/**
- * A listing heading → the award row it names, or null.
- *
- * 🔴 Null rather than a nearest match, deliberately. A nomination filed under
- * the wrong category pays that category's points to the film, and the page
- * renders it without a hint that anything is wrong. An unmatched heading is
- * reported to the owner instead, who can add the category or skip it.
- */
-export function matchCategory(heading, awards) {
-  const wanted = normalizeCategory(heading);
-  return awards.find((award) => normalizeCategory(award.name) === wanted) ?? null;
-}
-
 /** Every problem with a plan, as sentences. Empty means it may be applied. */
 export function validatePlan(plan, awards) {
   const problems = [];
@@ -48,14 +27,19 @@ export function validatePlan(plan, awards) {
     problems.push('the plan records no source URL');
   }
 
+  const seenAwardIds = new Set();
   for (const category of plan.categories ?? []) {
     const award = byId.get(category.awardId);
     if (!award) {
       problems.push(`award ${category.awardId} does not belong to this event`);
       continue;
     }
+    if (seenAwardIds.has(category.awardId)) {
+      problems.push(`award ${category.awardId} appears twice in this plan`);
+    }
+    seenAwardIds.add(category.awardId);
     for (const nominee of category.nominees ?? []) {
-      if (award.requiresNomineeName && !nominee.detailName) {
+      if (award.requiresNomineeName && !nominee.detailName?.trim()) {
         problems.push(
           `award ${award.id} requires a nominee name: "${nominee.title}" has none`,
         );
@@ -238,6 +222,21 @@ export function movieInsertColumns() {
   ];
 }
 
+/**
+ * The US theatrical release date, falling back to the top-level date TMDB
+ * defaults to. Mirrors `releaseDateOf` in lib/external/tmdb.ts — for an
+ * awards film these two dates differ by a year routinely (a festival
+ * premiere abroad against a January US release), and `applyWinners`'s own
+ * docstring cites exactly that hazard.
+ */
+function releaseDateOf(detail) {
+  const us = detail.release_dates?.results?.find((entry) => entry.iso_3166_1 === 'US');
+  const raw = us?.release_dates?.[0]?.release_date ?? detail.release_date;
+  if (!raw) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 /** TMDB detail → the shape `movies` stores. Mirrors `fetchTmdbFilm`. */
 export async function fetchTmdbFilm(tmdbId) {
   const key = process.env.TMDB_API_KEY;
@@ -245,6 +244,7 @@ export async function fetchTmdbFilm(tmdbId) {
 
   const url = new URL(`https://api.themoviedb.org/3/movie/${tmdbId}`);
   url.searchParams.set('api_key', key);
+  url.searchParams.set('append_to_response', 'release_dates');
   const response = await fetch(url);
   if (!response.ok) return null;
   const detail = await response.json();
@@ -261,12 +261,23 @@ export async function fetchTmdbFilm(tmdbId) {
     sortTitle: detail.title.replace(/^(the|a)\s/i, ''),
     poster: detail.poster_path ?? null,
     backdrop: detail.backdrop_path ?? null,
-    releaseDate: detail.release_date ? new Date(detail.release_date) : null,
+    releaseDate: releaseDateOf(detail),
   };
 }
 
-/** A local `movies.id` for a nominee, ingesting from TMDB the first time. */
-export async function resolveFilm(client, nominee, fetchFilm = fetchTmdbFilm) {
+/**
+ * A local `movies.id` for a nominee, ingesting from TMDB the first time.
+ *
+ * 🔴 `commit: false` never inserts, even for a film not yet cached — every
+ * subcommand is read-only without `--commit`. The caller gets `movieId: null`
+ * and must treat that as "unverifiable", not "resolved".
+ */
+export async function resolveFilm(
+  client,
+  nominee,
+  fetchFilm = fetchTmdbFilm,
+  commit = true,
+) {
   const found = await client.query(
     'SELECT id, title, release_date FROM movies WHERE tmdb_id = $1 LIMIT 1',
     [nominee.tmdbId],
@@ -281,6 +292,10 @@ export async function resolveFilm(client, nominee, fetchFilm = fetchTmdbFilm) {
         : null,
       created: false,
     };
+  }
+
+  if (!commit) {
+    return { movieId: null, title: nominee.title, releaseYear: null, created: true };
   }
 
   const detail = await fetchFilm(nominee.tmdbId);
@@ -328,28 +343,53 @@ export async function applyNominations(client, plan, context, { commit }) {
     throw new Error(`this plan cannot be applied:\n  - ${problems.join('\n  - ')}`);
   }
 
+  // 🔴 The year column is the season, and the season is whatever
+  // available_years says. A plan naming a different one passes every other
+  // check — its films are real, its categories are real — and writes a whole
+  // wrong season. It also loads its idempotence skip set for `activeYear`
+  // while inserting `plan.year`, so the skip matches nothing and a second run
+  // doubles every film's points.
+  if (plan.year !== context.activeYear) {
+    throw new Error(
+      `plan year ${plan.year} is not the active season ${context.activeYear} — ` +
+        'fix the plan, or change the active season first',
+    );
+  }
+
   const resolved = [];
   for (const category of plan.categories) {
     for (const nominee of category.nominees) {
-      const film = await resolveFilm(client, nominee);
+      const film = await resolveFilm(client, nominee, undefined, commit);
       resolved.push({ category, nominee, film });
     }
   }
 
+  // Before a season's drafts there are no picks to measure against — and that
+  // is precisely when the wrong-year listing is easiest to reach for. The
+  // season and the year before it is what a season honours (D57), so it is a
+  // yardstick even with nothing drafted yet.
+  const yardstick =
+    context.seasonYears.length > 0
+      ? context.seasonYears
+      : [context.activeYear - 1, context.activeYear];
+
   const check = yearCheck({
     nominatedYears: resolved.map((entry) => entry.film.releaseYear),
-    seasonYears: context.seasonYears,
+    seasonYears: yardstick,
   });
   if (!check.ok) throw new Error(check.reason);
 
   const already = new Set(
-    context.existingNominations.map((row) => `${row.awardId}:${row.movieId}`),
+    context.existingNominations.map(
+      (row) => `${row.awardId}:${row.movieId}:${context.activeYear}`,
+    ),
   );
   const report = { inserted: [], skipped: [], created: [] };
 
   for (const { category, nominee, film } of resolved) {
     if (film.created) report.created.push(film.title);
-    if (already.has(`${category.awardId}:${film.movieId}`)) {
+    const key = `${category.awardId}:${film.movieId}:${plan.year}`;
+    if (already.has(key)) {
       report.skipped.push({
         awardId: category.awardId,
         title: film.title,
@@ -357,7 +397,7 @@ export async function applyNominations(client, plan, context, { commit }) {
       });
       continue;
     }
-    already.add(`${category.awardId}:${film.movieId}`);
+    already.add(key);
     report.inserted.push({
       awardId: category.awardId,
       awardName: category.awardName,
@@ -405,10 +445,31 @@ export async function applyWinners(client, plan, context, { commit }) {
     throw new Error(`this plan cannot be applied:\n  - ${problems.join('\n  - ')}`);
   }
 
+  // Same guard as applyNominations. The nomination lookup below already
+  // filters on `plan.year`, so a mismatch refuses in practice — but the two
+  // should not disagree about what is legal.
+  if (plan.year !== context.activeYear) {
+    throw new Error(
+      `plan year ${plan.year} is not the active season ${context.activeYear} — ` +
+        'fix the plan, or change the active season first',
+    );
+  }
+
   const pending = [];
+  const unverifiable = [];
   for (const category of plan.categories) {
     for (const nominee of category.nominees) {
-      const film = await resolveFilm(client, nominee);
+      const film = await resolveFilm(client, nominee, undefined, commit);
+      if (film.movieId == null) {
+        // Dry run, film not yet cached — there is nothing to look up a
+        // nomination against. Reporting "not nominated" here would be a lie.
+        unverifiable.push({
+          awardId: category.awardId,
+          awardName: category.awardName,
+          title: film.title,
+        });
+        continue;
+      }
       const nomination = await client.query(
         'SELECT id FROM nominations WHERE award_id = $1 AND movie_id = $2 AND year = $3 LIMIT 1',
         [category.awardId, film.movieId, plan.year],
@@ -431,6 +492,7 @@ export async function applyWinners(client, plan, context, { commit }) {
       title: entry.film.title,
     })),
     skipped: [],
+    unverifiable,
   };
   if (!commit) return report;
 
@@ -578,11 +640,6 @@ async function main(argv) {
     const client = await connect();
     try {
       const context = await loadContext(client, plan.eventAbbreviation);
-      if (plan.year !== context.activeYear) {
-        console.warn(
-          `[award-import] plan year ${plan.year} is not the active season ${context.activeYear}`,
-        );
-      }
       const report =
         plan.kind === 'winners'
           ? await applyWinners(client, plan, context, { commit })
@@ -610,7 +667,8 @@ async function main(argv) {
   if (command === 'finish') {
     const commit = rest.includes('--commit');
     const kind = rest.includes('--winners') ? 'winners' : 'nominations';
-    const message = rest[rest.indexOf('--message') + 1];
+    const at = rest.indexOf('--message');
+    const message = at === -1 ? undefined : rest[at + 1];
 
     const client = await connect();
     try {
@@ -630,21 +688,41 @@ async function main(argv) {
     const abbreviation = rest[0];
     const yearArg = rest[rest.indexOf('--year') + 1];
     const titlesArg = rest.includes('--titles') ? rest[rest.indexOf('--titles') + 1] : '';
+    const explicitTitles = titlesArg
+      ? titlesArg.split(',').map((title) => title.trim())
+      : [];
 
     const client = await connect();
     let year = Number(yearArg);
+    let context;
     try {
-      if (!Number.isSafeInteger(year)) {
-        year = (await loadContext(client, abbreviation)).activeYear;
-      }
+      context = await loadContext(client, abbreviation);
+      if (!Number.isSafeInteger(year)) year = context.activeYear;
     } finally {
       await client.end();
+    }
+
+    // The titles are what to prove render on the live page. Default to what
+    // is actually in the database for this show and season — the point of
+    // `refresh` is to verify something real, not to require the caller to
+    // retype titles by hand.
+    const derivedTitles = [
+      ...new Set(
+        context.existingNominations.map((row) => row.title).filter((title) => title),
+      ),
+    ];
+    const titles = explicitTitles.length > 0 ? explicitTitles : derivedTitles;
+    if (titles.length === 0) {
+      throw new Error(
+        'nothing to verify — no titles given and none found in the database for ' +
+          `${abbreviation} ${year}`,
+      );
     }
 
     const result = await refresh({
       abbreviation: abbreviation.toLowerCase(),
       year,
-      titles: titlesArg ? titlesArg.split(',').map((title) => title.trim()) : [],
+      titles,
       baseUrl: process.env.SITE_URL ?? 'https://cinemadraft.com',
       secret: process.env.REVALIDATE_SECRET ?? null,
     });

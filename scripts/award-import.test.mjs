@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  matchCategory,
-  normalizeCategory,
-  validatePlan,
-  yearCheck,
-} from './award-import.mjs';
+import { validatePlan, yearCheck } from './award-import.mjs';
 
 const AWARDS = [
   {
@@ -15,30 +10,6 @@ const AWARDS = [
   },
   { id: 11, name: 'Best Picture', requiresNomineeName: false },
 ];
-
-describe('matchCategory', () => {
-  it('matches an exact heading', () => {
-    expect(matchCategory('Best Picture', AWARDS)?.id).toBe(11);
-  });
-
-  // Listings vary in punctuation and case; the award row is the authority.
-  it('matches ignoring case, punctuation and stray whitespace', () => {
-    expect(matchCategory('  best   picture:', AWARDS)?.id).toBe(11);
-  });
-
-  // 🔴 The failure that matters: a near-miss heading must NOT be guessed into
-  // a real category, because a wrong category pays the wrong points to the
-  // wrong film and nothing on the page would look odd.
-  it('returns null rather than guessing at an unknown heading', () => {
-    expect(matchCategory('Best Documentary Feature', AWARDS)).toBe(null);
-  });
-});
-
-describe('normalizeCategory', () => {
-  it('strips punctuation, collapses whitespace and lowercases', () => {
-    expect(normalizeCategory('  Best   PICTURE: ')).toBe('best picture');
-  });
-});
 
 describe('validatePlan', () => {
   const plan = {
@@ -93,6 +64,41 @@ describe('validatePlan', () => {
       'kind must be "nominations" or "winners"',
     );
   });
+
+  // M4: in winners mode the second DELETE removes the first INSERT, so one
+  // category would silently win over the other rather than both applying.
+  it('rejects a plan naming the same awardId twice', () => {
+    const bad = {
+      ...plan,
+      categories: [
+        ...plan.categories,
+        {
+          awardId: 11,
+          awardName: 'Best Picture',
+          nominees: [{ title: 'Sinners', tmdbId: '1233413' }],
+        },
+      ],
+    };
+    expect(validatePlan(bad, AWARDS)).toContain('award 11 appears twice in this plan');
+  });
+
+  // M5: a whitespace-only detailName passes a truthiness check but fails
+  // attach-nominee.ts's `z.string().trim().min(1)`, and renders as a blank.
+  it('rejects a whitespace-only detailName', () => {
+    const bad = {
+      ...plan,
+      categories: [
+        {
+          awardId: 10,
+          awardName: 'Directing',
+          nominees: [{ title: 'X', tmdbId: '1', detailName: '   ' }],
+        },
+      ],
+    };
+    expect(validatePlan(bad, AWARDS)).toContain(
+      'award 10 requires a nominee name: "X" has none',
+    );
+  });
 });
 
 describe('yearCheck', () => {
@@ -140,7 +146,49 @@ describe('yearCheck', () => {
   });
 });
 
-import { applyNominations, movieInsertColumns, resolveFilm } from './award-import.mjs';
+import {
+  applyNominations,
+  fetchTmdbFilm,
+  movieInsertColumns,
+  resolveFilm,
+} from './award-import.mjs';
+
+describe('fetchTmdbFilm', () => {
+  // I4: mirrors `releaseDateOf` in lib/external/tmdb.ts — for awards films
+  // the top-level date and the US theatrical date differ by a year routinely
+  // (a festival premiere abroad against a January US release), and that
+  // release year feeds straight into the year check.
+  it('prefers the US release date over the top-level release_date', async () => {
+    const originalFetch = globalThis.fetch;
+    const originalKey = process.env.TMDB_API_KEY;
+    process.env.TMDB_API_KEY = 'test-key';
+    globalThis.fetch = async () => ({
+      ok: true,
+      async json() {
+        return {
+          id: 1234567,
+          title: 'One Battle After Another',
+          release_date: '2024-09-26',
+          release_dates: {
+            results: [
+              {
+                iso_3166_1: 'US',
+                release_dates: [{ release_date: '2025-01-10' }],
+              },
+            ],
+          },
+        };
+      },
+    });
+    try {
+      const result = await fetchTmdbFilm('1234567');
+      expect(result.releaseDate.getFullYear()).toBe(2025);
+    } finally {
+      globalThis.fetch = originalFetch;
+      process.env.TMDB_API_KEY = originalKey;
+    }
+  });
+});
 
 /** A pg-shaped stub: hand it queries to match, collect what was run. */
 function fakeClient(handlers) {
@@ -238,6 +286,28 @@ describe('resolveFilm', () => {
     await expect(
       resolveFilm(client, { title: 'Ghost', tmdbId: '0' }, async () => null),
     ).rejects.toThrow(/Ghost/);
+  });
+
+  // I2: every subcommand is read-only without --commit, including for a film
+  // TMDB has never been asked about.
+  it('does not insert or call TMDB for an uncached film on a dry run', async () => {
+    const client = fakeClient([[/FROM movies WHERE tmdb_id/, []]]);
+    const fetchFilm = () => {
+      throw new Error('TMDB must not be called on a dry run');
+    };
+    const result = await resolveFilm(
+      client,
+      { title: 'Ghost', tmdbId: '0' },
+      fetchFilm,
+      false,
+    );
+    expect(result).toEqual({
+      movieId: null,
+      title: 'Ghost',
+      releaseYear: null,
+      created: true,
+    });
+    expect(client.ran.some((call) => /INSERT INTO movies/.test(call.text))).toBe(false);
   });
 });
 
@@ -339,6 +409,42 @@ describe('applyNominations', () => {
       false,
     );
   });
+
+  // C1: a plan naming a different season than available_years's active one
+  // must never write — a correct listing for the wrong year passes every
+  // other check and would double every film's points on a second run.
+  it('refuses when the plan year is not the active season, and writes nothing', async () => {
+    const client = fakeClient(cached);
+    await expect(
+      applyNominations(client, { ...plan, year: 2026 }, context, { commit: true }),
+    ).rejects.toThrow(/not the active season/);
+    expect(client.ran.some((call) => /INSERT/.test(call.text))).toBe(false);
+  });
+
+  // I5: before a season's drafts there are no picks to measure against, and
+  // that is exactly when the wrong-year listing is easiest to reach for.
+  it('refuses a wrong-year listing even when the season has no picks yet', async () => {
+    const client = fakeClient([
+      [
+        /FROM movies WHERE tmdb_id/,
+        [{ id: 42, title: 'Sinners', release_date: new Date('2019-04-18') }],
+      ],
+    ]);
+    await expect(
+      applyNominations(client, plan, { ...context, seasonYears: [] }, { commit: true }),
+    ).rejects.toThrow(/outside/);
+    expect(client.ran.some((call) => /INSERT INTO nominations/.test(call.text))).toBe(
+      false,
+    );
+  });
+
+  // I2: a dry run must never write to `movies`, even for a film not yet cached.
+  it('does not insert into movies for an uncached film on a dry run', async () => {
+    const client = fakeClient([[/FROM movies WHERE tmdb_id/, []]]);
+    const report = await applyNominations(client, plan, context, { commit: false });
+    expect(report.inserted).toHaveLength(1);
+    expect(client.ran.some((call) => /INSERT INTO movies/.test(call.text))).toBe(false);
+  });
 });
 
 import { applyWinners } from './award-import.mjs';
@@ -406,6 +512,27 @@ describe('applyWinners', () => {
     const report = await applyWinners(client, plan, context, { commit: false });
     expect(report.set).toHaveLength(1);
     expect(client.ran.some((call) => /INSERT INTO winners/.test(call.text))).toBe(false);
+  });
+
+  // C1: the nomination lookup already filters on plan.year, so this refuses
+  // in practice — but the guard must agree with applyNominations regardless.
+  it('refuses when the plan year is not the active season, and writes nothing', async () => {
+    const client = fakeClient(handlers);
+    await expect(
+      applyWinners(client, { ...plan, year: 2026 }, context, { commit: true }),
+    ).rejects.toThrow(/not the active season/);
+    expect(client.ran.some((call) => /INSERT|DELETE/.test(call.text))).toBe(false);
+  });
+
+  // I2: a dry run must never write to `movies`, even for a film not yet
+  // cached — and it must not throw a false "not nominated" for a film it
+  // never actually looked up.
+  it('does not insert into movies for an uncached film on a dry run', async () => {
+    const client = fakeClient([[/FROM movies WHERE tmdb_id/, []]]);
+    const report = await applyWinners(client, plan, context, { commit: false });
+    expect(report.unverifiable).toHaveLength(1);
+    expect(report.set).toHaveLength(0);
+    expect(client.ran.some((call) => /INSERT INTO movies/.test(call.text))).toBe(false);
   });
 });
 
