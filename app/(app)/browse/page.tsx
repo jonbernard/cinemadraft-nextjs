@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { BrowseList } from '@/components/BrowseList';
 import { EmptyState } from '@/components/EmptyState';
+import { RemoteImage } from '@/components/RemoteImage';
 import { SectionHead } from '@/components/SectionHead';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
@@ -79,6 +80,29 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
     // the panel this sits inside.
     <>
       <div className="mx-auto flex max-w-6xl flex-col gap-10">
+        {/* 🔴 A still from the shelf, so `/browse` is not a heading over a grid
+            (P15.T8). The aspect ratio is reserved at both sizes so the band
+            cannot shift the grid beneath it as the image arrives (CLS), and
+            `alt=""` is deliberate — the band is decoration, the heading below
+            it is the content, and "a still from whichever film TMDB ranked
+            first today" tells a screen-reader reader nothing. */}
+        {shelf.hero ? (
+          <div className="relative -mx-4 aspect-[21/9] overflow-hidden sm:aspect-[3/1] xl:-mx-6">
+            <RemoteImage
+              src={shelf.hero.backdropUrl}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+            {/* The scrim is what makes the heading legible over an unknown
+                image — the backdrop changes daily, so no fixed text colour can
+                be trusted against it. */}
+            <div className="from-bg-surface absolute inset-0 bg-gradient-to-t via-transparent" />
+          </div>
+        ) : null}
+
         <header className="flex flex-col gap-4">
           {/* No film count and no page indicator here. Both were true of the
               first page only, and the list now grows underneath them — a header

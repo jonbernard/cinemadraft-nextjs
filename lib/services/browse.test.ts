@@ -258,6 +258,52 @@ describe('what the shelf carries', () => {
     expect(page).toMatchObject({ page: 1, pageCount: 21, when: 'past' });
   });
 
+  it('offers the first backdrop it finds as the hero', async () => {
+    mockDiscover([
+      // The first film has no backdrop, so the hero has to look past it rather
+      // than settle for null — a posterless film is dropped, a backdropless one
+      // is not.
+      result(1, 'July film', '2026-07-15'),
+      { ...result(2, 'August film', '2026-08-04'), backdrop_path: '/wide.jpg' },
+    ]);
+
+    const page = await loadBrowse({ when: 'past', page: 1, userId: null });
+
+    expect(page.hero).toEqual({
+      backdropUrl: 'https://image.tmdb.org/t/p/w1280/wide.jpg',
+      title: 'August film',
+    });
+  });
+
+  it('has no hero when nothing on the page carries a backdrop', async () => {
+    mockDiscover(ACROSS_MONTHS);
+
+    const page = await loadBrowse({ when: 'past', page: 1, userId: null });
+
+    expect(page.hero).toBeNull();
+  });
+
+  it('🔴 has no hero on later pages', async () => {
+    // The band belongs at the top of the page, and page 3 is the middle of a
+    // scroll — a second hero appearing mid-list is the bug this prevents.
+    mockDiscover([
+      { ...result(2, 'August film', '2026-08-04'), backdrop_path: '/wide.jpg' },
+    ]);
+
+    const page = await loadBrowse({ when: 'past', page: 3, userId: null });
+
+    expect(page.hero).toBeNull();
+  });
+
+  it('keeps a backdropless film on the shelf', async () => {
+    // Posterlessness is a reason to drop a film. A missing backdrop is not.
+    mockDiscover(ACROSS_MONTHS);
+
+    const page = await loadBrowse({ when: 'past', page: 1, userId: null });
+
+    expect(page.months.flatMap((month) => month.films)).toHaveLength(4);
+  });
+
   it('returns no months rather than throwing when TMDB is unreachable', async () => {
     vi.stubGlobal(
       'fetch',

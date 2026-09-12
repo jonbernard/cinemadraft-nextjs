@@ -33,6 +33,8 @@ export type BrowsePage = {
   page: number;
   pageCount: number;
   months: BrowseMonth[];
+  /** The header band's still, on the first page only (P15.T8). */
+  hero: { backdropUrl: string; title: string } | null;
 };
 
 /** Films TMDB has announced without a date, kept rather than hidden. */
@@ -152,5 +154,31 @@ export async function loadBrowse(input: {
     page: discovered.page,
     pageCount: discovered.pageCount,
     months,
+    hero: heroOf(discovered.films, input.page),
   };
+}
+
+/**
+ * The header band's image: the first film on the page that has a backdrop.
+ *
+ * 🔴 **First page only, and keyed on what was *asked* for.** The band belongs at
+ * the top of the page; page 3 is the middle of a scroll, and a second hero
+ * appearing mid-list as `BrowseList` appends is the bug this prevents. The
+ * requested page is the right input rather than the one TMDB echoes back —
+ * those differ when a page number is clamped.
+ *
+ * Null when no film on the page carries one. The page renders its plain heading
+ * in that case rather than reserving an empty band.
+ */
+function heroOf(
+  films: readonly { backdropPath: string | null; title: string }[],
+  requestedPage: number,
+): BrowsePage['hero'] {
+  if (requestedPage !== 1) return null;
+
+  for (const film of films) {
+    const backdropUrl = posterUrl(film.backdropPath, 'w1280');
+    if (backdropUrl) return { backdropUrl, title: film.title };
+  }
+  return null;
 }

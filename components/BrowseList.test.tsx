@@ -86,6 +86,7 @@ describe('BrowseList', () => {
           page: 1,
           pageCount: 3,
           months: [monthOf('10/2026', 'First')],
+          hero: null,
         }}
         isSignedIn={false}
       />,
@@ -101,12 +102,12 @@ describe('BrowseList', () => {
   it('never asks twice for the same page', async () => {
     loadBrowsePage.mockResolvedValue({
       ok: true,
-      data: { when: 'past', page: 2, pageCount: 3, months: [] },
+      data: { when: 'past', page: 2, pageCount: 3, months: [], hero: null },
     });
     render(
       <BrowseList
         when="past"
-        initial={{ when: 'past', page: 1, pageCount: 3, months: [] }}
+        initial={{ when: 'past', page: 1, pageCount: 3, months: [], hero: null }}
         isSignedIn={false}
       />,
     );
@@ -137,6 +138,7 @@ describe('BrowseList', () => {
           page: 1,
           pageCount: 3,
           months: [monthOf('10/2026', 'First')],
+          hero: null,
         }}
         isSignedIn={false}
       />,
@@ -156,7 +158,7 @@ describe('BrowseList', () => {
     render(
       <BrowseList
         when="past"
-        initial={{ when: 'past', page: 3, pageCount: 3, months: [] }}
+        initial={{ when: 'past', page: 3, pageCount: 3, months: [], hero: null }}
         isSignedIn={false}
       />,
     );
@@ -170,12 +172,18 @@ describe('BrowseList', () => {
   it('stops observing once the last page has arrived', async () => {
     loadBrowsePage.mockResolvedValue({
       ok: true,
-      data: { when: 'past', page: 2, pageCount: 2, months: [monthOf('09/2026', 'Last')] },
+      data: {
+        when: 'past',
+        page: 2,
+        pageCount: 2,
+        months: [monthOf('09/2026', 'Last')],
+        hero: null,
+      },
     });
     render(
       <BrowseList
         when="past"
-        initial={{ when: 'past', page: 1, pageCount: 2, months: [] }}
+        initial={{ when: 'past', page: 1, pageCount: 2, months: [], hero: null }}
         isSignedIn={false}
       />,
     );
@@ -199,7 +207,7 @@ describe('BrowseList', () => {
     render(
       <BrowseList
         when="past"
-        initial={{ when: 'past', page: 1, pageCount: 3, months: [] }}
+        initial={{ when: 'past', page: 1, pageCount: 3, months: [], hero: null }}
         isSignedIn={false}
       />,
     );
@@ -236,7 +244,7 @@ describe('BrowseList', () => {
     render(
       <BrowseList
         when="past"
-        initial={{ when: 'past', page: 1, pageCount: 3, months: [] }}
+        initial={{ when: 'past', page: 1, pageCount: 3, months: [], hero: null }}
         isSignedIn={false}
       />,
     );

@@ -29,6 +29,11 @@ export type DiscoveredFilm = {
   tmdbId: string;
   title: string;
   posterPath: string;
+  /**
+   * The wide still, for the page's header band (P15.T8). Often absent, and
+   * never a reason to drop the film — a shelf is made of posters.
+   */
+  backdropPath: string | null;
   releaseDate: Date | null;
 };
 
@@ -42,6 +47,7 @@ type TmdbDiscoverResult = {
   id?: number;
   title?: string;
   poster_path?: string | null;
+  backdrop_path?: string | null;
   release_date?: string | null;
   popularity?: number | null;
 };
@@ -87,6 +93,7 @@ function toFilm(result: TmdbDiscoverResult): DiscoveredFilm | null {
     tmdbId: String(result.id),
     title: result.title,
     posterPath: result.poster_path,
+    backdropPath: result.backdrop_path ?? null,
     releaseDate: date && !Number.isNaN(date.getTime()) ? date : null,
   };
 }

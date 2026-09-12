@@ -39,7 +39,7 @@ const meta = {
   args: {
     when: 'past' as const,
     isSignedIn: false,
-    initial: { when: 'past' as const, page: 1, pageCount: 9, months },
+    initial: { when: 'past' as const, page: 1, pageCount: 9, months, hero: null },
   },
 } satisfies Meta<typeof BrowseList>;
 
@@ -49,5 +49,5 @@ export const Shelf: StoryObj<typeof meta> = {};
 
 /** The last page: no sentinel, so the list simply ends. */
 export const LastPage: StoryObj<typeof meta> = {
-  args: { initial: { when: 'past', page: 9, pageCount: 9, months } },
+  args: { initial: { when: 'past', page: 9, pageCount: 9, months, hero: null } },
 };

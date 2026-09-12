@@ -15,6 +15,7 @@ type TmdbNowPlayingResult = {
   id?: number;
   title?: string;
   poster_path?: string | null;
+  backdrop_path?: string | null;
   release_date?: string | null;
 };
 
@@ -39,6 +40,10 @@ function toFilm(result: TmdbNowPlayingResult): DiscoveredFilm | null {
     tmdbId: String(result.id),
     title: result.title,
     posterPath: result.poster_path,
+    // Carried because the DTO has it (P15.T8). The rail renders posters only;
+    // hardcoding null here would be a claim about the response rather than
+    // about the rail.
+    backdropPath: result.backdrop_path ?? null,
     releaseDate: date && !Number.isNaN(date.getTime()) ? date : null,
   };
 }

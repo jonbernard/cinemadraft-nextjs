@@ -44,6 +44,9 @@ describe('getNowPlaying', () => {
         tmdbId: '1',
         title: 'A Film',
         posterPath: '/a.jpg',
+        // Carried through the shared DTO since P15.T8, though the rail that
+        // consumes this one renders posters only.
+        backdropPath: null,
         releaseDate: new Date('2026-08-01'),
       },
     ]);
