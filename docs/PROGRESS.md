@@ -1307,8 +1307,22 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 
 ### Recording the decisions
 
-- 🔴 **No member index — decided by the owner 2026-09-12, awaiting a D-number
-  from T26.** Individual member pages stay and are wanted: a seat name leads to
+- 🔴 **The league page IS the member index — decided by the owner 2026-09-12,
+  awaiting a D-number from T26.** You reach a member's posts and drafts from a
+  seat name in a league you are in; there is no global directory. Already built:
+  `app/(app)/leagues/[id]/page.tsx:231` links each seat to `/members/<uuid>`.
+
+  🔴 **One seam, for P17.T30 to close.** League pages are public (D44/D45 — the
+  link pasted into a group chat has to open), but `/members` is **not** in
+  `proxy.ts`'s public list. So a signed-out visitor on a public league page sees
+  a roster of names that every one of which bounces to sign-in. The fix belongs
+  with T30, which already owns that page's hierarchy: **render the seat name as
+  plain text when there is no session**, rather than making member pages public.
+  A league page is standings and rosters — what a pasted link is for; a member
+  page is someone's posts and drafts, which is wider than "people in your
+  league" and should stay behind a session.
+
+- 🔴 **No *global* member index — same decision, awaiting the same D-number.** Individual member pages stay and are wanted: a seat name leads to
   a member's posts and drafts, and that is the point of them. What is refused is
   the *collective* listing — a directory of sixty real people is not something
   the product should offer, and nothing in the app links to one.
