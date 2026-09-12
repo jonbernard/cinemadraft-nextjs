@@ -1602,6 +1602,33 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 ## Phase 14 — Realtime
 
+- ✅ **T0 is answered (2026-09-12): SSE, the server polling Postgres, no broker
+  and no vendor.** Spec: `docs/superpowers/specs/2026-09-12-realtime-transport.md`.
+  Accepted by the owner. 🔴 Awaiting a D-number from P17.T26 — do not assign one.
+
+- **Why polling, when D13 called polling the interim.** Recorded plainly because
+  it reads like a retreat and is not. Vercel kills every connection at the 300s
+  ceiling, so a three-hour ceremony is ~36 forced disconnects per viewer. An
+  event pushed into one of those gaps is lost — `NOTIFY` is fire-and-forget,
+  Redis pub/sub has no replay, a closed socket receives nothing. So **every**
+  design, broker or not, must read full current state on reconnect; that read is
+  the poll, and it exists either way. A broker would only save latency *between*
+  reconnects, for an event that arrives about once every four minutes. What
+  changed since D13 is the shape, not the resignation: D13 meant the browser
+  asking repeatedly, and this is one `EventSource` receiving pushes while the
+  server does the asking.
+
+  **Reopen it if** a ceremony draws a real complaint about lag, or the audience
+  outgrows a single league — `/live` is public, so its audience is unbounded by
+  design, and that is also why a vendor's hard connection cliff was refused in
+  favour of a cost slope that can be watched.
+
+- **Poll interval: 2s.** A latency choice, not a cost one — Neon bills awake
+  time rather than queries, so 108,000 polls in a ceremony cost nothing the
+  ceremony was not already spending. Tighten it freely if it ever feels slow; a
+  televised broadcast lags the room by more than this does.
+
+
 - [ ] P14 not started
 
 ## Phase 16 — New features

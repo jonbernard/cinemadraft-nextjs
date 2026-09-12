@@ -671,13 +671,14 @@ not need it. Nothing here gates going live.
 
 Replaces the polling fallback (D13).
 
-- T0: **Choose the realtime transport** (D23 deferred this) — evaluate Upstash direct, Pusher, Ably, and Postgres `LISTEN`/`NOTIFY`, then record the decision
-- T1: Publisher wired into the winner-marking Server Action
-- T2: `/api/live/[event]/stream` SSE route
-- T3: Client subscription replacing the polling hook
-- T4: Winner-seal stamp animation — the one orchestrated motion moment (§6.8)
-- T5: Reconnection handling
+- [x] T0: **the transport is decided** — SSE on the Node runtime, the server polling Postgres, no broker and no vendor. Spec: `docs/superpowers/specs/2026-09-12-realtime-transport.md`. 🔴 **Push to the browser, poll at the database**: the client holds one `EventSource` and receives events; the function holding that stream re-reads Postgres every 2s because nothing pushes *to* it — Neon's pooler does not support `LISTEN`/`NOTIFY`. Free on Hobby and Neon Free with an order of magnitude of headroom
+- ~~T1: Publisher wired into the winner-marking Server Action~~ — **deleted.** There is no publisher: `set-winner.ts` is unchanged, and the stream discovers the write by reading
+- T2: `/api/live/[abbr]/stream` — the SSE route, closing itself at ~290s ahead of the platform's 300s kill. 🔴 Land it **after P17.T16b**: `leagues` is `[]` in T16a and widens in T16b
+- T3: Client subscription. 🔴 There is **no polling hook to replace** — D13's client poll was specified and never built, confirmed by grep
+- T4: Winner-seal stamp animation. 🔴 **Mostly done** — P17.T15 built and shipped the seal; this task only has to make it fire from a live event
+- T5: Reconnection. 🔴 **Promoted from nicety to the centre of the design.** A 3-hour ceremony is ~36 forced disconnects per viewer, and a pushed event landing in a gap is lost forever — so **the first frame of every connection is complete current state**, which is what makes the gap unmissable. This is also why no broker was needed: that full read exists in every design, and a bus would only save latency between reconnects
 - T6: E2E: two clients, admin marks winner, viewer receives it
+- T7: 🔴 **Stop conditions — load-bearing, not polish.** One forgotten tab pins Neon awake at 0.25 CU; 720 hours of that is **180 CU-hrs against a 100 CU-hr free allowance**, so a single spare monitor left on `/live` exhausts the tier by itself. Close the stream when the show is not active, and while the tab is hidden
 
 **Gate:** live event works end to end with two concurrent clients.
 
