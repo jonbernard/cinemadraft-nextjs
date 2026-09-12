@@ -74,3 +74,18 @@ export const omdbEnv = {
     return process.env.OMDB_API_KEY ?? null;
   },
 };
+
+/**
+ * The shared secret for `/api/revalidate`.
+ *
+ * Nullable rather than `required()`: a deployment without it should make the
+ * route answer 404 — indistinguishable from the route not existing — rather
+ * than crash a request. It clears caches and reads nothing, so a missing
+ * secret degrades one operator workflow; it is not a security failure the way
+ * a missing webhook secret is.
+ */
+export const revalidateEnv = {
+  get secret(): string | null {
+    return process.env.REVALIDATE_SECRET || null;
+  },
+};
