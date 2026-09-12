@@ -388,7 +388,11 @@ export async function applyNominations(client, plan, context, { commit }) {
 
   for (const { category, nominee, film } of resolved) {
     if (film.created) report.created.push(film.title);
-    const key = `${category.awardId}:${film.movieId}:${plan.year}`;
+    // 🔴 A dry run has no movie id for an uncached film, and without this
+    // fallback every uncached nominee in a category collides into one key and
+    // the report hides all but the first from approval.
+    const filmKey = film.movieId ?? `tmdb:${nominee.tmdbId}`;
+    const key = `${category.awardId}:${filmKey}:${plan.year}`;
     if (already.has(key)) {
       report.skipped.push({
         awardId: category.awardId,

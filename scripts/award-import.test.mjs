@@ -445,6 +445,33 @@ describe('applyNominations', () => {
     expect(report.inserted).toHaveLength(1);
     expect(client.ran.some((call) => /INSERT INTO movies/.test(call.text))).toBe(false);
   });
+
+  // 🔴 A dry run with two different uncached nominees in the same category
+  // must report both as inserted and neither as skipped. Without the tmdbId
+  // fallback, both get movieId: null and produce the identical dedupe key,
+  // causing the second (and any further) to be silently reported as skipped
+  // despite never being processed before — hiding real nominees from approval.
+  it('reports two different uncached nominees in the same category as inserted', async () => {
+    const client = fakeClient([[/FROM movies WHERE tmdb_id/, []]]);
+    const twoNomineePlan = {
+      ...plan,
+      categories: [
+        {
+          awardId: 11,
+          awardName: 'Best Picture',
+          nominees: [
+            { title: 'Film A', tmdbId: '1111111' },
+            { title: 'Film B', tmdbId: '2222222' },
+          ],
+        },
+      ],
+    };
+    const report = await applyNominations(client, twoNomineePlan, context, {
+      commit: false,
+    });
+    expect(report.inserted).toHaveLength(2);
+    expect(report.skipped).toHaveLength(0);
+  });
 });
 
 import { applyWinners } from './award-import.mjs';
