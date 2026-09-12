@@ -125,10 +125,18 @@ export function PosterFrame({
         )}
 
         {status === 'won' && (
+          // 🔴 CSS, not a client component. PosterFrame is a Server Component
+          // and cannot read matchMedia; `motion-reduce:` compiles to the media
+          // query, so a reader who asked for less motion gets the seal present
+          // in its final state immediately — the GroupCeremony contract in two
+          // classes rather than a state machine.
+          //
+          // One run, then the static mark this has always rendered. A seal is
+          // permanent; anything that loops would read as "pending".
           <span
             aria-label="Winner"
             role="img"
-            className="bg-accent-fill absolute right-0 top-0 h-6 w-6 [clip-path:polygon(100%_0,100%_100%,0_0)]"
+            className="bg-accent-fill animate-stamp motion-reduce:animate-none absolute right-0 top-0 h-6 w-6 [clip-path:polygon(100%_0,100%_100%,0_0)]"
           />
         )}
       </div>

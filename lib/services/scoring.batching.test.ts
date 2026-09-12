@@ -101,8 +101,39 @@ describe('every page that shows a score loads them in bulk', () => {
   it('the signed-in dashboard costs a fixed number of queries', async () => {
     const { queries } = await countQueries(() => getDashboard(6));
 
-    expect(queries).toBeLessThanOrEqual(15);
+    // P17.T15 swapped pointsForMovieIds for ledgerForMovies so the roster can
+    // mark winners. The ledger additionally names the shows, which is one more
+    // batched call: measured 12 before the swap and 13 after, on the restored
+    // data. Bound at 14 rather than left at the 15 it inherited — a loose
+    // ceiling is how a guard keeps passing while the thing it guards gets
+    // worse, and at 15 this one would not have noticed the swap at all.
+    expect(queries).toBeLessThanOrEqual(14);
     expect(queries).toBeGreaterThan(0);
+  });
+
+  it('🔴 the dashboard costs no more for a 91-pick league than a 1-pick one', async () => {
+    // 🔴 The property, and unlike a ceiling it says what "batched" means here.
+    //
+    // The restored data gives two very different leagues. League 1's 2026
+    // season has 13 seats and 91 picks; league 70 has one seat and one pick.
+    // User 6 plays only league 1; user 3 plays both. So the difference between
+    // their counts is what league 70 costs, and user 6's count above the
+    // no-league baseline is what league 1 costs — the same work over ninety
+    // more picks.
+    //
+    // The count is ALLOWED to grow with leagues: each is a separate board.
+    // It is not allowed to grow with the seats or picks inside one, and that
+    // is the only thing asserted. An N+1 over picks would put ~90 queries on
+    // one side of this subtraction and none on the other.
+    const none = await countQueries(() => getDashboard(999_999));
+    const oneLeague = await countQueries(() => getDashboard(6));
+    const twoLeagues = await countQueries(() => getDashboard(3));
+
+    const bigLeague = oneLeague.queries - none.queries;
+    const smallLeague = twoLeagues.queries - oneLeague.queries;
+
+    expect(smallLeague).toBeGreaterThan(0);
+    expect(bigLeague - smallLeague).toBeLessThanOrEqual(2);
   });
 
   it('🔴 the season leaderboard (P10.T4) costs a fixed number of queries', async () => {

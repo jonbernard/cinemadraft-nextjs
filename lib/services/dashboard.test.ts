@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { clearCacheForTests } from '@/lib/external/cache';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { getDashboard } from './dashboard';
+import { pointsForMovieIds } from './scoring';
 
 afterAll(async () => {
   await db.$disconnect();
@@ -127,6 +128,74 @@ describe('getDashboard', () => {
     const view = await getDashboard(await aMemberOfLeague1());
     for (const entry of view.leagues.flatMap((league) => league.roster)) {
       if (entry.movie.poster == null) expect(entry.posterUrl).toBeNull();
+    }
+  });
+
+  it('🔴 tells the roster which films were nominated and which won', async () => {
+    // The winner seal has existed in PosterFrame since Phase 3.5 and has never
+    // rendered: nothing in the app ever set `status`. The ledger already knows
+    // — `MovieLedger.lines` carry `won` — so this is a read, not a new rule.
+    const view = await getDashboard(await aMemberOfLeague1());
+    const entries = view.leagues.flatMap((league) => league.roster);
+    expect(entries.length).toBeGreaterThan(0);
+
+    for (const entry of entries) {
+      expect(['none', 'nominated', 'won']).toContain(entry.status);
+      // 🔴 One direction only, and it is the airtight one: points come out of
+      // the ledger's lines, so anything that scored must have a line and must
+      // therefore not be 'none'. The converse is NOT asserted — a nomination
+      // for an award whose points row resolves to 0 is honestly 'nominated'
+      // on zero points, and a test forbidding that would be pinning an
+      // accident of the data rather than the rule.
+      if (entry.points > 0) expect(entry.status).not.toBe('none');
+    }
+  });
+
+  it('🔴 marks some films won and others merely nominated', async () => {
+    // Half of T15 is that the seal had never rendered, so both degenerate
+    // answers have to fail here. All-'none' is the state being fixed; all-'won'
+    // is the way a "fix" passes a union check while marking every poster —
+    // member 6's real 2026 roster holds both kinds, so this discriminates.
+    const view = await getDashboard(await aMemberOfLeague1());
+    const statuses = view.leagues.flatMap((league) =>
+      league.roster.map((entry) => entry.status),
+    );
+
+    expect(statuses).toContain('won');
+    expect(statuses).toContain('nominated');
+    // And a won film is one with a winning line, not merely a high-scoring
+    // one: the two are different claims and only the ledger knows which.
+    const won = view.leagues
+      .flatMap((league) => league.roster)
+      .filter((entry) => entry.status === 'won');
+    expect(won.length).toBeLessThan(statuses.length);
+  });
+
+  it('🔴 keeps the seat totals it had before the ledger swap', async () => {
+    // 🔴 Checked against `pointsForMovieIds` — the call the dashboard USED to
+    // make — rather than against itself. Comparing `league.total` to the sum of
+    // `entry.points` proves nothing: both are read out of the same map, so that
+    // assertion holds however wrong the map is.
+    //
+    // ledgerForMovies and pointsForMovieIds are the same arithmetic over the
+    // same inputs (D41). If this ever disagrees, one of them has grown a second
+    // definition of the rule, and that is the bug to fix, not this number.
+    const view = await getDashboard(await aMemberOfLeague1());
+    const roster = view.leagues.flatMap((league) => league.roster);
+    expect(roster.length).toBeGreaterThan(0);
+
+    const reference = await pointsForMovieIds(
+      roster.map((entry) => entry.movie.id),
+      view.year,
+    );
+    for (const entry of roster) {
+      expect(entry.points).toBe(reference.get(entry.movie.id) ?? 0);
+    }
+
+    // And the seat total is still the sum of what it is showing.
+    for (const league of view.leagues) {
+      const fromRoster = league.roster.reduce((sum, e) => sum + e.points, 0);
+      expect(league.total).toBe(fromRoster);
     }
   });
 

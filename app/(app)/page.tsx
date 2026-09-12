@@ -190,6 +190,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
                         round: entry.round,
                         points: entry.points,
                         share: entry.share,
+                        status: entry.status,
                       }))}
                     />
                   )}
@@ -343,6 +344,7 @@ function FilmShelf({
             posterUrl={film.posterUrl}
             points={film.points}
             share={film.share}
+            status={film.status}
             // No draft round: a film held in two leagues has two of them, and
             // printing whichever survived the dedupe would be wrong half the
             // time. The strips above are where round belongs.

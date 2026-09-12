@@ -7,7 +7,7 @@ import { type Movie, movieRepository } from '@/lib/repositories/movies';
 import { userRepository } from '@/lib/repositories/users';
 import { posterUrl } from '@/lib/utils/poster';
 import { denseRank } from '@/lib/utils/rank';
-import { pointsForMovieIds, sumTotals } from './scoring';
+import { ledgerForMovies, sumTotals } from './scoring';
 import { getActiveYear } from './season';
 
 /** One drafted film on the viewer's own strip. */
@@ -26,6 +26,17 @@ export type RosterEntry = {
    * 2× — and the draft-board bucket is visibly soft at that size.
    */
   posterUrl: string | null;
+  /**
+   * Whether this film has been nominated this season, and whether it won.
+   *
+   * 🔴 Read out of the ledger, never computed here. `MovieLedger.lines` each
+   * carry `won`, and the ledger is the same load as the totals (D41) — so this
+   * costs nothing and, more importantly, cannot disagree with the number beside
+   * it. The string union matches `PosterFrame`'s `PosterStatus`, re-declared
+   * there rather than imported because `components/` may not reach a service
+   * (D33).
+   */
+  status: 'none' | 'nominated' | 'won';
   /** Draft round, from 1. There is no roster size (D34). */
   round: number;
   points: number;
@@ -233,12 +244,21 @@ async function buildLeague(
       picksByDraft.flatMap((pick) => (pick.movieId == null ? [] : [pick.movieId])),
     ),
   ];
-  const [totals, users] = await Promise.all([
-    pointsForMovieIds(allMovieIds, year),
+  // 🔴 The ledger rather than the totals, because the roster needs to know
+  // which films won and the ledger already does. Same rule, same load, same
+  // inputs — `ledgerForMovies` and `pointsForMovieIds` both go through
+  // `loadScoringInputs`, and `MovieLedger.total` is by construction the sum of
+  // its lines (D41). One extra batched query names the shows; it does not grow
+  // with seats, which is the property scoring.batching.test.ts guards.
+  const [ledgers, users] = await Promise.all([
+    ledgerForMovies(allMovieIds, year),
     userRepository.findManyByIds([
       ...new Set(drafts.flatMap((draft) => (draft.userId == null ? [] : [draft.userId]))),
     ]),
   ]);
+  const totals: ReadonlyMap<number, number> = new Map(
+    [...ledgers].map(([id, ledger]) => [id, ledger.total]),
+  );
   const userById = new Map(users.map((user) => [user.id, user]));
 
   const rows = drafts
@@ -264,7 +284,7 @@ async function buildLeague(
   return {
     id: league.id,
     name: league.name,
-    ...(await buildRoster(drafts, picksByDraft, totals, viewerId)),
+    ...(await buildRoster(drafts, picksByDraft, totals, ledgers, viewerId)),
     standings,
     position: standings.find((row) => row.isViewer)?.position ?? null,
   };
@@ -279,6 +299,7 @@ async function buildRoster(
     createdAt: Date | null;
   }[],
   totals: ReadonlyMap<number, number>,
+  ledgers: ReadonlyMap<number, { lines: readonly { won: boolean }[] }>,
   viewerId: number,
 ): Promise<{ roster: RosterEntry[]; total: number }> {
   const seat = drafts.find((draft) => draft.userId === viewerId);
@@ -308,6 +329,7 @@ async function buildRoster(
       {
         movie,
         posterUrl: posterUrl(movie.poster, 'w342'),
+        status: statusOf(ledgers.get(movie.id)),
         // The stored `order` is the draft round, but it is nullable and has
         // gaps in the restored data; the index is the reliable sequence.
         round: pick.order ?? index + 1,
@@ -321,4 +343,19 @@ async function buildRoster(
   });
 
   return { roster, total };
+}
+
+/**
+ * What a film's poster should be marked with.
+ *
+ * 🔴 Three states from one source. A film with no ledger entry was not
+ * nominated this season; one with lines was; one with a winning line won. Any
+ * other derivation — a second query, a separate winners lookup — could
+ * disagree with the points printed under the same poster.
+ */
+function statusOf(
+  ledger: { lines: readonly { won: boolean }[] } | undefined,
+): RosterEntry['status'] {
+  if (!ledger || ledger.lines.length === 0) return 'none';
+  return ledger.lines.some((line) => line.won) ? 'won' : 'nominated';
 }

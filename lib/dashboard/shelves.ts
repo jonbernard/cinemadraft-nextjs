@@ -21,6 +21,8 @@ export type ShelfFilm = {
   title: string;
   /** The film's artwork, already resolved by the dashboard service. */
   posterUrl: string | null;
+  /** Nominated, won, or neither — already resolved by the dashboard service. */
+  status: 'none' | 'nominated' | 'won';
   points: number;
   /**
    * 0–1, this film measured against the best on **its own shelf**.
@@ -102,6 +104,7 @@ function toShelf(held: number, matching: RosterEntry[]): ShelfView {
       id: entry.movie.id,
       title: entry.movie.title ?? 'Untitled',
       posterUrl: entry.posterUrl,
+      status: entry.status,
       points: entry.points,
       share: best > 0 ? entry.points / best : 0,
     })),

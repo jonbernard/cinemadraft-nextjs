@@ -24,17 +24,20 @@ function entry(
     round = 1,
     pickedAt = null,
     posterUrl = null,
+    status = 'none',
   }: Partial<{
     title: string | null;
     points: number;
     round: number;
     pickedAt: number | null;
     posterUrl: string | null;
+    status: RosterEntry['status'];
   }> = {},
 ): RosterEntry {
   return {
     movie: { id, title } as RosterEntry['movie'],
     posterUrl,
+    status,
     round,
     points,
     share: 0.99,
@@ -66,6 +69,16 @@ describe('topScorers', () => {
     ]);
 
     expect(shelf.films[0]?.posterUrl).toBe('https://image.tmdb.org/t/p/w342/abc.jpg');
+  });
+
+  it('carries the won/nominated mark onto the shelf', () => {
+    // The seal is the same signal wherever the film appears; a shelf that
+    // dropped it would show a winner beside the roster strip that stamps it.
+    const shelf = topScorers([
+      league([entry(1, { points: 3, status: 'won' }), entry(2, { points: 9 })]),
+    ]);
+
+    expect(shelf.films.map((film) => film.status)).toEqual(['none', 'won']);
   });
 
   it('ranks by points, highest first', () => {

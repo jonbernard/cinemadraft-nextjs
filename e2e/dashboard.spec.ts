@@ -315,6 +315,68 @@ test.describe('dashboard', () => {
      */
     test.beforeEach(skipWithoutRestoredCorpus);
 
+    /**
+     * 🔴 P17.T15, and the half of it that is not the animation.
+     *
+     * `PosterFrame` has carried a winner seal since Phase 3.5 and, until this
+     * task, nothing in the application ever set `status` — the only `'won'` in
+     * the repository was in a story file. So the seal had rendered zero times
+     * in the product, and a component test asserting it renders when told to
+     * would have gone green throughout.
+     *
+     * This asserts it against the real restored roster, where member 6 holds
+     * films that genuinely won this season: the seal reaches the page from the
+     * ledger, not from a prop a test set.
+     */
+    test('🔴 a film that won is sealed on the roster, from real data', async ({
+      page,
+    }) => {
+      await signInAsMember(page);
+      await page.goto('/');
+
+      const strip = page.getByRole('list', { name: /drafted films/i });
+      await expect(strip).toBeVisible();
+
+      // Some, not all: a roster of seals would mean status was hardcoded, and
+      // a roster of none is the state this task exists to end.
+      const sealed = strip.getByLabel('Winner');
+      const frames = strip.getByRole('figure');
+      const [seals, total] = [await sealed.count(), await frames.count()];
+      expect(seals).toBeGreaterThan(0);
+      expect(seals).toBeLessThan(total);
+
+      // 🔴 Read off the running animation, not off computed style. Both of the
+      // obvious assertions here are ones a broken seal passes:
+      // `animation-iteration-count: 1` is CSS's own default, and
+      // `animation-name: stamp` reads back even when no `@keyframes stamp`
+      // rule was ever compiled — a name is just a reference. Only the
+      // keyframes themselves distinguish a stamp from a seal that was always
+      // simply there.
+      const stamp = await sealed.first().evaluate((el) => {
+        const anim = el.getAnimations()[0] as CSSAnimation | undefined;
+        // `getKeyframes` lives on KeyframeEffect, not the AnimationEffect base
+        // the DOM lib types `effect` as.
+        const effect = anim?.effect as KeyframeEffect | undefined;
+        const frames = effect?.getKeyframes() ?? [];
+        return {
+          name: anim?.animationName ?? null,
+          iterations: effect?.getTiming().iterations ?? null,
+          fill: effect?.getTiming().fill ?? null,
+          from: frames[0] ?? null,
+        };
+      });
+
+      expect(stamp.name).toBe('stamp');
+      // It is a mark, not a notification: one run, then still.
+      expect(stamp.iterations).toBe(1);
+      // `both` is load-bearing — without it the seal shows at full size for a
+      // frame before the animation starts.
+      expect(stamp.fill).toBe('both');
+      // And it genuinely arrives from somewhere: oversized, rotated, invisible.
+      expect(stamp.from?.opacity).toBe('0');
+      expect(String(stamp.from?.transform)).toContain('scale(2.2)');
+    });
+
     test('shows the member’s roster, total and standings', async ({ page }) => {
       await signInAsMember(page);
       await page.goto('/');

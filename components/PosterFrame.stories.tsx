@@ -20,3 +20,12 @@ const meta = {
 export default meta;
 
 export const Default: StoryObj<typeof meta> = {};
+
+/**
+ * All three states side by side. Until P17.T15 only `won` had a story and
+ * nothing in the app ever set `status` at all, so the seal in `Default` had
+ * never once rendered outside this file.
+ */
+export const Nominated: StoryObj<typeof meta> = { args: { status: 'nominated' } };
+
+export const NotNominated: StoryObj<typeof meta> = { args: { status: 'none' } };

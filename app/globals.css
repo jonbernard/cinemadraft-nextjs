@@ -78,12 +78,32 @@
    * from-state across the delay, so a staggered row starts invisible instead
    * of appearing, blinking out and fading back in. */
   --animate-deal-in: deal-in 320ms ease-out both;
+
+  /* The winner seal (P17.T15, pulled forward from P14.T4). A stamp, not a fade:
+   * it arrives oversized and rotated and settles, which is what a seal pressed
+   * into a page does. `both` holds the from-state so the seal is never visible
+   * at full size for one frame before the animation begins, and the overshoot in
+   * the easing is what makes it land rather than glide.
+   *
+   * Runs exactly once and stops on the existing static seal — a win is a mark,
+   * not a notification, and anything that loops reads as "pending". */
+  --animate-stamp: stamp 260ms cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
 }
 
 @keyframes deal-in {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+}
+
+/* 🔴 No `transform-origin`. The seal is a clip-path triangle pinned to the
+ * frame's top-right corner, and the default centre origin makes it scale
+ * toward and away from the corner it lives in, which is the behaviour wanted. */
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: scale(2.2) rotate(-14deg);
   }
 }
 

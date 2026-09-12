@@ -24,6 +24,25 @@ describe('PosterFrame', () => {
     expect(screen.getByLabelText('Winner')).toBeInTheDocument();
   });
 
+  it('🔴 stamps the seal rather than having it simply be there', () => {
+    render(<PosterFrame {...base} status="won" />);
+    expect(screen.getByLabelText('Winner')).toHaveClass('animate-stamp');
+  });
+
+  it('🔴 delivers the seal instantly when motion is reduced', () => {
+    // The GroupCeremony contract: same information, no animation. The seal is
+    // present in its final state, not delayed and not omitted.
+    //
+    // 🔴 Asserted as a class rather than a computed style because PosterFrame
+    // is a Server Component: it cannot read matchMedia, so `motion-reduce:`
+    // compiling to the media query IS the implementation. jsdom applies no
+    // stylesheet, so there is nothing else here to read.
+    render(<PosterFrame {...base} status="won" />);
+    const seal = screen.getByLabelText('Winner');
+    expect(seal).toBeInTheDocument();
+    expect(seal).toHaveClass('motion-reduce:animate-none');
+  });
+
   it('does not mark an unwon film as a winner', () => {
     render(<PosterFrame {...base} status="nominated" />);
     expect(screen.queryByLabelText('Winner')).not.toBeInTheDocument();
