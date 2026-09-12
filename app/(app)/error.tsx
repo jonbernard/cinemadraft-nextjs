@@ -14,6 +14,9 @@ import { type ErrorKind, ErrorPanel } from '@/components/ErrorPanel';
  * It duplicates the root boundary's logic rather than importing it, because a
  * boundary that depends on another module is a boundary that can fail for the
  * same reason as the page it is catching for.
+ *
+ * `ErrorPanel` supplies no `<main>` (P17.T27): `AppShell` already renders the
+ * one content landmark, and this used to nest a second inside it.
  */
 export default function AppSectionError({
   error,

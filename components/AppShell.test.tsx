@@ -245,4 +245,16 @@ describe('AppShell', () => {
     // Focusable by script so focus actually moves, never by Tab.
     expect(main).toHaveAttribute('tabindex', '-1');
   });
+
+  it('🔴 names the create action the same as every other place it appears', () => {
+    // "Create league" in the strip and "Start a league" on /leagues are the
+    // same action, ~700px apart at 1440px. One label (P17.T32).
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    expect(screen.getByRole('link', { name: 'Start a league' })).toHaveAttribute(
+      'href',
+      '/leagues/new',
+    );
+    expect(screen.queryByRole('link', { name: 'Create league' })).toBeNull();
+  });
 });

@@ -1294,16 +1294,16 @@ production database — the gap both earlier reviews flagged. **Do not flatten t
 draft console or the watchlist:** they are the best-designed screens in the
 product and should only inherit tokens from this phase, not be redesigned by it.
 
-- [ ] P17.T27 — `not-found` renders inside the app shell; `/live` and `/members` currently drop the whole shell
-- [ ] P17.T28 — 🔴 `/admin/season` confirms before re-scoping the app for every user. **Safety-bearing; own reviewer pass.** `/admin/broadcast` is the model
+- [x] P17.T27 — `not-found` renders inside the app shell; `/live` and `/members` currently drop the whole shell. 🔴 A catch-all inside `(app)` fixes every unmatched URL at once, not the two the review tried; `ErrorPanel` stopped rendering its own `<main>` (it was nesting a landmark inside `AppShell`'s on *every* in-shell 404). **`/members` deliberately not built** — nothing links to it and a directory of sixty real people is an owner's product decision, not a polish-phase gap; it 404s inside the shell instead
+- [x] P17.T28 — 🔴 `/admin/season` confirms before re-scoping the app for every user. **Safety-bearing; own reviewer pass.** `/admin/broadcast` is the model. Ten adjacent "Make active" buttons became one `<select>` and one gated commit; the member count is read server-side and named in the form and again in the dialog. Reviewer pass done — no finding on any of the four paths to the action; five low/info findings addressed (a decorative alternation in one assertion, the active season no longer stated outside a disabled control, a doubled-space label when no season is active)
 - [ ] P17.T29 — signed-in home shows the member's own state (today it is the signed-out page plus three icons)
 - [ ] P17.T30 — league page: promote the owner actions, move the raw invite URL behind an Invite action, hide it on a complete season
 - [ ] P17.T31 — roster beside standings, into the empty 55% of the content width
-- [ ] P17.T32 — `/leagues`: one label for one action; mark the admin section
+- [x] P17.T32 — `/leagues`: one label for one action; mark the admin section. The strip said "Create league" and `/leagues` said "Start a league" ~700px apart; the latter wins (3 of 4 sites and the destination's own heading already said it), so only `AppShell` changed — `/leagues` needed no edit. 🔴 **The second half was re-pointed:** `/leagues` has no admin section; the page matching the description is `app/(app)/admin/page.tsx`, three identical cards two of which are irreversible for every member. Implemented there, split into "Affects every member" / "Affects one account". **If the owner meant something else on `/leagues`, this half needs re-pointing; the label fix stands either way**
 - [ ] P17.T33 — 88% of signed-in text is 12px; kill the `text-[0.65rem]` arbitrary value (117 elements at 10.4px)
 - [ ] P17.T34 — `text-dim` outnumbers `text-primary` 3.6:1; audit what deserves it
 - [x] P17.T35 — brass means an **award outcome only**; the review's "320 instances on the draft board" does not reproduce (570 elements, every one of them the word `Won`, from one source site rendered twice per seat). **P18.T6 and T21 unblocked.** Method and numbers in the Phase 17 notes below; 🔴 T26 owes it a D-row in the D85+ block
-- [ ] P17.T36 — `/list` has three left edges (445 / 469 / 493)
+- [x] P17.T36 — `/list` has three left edges (445 / 469 / 493). Re-measured at 1440px before touching anything and the review's numbers reproduce exactly: heading 445, search field 469, empty state 493. The middle edge was a `Panel` wrapping the whole page body at the same `surface` tone as `AppShell`'s content panel — invisible, worth only a 24px gutter. Deleted; heading and field now both sit at 445. Audited the other single-column pages at 1440px: `/leagues` h1 445, `/admin` h1 445 / first card 445, `/leagues/new` h1 573 / first field 573, `/members/[uuid]` column 445 — all aligned. 🔴 `/watchlist` measured and left alone (h1 x=381)
 
 ### Recording the decisions
 

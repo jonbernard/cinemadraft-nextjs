@@ -80,6 +80,91 @@ test.describe('failure surfaces', () => {
     }
   });
 
+  test('🔴 an unmatched URL keeps the application, and there is one main', async ({
+    page,
+  }) => {
+    // `/members` and `/live` are directories with a dynamic child and no index,
+    // so before P17.T27 they matched no route and fell through to the ROOT
+    // not-found — a bare page with no rail, no tab bar and no strip, and one
+    // link back out of the product. The status was already 404 then, so the
+    // status alone proves nothing here; the rail is what discriminates.
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    for (const url of ['/members', '/live', '/nonsense/deep/path']) {
+      const response = await page.goto(url);
+
+      expect(response?.status(), `${url} must answer 404`).toBe(404);
+      await expect(
+        page
+          .getByRole('navigation', { name: 'Main' })
+          .getByRole('link', { name: 'Leagues' }),
+      ).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Not here' })).toBeVisible();
+
+      // One content landmark, not two. ErrorPanel used to render its own
+      // <main> inside AppShell's, on every in-shell 404 and every caught error.
+      expect(await page.locator('main').count(), `${url} nests <main>`).toBe(1);
+    }
+  });
+
+  test('🔴 the 404 panel does not repaint the ground inside the shell', async ({
+    page,
+  }) => {
+    // ErrorPanel painted `bg-bg-base` — the *ground* — while sitting inside
+    // AppShell's `bg-bg-surface` content panel, which punched a hole in it.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/members');
+
+    const colours = await page.evaluate(() => {
+      const panel = document.querySelector('[data-testid="error-panel"]');
+      const main = document.querySelector('main');
+      if (!panel || !main) return null;
+      return {
+        panel: getComputedStyle(panel.parentElement as Element).backgroundColor,
+        main: getComputedStyle(main).backgroundColor,
+      };
+    });
+    if (!colours) throw new Error('no panel');
+
+    // Transparent: the host decides the ground.
+    expect(colours.panel).toBe('rgba(0, 0, 0, 0)');
+    expect(colours.main).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
+  test('the 404 panel sits centred in the content column', async ({ page }) => {
+    // 🔴 A regression guard, not a proof of P17.T27: the column was already
+    // centred by `mx-auto` before this task, and `justify-center` replaces it.
+    // It is here so a later edit cannot quietly left-align the panel inside the
+    // shell — which is what the 2026-09-12 review reported seeing.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/members');
+
+    const main = await page.locator('main').boundingBox();
+    const panel = await page.getByTestId('error-panel').boundingBox();
+    if (!main || !panel) throw new Error('no layout');
+
+    // The column caps at max-w-xl (576px); in a ~1100px content column the
+    // space either side of it must agree. Measured on the column, never on the
+    // heading — the heading is a shrink-to-fit flex item whose right-hand gap
+    // is meaningless.
+    const left = panel.x - main.x;
+    const right = main.x + main.width - (panel.x + panel.width);
+    expect(Math.abs(left - right)).toBeLessThan(2);
+    expect(panel.width).toBeLessThanOrEqual(576);
+  });
+
+  test('the 404 still works on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/members');
+
+    await expect(page.getByRole('heading', { name: 'Not here' })).toBeVisible();
+    // Below xl the rail is gone and the tab bar carries navigation.
+    await expect(page.getByRole('navigation', { name: 'Primary, mobile' })).toBeVisible();
+    // No horizontal overflow: the document is no wider than the viewport.
+    const width = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(width).toBeLessThanOrEqual(390);
+  });
+
   test('🔴 the 404 keeps the app’s navigation, so it is not a dead end', async ({
     page,
   }) => {

@@ -239,7 +239,11 @@ function Strip({
         className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center gap-2 border px-4 text-sm focus-visible:outline-2"
       >
         <PlusIcon />
-        Create league
+        {/* One label for one action (P17.T32). `/leagues` and `/leagues/new`
+            both say "Start a league", and so does the destination's own
+            heading; "Create league" survives only as CreateLeagueForm's submit
+            label, which is a different act at a different moment. */}
+        Start a league
       </Link>
 
       {/* The live countdown slot: intentionally empty until a page supplies
