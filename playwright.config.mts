@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { defineConfig, devices } from '@playwright/test';
 import { config as loadEnv } from 'dotenv';
 
@@ -14,11 +15,18 @@ loadEnv({ path: '.env', quiet: true });
  * one and every spec fails as "not signed in", which reads as a broken app
  * rather than a broken config.
  *
- * A literal default because this is a local, non-deployed run by construction:
- * `lib/test-auth.ts` refuses to load at all if `VERCEL_ENV` is set. CI
- * generates a real one and exports it before this file is read.
+ * 🔴 Generated per run, never a literal. A committed default is a published
+ * signing key: with it, anybody who can reach the e2e server can mint
+ * `<id>.<Date.now()>.<hmac>` for any row in the restored local database,
+ * including an admin. That the run is local is not the protection people
+ * assume — `reuseExistingServer` leaves it up long after the run, so the
+ * window is "whenever a developer last ran the suite", not "during it".
+ *
+ * Still `??=`: the value only ever travels process-to-process (here into
+ * `webServer.env` below), so an explicitly supplied one — CI's `openssl rand`
+ * — must win. 64 hex characters, twice the 32 the module demands.
  */
-process.env.E2E_TEST_AUTH_SECRET ??= 'local-e2e-secret-at-least-32-chars';
+process.env.E2E_TEST_AUTH_SECRET ??= randomBytes(32).toString('hex');
 
 export default defineConfig({
   testDir: './e2e',
@@ -44,8 +52,22 @@ export default defineConfig({
     // `next.config.ts` strips the attribute from production output, and this is
     // the one build where it must not — remove this and every testid selector in
     // the suite fails with a locator that matches nothing.
-    command: 'KEEP_TEST_IDS=1 npm run build && npm run start',
+    //
+    // 🔴 `-H 127.0.0.1` is a security control, not a preference. `next start`
+    // binds `0.0.0.0`, and under this flag `proxy.ts` installs a pass-through
+    // with no route protection at all — so the default put an app that trusts
+    // a cookie, and has no auth behind it, on every interface of the machine.
+    // Bound to loopback there is nothing for the rest of the network to reach.
+    // (`lib/test-auth.ts` refuses a non-loopback `Host` as well; two locks.)
+    //
+    // The URLs below stay `localhost` deliberately: it resolves to this same
+    // listener, and it is the origin `e2e/support/session.ts` pins the session
+    // cookie to. Changing one without the other signs nobody in.
+    command: 'KEEP_TEST_IDS=1 npm run build && npm run start -- -H 127.0.0.1',
     url: 'http://localhost:3000',
+    // A server left over from an earlier run holds *that* run's secret, so
+    // reuse after the change above fails every spec as "not signed in" rather
+    // than as a mismatch. Kill whatever is on 3000 and run again.
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     // 🔴 The app under test boots with no Clerk at all (D82/D84). The test
