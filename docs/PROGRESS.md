@@ -1265,7 +1265,7 @@ order, the tranche boundaries and the browser-verification protocol.
 ### Visual
 
 - [ ] P17.T11 — media through to rosters (`app/(app)/page.tsx:171, :315` pass `posterUrl: null`)
-- [ ] P17.T12 — award-show marks at 64px `contain` on a neutral plate; pluralise the count
+- [x] P17.T12 — award-show marks at 64px `contain` on a neutral plate; pluralise the count — `8430113`. 🔴 The review's premise was wrong: the twelve marks are **not** transparent (`transparentPct` 0.0 — eleven baseline JPEG, one 8-bit RGB), so the defect at 40px was size, not contrast against the ground
 - [ ] P17.T13 — film detail title/year lockup
 - [ ] P17.T14 — `NavRail` owns its column
 - [ ] P17.T15 — winner seal, pulled forward from P14.T4 (does not close it)
@@ -1525,7 +1525,7 @@ identifier, not a position.
 Replaces `/rules-and-scoring` with a public `/how-it-works`. Every number on
 the page must trace to `lib/services/scoring.ts` or the `points` table; no
 invented claims.
-Plan: _not yet written — write it before starting T0._
+Plan: `docs/superpowers/plans/2026-09-12-phase-18-how-it-works.md`
 
 - [x] P18.T0 — **decided 2026-09-12:** route is `/how-it-works` with `/rules-and-scoring` permanently redirecting; the scoring table stays on the page, **below the worked example**. Nav label changes with the route. (Recording the D-number is P17.T26)
 - [ ] P18.T1 — page shell and section spine, public
