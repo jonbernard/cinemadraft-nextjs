@@ -190,6 +190,88 @@ test.describe('browse', () => {
     expect(new Set(months).size).toBe(months.length);
   });
 
+  test('🔴 the cursor follows the reader into the URL (amends D80)', async ({ page }) => {
+    // 🔴 jsdom has a history object but no scrolling, no real navigation and no
+    // bfcache, so every property this task exists for is a browser property.
+    //
+    // D80 is otherwise untouched: no button comes back, nothing on screen
+    // changes, and the reader cannot tell this shipped by looking at the page.
+    await page.goto('/browse');
+
+    const films = page.locator('section ul > li');
+    const start = await films.count();
+    const entries = await page.evaluate(() => history.length);
+
+    await page.getByTestId('browse-sentinel').scrollIntoViewIfNeeded();
+    await expect.poll(() => films.count(), { timeout: 15_000 }).toBeGreaterThan(start);
+    await expect(page).toHaveURL(/[?&]page=2/);
+
+    const two = await films.count();
+    await page.getByTestId('browse-sentinel').scrollIntoViewIfNeeded();
+    await expect.poll(() => films.count(), { timeout: 15_000 }).toBeGreaterThan(two);
+    await expect(page).toHaveURL(/[?&]page=3/);
+    // The side rides along, or the cursor points into the wrong catalogue.
+    await expect(page).toHaveURL(/[?&]when=past/);
+
+    // 🔴 `replaceState`, not `pushState`: two appends and the history is the
+    // same length it was. This is the infinite-scroll Back trap D80 was right
+    // to avoid, and buying the URL back must not rebuild it.
+    expect(await page.evaluate(() => history.length)).toBe(entries);
+  });
+
+  test('🔴 the cursor survives a trip to a film and back (amends D80)', async ({
+    page,
+  }) => {
+    await page.goto('/browse');
+    const films = page.locator('section ul > li');
+    const start = await films.count();
+
+    await page.getByTestId('browse-sentinel').scrollIntoViewIfNeeded();
+    await expect.poll(() => films.count(), { timeout: 15_000 }).toBeGreaterThan(start);
+    const cursor = new URL(page.url()).search;
+    expect(cursor).toMatch(/page=2/);
+
+    await page.locator('a[href^="/films/"]').first().click();
+    await page.waitForURL(/\/films\//);
+
+    // 🔴 One press of Back, not one per appended page.
+    await page.goBack();
+    await expect(page).toHaveURL(/\/browse/);
+
+    // The cursor came back with it. 🔴 What comes back on screen is the App
+    // Router's cached first page, not the cursor's — measured, 2026-09-12: the
+    // client cache answers the Back before any request is made, and that is
+    // Next's behaviour for a soft-navigated entry, not something this page
+    // chooses. The URL is the half that is bought back, and it is the half
+    // that travels: a reload or a paste of this address lands on the cursor.
+    expect(new URL(page.url()).search).toBe(cursor);
+    await page.reload();
+    await expect(page).toHaveURL(/[?&]page=2/);
+    await expect(films.first()).toBeVisible();
+  });
+
+  test('🔴 a shared cursor opens where the sender was', async ({ page }) => {
+    // The entry point `?page=` already worked (D65, kept by D80) — nothing had
+    // ever pointed at it. Now the address bar does, so this is the other end of
+    // the same trip.
+    const films = page.locator('section ul > li');
+
+    await page.goto('/browse');
+    const fromTheTop = await films.first().textContent();
+
+    await page.goto('/browse?when=past&page=3');
+    // Page 3, not the top of the catalogue.
+    expect(await films.first().textContent()).not.toBe(fromTheTop);
+
+    await page.goto('/browse?when=future&page=2');
+    // The side the sender was on, not the default.
+    await expect(page.getByRole('link', { name: 'The future' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible();
+  });
+
   test('🔴 a crawler still has a path into page 2', async ({ page }) => {
     // The one property of D65 that auto-append keeps. The sitemap (P15.T6)
     // leads here, and the sentinel offers nothing to a client without

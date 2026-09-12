@@ -86,6 +86,29 @@ export function BrowseList({
 
       loaded.current = result.data.page;
       setPage(result.data.page);
+
+      // 🔴 Amends D80 — the new D-number is assigned by P17.T26.
+      //
+      // D80 weighed auto-append against "a linkable page, a working Back
+      // button, keyboard reachability, and crawlability" and chose append.
+      // That choice is untouched: no button comes back and nothing on screen
+      // changes. Only the address bar does, which buys back one of the four —
+      // a shareable position, and a return from a film page that lands where
+      // the reader left rather than at the top of page 1.
+      //
+      // 🔴 `replaceState`, never `pushState`. `pushState` would make Back walk
+      // back through every appended page, which is the infinite-scroll history
+      // trap and is strictly worse than what D80 accepted.
+      //
+      // 🔴 Native history, never `router.replace`. `router.replace` re-runs the
+      // Server Component and re-mounts this list with a fresh `initial`,
+      // discarding every month already appended. Next integrates the native
+      // calls into the router (docs: Linking and Navigating § Native History
+      // API), so `useSearchParams` stays in step either way.
+      //
+      // Built from props, not from `window.location`: a navigation in flight
+      // could have changed the latter under us.
+      window.history.replaceState(null, '', `?when=${when}&page=${result.data.page}`);
       if (result.data.months.length === 0) setEnded(true);
       setMonths((current) => merge(current, result.data.months));
 

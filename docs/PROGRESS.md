@@ -1253,7 +1253,7 @@ order, the tranche boundaries and the browser-verification protocol.
 - [ ] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
 - [ ] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
 - [ ] P17.T5 — signed-out lede above `SeasonStepper`
-- [ ] P17.T6 — `/browse` **`replaceState`s the cursor as you scroll** — auto-append stays exactly as D80 wanted, Back and shareability come back, no new UI. Narrowest possible amendment to D80
+- [x] P17.T6 — `/browse` **`replaceState`s the cursor as you scroll** — auto-append stays exactly as D80 wanted, Back and shareability come back, no new UI. Narrowest possible amendment to D80
 - [x] P17.T7 — draft console never returns silently from `assign`
 
 ### Accessibility and correctness
@@ -1313,6 +1313,22 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 
 _Fill these in as you go. The gate requires the T18–T25 measurements re-run and
 recorded here, so the change is a number rather than an impression._
+
+- **Amendments awaiting a D-number (recorded by P17.T26, from D85 up).** The
+  ledger is complete through D84; nothing in tranche 1 edits `DECISIONS.md`,
+  because picking a number per task would force a renumber when T26 records all
+  thirteen at once.
+  - P17.T6 amends **D80**: auto-append is unchanged and no UI returns; the page
+    `replaceState`s its cursor so a position is shareable and a return from a
+    film page lands where the reader left. `pushState` was rejected — it
+    rebuilds the infinite-scroll Back trap D80 was right to avoid.
+    🔴 Measured 2026-09-12, and narrower than the plan assumed: **Back restores
+    the cursor in the URL, not on screen.** The App Router answers a Back to a
+    soft-navigated entry from its client cache, so the first paint is page 1's
+    films under a `page=3` address; a reload or a pasted link then serves page
+    3. That is Next's behaviour for the entry, not a choice this page makes, and
+    `router.replace` is not the fix — it would re-run the Server Component and
+    discard every appended month.
 
 - Baseline, measured 2026-09-12 across `/`, `/browse`, `/award-shows`,
   `/films/[id]` at 1440px, both schemes, 1,272 visible text elements:

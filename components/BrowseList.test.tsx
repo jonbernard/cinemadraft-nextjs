@@ -280,4 +280,98 @@ describe('BrowseList', () => {
       expect(screen.getByRole('status')).toHaveTextContent(/1 more film/),
     );
   });
+
+  it('🔴 writes the cursor into the URL as pages append (amends D80)', async () => {
+    loadBrowsePage.mockResolvedValue({
+      ok: true,
+      data: {
+        when: 'past',
+        page: 2,
+        pageCount: 9,
+        months: [monthOf('09/2026', 'Second')],
+      },
+    });
+    render(
+      <BrowseList
+        when="past"
+        initial={{
+          when: 'past',
+          page: 1,
+          pageCount: 9,
+          months: [monthOf('10/2026', 'First')],
+          hero: null,
+        }}
+        isSignedIn={false}
+      />,
+    );
+
+    intersect();
+
+    // The address bar, not the router: `router.replace` would re-run the
+    // server component and throw away the months already appended.
+    await waitFor(() => expect(window.location.search).toBe('?when=past&page=2'));
+  });
+
+  it('🔴 keeps the side in the URL, so a shared cursor lands on the right catalogue', async () => {
+    loadBrowsePage.mockResolvedValue({
+      ok: true,
+      data: {
+        when: 'future',
+        page: 2,
+        pageCount: 3,
+        months: [monthOf('01/2027', 'Announced')],
+      },
+    });
+    render(
+      <BrowseList
+        when="future"
+        initial={{
+          when: 'future',
+          page: 1,
+          pageCount: 3,
+          months: [monthOf('12/2026', 'Soon')],
+          hero: null,
+        }}
+        isSignedIn={false}
+      />,
+    );
+
+    intersect();
+
+    await waitFor(() => expect(window.location.search).toBe('?when=future&page=2'));
+  });
+
+  it('🔴 adds no history entry — Back must still leave the page in one press', async () => {
+    const push = vi.spyOn(window.history, 'pushState');
+    loadBrowsePage.mockResolvedValue({
+      ok: true,
+      data: {
+        when: 'past',
+        page: 2,
+        pageCount: 9,
+        months: [monthOf('09/2026', 'Second')],
+      },
+    });
+    render(
+      <BrowseList
+        when="past"
+        initial={{
+          when: 'past',
+          page: 1,
+          pageCount: 9,
+          months: [monthOf('10/2026', 'First')],
+          hero: null,
+        }}
+        isSignedIn={false}
+      />,
+    );
+
+    intersect();
+    await waitFor(() => expect(screen.getByText('Second')).toBeInTheDocument());
+
+    // The whole difference between buying back a shareable URL and building
+    // the infinite-scroll Back trap D80 was right to avoid.
+    expect(push).not.toHaveBeenCalled();
+    push.mockRestore();
+  });
 });
