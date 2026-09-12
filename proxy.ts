@@ -75,6 +75,15 @@ const isPublic = createRouteMatcher([
   // Protecting it would bounce them to a login page that cannot say what they
   // were invited to.
   '/join/(.*)',
+  // The page that explains the game, and the one a new reader is most likely
+  // to be sent. It reads the `points` table and writes nothing, so there is
+  // nothing behind it to protect.
+  //
+  // 🔴 Superseded in scope by Phase 18, which replaces this page with a public
+  // `/how-it-works` and permanently redirects this route to it (P18.T0). Listed
+  // here anyway: until that lands, a redirect source that is protected and a
+  // redirect target that is public is the worst of both.
+  '/rules-and-scoring',
   // 🔴 Crawler and scraper endpoints, which are useless behind a redirect: a
   // bot asking for robots.txt or a sitemap gets a 307 to the login page, and a
   // scraper building a link preview gets one for the share card. All three are

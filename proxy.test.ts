@@ -50,4 +50,30 @@ describe('proxy', () => {
       '/(api|trpc)(.*)',
     ]);
   });
+
+  it('🔴 lists every route a stranger may reach, and no more', async () => {
+    // Pinned as a whole list rather than `arrayContaining`. This is the file
+    // where "public" is decided; a test that only checks for presence would
+    // stay green while somebody added a route that should not be here, which
+    // is the failure direction that actually costs something (D45).
+    await import('./proxy');
+
+    expect(createRouteMatcher).toHaveBeenCalledWith([
+      '/',
+      '/tokens',
+      '/auth/(.*)',
+      '/api/webhooks/(.*)',
+      '/api/revalidate',
+      '/leagues/(.*)',
+      '/award-shows/(.*)',
+      '/award-shows',
+      '/films/(.*)',
+      '/browse',
+      '/join/(.*)',
+      '/rules-and-scoring',
+      '/robots.txt',
+      '/sitemap.xml',
+      '/opengraph-image',
+    ]);
+  });
 });

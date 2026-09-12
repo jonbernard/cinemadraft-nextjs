@@ -15,7 +15,11 @@ export const metadata: Metadata = {
  * one page, two sections, matching how the source app arranged it: the prose
  * explains the rule, the table shows the numbers.
  *
- * Public, like the award-show pages this explains.
+ * Public, like the award-show pages this explains — enforced by the `isPublic`
+ * matcher in `proxy.ts`, not by anything in this file. That is worth naming:
+ * this comment claimed the page was public for months while the matcher said
+ * otherwise, and a reader had no way to tell which was right without knowing
+ * where to look. Now they do.
  */
 export default async function RulesAndScoringPage() {
   const points = await pointRepository.findAll();

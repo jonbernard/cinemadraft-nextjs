@@ -1247,7 +1247,7 @@ order, the tranche boundaries and the browser-verification protocol.
 
 ### Product and structure
 
-- [ ] P17.T0 — `/rules-and-scoring` joins `isPublic`; fix the docstring that already claims it is public
+- [x] P17.T0 — `/rules-and-scoring` joins `isPublic`; fix the docstring that already claims it is public
 - [ ] P17.T1 — `SectionHead` sizes **28 / 20 / 17** keyed to `as`; fix the `h1 → h3 → h2` order on `/`
 - [ ] P17.T2 — `AppShell` breakpoints: close the 1024–1280px dead zone; **decided — identity, search and sign-in fold into the tab bar row**, wordmark left, search right. Watch that the chrome does not read as a sixth tab
 - [ ] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
