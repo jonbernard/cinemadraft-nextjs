@@ -1248,7 +1248,7 @@ order, the tranche boundaries and the browser-verification protocol.
 ### Product and structure
 
 - [x] P17.T0 — `/rules-and-scoring` joins `isPublic`; fix the docstring that already claims it is public
-- [ ] P17.T1 — `SectionHead` sizes **28 / 20 / 17** keyed to `as`; fix the `h1 → h3 → h2` order on `/`
+- [x] P17.T1 — `SectionHead` sizes **28 / 20 / 17** keyed to `as`; fix the `h1 → h3 → h2` order on `/`
 - [x] P17.T2 — `AppShell` breakpoints: close the 1024–1280px dead zone; **decided — identity, search and sign-in fold into the tab bar row**, wordmark left, search right. Watch that the chrome does not read as a sixth tab
 - [ ] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
 - [ ] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
@@ -1350,6 +1350,24 @@ recorded here, so the change is a number rather than an impression._
   sizes) or "Award shows" gets a shorter form on the bar. Neither is T2's, and
   neither is needed for the dead zone.
 
+- **P17.T1, the rendered heading sizes.** Measured on `/`, `/browse`,
+  `/award-shows` and `/films/[tmdbId]` at 1440, 1280, 1024 and 390px in both
+  schemes, against a production build: `h1` **28px**, `h2` **20px**, `h3`
+  **17px**, all Archivo, and a `name` heading **24px Instrument Serif** at
+  whatever level it sits (`/leagues/1`'s league name is an `h1` and is 24px
+  serif, not 28px — the face rule is not the hierarchy, D70). The outline on `/`
+  is now `h1 → h2 → h2 → h3`; it was `h1 → h3 → h2`. Nothing wrapped at 390px
+  and no `SectionHead` right slot came off its heading's baseline at any width.
+  The sizes are identical in both schemes, as they must be — the change is a
+  size token and touches no colour.
+
+  🔴 **The plan's `Shelf` grep was wrong, and it said to check.** `Shelf` has a
+  **fourth** consumer, `components/DraftBoard.tsx`, and it is nested: a shelf
+  per seat under the `Group N` `h2` on `/leagues/[id]`. So `Shelf` took the
+  `as?: 'h2' | 'h3'` prop the plan named as the fallback, defaulting to `h2`,
+  with `DraftBoard` passing `h3`. All three call sites on `/` are top-level and
+  take the default.
+
 - **P17.T2, the other measured numbers.** Rail **208px** at 1280 and 1440 and
   hidden at 1024 and 390 — its `xl` gate is untouched. Content panel at 1024:
   **1024px**, unchanged by this task (nothing in the diff touches the layout
@@ -1448,6 +1466,22 @@ Plan: _not yet written — write it before starting T0._
 ---
 
 ## Open questions carried forward
+
+- **🔴 Found by P17.T1's browser pass, not fixed — `Group N` on
+  `/leagues/[id]` is a 12px `h2` above 17px `h3`s.** `app/(app)/leagues/[id]/page.tsx:210`
+  renders a raw `<h2 className="text-text-dim text-xs">`, not a `SectionHead`,
+  so the heading scale does not reach it and the level above renders smaller
+  than the level below. **Pre-existing** — those seat shelves were `h3` at 17px
+  before T1 too, and T1 changed neither number — but it is now the only visible
+  size inversion in the app. Sizes outside `SectionHead` are tranche 4's
+  (T18/T33); left alone on purpose so that sweep's diff stays readable.
+- **🔴 Found by P17.T1's browser pass, not fixed — `/leagues/[id]` overflows
+  horizontally at 390px.** `document.scrollingElement.scrollWidth` is **582**
+  in a 390px viewport, signed out, on league 1. Not introduced by T1 (its only
+  rendering change is heading font-size, and headings shrink-wrap) and not named
+  by any tranche: tranche 2's T10 owns `/films/[tmdbId]`'s overflow, which
+  measures **2304px** at 390px in the same pass, but nothing owns the league
+  page. Same class of defect, one owner short.
 
 - **Raise the past side's `vote_count.gte` from 200 to ~400?** It would sharpen
   "films anybody has heard of" and would also thin out genuinely good

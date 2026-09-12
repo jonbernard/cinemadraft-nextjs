@@ -90,6 +90,11 @@ export function DraftBoard({
               }
             >
               <Shelf
+                // h3: this shelf is a seat inside a `Group N` h2 on
+                // `/leagues/[id]`, so it is the one nested consumer `Shelf`'s
+                // `as` prop exists for. The default h2 would put a seat beside
+                // the group that holds it.
+                as="h3"
                 eyebrow={
                   seat.order == null
                     ? `Rounds 1–${rounds}`

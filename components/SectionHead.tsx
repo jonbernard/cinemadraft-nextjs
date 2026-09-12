@@ -4,6 +4,34 @@ import { cn } from '@/lib/utils/cn';
 import { Eyebrow } from './Eyebrow';
 
 /**
+ * 🔴 28 / 20 / 17, keyed to the heading level (decided 2026-09-12).
+ *
+ * Every `SectionHead` used to render at 17px whatever `as` said, so the page's
+ * own `h1` was visibly outranked by any league name — which is 24px serif. 28
+ * is chosen for exactly that: an `h1` has to outrank a name.
+ *
+ * 🔴 **This is not a D70 change.** D70 assigns *faces* semantically — serif for
+ * proper nouns, Archivo for structure — and says nothing about size. An
+ * Archivo `h1` at 28px honours it exactly, and the serif `name` variant below
+ * stays 24px on its own axis: the face rule is not the hierarchy.
+ *
+ * `h4` shares `h3`'s 17px. Three sizes for four levels is deliberate — a
+ * fourth step below 17 would collide with body text once P17.T18 moves that to
+ * 15px, and nothing in the app nests four heading levels deep today.
+ *
+ * 🔴 Note for P17.T18 and P17.T23, which both sweep these components: the gap
+ * between the 17px `h3` and body text is 3px today and 2px after T18. That is
+ * intended at this size — an `h3` is a label, not a headline — but if the
+ * sweep makes them indistinguishable, the `h3` moves, not the body.
+ */
+const SIZE = {
+  h1: 'text-[28px] tracking-[-0.02em]',
+  h2: 'text-[20px] tracking-[-0.015em]',
+  h3: 'text-[17px] tracking-[-0.01em]',
+  h4: 'text-[17px] tracking-[-0.01em]',
+} as const;
+
+/**
  * The `LetterboxRule` replacement (D74).
  *
  * The rules are gone and separation comes from space. What the rules could not
@@ -62,7 +90,7 @@ export function SectionHead({
             'text-text-primary',
             name
               ? 'font-serif text-2xl tracking-[-0.02em]'
-              : 'font-sans text-[17px] font-semibold tracking-[-0.01em]',
+              : cn('font-sans font-semibold', SIZE[Tag]),
           )}
         >
           {children}

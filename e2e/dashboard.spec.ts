@@ -114,6 +114,44 @@ test.describe('dashboard', () => {
     await expect(page.getByRole('list', { name: /drafted films/i })).toHaveCount(0);
   });
 
+  test('🔴 the page has a valid heading outline', async ({ page }) => {
+    await page.goto('/');
+
+    const levels = await page.evaluate(() =>
+      [...document.querySelectorAll('main h1, main h2, main h3, main h4')].map((h) =>
+        Number(h.tagName[1]),
+      ),
+    );
+
+    // One h1, first. Then no jump of more than one level — which is what
+    // h1 → h3 was, and what made the page's own structure unreadable to a
+    // screen reader long before it was visible to anybody else.
+    expect(levels[0]).toBe(1);
+    expect(levels.filter((level) => level === 1)).toHaveLength(1);
+    for (let i = 1; i < levels.length; i += 1) {
+      expect(levels[i]).toBeLessThanOrEqual(levels[i - 1] + 1);
+    }
+  });
+
+  test('🔴 headings render at 28 / 20 / 17, and an h1 outranks a league name', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const px = (selector: string) =>
+      page
+        .locator(selector)
+        .first()
+        .evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
+
+    // Rendered px, not class names: the whole defect was that four different
+    // `as` values compiled to one size, which no class assertion would show.
+    expect(await px('main h1')).toBeCloseTo(28, 0);
+    expect(await px('main h2')).toBeCloseTo(20, 0);
+    // A serif name is 24px on its own axis (D70), so the h1 must clear it.
+    expect(await px('main h1')).toBeGreaterThan(24);
+  });
+
   test.describe('signed in', () => {
     /**
      * 🔴 These four need the restored member, and only these four — the
