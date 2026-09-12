@@ -1063,7 +1063,7 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [x] P15.T3 — global search panel
 - [x] P15.T4 — Clerk combined sign-in-or-up flow, and the login copy — _done in `3119618`; box ticked retroactively 2026-09-12_
 - [x] P15.T5 — brand mark, icons, favicon (records D83)
-- [x] P15.T6 — SEO: metadata, canonicals, robots, sitemap, OG images, JSON-LD
+- [x] P15.T6 — SEO: metadata, canonicals, robots, sitemap, OG images — _JSON-LD was ticked here but never built; added after the gate's browser pass caught it_
 - [x] P15.T7 — `/browse` auto-append (D80) — _landed in `41405b0`, not its own commit; see the note below_
 - [x] P15.T8 — `/browse` header photo
 - [x] P15.T9 — the discover query: future returns pre-release films only, and the quality floors move server-side
@@ -1072,6 +1072,25 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [x] P15.T12 — group randomisation ceremony — `6c26361`, layout corrected for the real shape in `9038e17`
 
 ### Phase 15 notes
+
+- 🔴 **T6 was ticked as including JSON-LD, and JSON-LD did not exist.** The
+  design doc's §6 asks for a schema.org `Movie` on film pages; the T6 plan
+  section never mentions it, so it was dropped when the plan was written and the
+  ledger line was copied from the design rather than from what shipped. The
+  gate's browser pass found it — zero `ld+json` in a 155KB film page, and no
+  `schema.org` anywhere under `app`, `lib` or `components`.
+
+  Now in `lib/seo.ts` as `movieJsonLd`, rendered on the film page. Two
+  deliberate restraints: every field is omitted rather than guessed when the
+  data is missing (structured data is machine-read, so a wrong field is asserted
+  as confidently as a right one and no reader is there to discount it), and
+  there is **no `aggregateRating`** — we hold IMDb's score through OMDb, but
+  that property means ratings the site collected itself, and Cinemadraft
+  collects points, not stars.
+
+  The lesson is the tick, not the omission: a box was ticked against a design
+  bullet nobody re-read. Where a plan drops something the design asked for, the
+  drop belongs in the ledger.
 
 - 🔴 **The ceremony was built and watched with two groups; the real shape is
   four.** `drafts` says league 1 has run 4 groups every year from 2018 to 2026

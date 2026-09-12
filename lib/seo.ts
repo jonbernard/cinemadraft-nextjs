@@ -35,3 +35,70 @@ export function canonical(path: string): string {
  * purpose so a pasted link opens, and this only keeps it out of the index.
  */
 export const NOINDEX: Metadata['robots'] = { index: false, follow: false };
+
+/**
+ * What a film page tells a crawler about itself, as schema.org `Movie` (§6).
+ *
+ * 🔴 **Only fields the page actually holds.** Every property here is omitted
+ * rather than guessed when the data is missing — a `datePublished` invented
+ * from a year, or a `description` echoing the title, is worse than silence:
+ * structured data is machine-read, so a wrong field is asserted with the same
+ * confidence as a right one and there is no reader to notice.
+ *
+ * 🔴 **No `aggregateRating`, deliberately.** OMDb gives us IMDb's score and
+ * vote count, and `aggregateRating` on this page would claim it as *this*
+ * page's rating — Google's own guidance is that it must reflect ratings
+ * collected by the site itself. Cinemadraft collects points, not stars.
+ *
+ * `director` comes from the Directing department rather than the first crew
+ * member: TMDB lists writers, editors and producers there too, and a film with
+ * no credited director in the response simply has no `director` key.
+ */
+export type MovieJsonLdInput = {
+  tmdbId: string;
+  title: string;
+  overview: string | null;
+  tagline: string | null;
+  releaseDate: Date | null;
+  runtimeMinutes: number | null;
+  language: string | null;
+  genres: readonly string[];
+  posterUrls: readonly string[];
+  crew: readonly {
+    department: string;
+    people: readonly { name: string; job: string }[];
+  }[];
+};
+
+export function movieJsonLd(film: MovieJsonLdInput): Record<string, unknown> {
+  const directors = film.crew
+    .filter((group) => group.department === 'Directing')
+    .flatMap((group) => group.people)
+    .filter((person) => person.job === 'Director')
+    .map((person) => ({ '@type': 'Person', name: person.name }));
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Movie',
+    name: film.title,
+    url: canonical(`/films/${film.tmdbId}`),
+    ...(film.posterUrls[0] ? { image: film.posterUrls[0] } : {}),
+    // The synopsis first, the tagline only as a fallback: a tagline is written
+    // to intrigue rather than to describe, which is the wrong job here.
+    ...((film.overview ?? film.tagline)
+      ? { description: film.overview ?? film.tagline }
+      : {}),
+    // 🔴 The date in UTC, not the server's zone. `toISOString` is what keeps a
+    // film released on the 1st from being published on the 31st for a crawler
+    // hitting a machine west of UTC — the same reasoning as the browse
+    // grouping, and the same bug if it is forgotten.
+    ...(film.releaseDate
+      ? { datePublished: film.releaseDate.toISOString().slice(0, 10) }
+      : {}),
+    // ISO 8601 duration, which is what schema.org asks for — "PT128M", not 128.
+    ...(film.runtimeMinutes ? { duration: `PT${film.runtimeMinutes}M` } : {}),
+    ...(film.language ? { inLanguage: film.language } : {}),
+    ...(film.genres.length > 0 ? { genre: [...film.genres] } : {}),
+    ...(directors.length > 0 ? { director: directors } : {}),
+  };
+}
