@@ -10,14 +10,33 @@ services:
       POSTGRES_PASSWORD: local
       POSTGRES_DB: cinemadraft
     ports:
-      - '5433:5432'
+      - "5433:5432"
     volumes:
       - cinemadraft-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U cinemadraft -d cinemadraft']
+      test: ["CMD-SHELL", "pg_isready -U cinemadraft -d cinemadraft"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-test:
+    image: postgres:17
+    container_name: cinemadraft-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cinemadraft
+      POSTGRES_PASSWORD: local
+      POSTGRES_DB: cinemadraft
+    ports:
+      - "5434:5432"
+    volumes:
+      - cinemadraft-pgdata-test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cinemadraft -d cinemadraft"]
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
   cinemadraft-pgdata:
+  cinemadraft-pgdata-test:
