@@ -106,6 +106,30 @@ describe('getDashboard', () => {
     expect(league?.total).toBe(summed);
   });
 
+  it('🔴 sends the roster real artwork, not an initials box', async () => {
+    // The dashboard was the last surface handing PosterFrame a null. A member's
+    // own drafted team rendered as grey two-letter squares while the draft
+    // console two clicks away showed the same films with posters.
+    const view = await getDashboard(await aMemberOfLeague1());
+    const entries = view.leagues.flatMap((league) => league.roster);
+    expect(entries.length).toBeGreaterThan(0);
+
+    const withArtwork = entries.filter((entry) => entry.posterUrl != null);
+    expect(withArtwork.length).toBeGreaterThan(0);
+    for (const entry of withArtwork) {
+      // Built from the stored bare path through the one helper, at the roster
+      // bucket — not w185, which is the draft-board cell.
+      expect(entry.posterUrl).toMatch(/^https:\/\/image\.tmdb\.org\/t\/p\/w342\//);
+    }
+  });
+
+  it('leaves a film with no stored poster on null rather than a broken URL', async () => {
+    const view = await getDashboard(await aMemberOfLeague1());
+    for (const entry of view.leagues.flatMap((league) => league.roster)) {
+      if (entry.movie.poster == null) expect(entry.posterUrl).toBeNull();
+    }
+  });
+
   it('🔴 never divides by zero when nothing has scored', async () => {
     // Opening day: every seat is on zero. An unguarded share would make every
     // contribution bar NaN on the one day the most people are looking.

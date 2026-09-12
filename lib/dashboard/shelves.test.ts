@@ -23,15 +23,18 @@ function entry(
     points = 0,
     round = 1,
     pickedAt = null,
+    posterUrl = null,
   }: Partial<{
     title: string | null;
     points: number;
     round: number;
     pickedAt: number | null;
+    posterUrl: string | null;
   }> = {},
 ): RosterEntry {
   return {
     movie: { id, title } as RosterEntry['movie'],
+    posterUrl,
     round,
     points,
     share: 0.99,
@@ -52,6 +55,19 @@ function league(roster: RosterEntry[]): LeagueView {
 }
 
 describe('topScorers', () => {
+  it('carries each film’s artwork onto the shelf', () => {
+    // The shelves are a cut of the roster, so the URL the dashboard service
+    // already resolved travels with the entry rather than being rebuilt here —
+    // `lib/dashboard/` has no business knowing TMDB's host or bucket names.
+    const shelf = topScorers([
+      league([
+        entry(1, { points: 3, posterUrl: 'https://image.tmdb.org/t/p/w342/abc.jpg' }),
+      ]),
+    ]);
+
+    expect(shelf.films[0]?.posterUrl).toBe('https://image.tmdb.org/t/p/w342/abc.jpg');
+  });
+
   it('ranks by points, highest first', () => {
     const shelf = topScorers([
       league([entry(1, { points: 3 }), entry(2, { points: 9 }), entry(3, { points: 5 })]),

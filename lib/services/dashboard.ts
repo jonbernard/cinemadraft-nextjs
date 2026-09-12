@@ -13,6 +13,19 @@ import { getActiveYear } from './season';
 /** One drafted film on the viewer's own strip. */
 export type RosterEntry = {
   movie: Movie;
+  /**
+   * The film's artwork at the roster bucket, or null when the row has no
+   * stored path.
+   *
+   * 🔴 Built here rather than in the page. `movies.poster` is a bare TMDB path
+   * and the host and size are a presentation decision that lives in exactly one
+   * place (`lib/utils/poster.ts`); `components/` may not reach a service (D33),
+   * so a page that built the URL itself would be the second place.
+   *
+   * `w342`, not `w185`: RosterStrip's frames are 10rem — 160px CSS, 320px at
+   * 2× — and the draft-board bucket is visibly soft at that size.
+   */
+  posterUrl: string | null;
   /** Draft round, from 1. There is no roster size (D34). */
   round: number;
   points: number;
@@ -294,6 +307,7 @@ async function buildRoster(
     return [
       {
         movie,
+        posterUrl: posterUrl(movie.poster, 'w342'),
         // The stored `order` is the draft round, but it is nullable and has
         // gaps in the restored data; the index is the reliable sequence.
         round: pick.order ?? index + 1,

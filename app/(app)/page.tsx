@@ -186,9 +186,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
                       films={league.roster.map((entry) => ({
                         id: entry.movie.id,
                         title: entry.movie.title ?? 'Untitled',
-                        // Posters arrive in Phase 11 with the media migration;
-                        // PosterFrame already renders an initials placeholder.
-                        posterUrl: null,
+                        posterUrl: entry.posterUrl,
                         round: entry.round,
                         points: entry.points,
                         share: entry.share,
@@ -330,9 +328,7 @@ function FilmShelf({
         <li key={film.id} className="w-40">
           <PosterFrame
             title={film.title}
-            // Posters arrive in Phase 11 with the media migration;
-            // PosterFrame already renders an initials placeholder.
-            posterUrl={null}
+            posterUrl={film.posterUrl}
             points={film.points}
             share={film.share}
             // No draft round: a film held in two leagues has two of them, and
