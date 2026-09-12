@@ -1254,7 +1254,7 @@ order, the tranche boundaries and the browser-verification protocol.
 - [ ] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
 - [ ] P17.T5 — signed-out lede above `SeasonStepper`
 - [ ] P17.T6 — `/browse` **`replaceState`s the cursor as you scroll** — auto-append stays exactly as D80 wanted, Back and shareability come back, no new UI. Narrowest possible amendment to D80
-- [ ] P17.T7 — draft console never returns silently from `assign`
+- [x] P17.T7 — draft console never returns silently from `assign`
 
 ### Accessibility and correctness
 

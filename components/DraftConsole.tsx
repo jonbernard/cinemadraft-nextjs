@@ -137,11 +137,39 @@ export function DraftConsole({
 
   const assign = useCallback(
     (film: SearchedFilm) => {
+      // 🔴 Three conditions used to share one silent `return`, on the one
+      // screen in the product that is run live with the league watching. Two
+      // of them are things the owner needs told; the third is not.
+      //
+      // A second Enter while the first save is in flight: the status line
+      // already reads "Saving…", and replacing a true statement with a
+      // redundant one is worse than saying nothing.
+      if (pending) return;
+
+      if (!currentSeat) {
+        // The race, not the common case — `FilmSearch` is disabled with no
+        // seat. It is still reachable if a seat goes away between the render
+        // the owner is looking at and the Enter they just pressed, and a live
+        // console that swallows a pick is the worst possible way to find out.
+        setMessage(`${film.title} has nowhere to go — choose a seat first.`);
+        return;
+      }
+
       // A TMDB-only film has no local id and cannot be drafted until it is
-      // saved. Phase 8 leaves that path to the award admin; here it simply
-      // cannot be selected.
+      // saved. Phase 8 leaves that path to the award admin.
+      //
+      // 🔴 The title is in the message deliberately. The owner is typing what
+      // somebody just said aloud and is half a sentence ahead of the screen;
+      // "that film cannot be drafted" sends them hunting through five results
+      // for which one it meant.
       const movieId = film.id;
-      if (!currentSeat || pending || movieId == null) return;
+      if (movieId == null) {
+        setMessage(
+          `${film.title} is not in the app yet — an admin has to add it before it can be drafted.`,
+        );
+        return;
+      }
+
       setMessage(null);
 
       startTransition(async () => {

@@ -210,4 +210,46 @@ describe('DraftConsole — assigning', () => {
     // typing the title again.
     expect(screen.getByRole('searchbox')).toHaveValue('battle');
   });
+
+  it('🔴 names the film when it is not in the app yet', async () => {
+    // A film TMDB knows and this app has never ingested: `id` is null.
+    // `FilmSearch` happily returns and selects one, so this is reachable in
+    // normal use — and used to be a silent `return` on the one screen that is
+    // run live with the league watching.
+    const { onAssign, user } = setup({
+      onSearch: vi.fn(async () => ({
+        ok: true as const,
+        data: [
+          { id: null, tmdbId: '550', title: 'Fight Club', year: 1999, posterUrl: null },
+        ] as ConsoleFilm[],
+      })),
+    });
+
+    await user.type(screen.getByRole('searchbox'), 'fight');
+    await user.click(await screen.findByRole('button', { name: /Fight Club/ }));
+
+    // The title, so the owner knows which of the results on screen this is
+    // about, and the reason, so they know it is not a network failure.
+    expect(
+      await screen.findByText(/Fight Club is not in the app yet/i),
+    ).toBeInTheDocument();
+    expect(onAssign).not.toHaveBeenCalled();
+    // The query survives, as it does for a refused pick: the owner is half a
+    // sentence behind the room and should not retype the title.
+    expect(screen.getByRole('searchbox')).toHaveValue('fight');
+  });
+
+  it('🔴 says which film had no seat, rather than returning silently', () => {
+    // With no seat the console says so in the heading *and* the field is
+    // disabled, so the owner is never left pressing Enter into nothing. The
+    // message branch behind it covers the race where a seat disappears between
+    // the render the owner is looking at and the Enter they just pressed,
+    // which jsdom cannot stage — that half is proved in a browser.
+    setup({ suggestedSeatId: null });
+
+    expect(
+      screen.getByRole('heading', { name: /every seat is up to date/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('searchbox')).toBeDisabled();
+  });
 });
