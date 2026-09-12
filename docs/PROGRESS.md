@@ -1299,7 +1299,7 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 - [ ] P17.T29 — signed-in home shows the member's own state (today it is the signed-out page plus three icons)
 - [ ] P17.T30 — league page: promote the owner actions, move the raw invite URL behind an Invite action, hide it on a complete season
 - [ ] P17.T31 — roster beside standings, into the empty 55% of the content width
-- [ ] P17.T32 — `/leagues`: one label for one action; mark the admin section
+- [x] P17.T32 — `/leagues`: one label for one action; mark the admin section. The strip said "Create league" and `/leagues` said "Start a league" ~700px apart; the latter wins (3 of 4 sites and the destination's own heading already said it), so only `AppShell` changed — `/leagues` needed no edit. 🔴 **The second half was re-pointed:** `/leagues` has no admin section; the page matching the description is `app/(app)/admin/page.tsx`, three identical cards two of which are irreversible for every member. Implemented there, split into "Affects every member" / "Affects one account". **If the owner meant something else on `/leagues`, this half needs re-pointing; the label fix stands either way**
 - [ ] P17.T33 — 88% of signed-in text is 12px; kill the `text-[0.65rem]` arbitrary value (117 elements at 10.4px)
 - [ ] P17.T34 — `text-dim` outnumbers `text-primary` 3.6:1; audit what deserves it
 - [ ] P17.T35 — 🔴 brass already means "drafted" (320 instances on the draft board). **Blocks P18.T6** until its meaning is decided
