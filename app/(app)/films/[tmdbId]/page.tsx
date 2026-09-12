@@ -17,7 +17,7 @@ import { TrailerReel } from '@/components/TrailerReel';
 import { WatchedToggle } from '@/components/WatchedToggle';
 import { YourReview } from '@/components/YourReview';
 import { getCurrentUser } from '@/lib/auth';
-import { canonical } from '@/lib/seo';
+import { canonical, movieJsonLd } from '@/lib/seo';
 import { type FilmPage, isFilmWatched, loadFilmPage } from '@/lib/services/film';
 import { loadMyReview } from '@/lib/services/reviews';
 import { formatMoney, formatReleaseDate, formatRuntime } from '@/lib/utils/format';
@@ -109,6 +109,23 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
 
   return (
     <>
+      {/* 🔴 schema.org `Movie`, which is what a search result needs to show this
+          as a film rather than as a page that mentions one (§6). Injected as a
+          raw script because that is the only way to emit JSON-LD — React would
+          otherwise escape the braces into text.
+
+          `<` is escaped to `\u003c` before it reaches the DOM. The values come
+          from TMDB, so a title containing `</script>` would otherwise close this
+          element and turn the rest of the payload into markup. Nothing in the
+          catalogue does today, which is exactly why it would go unnoticed. */}
+      <script
+        type="application/ld+json"
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: the only way to emit JSON-LD; escaped above.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(movieJsonLd(film)).replace(/</g, '\\u003c'),
+        }}
+      />
+
       <FilmBanner film={film} isSignedIn={user != null} watched={watched} />
 
       <div className="mx-auto grid max-w-6xl gap-8 px-4 md:grid-cols-2 md:px-8">
