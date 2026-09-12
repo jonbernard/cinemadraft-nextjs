@@ -1064,7 +1064,7 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [ ] P15.T4 — Clerk combined sign-in-or-up flow, and the login copy
 - [x] P15.T5 — brand mark, icons, favicon (records D83)
 - [x] P15.T6 — SEO: metadata, canonicals, robots, sitemap, OG images, JSON-LD
-- [ ] P15.T7 — `/browse` auto-append (D80)
+- [x] P15.T7 — `/browse` auto-append (D80) — _landed in `41405b0`, not its own commit; see the note below_
 - [ ] P15.T8 — `/browse` header photo
 - [ ] P15.T9 — the discover query: future returns pre-release films only, and the quality floors move server-side
 - [ ] P15.T10 — 🔴 test-only auth cookie (D82) — security-bearing, reviewer pass
@@ -1072,6 +1072,21 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [ ] P15.T12 — group randomisation ceremony
 
 ### Phase 15 notes
+
+- 🔴 **`e2e/browse.spec.ts`'s "the months reverse when looking forward" is red,
+  and was red before T7.** `?when=future` returns no films at all — the page
+  renders "Nothing is scheduled for release yet." while the discover response
+  still reports 22 pages. Confirmed by re-running the page against a stashed
+  tree, so T7's auto-append did not cause it. **This is P15.T9's subject**; the
+  spec should go green as part of that task rather than being touched here.
+
+- ⚠️ **Another agent session is committing in this working tree.** While T7 was
+  in progress, `f441354 "adjust caching limits"` swept in `actions/browse/*`
+  mid-task, and `41405b0 "updates"` then committed and pushed the rest of T7
+  together with unrelated `app/sitemap*` and `vitest.ci.config.mts` changes. So
+  T7 has **no `P15.T7:` commit** — the one-commit-per-task record breaks here,
+  and `41405b0` is already on `origin/main`, so it was not rewritten. Two agents
+  on one tree on `main` will keep doing this.
 
 - 🔴 **Nothing ever ran migrations on Vercel.** The build command was a plain
   `next build`, there is no `vercel.json`, and no deploy step called Prisma —
