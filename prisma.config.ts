@@ -12,10 +12,26 @@ import { defineConfig } from 'prisma/config';
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   migrations: { path: 'prisma/migrations' },
-  // 🔴 `DIRECT_URL` first, `DATABASE_URL` second. Migrations take a Postgres
-  // advisory lock and issue DDL, neither of which survives a PgBouncer pool in
-  // transaction mode — which is exactly what Neon's `-pooler` host is. The
-  // running app wants the pooled URL; the CLI wants the direct one. Where only
-  // one is set (local Docker, a developer's shell) this is the same string.
-  datasource: { url: process.env.DIRECT_URL ?? process.env.DATABASE_URL },
+  // 🔴 The direct connection first, the pooled one last. Migrations take a
+  // Postgres advisory lock and issue DDL, neither of which survives a PgBouncer
+  // pool in transaction mode — which is exactly what Neon's `-pooler` host is.
+  // The running app wants the pooled URL; the CLI wants the direct one. Where
+  // only one is set (local Docker, a developer's shell) they are the same
+  // string and the chain collapses to `DATABASE_URL`.
+  //
+  // 🔴 `DATABASE_URL_UNPOOLED` and `POSTGRES_URL_NON_POOLING` are **Neon's own
+  // names**, injected into Preview and Production by the Marketplace
+  // integration and re-issued by it whenever the password rotates or the branch
+  // moves. Reading them is what makes this work on Vercel with nothing set by
+  // hand: a `DIRECT_URL` copied out of the Neon console would be a second copy
+  // of a rotating secret, correct on the day it was pasted and silently stale
+  // afterwards. `DIRECT_URL` stays first so anyone who does set it deliberately
+  // — a different database, a one-off migration target — still wins.
+  datasource: {
+    url:
+      process.env.DIRECT_URL ??
+      process.env.DATABASE_URL_UNPOOLED ??
+      process.env.POSTGRES_URL_NON_POOLING ??
+      process.env.DATABASE_URL,
+  },
 });
