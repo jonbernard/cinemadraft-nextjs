@@ -103,6 +103,39 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
 }
 
 /**
+ * 🔴 jsdom has no `ResizeObserver` — the constructor is absent, so merely
+ * rendering a component that measures itself throws before any assertion runs.
+ *
+ * `SeasonStepper` measures because it must: its window holds however many 160px
+ * boxes the container turns out to fit, and a constant got that wrong by three
+ * boxes on a phone. Defined here rather than guarded in the component, for the
+ * reason the polyfills above give.
+ *
+ * Fires once, synchronously, on `observe` — which is what a browser does, and
+ * what lets a test assert against a measured render without pumping timers. The
+ * rect comes from `getBoundingClientRect`, jsdom's one measurement seam: it
+ * answers all-zeros by default, which the stepper reads as "not laid out" and
+ * falls back from, and a test that wants a width stubs it. Nothing here
+ * observes anything afterwards — a resize a test wants to simulate is another
+ * `render`, and whether a real browser re-measures is an E2E question.
+ */
+if (typeof window !== 'undefined' && !window.ResizeObserver) {
+  window.ResizeObserver = class ResizeObserver {
+    constructor(private readonly callback: ResizeObserverCallback) {}
+
+    observe(target: Element) {
+      this.callback(
+        [{ target, contentRect: target.getBoundingClientRect() } as ResizeObserverEntry],
+        this,
+      );
+    }
+
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
+/**
  * 🔴 jsdom has no `matchMedia` — the property is simply absent on `window`.
  *
  * `GroupCeremony` reads `(prefers-reduced-motion: reduce)` in its initial

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils/cn';
 import { StatusChip } from './StatusChip';
@@ -30,13 +30,43 @@ export type SeasonPhase = {
 
 const DAY_MS = 86_400_000;
 
-/** How many boxes fit the window, and how many a press moves. */
-const VISIBLE = 5;
-/** Three is a phone's worth and half a laptop's. */
-const STEP = 3;
+/** `w-40` and the `gap-3` between boxes, in the units the class names use. */
+const BOX_REM = 10;
+const GAP_REM = 0.75;
 
-/** `w-40` plus the `gap-3` between boxes, in the same units the class names use. */
-const BOX_ADVANCE = 'calc(10rem + 0.75rem)';
+/** One box plus the gap that precedes it, for the window's transform. */
+const BOX_ADVANCE = `calc(${BOX_REM}rem + ${GAP_REM}rem)`;
+
+/**
+ * How many boxes the window shows before it has been measured.
+ *
+ * Server render and the first client render have no layout to read, and this
+ * is the count a laptop turns out to have; a phone corrects it one frame later.
+ */
+const VISIBLE_FALLBACK = 5;
+
+/**
+ * How many whole boxes fit `width` px.
+ *
+ * `n` boxes occupy `n` advances minus the gap the first one does not have, so
+ * the gap is added back before dividing. Never less than one: a window too
+ * narrow for a single box still has to be able to move through the season.
+ */
+function boxesIn(width: number, rem: number): number {
+  return Math.max(1, Math.floor((width + GAP_REM * rem) / ((BOX_REM + GAP_REM) * rem)));
+}
+
+/**
+ * The root font size in px, because the box is sized in rem.
+ *
+ * 🔴 Not hardcoded to 16. A reader who has turned their browser's text size up
+ * gets wider boxes, so fewer of them fit — and a count computed from the wrong
+ * rem is an overcount, which is exactly the failure this whole measurement
+ * exists to prevent.
+ */
+function rootRem(): number {
+  return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+}
 
 /**
  * Fixed to UTC deliberately. The dates come off the wire as epoch
@@ -73,23 +103,6 @@ function label(phase: SeasonPhase): string {
 }
 
 /**
- * Steps toward the start of the season, clamping the last short hop to zero.
- *
- * Landing on offset 1 or 2 would leave a sliver of the first box hanging off
- * the left edge for one press only, which reads as a rendering bug rather than
- * as a position in the season.
- */
-function earlier(offset: number): number {
-  const next = offset - STEP;
-  return next < STEP ? 0 : next;
-}
-
-function later(offset: number, max: number): number {
-  const next = offset + STEP;
-  return next > max - STEP ? max : next;
-}
-
-/**
  * The season's award shows as a stepped rail — one box per **show phase**
  * (§6.7, D81).
  *
@@ -102,6 +115,18 @@ function later(offset: number, max: number): number {
  * trackpad fights the page's own scrolling and on a phone hides the boxes that
  * matter — the ones at the end. The window opens anchored to the end for that
  * reason: the reader wants the next thing to happen, not January.
+ *
+ * 🔴 **The window is measured, and a press moves exactly one window.** Both
+ * halves of that are the same bug. The window used to be a constant five boxes
+ * stepping three; at 390px the clip is 366px, which holds *two* 160px boxes —
+ * so the rail believed it was showing five boxes it had no room for, announced
+ * five through `aria-live`, and stepping three at a time walked past boxes 3,
+ * 19, 22, 23 and 24 at every offset. The last three shows of the season, the
+ * ones the end-anchor exists for, could not be reached at all. Fixing only the
+ * count leaves a step wider than the window and the same skip; fixing only the
+ * step leaves the announcement lying about what is on screen. So the count
+ * comes from the measured container and the step *is* the count, which makes
+ * consecutive windows abut and skipping arithmetically impossible.
  *
  * Every phase stays in the DOM in date order; the window is a transform. A
  * screen reader gets the whole season, and so does a reader whose JavaScript
@@ -124,13 +149,45 @@ export function SeasonStepper({
   phases: SeasonPhase[];
   className?: string;
 }) {
-  const maxOffset = Math.max(0, phases.length - VISIBLE);
-  const [offset, setOffset] = useState(maxOffset);
+  const windowRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(VISIBLE_FALLBACK);
+  /**
+   * The offset the reader asked for, or `null` for "wherever the end is".
+   *
+   * 🔴 Null rather than a number, so the opening position survives
+   * measurement. The window is sized after the first paint, which moves the
+   * end of the season — a numeric initial offset would be the end of a
+   * five-box window on a phone that turns out to hold two, i.e. anchored three
+   * boxes short of the last show, which is the one thing the end-anchor exists
+   * to put on screen (D81). It also keeps the anchor across a rotation, until
+   * a press makes the position the reader's rather than ours.
+   */
+  const [requested, setRequested] = useState<number | null>(null);
+
+  useEffect(() => {
+    const element = windowRef.current;
+    if (!element) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      // `contentRect`, not the border box: the window carries `px-1` so that a
+      // focused box's outline is not clipped, and those 8px hold no box.
+      const width = entry?.contentRect.width ?? 0;
+      // Zero means "not laid out" — a hidden ancestor, or jsdom, which has no
+      // layout at all. Neither is a measurement, and believing it would
+      // collapse the window to one box for reasons nothing on screen explains.
+      if (width > 0) setVisible(boxesIn(width, rootRem()));
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // A season with no shows is a real state (a year seeded before its calendar
   // is published). The dashboard owns empty-state copy, so the stepper says
   // nothing rather than rendering an empty frame that reads as a failed load.
   if (phases.length === 0) return null;
+
+  const maxOffset = Math.max(0, phases.length - visible);
+  const offset = requested === null ? maxOffset : Math.min(requested, maxOffset);
 
   const now = Date.now();
 
@@ -140,11 +197,12 @@ export function SeasonStepper({
   const next = phases.find((phase) => !phase.complete && phase.date != null);
 
   const first = Math.min(offset + 1, phases.length);
-  const last = Math.min(offset + VISIBLE, phases.length);
+  const last = Math.min(offset + visible, phases.length);
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <div
+        ref={windowRef}
         data-testid="season-window"
         data-offset={offset}
         className="-mx-1 overflow-hidden px-1"
@@ -222,7 +280,7 @@ export function SeasonStepper({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setOffset(earlier)}
+            onClick={() => setRequested(Math.max(0, offset - visible))}
             disabled={offset === 0}
             aria-label="Earlier in the season"
             className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex h-11 min-w-11 items-center justify-center rounded-sm transition-colors focus-visible:outline-2 disabled:opacity-40"
@@ -231,7 +289,7 @@ export function SeasonStepper({
           </button>
           <button
             type="button"
-            onClick={() => setOffset((current) => later(current, maxOffset))}
+            onClick={() => setRequested(Math.min(maxOffset, offset + visible))}
             disabled={offset === maxOffset}
             aria-label="Later in the season"
             className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex h-11 min-w-11 items-center justify-center rounded-sm transition-colors focus-visible:outline-2 disabled:opacity-40"
