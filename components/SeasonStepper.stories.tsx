@@ -57,3 +57,52 @@ export const EarlySeason: StoryObj<typeof meta> = {
 export const Unscheduled: StoryObj<typeof meta> = {
   args: { phases: season(3, { dated: false }) },
 };
+
+/**
+ * 🔴 The shape the real dashboard has had all along, and that no story or test
+ * constructed until P17.T3: the shows that have happened are complete, and the
+ * ones still to come have no date yet because the calendar is published months
+ * into the season. The rail used to highlight nothing at all here.
+ */
+export const LiveSeason: StoryObj<typeof meta> = {
+  args: {
+    phases: [
+      {
+        key: '8-nominations',
+        eventId: 8,
+        phase: 'nominations' as const,
+        name: 'Golden Globes',
+        abbreviation: 'gg',
+        date: Date.now() - 40 * DAY,
+        complete: true,
+      },
+      {
+        key: '8-ceremony',
+        eventId: 8,
+        phase: 'ceremony' as const,
+        name: 'Golden Globes',
+        abbreviation: 'gg',
+        date: Date.now() - 10 * DAY,
+        complete: true,
+      },
+      {
+        key: '9-nominations',
+        eventId: 9,
+        phase: 'nominations' as const,
+        name: 'Academy Awards',
+        abbreviation: 'oscars',
+        date: null,
+        complete: false,
+      },
+      {
+        key: '9-ceremony',
+        eventId: 9,
+        phase: 'ceremony' as const,
+        name: 'Academy Awards',
+        abbreviation: 'oscars',
+        date: null,
+        complete: false,
+      },
+    ],
+  },
+};

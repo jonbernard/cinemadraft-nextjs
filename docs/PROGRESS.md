@@ -1250,7 +1250,7 @@ order, the tranche boundaries and the browser-verification protocol.
 - [x] P17.T0 — `/rules-and-scoring` joins `isPublic`; fix the docstring that already claims it is public
 - [x] P17.T1 — `SectionHead` sizes **28 / 20 / 17** keyed to `as`; fix the `h1 → h3 → h2` order on `/`
 - [x] P17.T2 — `AppShell` breakpoints: close the 1024–1280px dead zone; **decided — identity, search and sign-in fold into the tab bar row**, wordmark left, search right. Watch that the chrome does not read as a sixth tab
-- [ ] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
+- [x] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
 - [ ] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
 - [ ] P17.T5 — signed-out lede above `SeasonStepper`
 - [x] P17.T6 — `/browse` **`replaceState`s the cursor as you scroll** — auto-append stays exactly as D80 wanted, Back and shareability come back, no new UI. Narrowest possible amendment to D80

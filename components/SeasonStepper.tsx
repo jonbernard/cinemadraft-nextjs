@@ -113,8 +113,11 @@ function label(phase: SeasonPhase): string {
  * 🔴 **A window, not a horizontal scroll.** A full season is two dozen boxes.
  * The previous rail scrolled sideways inside its own container, which on a
  * trackpad fights the page's own scrolling and on a phone hides the boxes that
- * matter — the ones at the end. The window opens anchored to the end for that
- * reason: the reader wants the next thing to happen, not January.
+ * matter — the ones at the end. The window opens anchored to the **next**
+ * show for that reason: the reader wants the next thing to happen, not
+ * January. (P17.T3 — D81 anchored to the end of the array because the end
+ * *was* the next thing; a season whose middle show is still open is the case
+ * where those two part company.)
  *
  * 🔴 **The window is measured, and a press moves exactly one window.** Both
  * halves of that are the same bug. The window used to be a constant five boxes
@@ -186,15 +189,56 @@ export function SeasonStepper({
   // nothing rather than rendering an empty frame that reads as a failed load.
   if (phases.length === 0) return null;
 
-  const maxOffset = Math.max(0, phases.length - visible);
-  const offset = requested === null ? maxOffset : Math.min(requested, maxOffset);
-
   const now = Date.now();
 
-  // The earliest incomplete phase that has a date. An undated phase can never
-  // be next — it has no date to be next *by*, and promoting it would push the
-  // real next moment off the highlight.
-  const next = phases.find((phase) => !phase.complete && phase.date != null);
+  /**
+   * The moment the league is waiting for.
+   *
+   * The earliest incomplete phase **that has a date** is the answer whenever
+   * there is one: an undated phase has no date to be next *by*, and promoting
+   * one would push the real next moment off the highlight.
+   *
+   * 🔴 The fallback is what makes this true of live data. A real season's
+   * remaining phases are routinely all unscheduled — the ceremony calendar is
+   * published months after the season opens — and the rail then highlighted
+   * *nothing*: no `aria-current`, no chip, no countdown, on the dashboard's
+   * most prominent widget. Every test was green, because they all gave every
+   * box a date.
+   *
+   * 🔴 `findLast`, not `find`. `lib/services/dashboard.ts` sorts undated
+   * phases to the end with `POSITIVE_INFINITY` and nothing orders them among
+   * themselves, so "the first undated phase" is whichever row the database
+   * happened to return — an unstable highlight that could move between
+   * renders. The last is a fixed position, and it is where D81's end-anchor
+   * already points, so the highlight and the opening window agree.
+   */
+  const next =
+    phases.find((phase) => !phase.complete && phase.date != null) ??
+    phases.findLast((phase) => !phase.complete);
+
+  const maxOffset = Math.max(0, phases.length - visible);
+
+  /**
+   * Where the window opens.
+   *
+   * 🔴 Anchored to `next`, not to the end of the array (amending D81's
+   * mechanism, not its intent — D81 chose the end because the end *was* the
+   * next thing). A season whose last two shows are finished and whose middle
+   * show is still open would otherwise open on two completed boxes.
+   *
+   * `next` sits at the window's left edge so what follows it is on screen
+   * too; clamped to `maxOffset` so the last window is never short.
+   *
+   * `requested === null` still carries "wherever the anchor is", and still for
+   * the reason D81 records: the window is measured after first paint, so a
+   * numeric initial offset would be computed against a box count that turns
+   * out to be wrong. That survives here — the anchor is recomputed on the
+   * render that follows the measurement.
+   */
+  const nextIndex =
+    next == null ? -1 : phases.findIndex((phase) => phase.key === next.key);
+  const anchor = nextIndex < 0 ? maxOffset : Math.min(nextIndex, maxOffset);
+  const offset = requested === null ? anchor : Math.min(requested, maxOffset);
 
   const first = Math.min(offset + 1, phases.length);
   const last = Math.min(offset + visible, phases.length);
@@ -227,13 +271,29 @@ export function SeasonStepper({
                 className="bg-bg-raised flex w-40 shrink-0 flex-col gap-2 rounded-md p-3"
               >
                 <StatusChip
+                  // 🔴 P17.T20 (a later tranche) spends the `beam` token here
+                  // and on the live surface. Carmine until then — do not
+                  // "tidy" this to neutral in the meantime, or T20 will have
+                  // nothing to change and the token will stay unspent.
                   tone={isNext ? 'carmine' : 'neutral'}
                   // The card is already `raised`, so a neutral chip steps down
                   // rather than up; `self-start` keeps it a badge rather than a
                   // stretched banner in the flex column.
                   className={cn('self-start', !isNext && 'bg-bg-surface')}
                 >
-                  {phase.complete ? 'Complete' : isNext ? 'Next' : 'Upcoming'}
+                  {phase.complete
+                    ? 'Complete'
+                    : isNext
+                      ? // An unscheduled next show is a real and common state:
+                        // the ceremony calendar is published months into the
+                        // season. Saying so in the chip means the box carries
+                        // its status and its date in one line instead of
+                        // leaving a reader to pair "Next" with a "Date TBA"
+                        // three lines down.
+                        phase.date == null
+                        ? 'Next · date TBA'
+                        : 'Next'
+                      : 'Upcoming'}
                 </StatusChip>
 
                 <span
@@ -252,10 +312,13 @@ export function SeasonStepper({
                 </span>
 
                 {phase.date == null ? (
-                  // Unscheduled phases still belong on the rail: they are real
-                  // moments on the season's ballot, and omitting them makes the
-                  // season look shorter than it is.
-                  <span className="text-text-dim text-xs">Date TBA</span>
+                  // Suppressed on the next box, where the chip above already
+                  // said it. Unscheduled phases still belong on the rail: they
+                  // are real moments on the season's ballot, and omitting them
+                  // makes the season look shorter than it is.
+                  isNext ? null : (
+                    <span className="text-text-dim text-xs">Date TBA</span>
+                  )
                 ) : (
                   <time
                     dateTime={new Date(phase.date).toISOString()}
