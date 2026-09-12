@@ -106,3 +106,144 @@ export function yearCheck({ nominatedYears, seasonYears }) {
       `Nominated: ${shape}. This is usually the wrong year's listing.`,
   };
 }
+
+import { Client } from 'pg';
+
+/**
+ * 🔴 No dotenv, on purpose. `.env` points at local Docker and `.env.neon` at
+ * production; a script that picks one up silently is a script that writes to
+ * whichever the author last edited.
+ */
+export async function connect() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error(
+      'DATABASE_URL is not set. Pass it explicitly:\n' +
+        '  DATABASE_URL="$(grep -m1 ^DATABASE_URL .env.neon | cut -d= -f2-)" node scripts/award-import.mjs …',
+    );
+  }
+  if (!/\.neon\.tech/.test(connectionString)) {
+    const host = connectionString.replace(/:\/\/[^@]*@/, '://…@');
+    console.warn(`[award-import] NOT production — connected to ${host}`);
+  }
+  const client = new Client({ connectionString });
+  await client.connect();
+  return client;
+}
+
+/**
+ * Everything the skill needs before it reads a single web page.
+ *
+ * 🔴 `points` is joined through `points.id`. `awards.points` is a FOREIGN KEY,
+ * not a point value (D41) — "Performance by an Ensemble" stores 1 and is worth
+ * 5 — so printing the raw column would put a confident wrong number in front
+ * of whoever is checking the plan.
+ */
+export async function loadContext(client, abbreviation) {
+  const events = await client.query(
+    'SELECT id, name, abbreviation, nom_active, awards_active FROM events WHERE lower(abbreviation) = lower($1)',
+    [abbreviation],
+  );
+  const event = events.rows[0];
+  if (!event) {
+    const all = await client.query(
+      'SELECT abbreviation FROM events ORDER BY abbreviation',
+    );
+    throw new Error(
+      `no show with abbreviation "${abbreviation}". Known: ` +
+        all.rows.map((row) => row.abbreviation).join(', '),
+    );
+  }
+
+  const awards = await client.query(
+    `SELECT a.id, a.name, coalesce(a.requires_nominee_name, false) AS requires_nominee_name,
+            p.points AS points
+       FROM awards a
+       LEFT JOIN points p ON p.id = a.points
+      WHERE a.event_id = $1
+      ORDER BY a.name`,
+    [event.id],
+  );
+
+  const active = await client.query(
+    'SELECT year FROM available_years WHERE is_active = true LIMIT 1',
+  );
+  const newest = await client.query(
+    'SELECT year FROM available_years ORDER BY year DESC LIMIT 1',
+  );
+  const activeYear = active.rows[0]?.year ?? newest.rows[0]?.year;
+  if (activeYear == null) throw new Error('no seasons exist in available_years');
+
+  const existing = await client.query(
+    `SELECT n.award_id, n.movie_id, m.title
+       FROM nominations n
+       JOIN awards a ON a.id = n.award_id
+       LEFT JOIN movies m ON m.id = n.movie_id
+      WHERE a.event_id = $1 AND n.year = $2`,
+    [event.id, activeYear],
+  );
+
+  // The release years of this season's drafted films — the yardstick the year
+  // check measures a listing against.
+  const picks = await client.query(
+    `SELECT DISTINCT extract(year FROM m.release_date)::int AS year
+       FROM draft_picks dp
+       JOIN drafts d ON d.id = dp.draft_id
+       JOIN movies m ON m.id = dp.movie_id
+      WHERE d.year = $1 AND m.release_date IS NOT NULL`,
+    [activeYear],
+  );
+
+  return {
+    event: {
+      id: event.id,
+      name: event.name,
+      abbreviation: event.abbreviation,
+      nomActive: event.nom_active === true,
+      awardsActive: event.awards_active === true,
+    },
+    awards: awards.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      requiresNomineeName: row.requires_nominee_name === true,
+      points: row.points ?? 0,
+    })),
+    activeYear,
+    existingNominations: existing.rows.map((row) => ({
+      awardId: Number(row.award_id),
+      movieId: Number(row.movie_id),
+      title: row.title,
+    })),
+    seasonYears: picks.rows.map((row) => row.year).filter((year) => year != null),
+  };
+}
+
+import { pathToFileURL } from 'node:url';
+
+const COMMANDS = ['context', 'apply', 'finish', 'refresh'];
+
+async function main(argv) {
+  const [command, ...rest] = argv;
+  if (!COMMANDS.includes(command)) {
+    console.error(`usage: node scripts/award-import.mjs <${COMMANDS.join('|')}> [args]`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (command === 'context') {
+    const client = await connect();
+    try {
+      console.log(JSON.stringify(await loadContext(client, rest[0]), null, 2));
+    } finally {
+      await client.end();
+    }
+  }
+}
+
+// Importable by the test file without running anything.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main(process.argv.slice(2)).catch((error) => {
+    console.error(`[award-import] ${error.message}`);
+    process.exitCode = 1;
+  });
+}
