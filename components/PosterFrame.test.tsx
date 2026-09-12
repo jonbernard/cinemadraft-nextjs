@@ -70,6 +70,37 @@ describe('PosterFrame', () => {
     expect(poster).toHaveAttribute('src', 'https://image.tmdb.org/t/p/w500/abc.jpg');
   });
 
+  it('lazy-loads a poster and preloads nothing by default', () => {
+    // `priority` emits a <link rel=preload> per image. A shelf of twelve of
+    // them contends for the same connections and makes the LCP worse, which is
+    // the usual way this fix backfires — so the default must stay lazy.
+    render(<PosterFrame {...base} posterUrl="https://image.tmdb.org/t/p/w342/a.jpg" />);
+
+    expect(document.querySelector('img')).toHaveAttribute('loading', 'lazy');
+    expect(document.head.querySelector('link[rel="preload"][as="image"]')).toBeNull();
+  });
+
+  it('🔴 preloads the poster when the page says it is the LCP', () => {
+    render(
+      <PosterFrame
+        {...base}
+        posterUrl="https://image.tmdb.org/t/p/w342/a.jpg"
+        priority
+      />,
+    );
+
+    // 🔴 Asserted on what `next/image` **actually** renders, measured rather
+    // than assumed: in Next 16.3.1 `priority` hoists a `<link rel=preload>`
+    // into the head and drops `loading="lazy"` from the img. It does NOT set
+    // `fetchpriority` — that is a separate `fetchPriority` prop — so a test
+    // reading for `fetchpriority="high"` here would be one a correct fix could
+    // never satisfy.
+    expect(
+      document.head.querySelector('link[rel="preload"][as="image"]'),
+    ).toHaveAttribute('href', 'https://image.tmdb.org/t/p/w342/a.jpg');
+    expect(document.querySelector('img')).not.toHaveAttribute('loading', 'lazy');
+  });
+
   it('shows an initials placeholder when there is no poster', () => {
     render(<PosterFrame {...base} title="Marty Supreme" />);
     expect(screen.getByText('MA')).toBeInTheDocument();

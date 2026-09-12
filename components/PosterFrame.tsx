@@ -25,6 +25,21 @@ export type PosterFrameProps = {
    */
   accent?: string;
   status?: PosterStatus;
+  /**
+   * Preload this poster instead of lazy-loading it.
+   *
+   * 🔴 For the one or two frames that are the page's LCP, and nothing else.
+   * `priority` emits a `<link rel="preload">` per image, so setting it on a
+   * whole shelf makes twelve preloads race for the same connections and the
+   * LCP gets slower, not faster. Measured in a production build: the
+   * dashboard's LCP element is the first `In cinemas now` frame and every
+   * TMDB request went out at `Low`. This is the answer to that, applied
+   * narrowly by the page that knows which frame is first.
+   *
+   * 🔴 Never pass this together with a `loading` value — `next/image` rejects
+   * the pair at runtime.
+   */
+  priority?: boolean;
   className?: string;
 };
 
@@ -54,6 +69,7 @@ export function PosterFrame({
   share = 0,
   accent,
   status = 'none',
+  priority = false,
   className,
 }: PosterFrameProps) {
   // A share outside 0–1 is a caller bug, but clamping beats overflowing: a bar
@@ -93,6 +109,7 @@ export function PosterFrame({
             alt=""
             fill
             sizes="(min-width: 1024px) 16vw, (min-width: 640px) 25vw, 50vw"
+            priority={priority}
             className="object-cover"
           />
         ) : (

@@ -252,6 +252,44 @@ test.describe('dashboard', () => {
     );
   });
 
+  /**
+   * 🔴 P17.T17, and it has to be here rather than in jsdom.
+   *
+   * The component test pins that `priority` reaches `next/image`; only a real
+   * page can pin how many frames the shelf marks, and that is the half that
+   * goes wrong — `priority` is a preload link per image, so marking the whole
+   * shelf puts twelve of them in contention and makes the LCP worse.
+   *
+   * Two exact, not "at least one": both a zero and a twelve have to fail.
+   */
+  test('🔴 the first two In cinemas now frames preload, and only those two', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const shelf = page.locator('section', { hasText: 'In cinemas now' }).first();
+    const frames = await shelf.locator('img').count();
+    // Only meaningful when TMDB actually answered; a preview with no key
+    // renders no shelf at all.
+    test.skip(frames < 3, 'no now-playing shelf on this deployment');
+
+    const preloads = await page
+      .locator('head link[rel="preload"][as="image"]')
+      .evaluateAll((links) => links.map((l) => l.getAttribute('href')));
+    expect(preloads).toHaveLength(2);
+
+    // And they are the shelf's own first two, in order — not two arbitrary
+    // posters from somewhere else on the page.
+    const firstTwo = await shelf
+      .locator('img')
+      .evaluateAll((imgs) => imgs.slice(0, 2).map((i) => i.getAttribute('src')));
+    expect(preloads).toEqual(firstTwo);
+
+    // The point of the preload: those two are no longer lazy, the rest are.
+    await expect(shelf.locator('img').nth(0)).not.toHaveAttribute('loading', 'lazy');
+    await expect(shelf.locator('img').nth(2)).toHaveAttribute('loading', 'lazy');
+  });
+
   test('🔴 a phone can see where a total came from', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');

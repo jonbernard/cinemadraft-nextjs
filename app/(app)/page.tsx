@@ -238,13 +238,25 @@ function NowPlayingShelf({ films }: { films: DashboardView['nowPlaying'] }) {
 
   return (
     <Shelf heading="In cinemas now">
-      {films.map((film) => (
+      {films.map((film, index) => (
         <li key={film.tmdbId} className="w-40">
           <Link
             href={`/films/${film.tmdbId}`}
             className="focus-visible:outline-accent-fill block focus-visible:outline-2"
           >
-            <PosterFrame title={film.title} posterUrl={film.posterUrl} />
+            {/* 🔴 Two, not twelve. Measured in a production build: this shelf's
+                first frame is the dashboard's LCP element at all four widths in
+                both schemes, and every TMDB request went out at `Low` because
+                `next/image` defaults to `loading="lazy"`. But `priority` is a
+                preload link per image — marking the whole shelf would put
+                twelve of them in contention and make the metric worse. Two is
+                what sits above the fold at 1440px before the shelf scrolls,
+                and at 390px the shelf shows two as well. */}
+            <PosterFrame
+              title={film.title}
+              posterUrl={film.posterUrl}
+              priority={index < 2}
+            />
           </Link>
         </li>
       ))}
