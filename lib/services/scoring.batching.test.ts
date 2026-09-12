@@ -5,13 +5,16 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import fixture from '@/fixtures/movie-by-id.json';
 import { db } from '@/lib/db';
 import { clearCacheForTests } from '@/lib/external/cache';
+import { eventRepository } from '@/lib/repositories/events';
 import { denseRank } from '@/lib/utils/rank';
 import { loadFixture } from '@/test/fixtures';
 import { countQueries } from '@/test/query-count';
+import { getAwardShow } from './award-show';
 import { getDashboard } from './dashboard';
 import { getLeagueBoard } from './draft';
 import { loadFilmPage } from './film';
 import { getLeaderboard } from './leaderboard';
+import { getLiveShow } from './live';
 import { pointsForMovieIds } from './scoring';
 
 afterAll(async () => {
@@ -152,6 +155,57 @@ describe('every page that shows a score loads them in bulk', () => {
     const small = await countQueries(() => getLeaderboard(2022));
 
     expect(big.queries).toBe(small.queries);
+  });
+
+  it('🔴 the live show page (P17.T16) costs a fixed number of queries', async () => {
+    // Every surface that shows a score arrives with a case here — the standing
+    // rule since Phase 9. This one composes getAwardShow and getLeagueBoard and
+    // filters their ledgers in memory; it must never query per film, per seat or
+    // per category.
+    const { queries } = await countQueries(() => getLiveShow('oscars', 2026, 6));
+
+    // Measured on the restored data: 18 for user 6, who plays one league.
+    // Bound at 19 rather than a round number — a loose ceiling is how a guard
+    // keeps passing while the thing it guards gets worse, and the dashboard's
+    // own bound was just tightened 15 → 14 for exactly that reason.
+    expect(queries).toBeLessThanOrEqual(19);
+    expect(queries).toBeGreaterThan(0);
+  });
+
+  it('🔴 the live page costs no more for a big show than a small one', async () => {
+    // The actual property. The Oscars carry 25 categories and 125 nominations
+    // in 2026; the Golden Globes 15 and 92; AFI one and ten. If the count moves
+    // with any of those, something is querying per row — which is what would
+    // make this page fall over during the one hour a year it matters.
+    const big = await countQueries(() => getLiveShow('oscars', 2026, 6));
+    const small = await countQueries(() => getLiveShow('gg', 2026, 6));
+    const tiny = await countQueries(() => getLiveShow('afi', 2026, 6));
+
+    expect(big.queries).toBe(small.queries);
+    expect(big.queries).toBe(tiny.queries);
+  });
+
+  it('🔴 the live page asks nothing at all about leagues for a signed-out reader', async () => {
+    // The load-bearing property of a PUBLIC page (P17.T16, amending D40):
+    // `getLiveShow(abbr, year, null)` does not query leagues rather than
+    // querying with a sentinel — the same shape D44 gives `getDashboard(null)`.
+    //
+    // 🔴 Written as an equality against the show's own cost, not as a ceiling,
+    // and the difference is not academic. The first version of this case bound
+    // the anonymous path at "measured + 1" (7 → 8) and `<` the signed-in path.
+    // Both stayed green against the exact defect they existed to catch:
+    // replacing the null check with `seatsForReader(..., userId ?? -1)` costs
+    // one query, lands on 8, and returns an empty list — so every other test in
+    // the suite passes too. The equality below goes red on it, because the
+    // signed-out path is then doing something the show alone does not.
+    const anonymous = await countQueries(() => getLiveShow('oscars', 2026, null));
+    const showOnly = await countQueries(async () => {
+      await eventRepository.findByAbbreviation('oscars');
+      return getAwardShow('oscars', 2026);
+    });
+
+    expect(showOnly.queries).toBeGreaterThan(0);
+    expect(anonymous.queries).toBe(showOnly.queries);
   });
 
   it('🔴 the league page’s standings section (P10.T10) adds no query beyond the board itself', async () => {

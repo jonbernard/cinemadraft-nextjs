@@ -15,14 +15,20 @@ const meta = {
 
 export default meta;
 
+/**
+ * `day` is the ceremony's UTC midnight and `startsAt` is the instant, which is
+ * 25.5 hours later for a US evening broadcast — the two are deliberately on
+ * different UTC dates here, because that is the case the component exists to
+ * get right.
+ */
 export const Upcoming: StoryObj<typeof meta> = {
-  args: { startsAt: Date.UTC(2099, 2, 14, 1, 0) },
+  args: { day: Date.UTC(2099, 2, 14), startsAt: Date.UTC(2099, 2, 14) + 91_800_000 },
 };
 
 export const UnderWay: StoryObj<typeof meta> = {
-  args: { startsAt: Date.UTC(2020, 1, 9, 1, 0) },
+  args: { day: Date.UTC(2020, 1, 9), startsAt: Date.UTC(2020, 1, 9) + 91_800_000 },
 };
 
 export const Unscheduled: StoryObj<typeof meta> = {
-  args: { startsAt: null },
+  args: { day: null, startsAt: null },
 };

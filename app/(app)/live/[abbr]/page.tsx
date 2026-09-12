@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { EmptyState } from '@/components/EmptyState';
+import { LiveBoard } from '@/components/LiveBoard';
 import { LiveCountdown } from '@/components/LiveCountdown';
 import { Panel } from '@/components/Panel';
 import { SectionHead } from '@/components/SectionHead';
@@ -9,8 +10,8 @@ import { ShowLogo } from '@/components/ShowLogo';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
+import { eventRepository } from '@/lib/repositories/events';
 import { canonical } from '@/lib/seo';
-import { getAwardShow } from '@/lib/services/award-show';
 import { getLiveShow } from '@/lib/services/live';
 import { getActiveYear } from '@/lib/services/season';
 
@@ -27,10 +28,12 @@ async function season(year: string | string[] | undefined): Promise<number> {
  * canonical drops `?year=`, the same way `/award-shows/[abbr]` does — twelve
  * shows times ten seasons is 120 URLs for one page otherwise.
  *
- * 🔴 Deliberately NOT added to `app/sitemap.ts`. Public and crawlable are
- * different questions: this page is a thing you open during the two hours a
- * show is on air, and the twelve URLs it would add are all `/award-shows`
- * duplicates the rest of the year. Leave the sitemap alone.
+ * 🔴 Deliberately NOT added to `app/sitemap.ts`: this page is a thing you open
+ * during the two hours a show is on air, and the twelve URLs it would add are
+ * all `/award-shows` duplicates the rest of the year. It is still indexable if
+ * a crawler finds the link — the same as `/award-shows/[abbr]`, which is where
+ * the link is — and that is deliberate rather than overlooked; the canonical is
+ * what stops ten seasons of `?year=` becoming ten documents.
  */
 export async function generateMetadata({
   params,
@@ -40,15 +43,19 @@ export async function generateMetadata({
   const { year } = await searchParams;
   const requested = await season(year);
 
-  try {
-    const show = await getAwardShow(abbr, requested);
-    return {
-      title: `${show.name} ${requested}, live`,
-      alternates: { canonical: canonical(`/live/${abbr}`) },
-    };
-  } catch {
-    return { title: 'Not here' };
-  }
+  // 🔴 The event row, not `getAwardShow`. The title only needs the show's name,
+  // and `getAwardShow` assembles awards, nominations, winners, points and
+  // movies — which the page below is about to assemble again on the same
+  // request, since nothing under `lib/services/` is wrapped in React `cache()`.
+  // On the one route whose entire use is reloading during a broadcast, that is
+  // five wasted round trips per reload for a string.
+  const event = await eventRepository.findByAbbreviation(abbr);
+  if (!event) return { title: 'Not here' };
+
+  return {
+    title: `${event.name} ${requested}, live`,
+    alternates: { canonical: canonical(`/live/${abbr}`) },
+  };
 }
 
 /**
@@ -116,11 +123,16 @@ export default async function LivePage({
         </Panel>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* 🔴 Carmine, not brass. Brass means "drafted" in 320 places on the
-              draft board (P17.T35) and its meaning is not settled; carmine is
-              urgency, which a broadcast in progress is. */}
+          {/* 🔴 Carmine, not brass. What brass means is being decided in
+              P17.T35 and is not free to take a new one here; carmine is
+              urgency, which a broadcast in progress is.
+
+              (The plan says brass already means "drafted" in 320 places on the
+              draft board. It does not — the PROGRESS note of 2026-09-12 has
+              since measured 11 source instances, none of them on the board.
+              The conclusion holds for the other reason: T35 has not ruled.) */}
           {show.onAir ? <StatusChip tone="carmine">Live</StatusChip> : null}
-          <LiveCountdown startsAt={show.startsAt} />
+          <LiveCountdown startsAt={show.startsAt} day={show.startsOn} />
         </div>
       </header>
 
@@ -164,9 +176,21 @@ export default async function LivePage({
           wearing a league's name. They get the same invitation `/` gives a
           stranger, in the same words, for the same reason (D44).
 
-          P17.T16b puts <LiveBoard> above this; the branch itself does not
-          change. */}
-      {user == null ? (
+          🔴 `show.leagues` is `[]` for a signed-out reader **by construction**
+          — the service does not query leagues when `userId` is null — so the
+          first branch can never render for a stranger even if the `user ==
+          null` check were removed. Two locks, the same shape as `/`'s. */}
+      {show.leagues.length > 0 ? (
+        // 🔴 The `h2` is not decoration. Measured in a production build, the
+        // outline without it ran h1 → h2 Categories → h3 ×6 → h3 league, so the
+        // league read as a seventh category to anything following the heading
+        // structure. It also gives the board the label it otherwise lacked:
+        // `LiveBoard` opens on a league's name, which does not say what it is.
+        <section className="flex flex-col gap-4">
+          <SectionHead as="h2">Your seats</SectionHead>
+          <LiveBoard leagues={show.leagues} />
+        </section>
+      ) : user == null ? (
         <EmptyState
           title="Play the season"
           action={{ label: 'Register', href: '/auth/register' }}

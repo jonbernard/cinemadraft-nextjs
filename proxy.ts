@@ -96,8 +96,19 @@ const isPublic = createRouteMatcher([
   //
   // Safe for the same reason `/` is: `getLiveShow(abbr, year, null)` does not
   // query leagues rather than querying with a sentinel, so there is no code
-  // path on which an anonymous reader resolves somebody else's team. The page
-  // never writes.
+  // path on which an anonymous reader resolves somebody else's team, and
+  // `scoring.batching.test.ts` pins that as a query-count equality. The page
+  // never writes **for an anonymous reader** — `getCurrentUser()` can claim a
+  // row (D38), but it returns before that for a request with no session, so a
+  // crawler walking every abbreviation cannot cause an insert.
+  //
+  // 🔴 This matches the whole `/live/` subtree, not just `/live/[abbr]`, the
+  // same way `/leagues/(.*)` does — so a page added under it later is public
+  // by default, which inverts the rule at the top of this file. Today there is
+  // exactly one route there. Anything added under `/live/` must either be safe
+  // to hand a stranger or resolve the session itself and answer 404, the way
+  // `/leagues/[id]/draft` does. `/api/live/...` is a different prefix and is
+  // not matched by this.
   '/live/(.*)',
   // 🔴 Crawler and scraper endpoints, which are useless behind a redirect: a
   // bot asking for robots.txt or a sitemap gets a 307 to the login page, and a

@@ -34,16 +34,35 @@ describe('getLiveShow', () => {
     expect(view.resolved).toBeGreaterThan(0);
   });
 
-  it('carries the ceremony start as one instant', async () => {
+  it('🔴 carries the ceremony instant and the ceremony day separately', async () => {
     // `awards_date` is UTC midnight of the ceremony day and `awards_time` is
-    // milliseconds past it; the page needs the sum, and a show with no date
-    // needs null rather than a countdown to midnight on the 1st of January 1970.
+    // milliseconds past it. The countdown needs the sum; the printed date needs
+    // the day, and they are NOT the same UTC date — the Oscars store 91,800,000
+    // (25.5 hours), because the ceremony is a Sunday evening in America, so the
+    // instant lands on the Monday. Formatting the sum in UTC puts the wrong day
+    // on the page whose one job is saying when the show starts.
     const view = await getLiveShow('oscars', 2025, null);
+
+    expect(view.startsOn).toBe(1_773_532_800_000);
     expect(view.startsAt).toBe(1_773_532_800_000 + 91_800_000);
+    expect(new Date(view.startsOn as number).toISOString()).toBe(
+      '2026-03-15T00:00:00.000Z',
+    );
+    expect(new Date(view.startsAt as number).toISOString()).toBe(
+      '2026-03-16T01:30:00.000Z',
+    );
 
     // AFI has no `awards_date` at all in the restored data.
     const unscheduled = await getLiveShow('afi', 2025, null);
     expect(unscheduled.startsAt).toBeNull();
+    expect(unscheduled.startsOn).toBeNull();
+  });
+
+  it('reports the broadcast window from the row, not from a constant', async () => {
+    // `awards_active` is false on all twelve today, and a page that hardcoded
+    // `onAir: true` would put a carmine "Live" chip on every show, all year.
+    const view = await getLiveShow('oscars', 2025, null);
+    expect(view.onAir).toBe(false);
   });
 
   it('🔴 resolves the point value, never the foreign key (D41)', async () => {
@@ -69,12 +88,64 @@ describe('getLiveShow', () => {
     }
   });
 
-  it('shows a signed-out reader no leagues at all', async () => {
+  it('🔴 shows a signed-out reader no leagues, where a member sees real ones', async () => {
     // Same rule as the public dashboard (D44): the signed-out path does not
     // query leagues rather than querying with a sentinel, so there is no code
     // path on which this page can resolve somebody else's team.
-    const view = await getLiveShow('oscars', 2025, null);
-    expect(view.leagues).toEqual([]);
+    //
+    // 🔴 Both halves, deliberately. `expect(leagues).toEqual([])` on its own is
+    // a literal compared with itself for as long as nothing produces a seat —
+    // it stayed green through all of T16a and could not have failed. The
+    // signed-in call is what gives it something to be the absence of.
+    const anonymous = await getLiveShow('oscars', 2026, null);
+    const member = await getLiveShow('oscars', 2026, 6);
+
+    expect(anonymous.leagues).toEqual([]);
+    expect(member.leagues.length).toBeGreaterThan(0);
+    expect(member.leagues[0]?.seats.length).toBeGreaterThan(0);
+  });
+
+  it("🔴 a seat's take is this show's lines only, and the league total adds up", async () => {
+    const view = await getLiveShow('oscars', 2026, 6);
+    const league = view.leagues[0];
+    expect(league).toBeDefined();
+
+    // The league's total is the sum of its seats, never a second reduction —
+    // the `MovieLedger` rule. And the seats are ranked by it.
+    expect(league?.total).toBe(league?.seats.reduce((sum, seat) => sum + seat.earned, 0));
+    const earned = league?.seats.map((seat) => seat.earned) ?? [];
+    expect(earned).toEqual([...earned].sort((a, b) => b - a));
+
+    for (const seat of league?.seats ?? []) {
+      // Each seat's take is the sum of its films', and every film on this page
+      // earned something here — a pick with no line at this show is dropped.
+      expect(seat.earned).toBe(seat.films.reduce((sum, film) => sum + film.earned, 0));
+      for (const film of seat.films) {
+        expect(film.earned).toBeGreaterThan(0);
+        expect(film.status).not.toBe('none');
+      }
+    }
+
+    // 🔴 And it is genuinely narrower than the season. The same seat's dashboard
+    // total counts twelve shows; this counts one.
+    const viewer = league?.seats.find((seat) => seat.isViewer);
+    expect(viewer).toBeDefined();
+    expect(viewer?.films.length).toBeGreaterThan(0);
+  });
+
+  it('🔴 narrows the season ledger to this show and no other', async () => {
+    // The whole scoring content of the page is one filter on
+    // `LedgerLine.eventAbbreviation`. If it were dropped, every seat would show
+    // its season total here — so the two shows would agree, and they must not.
+    const oscars = await getLiveShow('oscars', 2026, 6);
+    const globes = await getLiveShow('gg', 2026, 6);
+
+    const take = (view: typeof oscars) =>
+      view.leagues[0]?.seats.find((seat) => seat.isViewer)?.earned ?? 0;
+
+    expect(take(oscars)).toBeGreaterThan(0);
+    expect(take(globes)).toBeGreaterThan(0);
+    expect(take(oscars)).not.toBe(take(globes));
   });
 
   it('throws NotFoundError for a show that does not exist', async () => {

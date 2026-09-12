@@ -10,6 +10,13 @@ import { cn } from '@/lib/utils/cn';
  * the ambient zone renders one day on a server in UTC and the previous day in
  * a browser west of it. That is a hydration mismatch on the most prominent
  * element of this page, and React discards the server HTML to fix it.
+ *
+ * 🔴 It formats `day`, never `startsAt`. UTC formatting is only lossless on a
+ * value that *is* a UTC midnight, which `events.awards_date` is and the
+ * ceremony instant is not — `awards_time` runs to 25.5 hours for the Oscars,
+ * so the instant falls on the following UTC day and this would print the
+ * ceremony a day late. `SeasonStepper` formats `awards_date` alone for exactly
+ * this reason.
  */
 const showDate = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -52,10 +59,16 @@ function remainder(ms: number): string {
  */
 export function LiveCountdown({
   startsAt,
+  day,
   className,
 }: {
-  /** Epoch ms of the ceremony start, or null if it is not scheduled. */
+  /** Epoch ms of the ceremony start — the instant to count down to. */
   startsAt: number | null;
+  /**
+   * Epoch ms of UTC midnight on the ceremony day — the date to print. Not
+   * `startsAt` truncated; see the formatter above.
+   */
+  day: number | null;
   className?: string;
 }) {
   const [now, setNow] = useState<number | null>(null);
@@ -76,7 +89,9 @@ export function LiveCountdown({
     <p
       className={cn('text-beam flex flex-wrap items-baseline gap-x-3 text-sm', className)}
     >
-      <time dateTime={new Date(startsAt).toISOString()}>{showDate.format(startsAt)}</time>
+      <time dateTime={new Date(startsAt).toISOString()}>
+        {showDate.format(day ?? startsAt)}
+      </time>
       {left == null ? null : left <= 0 ? (
         <span>Under way</span>
       ) : (
