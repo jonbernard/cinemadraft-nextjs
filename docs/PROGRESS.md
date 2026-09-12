@@ -1230,11 +1230,18 @@ exist` while it works against local Docker — the defect predates P15.T3,
 
 ## Phase 17 — Design review remediation
 
-🔴 **Runs here, before Phase 12, despite its number** — see `docs/PLAN.md`.
 Source: the design review of 2026-09-12 against `7a1e8d8`. All 21 findings
 marked **ship** by the owner. The legacy app is evidence, not a target — no
 task below is justified by "the old app did it".
-Plan: _not yet written — write it before starting T0._
+
+Plan: `docs/superpowers/plans/2026-09-12-phase-17-design-review-remediation.md`
+— 🔴 **tranche 1 only (T0–T7, "Product and structure")**. Later tranches are
+written just-in-time, after this one executes, because several are entangled
+sweeps whose right shape depends on what T1 settles about the heading scale and
+what T2 settles about the shell. They append to the same file under their own
+`## Tranche N` headings; if it outgrows one file they split into siblings and
+that file becomes the index. Start there either way — it carries the execution
+order, the tranche boundaries and the browser-verification protocol.
 
 ### Product and structure
 
