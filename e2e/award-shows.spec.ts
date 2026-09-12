@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { skipWithoutRestoredCorpus } from './support/corpus';
 import { signInAs } from './support/session';
 
 /**
@@ -208,6 +209,14 @@ test.describe('award shows', () => {
     // Reads the real Oscars row, not the scratch show — the twelve logos
     // uploaded in Task 3 are exactly the rows this suite otherwise avoids
     // touching, and this test only reads.
+    //
+    // 🔴 The one test in this file that cannot run on CI. Everything else here
+    // builds its own show; this asserts that a REAL row carries a logo and that
+    // the URL in it resolves against Blob, and there is nothing to seed —
+    // Blob is production infrastructure, and a scratch row pointed at a made-up
+    // URL would assert the made-up URL. See `support/corpus.ts`.
+    await skipWithoutRestoredCorpus();
+
     await page.goto('/award-shows/oscars');
     // The optimizer is in the path for Blob images (they are not TMDB), so the
     // rendered src is a /_next/image URL wrapping the Blob one. Assert on what

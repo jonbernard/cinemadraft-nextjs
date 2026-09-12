@@ -114,6 +114,12 @@ test.describe('season setup', () => {
 
     // Deal, then open.
     await page.getByRole('button', { name: 'Deal at random' }).click();
+    // 🔴 P15.T12 put a ceremony between the deal and its confirmation: the
+    // groups are already saved when the dialog opens, and the in-page message
+    // appears only once it is dismissed. The label is 'Skip' while the reel is
+    // still spinning and 'Done' when it has settled, so waiting for 'Done' is
+    // also what waits for the animation to finish.
+    await page.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByText(/dealt into groups/i)).toBeVisible();
     await expect
       .poll(async () => (await seats(leagueId)).every((seat) => seat.group != null))

@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { skipWithoutRestoredCorpus } from './support/corpus';
 import { signInAs } from './support/session';
 
 /**
@@ -114,6 +115,18 @@ test.describe('dashboard', () => {
   });
 
   test.describe('signed in', () => {
+    /**
+     * 🔴 These four need the restored member, and only these four — the
+     * signed-out test above is about what a stranger may see and runs
+     * everywhere, including CI's empty database.
+     *
+     * Not seeded a scratch roster instead: `longestRosterTitle` exists so the
+     * assertion always points at the hardest REAL title, and a roster this
+     * file invented would be a roster this file chose the title lengths of.
+     * That is the one thing these tests must not be. See `support/corpus.ts`.
+     */
+    test.beforeEach(skipWithoutRestoredCorpus);
+
     test('shows the member’s roster, total and standings', async ({ page }) => {
       await signInAsMember(page);
       await page.goto('/');

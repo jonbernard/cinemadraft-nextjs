@@ -1,6 +1,60 @@
 import { expect, test } from '@playwright/test';
 
 /**
+ * The scratch shows this file's last test needs, and the tag that removes them.
+ *
+ * `e2e-` is the prefix `lib/db.test.ts`'s restored-row counts deliberately
+ * exclude, so these cannot turn an unrelated contract test red — and the tag is
+ * this file's own, because `award-shows.spec.ts` clears `e2e-awards%` wholesale
+ * and the two run side by side.
+ *
+ * Raw `pg` rather than the Prisma client: Playwright does not resolve the `@/`
+ * alias into `generated/prisma`, so importing `lib/db` fails at require time
+ * and takes the whole spec with it. Same reasoning as every other spec here.
+ */
+const TAG = 'e2e-nav';
+
+async function withDb<T>(
+  fn: (query: (sql: string, params?: unknown[]) => Promise<unknown[]>) => Promise<T>,
+): Promise<T> {
+  const { Client } = await import('pg');
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  try {
+    return await fn(async (sql, params) => (await client.query(sql, params)).rows);
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * A dozen shows, so `/award-shows` is longer than a phone viewport.
+ *
+ * Idempotent on the abbreviation, because these tests run in parallel and a
+ * retry must not double the list. Nothing reads their names — they exist only
+ * to give the page a height — so they are plainly synthetic rather than
+ * imitations of the real twelve.
+ */
+async function seedShows(): Promise<void> {
+  await withDb(async (query) => {
+    for (let index = 1; index <= 12; index += 1) {
+      await query(
+        `insert into events (name, abbreviation, created_at, updated_at)
+           select $1, $2, now(), now()
+            where not exists (select 1 from events where abbreviation = $2)`,
+        [`${TAG} Show ${index}`, `${TAG}-${index}`],
+      );
+    }
+  });
+}
+
+async function cleanup(): Promise<void> {
+  await withDb(async (query) =>
+    query('delete from events where abbreviation like $1', [`${TAG}-%`]),
+  );
+}
+
+/**
  * The shell that makes every other page reachable (D67, D75).
  *
  * 🔴 The More sheet's real behaviour — Escape, the focus trap, the inert
@@ -26,6 +80,11 @@ import { expect, test } from '@playwright/test';
 test.describe('navigation', () => {
   const DESKTOP = { width: 1440, height: 900 };
   const PHONE = { width: 390, height: 844 };
+
+  // Before as well as after: a run killed halfway leaves rows behind, and the
+  // next run's `marks the current page` would then be reading debris.
+  test.beforeAll(cleanup);
+  test.afterAll(cleanup);
 
   test('desktop shows the rail and hides the tab bar', async ({ page }) => {
     await page.setViewportSize(DESKTOP);
@@ -186,7 +245,16 @@ test.describe('navigation', () => {
     await page.setViewportSize(PHONE);
     // Not `/`: the signed-out dashboard is shorter than a phone viewport, so
     // it never scrolls and the assertion below would be true by accident.
-    // /award-shows is long enough on a 390px phone to reach the worst case.
+    // /award-shows is one card per show, so it is as long as the shows make it.
+    //
+    // 🔴 Which is why this spec now seeds its own. It used to rely on the
+    // twelve restored shows being there, and on CI — schema, no data — the page
+    // came back 415px tall inside an 844px viewport, never scrolled, and the
+    // anti-vacuity guard below failed. Correctly: without a scroll this test
+    // measures nothing. A dozen scratch shows make the page taller than the
+    // viewport on any database, so what is being tested is the shell's bottom
+    // padding rather than how much data happens to be lying around.
+    await seedShows();
     await page.goto('/award-shows');
 
     const bar = page.getByRole('navigation', { name: 'Primary, mobile' });

@@ -96,6 +96,28 @@ jobs:
         # leaks. 64 hex characters, comfortably over the 32 the module demands.
         run: echo "E2E_TEST_AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
 
+      # 🔴 The one row the app cannot boot without.
+      #
+      # This job's whole premise is schema without data, and until P15.T11 that
+      # cost nothing: the Playwright steps were gated behind
+      # `if: env.CLERK_SECRET_KEY != ''`, which is never true here, so the e2e
+      # job had never actually run on CI. D84 removed the gate — and the first
+      # real run found that `/` throws `no seasons exist` with no row in
+      # `available_years`, which is correct behaviour and stays (the owner's
+      # call: an empty production database is not a state worth degrading into).
+      # But `/` and `/award-shows` are where three specs start, and Playwright's
+      # own readiness probe polled `/` for the full 180 seconds and then failed
+      # the job without running a single test.
+      #
+      # So: the season, and deliberately nothing else. Every spec that needs a
+      # league, a seat, a film or a show creates it and deletes it again; the
+      # three that genuinely need the restored corpus skip themselves visibly
+      # (see e2e/support/corpus.ts). Anything more seeded here is a row a future
+      # spec can lean on instead of making its own, which is how a suite stops
+      # proving anything on a fresh database.
+      - name: Seed the one row the app cannot boot without
+        run: node scripts/seed-e2e.mjs
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 

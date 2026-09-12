@@ -64,7 +64,24 @@ export default defineConfig({
     // listener, and it is the origin `e2e/support/session.ts` pins the session
     // cookie to. Changing one without the other signs nobody in.
     command: 'KEEP_TEST_IDS=1 npm run build && npm run start -- -H 127.0.0.1',
-    url: 'http://localhost:3000',
+    // 🔴 `/tokens`, not `/`. The readiness probe asks "is the server up", and
+    // `/` is the dashboard: it calls `getActiveYear()`, which THROWS
+    // `no seasons exist` against a database with no `available_years` row. On
+    // CI — a fresh Postgres with the schema and none of the data — that made
+    // every boot answer 500, Playwright polled it for the full 180s, and the
+    // run died as "Timed out waiting from config.webServer" without a single
+    // spec having started. A probe that can fail for a data reason is not a
+    // liveness probe, it is a test nobody wrote down.
+    //
+    // `/tokens` is the narrowest route that still proves something: it touches
+    // no repository, but it renders through the root layout, the providers, the
+    // fonts and compiled globals.css, so a 200 here means the app can actually
+    // produce HTML. `/robots.txt` would also answer, and answer earlier — which
+    // is the problem with it: it is emitted as a static file at build time and
+    // would go green for a server whose React runtime is broken.
+    //
+    // `use.baseURL` deliberately stays `/` — the specs navigate relative to it.
+    url: 'http://localhost:3000/tokens',
     // A server left over from an earlier run holds *that* run's secret, so
     // reuse after the change above fails every spec as "not signed in" rather
     // than as a mismatch. Kill whatever is on 3000 and run again.

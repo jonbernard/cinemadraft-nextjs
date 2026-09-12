@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { skipWithoutRestoredCorpus } from './support/corpus';
+
 /**
  * 🔴 The Phase 9 gate, in a browser: a real score on screen, and its
  * explanation one interaction away that adds up to it (§6.7).
@@ -11,11 +13,20 @@ import { expect, test } from '@playwright/test';
  * Reads league 1's real 2025 season rather than seeding a scratch league: this
  * spec only reads, and the value of using the restored data is that the
  * numbers on screen are the numbers sixty people actually played for.
+ *
+ * 🔴 Which is also why it cannot run on CI, where the database is the schema
+ * and nothing else. It skips there, visibly, rather than being handed a
+ * scratch league to read — see `support/corpus.ts`. The same arithmetic on
+ * scratch rows is already proven by `awards-lifecycle.spec.ts`, which does run
+ * on CI; what this file adds is the real board, and there is no CI version of
+ * that worth having.
  */
 const LEAGUE = 1;
 const YEAR = 2025;
 
 test.describe('points ledger', () => {
+  test.beforeEach(skipWithoutRestoredCorpus);
+
   test('🔴 a pick’s points explain themselves, and the lines add up', async ({
     page,
   }) => {

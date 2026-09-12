@@ -163,6 +163,10 @@ test.describe('the league lifecycle', () => {
     //    a reversal and a plain repeat are indistinguishable in.
     await page.getByLabel('How many groups').fill('1');
     await page.getByRole('button', { name: 'Deal at random' }).click();
+    // 🔴 P15.T12 put a ceremony between the deal and its confirmation — see the
+    // same wait in `season-setup.spec.ts`. 'Done' rather than 'Skip' is the
+    // label once the reel has settled, so this waits for the animation too.
+    await page.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByText(/dealt into groups/i)).toBeVisible();
 
     // 4. Open it. Confirms first, because groups are fixed from this moment.
