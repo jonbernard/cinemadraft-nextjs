@@ -1311,6 +1311,38 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 
 ### Phase 17 notes
 
+- **Where the phase stands (2026-09-12).** Tranche 1 (T0–T7) complete and gated.
+  Tranche 2 (T8–T10) complete. Tranche 3: T11–T15 and T17 complete, T16a/T16b in
+  flight. Tranche 4 (T18–T25) planned, **must run alone** — its 48-screenshot
+  zero-diff is unattributable if anything else is moving. Tranche 5 (T26–T36)
+  planned; T35 running in the `p17-t35` worktree against the 5434 database.
+  Five plan files, one per tranche, all under `docs/superpowers/plans/`.
+
+- 🔴 **The 2026-09-12 review's premises have failed repeatedly, and the pattern
+  is the lesson.** Confirmed wrong against the real code: T11's "Phase 11
+  migration is the blocker" (no blocker — nine services already render
+  `movies.poster`); T15's "animate the seal" (the seal had **never** rendered —
+  nothing set `PosterFrame`'s `status`); T18's 75-file sweep (four lines, since
+  Tailwind 4 reads its scale from custom properties); T21's 320 brass instances
+  on the draft board (a source grep finds 11, none on the board); T14's ~530px
+  dead column (1,201px — the review measured the viewport remainder); T12's
+  dark-on-transparent marks (`transparentPct` **0.0** across all twelve —
+  eleven are baseline JPEG, one is 8-bit RGB); T4's 1024px table overflow (does
+  not exist in a production build); the NavRail avatar (Next's dev indicator);
+  and a film-page overflow figure taken from a different film.
+
+  None of this makes the review worthless — it found real defects, and the
+  owner marked all 21 ship. It makes **measuring before building** the rule:
+  a premise that survives contact is worth more than one that sounds right.
+
+- **Five decision amendments are pending a number**, recorded in the tranche
+  plans and collected by T26 from **D85**: D71 (body density), D72 (surfaces,
+  compatible — no border returns), D77 (the rename D77 itself declined, now
+  answerable because the guard grep catches a missed one), D80 (browse URL —
+  🔴 narrower than advertised: shareable and refreshable, **not**
+  restore-on-Back, because the App Router answers Back from its client cache),
+  and D40 (`/live/[abbr]` public).
+
 - **The "avatar detached at the bottom" of the NavRail (T14) was the Next.js
   dev-tools indicator**, not the product. It renders as a dark circle in the
   bottom-left under `next dev`, which is exactly where the rail's empty column
