@@ -139,3 +139,272 @@ describe('yearCheck', () => {
     ).toBe(true);
   });
 });
+
+import { applyNominations, movieInsertColumns, resolveFilm } from './award-import.mjs';
+
+/** A pg-shaped stub: hand it queries to match, collect what was run. */
+function fakeClient(handlers) {
+  const ran = [];
+  return {
+    ran,
+    async query(text, params) {
+      ran.push({ text, params });
+      for (const [pattern, rows] of handlers) {
+        if (pattern.test(text))
+          return { rows: typeof rows === 'function' ? rows(params) : rows };
+      }
+      return { rows: [] };
+    },
+  };
+}
+
+describe('movieInsertColumns', () => {
+  // 🔴 Pinned against movieRepository.upsertByTmdbId in lib/repositories/movies.ts.
+  // The script cannot import that file (TypeScript behind @/ aliases), so this
+  // test is the only thing standing between the two copies and silent drift.
+  it('writes exactly the columns the repository writes', () => {
+    expect(movieInsertColumns()).toEqual([
+      'tmdb_id',
+      'imdb_id',
+      'title',
+      'sort_title',
+      'poster',
+      'backdrop',
+      'release_date',
+      'created_at',
+      'updated_at',
+    ]);
+  });
+});
+
+describe('resolveFilm', () => {
+  it('returns the cached row without asking TMDB', async () => {
+    const client = fakeClient([
+      [
+        /FROM movies WHERE tmdb_id/,
+        [{ id: 42, title: 'Sinners', release_date: new Date('2025-04-18') }],
+      ],
+    ]);
+    const fetchFilm = () => {
+      throw new Error('TMDB must not be called for a cached film');
+    };
+    const result = await resolveFilm(
+      client,
+      { title: 'Sinners', tmdbId: '1233413' },
+      fetchFilm,
+    );
+    expect(result).toEqual({
+      movieId: 42,
+      title: 'Sinners',
+      releaseYear: 2025,
+      created: false,
+    });
+  });
+
+  it('ingests an unknown film and reports it as created', async () => {
+    const client = fakeClient([
+      [/FROM movies WHERE tmdb_id/, []],
+      [
+        /INSERT INTO movies/,
+        [
+          {
+            id: 99,
+            title: 'One Battle After Another',
+            release_date: new Date('2025-09-26'),
+          },
+        ],
+      ],
+    ]);
+    const fetchFilm = async () => ({
+      tmdbId: '1234567',
+      imdbId: '1234567',
+      title: 'One Battle After Another',
+      sortTitle: 'One Battle After Another',
+      poster: '/p.jpg',
+      backdrop: null,
+      releaseDate: new Date('2025-09-26'),
+    });
+    const result = await resolveFilm(
+      client,
+      { title: 'One Battle After Another', tmdbId: '1234567' },
+      fetchFilm,
+    );
+    expect(result.movieId).toBe(99);
+    expect(result.created).toBe(true);
+  });
+
+  it('throws rather than writing a half-film when TMDB has nothing', async () => {
+    const client = fakeClient([[/FROM movies WHERE tmdb_id/, []]]);
+    await expect(
+      resolveFilm(client, { title: 'Ghost', tmdbId: '0' }, async () => null),
+    ).rejects.toThrow(/Ghost/);
+  });
+});
+
+describe('applyNominations', () => {
+  const context = {
+    event: {
+      id: 7,
+      name: 'DGA',
+      abbreviation: 'DGA',
+      nomActive: true,
+      awardsActive: false,
+    },
+    awards: [{ id: 11, name: 'Best Picture', requiresNomineeName: false, points: 5 }],
+    activeYear: 2025,
+    existingNominations: [],
+    seasonYears: [2025],
+  };
+  const plan = {
+    kind: 'nominations',
+    eventAbbreviation: 'DGA',
+    eventId: 7,
+    year: 2025,
+    sources: ['https://example.com'],
+    categories: [
+      {
+        awardId: 11,
+        awardName: 'Best Picture',
+        nominees: [{ title: 'Sinners', tmdbId: '1233413' }],
+      },
+    ],
+  };
+
+  const cached = [
+    [
+      /FROM movies WHERE tmdb_id/,
+      [{ id: 42, title: 'Sinners', release_date: new Date('2025-04-18') }],
+    ],
+  ];
+
+  it('writes nothing without --commit', async () => {
+    const client = fakeClient(cached);
+    const report = await applyNominations(client, plan, context, { commit: false });
+    expect(report.inserted).toHaveLength(1);
+    expect(client.ran.some((call) => /INSERT INTO nominations/.test(call.text))).toBe(
+      false,
+    );
+  });
+
+  it('inserts inside a transaction when committing', async () => {
+    const client = fakeClient(cached);
+    await applyNominations(client, plan, context, { commit: true });
+    const texts = client.ran.map((call) => call.text);
+    expect(texts).toContain('BEGIN');
+    expect(texts).toContain('COMMIT');
+    expect(texts.some((text) => /INSERT INTO nominations/.test(text))).toBe(true);
+  });
+
+  // 🔴 A double-run would double that film's points for the category.
+  it('skips a nomination that already exists', async () => {
+    const client = fakeClient(cached);
+    const report = await applyNominations(
+      client,
+      plan,
+      {
+        ...context,
+        existingNominations: [{ awardId: 11, movieId: 42, title: 'Sinners' }],
+      },
+      { commit: true },
+    );
+    expect(report.inserted).toHaveLength(0);
+    expect(report.skipped[0].reason).toMatch(/already nominated/);
+  });
+
+  it('refuses the whole run when the plan is invalid', async () => {
+    const client = fakeClient(cached);
+    await expect(
+      applyNominations(client, { ...plan, sources: [] }, context, { commit: true }),
+    ).rejects.toThrow(/source URL/);
+    expect(client.ran.some((call) => /INSERT/.test(call.text))).toBe(false);
+  });
+
+  // The listing was a year off — the failure this whole pipeline exists to catch.
+  it('refuses the whole run when the year check fails', async () => {
+    const client = fakeClient([
+      [
+        /FROM movies WHERE tmdb_id/,
+        [{ id: 42, title: 'Sinners', release_date: new Date('2022-04-18') }],
+      ],
+    ]);
+    await expect(
+      applyNominations(
+        client,
+        plan,
+        { ...context, seasonYears: [2025, 2026] },
+        { commit: true },
+      ),
+    ).rejects.toThrow(/outside/);
+    expect(client.ran.some((call) => /INSERT INTO nominations/.test(call.text))).toBe(
+      false,
+    );
+  });
+});
+
+import { applyWinners } from './award-import.mjs';
+
+describe('applyWinners', () => {
+  const context = {
+    event: {
+      id: 7,
+      name: 'DGA',
+      abbreviation: 'DGA',
+      nomActive: false,
+      awardsActive: true,
+    },
+    awards: [{ id: 11, name: 'Best Picture', requiresNomineeName: false, points: 5 }],
+    activeYear: 2025,
+    existingNominations: [{ awardId: 11, movieId: 42, title: 'Sinners' }],
+    seasonYears: [2025],
+  };
+  const plan = {
+    kind: 'winners',
+    eventAbbreviation: 'DGA',
+    eventId: 7,
+    year: 2025,
+    sources: ['https://example.com'],
+    categories: [
+      {
+        awardId: 11,
+        awardName: 'Best Picture',
+        nominees: [{ title: 'Sinners', tmdbId: '1233413' }],
+      },
+    ],
+  };
+  const handlers = [
+    [
+      /FROM movies WHERE tmdb_id/,
+      [{ id: 42, title: 'Sinners', release_date: new Date('2025-04-18') }],
+    ],
+    [/FROM nominations/, [{ id: 500 }]],
+  ];
+
+  // 🔴 A win pays the award's points a second time, so a winner that was never
+  // nominated scores for a nomination that does not exist — the film would hold
+  // points no page could explain. Same refusal as setWinner.
+  it('refuses a winner that is not nominated in that category', async () => {
+    const client = fakeClient([handlers[0], [/FROM nominations/, []]]);
+    await expect(applyWinners(client, plan, context, { commit: true })).rejects.toThrow(
+      /not nominated/,
+    );
+    expect(client.ran.some((call) => /INSERT INTO winners/.test(call.text))).toBe(false);
+  });
+
+  // One category has one winner. Two rows would pay the points twice.
+  it('deletes the category existing winner before inserting', async () => {
+    const client = fakeClient(handlers);
+    await applyWinners(client, plan, context, { commit: true });
+    const texts = client.ran.map((call) => call.text);
+    const deleteAt = texts.findIndex((text) => /DELETE FROM winners/.test(text));
+    const insertAt = texts.findIndex((text) => /INSERT INTO winners/.test(text));
+    expect(deleteAt).toBeGreaterThanOrEqual(0);
+    expect(insertAt).toBeGreaterThan(deleteAt);
+  });
+
+  it('writes nothing without --commit', async () => {
+    const client = fakeClient(handlers);
+    const report = await applyWinners(client, plan, context, { commit: false });
+    expect(report.set).toHaveLength(1);
+    expect(client.ran.some((call) => /INSERT INTO winners/.test(call.text))).toBe(false);
+  });
+});
