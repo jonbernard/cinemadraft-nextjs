@@ -24,6 +24,9 @@ export default function robots(): MetadataRoute.Robots {
         '/members',
         '/auth',
         '/join',
+        // Not a page anybody searched for: it is the cascade-layer probe the
+        // smoke run measures (`app/tokens/page.tsx`).
+        '/tokens',
       ],
     },
     sitemap: canonical('/sitemap.xml'),
