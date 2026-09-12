@@ -1307,6 +1307,25 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 
 ### Recording the decisions
 
+- 🔴 **No member index — decided by the owner 2026-09-12, awaiting a D-number
+  from T26.** Individual member pages stay and are wanted: a seat name leads to
+  a member's posts and drafts, and that is the point of them. What is refused is
+  the *collective* listing — a directory of sixty real people is not something
+  the product should offer, and nothing in the app links to one.
+
+  **Already true in four places, so this decision builds nothing and only makes
+  the reasoning explicit:** `/members` bare 404s inside the shell (P17.T27's
+  catch-all); `app/robots.ts` disallows `/members`; `app/sitemap.ts` deliberately
+  omits it, and its comment already says publishing `/members/[uuid]` would
+  publish the uuid itself; and `members/[uuid]` sets `robots: { index: false,
+  follow: false }` in its own `generateMetadata`. The page is public so a pasted
+  link opens — which is D44's rule — but it is not discoverable, and there is no
+  door marked "everyone".
+
+  🔴 If a member index is ever wanted, it is a product decision with a privacy
+  dimension (R7), not a polish task: who may see it, and what it shows.
+
+
 - [ ] P17.T26 — record **D85–D97** for the thirteen answers above and in P18.T0. 🔴 **Not D84 — that is taken** (`E2E runs in CI, with Clerk absent rather than credentialled`, added by `d96e5ec` alongside D79–D83). The ledger is complete through D84; the earlier claim that it was four entries behind was wrong — P15.T0 had shipped and only its checkbox was stale. Newsreader is a deferral, not a decision: it belongs in `DECISIONS.md` → Still open
 
 ### Phase 17 notes
