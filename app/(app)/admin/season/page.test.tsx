@@ -10,6 +10,11 @@ vi.mock('@/lib/repositories/available-years', () => ({
   availableYearRepository: { findAll },
 }));
 
+const findAllIds = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/repositories/users', () => ({
+  userRepository: { findAllIds },
+}));
+
 import { ForbiddenError } from '@/lib/errors';
 import AdminSeasonPage from './page';
 
@@ -32,6 +37,7 @@ describe('AdminSeasonPage', () => {
 
     await expect(AdminSeasonPage()).rejects.toThrow('admin only');
     expect(findAll).not.toHaveBeenCalled();
+    expect(findAllIds).not.toHaveBeenCalled();
   });
 
   it('renders for an admin', async () => {
@@ -40,8 +46,42 @@ describe('AdminSeasonPage', () => {
       { id: 1, year: 2025, isActive: false },
       { id: 2, year: 2026, isActive: true },
     ]);
+    findAllIds.mockResolvedValue([1, 2, 3]);
 
     const element = await AdminSeasonPage();
     expect(element).toBeTruthy();
   });
+
+  it('🔴 hands the control a member count read on the server', async () => {
+    // The confirmation has to name a real number, not one the client invented
+    // — the same reason `/admin/broadcast` reads its recipient count here
+    // (P17.T28). Asserted on the prop rather than on rendered text, because the
+    // count only reaches the browser through this one channel.
+    requireAdmin.mockResolvedValue({ id: 1, role: 'admin' });
+    findAll.mockResolvedValue([{ id: 2, year: 2026, isActive: true }]);
+    findAllIds.mockResolvedValue([1, 2, 3, 4, 5, 6, 7]);
+
+    const control = find(
+      await AdminSeasonPage(),
+      (node) => node.props?.memberCount !== undefined,
+    );
+
+    expect(control?.props.memberCount).toBe(7);
+    expect(control?.props.seasons).toEqual([{ year: 2026, isActive: true }]);
+  });
 });
+
+/** First node in the returned element tree matching `predicate`. */
+// biome-ignore lint/suspicious/noExplicitAny: walking an opaque React element tree
+function find(node: any, predicate: (node: any) => boolean): any {
+  if (node == null || typeof node !== 'object') return null;
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const hit = find(child, predicate);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  if (predicate(node)) return node;
+  return find(node.props?.children, predicate);
+}
