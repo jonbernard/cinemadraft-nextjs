@@ -29,3 +29,10 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
 - **MUI for components, Tailwind for custom styling.** They coexist through CSS cascade layers ordered `theme, base, mui, components, utilities`. Never reach for `!important` to make a Tailwind class beat MUI; if that seems necessary the layer order is wrong. Three Playwright tests in `e2e/smoke.spec.ts` pin this — do not relax them.
 - **All local databases run in Docker** (`npm run db:up`). There is no native Postgres server on the dev machine, and the local Postgres binaries are clients only.
 - **`fixtures/` is generated** by `scripts/scrub-fixtures.mjs` from the gitignored raw capture in `.local/`. Never hand-edit it, and never let a formatter touch it — the scrubber asserts byte-identical output on re-run.
+- **Award nominations and winners are entered by the `award-entry` skill**, not
+  by hand through the admin UI. It drives `scripts/award-import.mjs`, which is
+  the only thing that writes scoring inputs to production, and always ends with
+  `refresh` — the script cannot call `revalidatePath`, so
+  `app/api/revalidate/route.ts` does it on the script's behalf. The skill file
+  (`.claude/skills/award-entry/SKILL.md`) is the runbook, including the
+  one-time `REVALIDATE_SECRET` setup without which `refresh` refuses to run.

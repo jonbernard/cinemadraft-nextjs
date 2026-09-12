@@ -80,7 +80,7 @@ _Fill these in as you go — later phases read them._
 
 Carry these into Phase 7. Do **not** reproduce them in the port.
 
-- **`GET /draft/users/:id` takes a *league* id, not a draft id.** The handler calls `Drafts.getUsersByLeagueId`. Passing a draft id returns `[]` rather than erroring, so the bug is silent. Rename the concept in the port
+- **`GET /draft/users/:id` takes a _league_ id, not a draft id.** The handler calls `Drafts.getUsersByLeagueId`. Passing a draft id returns `[]` rather than erroring, so the bug is silent. Rename the concept in the port
 - **`GET /watchlist/:page?/:columnName?/:direction` only accepts `createdAt` and `releaseDate`.** `columnName` is passed straight into the Sequelize `order` array and only `releaseDate` is special-cased onto the joined `movie` table, so `title` / `sortTitle` raise Postgres `42703 errorMissingColumn`. Sortable columns must be a validated allowlist in the port
 - 🔴 **The error handler leaks schema.** That 42703 response returns the full failing SQL, column list, and Postgres internals (`parse_relation.c`) to the client. The port must return an opaque error and log the detail server-side. See the typed error classes in P2.T10
 - **`GET /points/league/:type(total|event)/:id/:year?` ignores `:type` entirely.** `getPointsByLeagueId` never reads `req.params.type`, so `total` and `event` return byte-identical responses — verified by diffing the two fixtures. The frontend only ever calls `total` (`components/Points/LeaguePointTotals.js:59`, `pages/league/viewPanel/panelLeague.js:56`), so `event` is **dead route surface**: declared, never implemented, never called. Drop it in the port — do not build a per-event leaderboard on the assumption it once existed
@@ -182,9 +182,10 @@ One per live table, in this order. Each: contract test first against `fixtures/`
 
 🔴 **A roster is not always 8 movies.** Picks per seat by season, counted from `draft_picks`: 2017 **7**, 2018 **7**, 2019 **8**, 2020 **7**, 2021 **7**, 2022 **7**, 2024 **7**, 2025 **9**, 2026 **7** (in progress). No database constraint enforces any of it, and per **D34** none ever will — roster size is not stored, not configured and not validated. A roster is whatever `draft_picks` holds for that seat, whether that is 6, 8 or 30. **Nothing may hardcode 8**, and nothing may read a roster-size setting, because there is none. Pinned by a test in `draft-picks.test.ts`.
 
-**Careful which fixture fields you assert.** `scripts/scrub-fixtures.mjs` rewrites *every* key named `image`, so `events.json` shows `https://example.test/avatar/<hash>.png` where the real column holds `/images/awards/sag.jpg` — a path into the app's own `/public`, nothing to do with avatars or TMDB. Names, emails, uuids and avatars are scrubbed everywhere they appear. Ids survive. A test asserting a scrubbed value is asserting the scrubber; assert shape from the fixture and values from `db.$queryRaw`.
+**Careful which fixture fields you assert.** `scripts/scrub-fixtures.mjs` rewrites _every_ key named `image`, so `events.json` shows `https://example.test/avatar/<hash>.png` where the real column holds `/images/awards/sag.jpg` — a path into the app's own `/public`, nothing to do with avatars or TMDB. Names, emails, uuids and avatars are scrubbed everywhere they appear. Ids survive. A test asserting a scrubbed value is asserting the scrubber; assert shape from the fixture and values from `db.$queryRaw`.
 
 **The fixtures are the contract.** Where a repository disagrees with a fixture, the fixture wins — unless it encodes one of the source-app bugs recorded above, in which case the correct behaviour wins and the deviation is documented in the test.
+
 ## Phase 3 — Design system
 
 Plan: [`docs/superpowers/plans/2026-08-14-phase-3-design-system.md`](superpowers/plans/2026-08-14-phase-3-design-system.md)
@@ -206,8 +207,8 @@ The plan groups the eight items below into seven executable tasks — T1+T2 are 
 ### Phase 3 notes
 
 - **`--font-mono` is a name collision.** Tailwind's own theme key is `--font-mono`, so pointing it at a `next/font` variable of the same name is a CSS reference cycle. CSS resolves a cycle to the guaranteed-invalid value: the build passes, no warning is emitted, and every mono column silently falls back to the browser default. The font variable is `--font-plex-mono` for this reason.
-- **`defaultColorScheme` is not the default mode.** It only names which palette CSS falls back to. The *mode* defaults to `system`, so dark-by-default (D15) additionally requires `defaultMode="dark"` on **both** `ThemeProvider` and `InitColorSchemeScript`. Caught in a browser, not by a test: a first-time visitor on a light-set OS got the light theme.
-- **Testing Library was not cleaning up.** Auto-cleanup registers only when Vitest `globals` are enabled, and this project runs without them, so every `render` accumulated in one document. A test asserting *absence* found the previous test's element and failed; a test asserting *presence* would have passed for the wrong reason, silently. `afterEach(cleanup)` is now in `vitest.setup.ts` — required for every component test written from here on.
+- **`defaultColorScheme` is not the default mode.** It only names which palette CSS falls back to. The _mode_ defaults to `system`, so dark-by-default (D15) additionally requires `defaultMode="dark"` on **both** `ThemeProvider` and `InitColorSchemeScript`. Caught in a browser, not by a test: a first-time visitor on a light-set OS got the light theme.
+- **Testing Library was not cleaning up.** Auto-cleanup registers only when Vitest `globals` are enabled, and this project runs without them, so every `render` accumulated in one document. A test asserting _absence_ found the previous test's element and failed; a test asserting _presence_ would have passed for the wrong reason, silently. `afterEach(cleanup)` is now in `vitest.setup.ts` — required for every component test written from here on.
 - **`theme/mui.d.ts` is load-bearing.** `createTheme` is typed as returning a plain `Theme` (its source carries the comment "cast type to skip module augmentation test"), so without augmenting `CssThemeVariables` the compiler cannot see `colorSchemes` or `defaultColorScheme` despite them existing at runtime — pushing every consumer toward an `as any`.
 - Poster frames carry a hairline border in **both** themes. §6.3 requires it in light, where the frame otherwise dissolves into the paper ground; making it a token rather than a light-only rule keeps D15's "no component branches on theme" intact.
 
@@ -219,7 +220,7 @@ Plan: [`docs/superpowers/plans/2026-08-14-phase-4-auth.md`](superpowers/plans/20
 
 The plan adds one item the task list did not have: a **lazy sync in `getCurrentUser`**. A webhook is asynchronous, so a member can reach the dashboard before it lands — and Clerk can drop a delivery outright. Both paths call the same `syncClerkIdentity`, so the safety rules cannot hold on one and be forgotten on the other.
 
-- [x] P4.T0 ✅ **Confirmed by the owner 2026-08-14** — account linking is enabled in the Clerk dashboard (Configure → Account linking). Without it one email can produce two Clerk identities. The claim guard means the second identity does *not* steal the account — it is refused and logged — but the member is then locked out of their own history until an admin relinks them. Linking prevents the situation rather than containing it. Nothing else blocks on this; the guard is what protects the data and it is tested regardless
+- [x] P4.T0 ✅ **Confirmed by the owner 2026-08-14** — account linking is enabled in the Clerk dashboard (Configure → Account linking). Without it one email can produce two Clerk identities. The claim guard means the second identity does _not_ steal the account — it is refused and logged — but the member is then locked out of their own history until an admin relinks them. Linking prevents the situation rather than containing it. Nothing else blocks on this; the guard is what protects the data and it is tested regardless
 - [x] P4.T1 Clerk installed, `proxy.ts` protecting the `(app)` segment
 - [x] P4.T2 `lib/auth.ts` — session → `User` resolution, **with lazy claim**; 11 tests
 - [x] P4.T3 Clerk webhook with signature verification — 10 tests, real svix signatures
@@ -239,11 +240,11 @@ The plan adds one item the task list did not have: a **lazy sync in `getCurrentU
 - **Next 16 renamed `middleware.ts` to `proxy.ts`.** The old name still resolves but logs a deprecation warning, and having both files is a hard build error (E900). Clerk is unaffected — it detects itself via a request header, not the filename.
 - **Clerk 7 renamed its appearance variables.** `colorText` → `colorForeground`, `colorTextSecondary` → `colorMutedForeground`, `colorInputBackground` → `colorInput`. The old names are a type error, not a silent no-op.
 - **Playwright does not read `.env`.** Before `playwright.config.mts` loaded it, all four auth specs skipped themselves on missing Clerk keys — a green run that proved nothing. It also cannot resolve the `@/` alias into `generated/prisma`, so the teardown uses `pg` directly rather than the Prisma client.
-- **Clerk test addresses need the subaddress to be exactly `+clerk_test`.** `e2e+clerk_test_1786…@example.com` is *not* recognised — Clerk tries to deliver a real email, no code is sent, and the form reports "You need to send a verification code before attempting to verify". Put the uniqueness before the `+`.
+- **Clerk test addresses need the subaddress to be exactly `+clerk_test`.** `e2e+clerk_test_1786…@example.com` is _not_ recognised — Clerk tries to deliver a real email, no code is sent, and the form reports "You need to send a verification code before attempting to verify". Put the uniqueness before the `+`.
 - **Wait on `prepare_verification`, not on the UI.** The OTP field submits as soon as it is full, so filling it when it appears races the send. Waiting for the resend countdown looked right and still failed about one run in three.
 - **The E2E writes to the restored production database** and cleans up after itself. If that teardown is ever removed, test accounts accumulate against the 60 genuine users and any later assertion about that population silently starts measuring debris.
 - One production account (`jon@jonbernard.net`, id 3) is used by `clerk-identity.production.test.ts` as the gate fixture: 10 drafts, 67 picks. It is restored to `clerk_id = null` in `afterAll`.
-- 🔴 **E2E does not run in CI, by decision (D43).** The owner declined to put Clerk credentials in GitHub, and the app cannot render without them — `ClerkProvider` needs a publishable key and the proxy needs a secret key. The Playwright steps are therefore *skipped visibly* rather than run against absent keys, because a spec that skips itself is a green run that proved nothing. **`npm run test:e2e` is a local gate and part of the pre-cutover checklist (Phase 12), not something CI covers.** Run it before any release. The `smoke.spec.ts` cascade-layer assertions from Phase 1 are in the same boat.
+- 🔴 **E2E does not run in CI, by decision (D43).** The owner declined to put Clerk credentials in GitHub, and the app cannot render without them — `ClerkProvider` needs a publishable key and the proxy needs a secret key. The Playwright steps are therefore _skipped visibly_ rather than run against absent keys, because a spec that skips itself is a green run that proved nothing. **`npm run test:e2e` is a local gate and part of the pre-cutover checklist (Phase 12), not something CI covers.** Run it before any release. The `smoke.spec.ts` cascade-layer assertions from Phase 1 are in the same boat.
 - `NEXT_PUBLIC_ACTIVE_YEAR` is **deleted** — from `.env` (P5.T0) and from Vercel (owner, 2026-08-14). D22 is fully discharged; nothing may reintroduce it.
 
 ---
@@ -268,7 +269,7 @@ Two reconciliations the plan makes explicit: `PLAN.md` said the roster strip is 
 
 ### Phase 5 notes
 
-- 🔴 **Route visibility is now a per-page decision (D44), and the plan carries the inventory.** The source app was already public by default — `/`, browse, events, live, movie detail, rules, join-by-uuid **and league pages** were never guarded. Only pages about *you* were. Check `src/routes/index.js` before assuming a page should be private; treating league pages as private would have been a parity regression, not a hardening.
+- 🔴 **Route visibility is now a per-page decision (D44), and the plan carries the inventory.** The source app was already public by default — `/`, browse, events, live, movie detail, rules, join-by-uuid **and league pages** were never guarded. Only pages about _you_ were. Check `src/routes/index.js` before assuming a page should be private; treating league pages as private would have been a parity regression, not a hardening.
 - **A public variant renders for a null user and omits what is about a person.** `getDashboard(null)` does not query leagues at all rather than querying with a sentinel id, so there is no code path on which the public page can resolve someone else's team. Three tests assert it.
 - **The proxy still enumerates PUBLIC routes** (D45) even though most routes are public. Forgetting to list a public page makes it protected — visible and harmless. Enumerating protected routes instead means forgetting one exposes it silently.
 - 🔴 **§6.7's "8 across" and its two-line title clamp are in conflict**, and the E2E gate caught it at 1440px: eight columns leave each frame ~130px, too narrow for a 24-character title in two lines, so it clipped — the exact defect the redesign exists to fix. The roster grid now sizes columns by a **minimum readable width** (`auto-fill`, 10rem floor) rather than a fixed count. 375 and 768 passed the whole time, which is why the fixed rule looked correct.
@@ -306,8 +307,8 @@ its artwork on the board and is labelled Taken in the console.
   2025 108/108, 2026 116/117 match a snake; 2017–2022 do not, and their
   timestamps arrive in clumps that do not describe a live draft at all. The one
   2026 exception is a pick taken out of sequence — the "someone missed their
-  turn" case — which is why `nextSeatId` derives the turn as *the seats behind
-  this round, in snake order* rather than counting, and why the owner can
+  turn" case — which is why `nextSeatId` derives the turn as _the seats behind
+  this round, in snake order_ rather than counting, and why the owner can
   overrule it. `lib/services/draft-order.ts`.
 - 🔴 **A film may be taken once per group, not once per league.** Measured
   across all 1025 production picks: no film ever repeats inside a group, while
@@ -353,7 +354,7 @@ Plan: [`docs/superpowers/plans/2026-08-15-phase-7-parity-audit.md`](superpowers/
 🔴 **The unit of parity is the capability, not the endpoint.** D8 removed the
 HTTP layer, so an endpoint-for-endpoint audit would mark the whole application
 deficient while being true of nothing. Each endpoint, controller and page is
-reduced to what a person can *do*, and that carries the verdict.
+reduced to what a person can _do_, and that carries the verdict.
 
 🔴 **Three verdicts, no fourth.** ported / deficient / dropped. A capability
 that half works is deficient — a green row has to mean someone can be told
@@ -371,9 +372,9 @@ day.
 - [x] P7.T5 Write [`docs/PARITY.md`](PARITY.md)
 - [x] P7.T6 Decompose deficiencies into Phase 10 tasks — **P10.T1–T50**
 - [x] 🔴 **P7 Owner review of the matrix — approved 2026-08-15.** The owner
-  accepted the classifications and asked to revisit the matrix later in the
-  process rather than row-by-row now. **Cutover is still blocked while any row
-  is open** — approval was of the audit, not of shipping with 43 gaps.
+      accepted the classifications and asked to revisit the matrix later in the
+      process rather than row-by-row now. **Cutover is still blocked while any row
+      is open** — approval was of the audit, not of shipping with 43 gaps.
 
 **Result: 83 capabilities — 18 ported, 50 deficient, 15 dropped.**
 
@@ -385,7 +386,7 @@ day.
   covered, writes almost entirely are not.
 - 🔴 **Six writes on the live app have no authentication at all** — nominations
   and winners create/delete, `POST /movie`, `POST /years`. Those are the
-  *scoring inputs*, so anyone with curl can change every league's standings.
+  _scoring inputs_, so anyone with curl can change every league's standings.
   Verified: no global auth middleware exists (`server/index.js:81` mounts the
   router with only a rate limiter). The owner has decided the source stays
   untouched, so this is closed by P10.T28/T29 shipping admin-gated, and the
@@ -401,7 +402,7 @@ day.
   is already handled (D41); `award.pointsData` being an array in one query and
   an object in another is not, and Phase 10 must not "normalise" it blindly.
 - **39 of 71 endpoints have no captured fixture.** Where a task depends on a
-  response shape, capture it from Heroku *before* porting — the app is still
+  response shape, capture it from Heroku _before_ porting — the app is still
   running, and after cutover that evidence is gone.
 - **The audit did not cover** the websocket layer, TMDB/OMDb field-by-field
   shapes, or email. Named in `PARITY.md` so the gaps are known rather than
@@ -455,7 +456,7 @@ narrower than the matrix says.
 
 - 🔴 **Phase 9 inherits a test it must not break.** `award-actions.test.ts`
   asserts that correcting a winner moves the points from the old film to the
-  new one. It passes *by construction* today because scoring is computed on
+  new one. It passes _by construction_ today because scoring is computed on
   read (D41) — which is exactly why it was written now. The moment phase 9
   materializes totals, that test becomes the thing that catches a stale one.
 - 🔴 **`PLAN.md` was wrong about the recompute** and has been corrected: there
@@ -466,7 +467,7 @@ narrower than the matrix says.
   titles; Postgres's default of 0.6 would reject it, and transposition is the
   typo people make at speed. The value lives in the predicate, not a session
   GUC, because a pooled connection may not carry the `SET`.
-- 🔴 **TMDB is required and now configured locally.** `movies` is a *cache* of
+- 🔴 **TMDB is required and now configured locally.** `movies` is a _cache_ of
   TMDB, so without a key the app finds only films the league has already used —
   which makes drafting or nominating a new release impossible. Search asks TMDB
   on every query, deliberately: an earlier version only asked when local
@@ -476,15 +477,15 @@ narrower than the matrix says.
 - 🔴 **A season's films can be up to five years old, and the boost is graded**
   (D58). 96.5% of nominations are exactly one year before their season, but the
   tail is real and has a cause: shorts and foreign-language films carry a
-  festival or home-country date. *This Is Endometriosis* is a 2022 film
+  festival or home-country date. _This Is Endometriosis_ is a 2022 film
   nominated for Best Short Film in 2026. Verified against the corpus — the same
   partial query reorders correctly for the 2018, 2021 and 2026 seasons.
 - 🔴 **Never send the award year to TMDB.** An award season honours the
-  *previous* year's films: of the 2026 season's 526 nominations, **507 are 2025
+  _previous_ year's films: of the 2026 season's 526 nominations, **507 are 2025
   releases and 7 are 2026 releases**. An early version passed the season as
   `primary_release_year`, which hid 96% of the candidates — an admin entering
   nominations would have found nothing. The season belongs to ranking, where it
-  boosts the award year *and the year before*, and excludes nothing. Caught by
+  boosts the award year _and the year before_, and excludes nothing. Caught by
   the E2E test that nominates a real uncached film, not by a unit test.
 - 🔴 **`vitest.setup.ts` clears `TMDB_API_KEY`.** Supplying a real key turned
   nine existing tests into live network calls and broke one immediately; worse,
@@ -527,7 +528,7 @@ _Nothing outstanding._
 
 - ✅ **`TMDB_API_KEY` is set locally and in Vercel for every environment**
   (2026-08-15), and verified end to end: searching "wicked" returns cached
-  films first with TMDB filling the rest, and an admin nominated *Wicked City*
+  films first with TMDB filling the rest, and an admin nominated _Wicked City_
   — a real film absent from the restored data — straight from TMDB, with the
   row cached correctly.
 - **The parity matrix still needs review** (Phase 7 gate). Cutover is blocked
@@ -593,7 +594,7 @@ Go-live rehearsed on a scratch database: restore → `migrate resolve --applied
 rescore 5.0 ms, all 1,355 films 14.2 ms. Cost is **round trips, not
 arithmetic**, so volume is nearly free and an N+1 is the only real danger.
 `lib/services/scoring.batching.test.ts` counts queries rather than timing them
-and asserts a *constant* bound — cost must not grow with league size. **Any new
+and asserts a _constant_ bound — cost must not grow with league size. **Any new
 surface that shows a score adds a case there.**
 
 Plan: _not yet written_ — 7 tasks, see `docs/PLAN.md`
@@ -676,7 +677,7 @@ only route into the live page), T21, T31 and T32.
   A test that checks only the fields you did include cannot catch one you should
   not have.
 - 🔴 **`awards.points` is a foreign key into `points.id`**, not a point value,
-  and the category admin form is where that trap bites: writing a *value* there
+  and the category admin form is where that trap bites: writing a _value_ there
   scores "Performance by an Ensemble" as 1 instead of 5 and corrupts every total
   silently. The admin picks a tier; the column stores that row's id.
 - 🔴 **Deleting a category refuses rather than orphaning.** Orphaned nominations
@@ -707,18 +708,18 @@ and `/browse`, plus the watched mark that browse is built around. Closes
   GET and `ensureFilm` was one line away; on a public route that is unbounded
   insert traffic from crawlers, and it would fill `movies` with films nobody
   drafted — breaking the invariant that a row means somebody used it. Marking a
-  film watched *does* ingest, because that is a person pressing a button.
-- 🔴 **A "watchlist" here is films you have *watched*** (D64), read out of the
+  film watched _does_ ingest, because that is a person pressing a button.
+- 🔴 **A "watchlist" here is films you have _watched_** (D64), read out of the
   source rather than inferred from the table name: its button says "Mark as
   watched" and offers "Write a review" next. Getting this backwards would have
   shipped a feature that reads as the opposite of what it does.
 - 🔴 **Three bugs the browser found and no test could.** The film title painted
-  *behind* the backdrop (a positioned sibling beats a static one in paint order,
+  _behind_ the backdrop (a positioned sibling beats a static one in paint order,
   whatever the source order). `PointsLedger` keyed rows on `awardId`, but La La
   Land holds two 2017 Best Original Song nominations under award 75 — React
   dropped one, so the ledger's rows summed to less than the total above them,
   which is the exact failure its "total is the sum of lines" rule exists to
-  prevent. And TMDB's `/similar` answers La La Land with *The Tigger Movie*, so
+  prevent. And TMDB's `/similar` answers La La Land with _The Tigger Movie_, so
   similar films now come from `/recommendations`.
 - 🔴 **Browse's past and future sides are two different queries**, not one sort
   reversed. The past side keeps the source's `vote_count >= 200` floor; the
@@ -776,7 +777,7 @@ are each a test that fails if reintroduced.
 
 - 🔴 **Joining is an explicit act, never a page load.** The first version
   joined during the render of `/join/[uuid]`; Next rejects a mutation during
-  render outright, and it would also have meant that anything *fetching* the
+  render outright, and it would also have meant that anything _fetching_ the
   URL joins — a Slack unfurl, an iMessage preview, a prefetch. Pasting an
   invite into a group chat would have seated the sender before anyone clicked.
 - 🔴 **The invite page names the league before asking anyone to register.**
@@ -799,7 +800,7 @@ are each a test that fails if reintroduced.
   URL shows a login page. Fixing it would mean a public catch-all, which is the
   fail-open behaviour D45 exists to prevent. Tested as the intended behaviour
   rather than papered over.
-- **`ErrorPanel` takes a *kind*, never a message.** The source app returned
+- **`ErrorPanel` takes a _kind_, never a message.** The source app returned
   Postgres errors verbatim, leaking SQL and column names on every error path;
   here the leak is impossible by construction.
 
@@ -814,13 +815,13 @@ comes first.
 **23 of 50 done** — T1, T5–T9, T11–T19, T22–T24, T28–T30, T34, T50.
 Remaining, grouped as the plan batches them:
 
-| Batch | Tasks | What it is |
-|---|---|---|
-| **E** — personal | T20, T33, T35–T42 | The draft list, the watched-films page and its three progress views, reviews, profiles and feeds |
-| **F** — season surfaces | T2, T3, T4, T10 | Films in cinemas, the live banner, the season leaderboard, league standings |
+| Batch                       | Tasks             | What it is                                                                                                 |
+| --------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| **E** — personal            | T20, T33, T35–T42 | The draft list, the watched-films page and its three progress views, reviews, profiles and feeds           |
+| **F** — season surfaces     | T2, T3, T4, T10   | Films in cinemas, the live banner, the season leaderboard, league standings                                |
 | **G** — admin and reference | T26, T27, T43–T49 | Show and category admin, notifications, the rules and scoring pages, the active-season and relink controls |
-| **H** — the calendar feed | T25 | `/api/ical/[...slug]` |
-| **Phase 14** | T21, T31, T32 | Realtime. Deferred by D23 and not on the cutover path |
+| **H** — the calendar feed   | T25               | `/api/ical/[...slug]`                                                                                      |
+| **Phase 14**                | T21, T31, T32     | Realtime. Deferred by D23 and not on the cutover path                                                      |
 
 - [x] **P10.T1** Join a league from an invite link — _batch B_
 - [x] **P10.T2** Films in cinemas now — _batch F_
@@ -874,7 +875,6 @@ Remaining, grouped as the plan batches them:
 - [x] **P10.T50** A 500 page — _batch A_
 - [x] **Phase 10 complete.** Every row closed except the four Phase 14 deferrals — T3, T21, T31 and T32. `PARITY.md` reads **65 ported / 4 deficient / 15 dropped = 84**.
 
-
 ---
 
 ## Phase 3.5 — Design system refinement + Storybook
@@ -910,20 +910,20 @@ code at the close of Phase 3.5, not copied from the spec.
   `plugins: ["@tailwindcss/postcss"]`; Vite's `postcss-load-config` rejects it.
 - `.storybook/preview` must be **`.tsx`, never `.ts`** — the `.ts` extension is
   a documented cause of `Cannot read properties of undefined (reading
-  'className')` with `next/font`.
+'className')` with `next/font`.
 - Fonts reach `<html>` from a **decorator** importing `theme/fonts.ts`, applied
   to `document.documentElement`. Storybook never renders the root layout, and
   calling a `next/font` loader a second time inside `preview.tsx` breaks.
 - 🔴 **Do not set `NEXT_FONT_GOOGLE_MOCKED_RESPONSES` in CI.** Turbopack has no
   fallback for a mocked-response miss: an empty map fails every font with
   `Module not found: Can't resolve
-  '@vercel/turbopack-next/internal/font/google/cssmodule.module.css'` and
+'@vercel/turbopack-next/internal/font/google/cssmodule.module.css'` and
   `url not found`. Only a map containing the exact CSS-API URL of every
   requested family works, and those URLs change with any font option. CI
   fetches from Google Fonts like every other build; the loader already retries
   three times.
 - Drive MUI's `setMode()` from a toolbar global (`.storybook/SyncMode.tsx`).
-  Never `withThemeByDataAttribute`: MUI *owns* `data-mui-color-scheme`, and an
+  Never `withThemeByDataAttribute`: MUI _owns_ `data-mui-color-scheme`, and an
   addon writing it makes `useColorScheme()` stale and `localStorage['mui-mode']`
   wrong.
 - `forceThemeRerender` is required on `ThemeProvider`; with `cssVariables: true`
@@ -931,7 +931,7 @@ code at the close of Phase 3.5, not copied from the spec.
 - Two more, and the second is the one that costs time: `app/globals.css` must be
   the **first** import in `preview.tsx`, because `@layer` order is fixed by first
   declaration — and **Storybook injects its own preview styles un-layered, which
-  outranks every layered rule.** If a story looks wrong *only* in Storybook,
+  outranks every layered rule.** If a story looks wrong _only_ in Storybook,
   suspect that before suspecting the component.
 
 **Primitive contracts — the traps, not the API**
@@ -952,13 +952,13 @@ code at the close of Phase 3.5, not copied from the spec.
 
 **Tokens and type**
 
-- **Token *names* did not change; values did** (D77). The spec says
+- **Token _names_ did not change; values did** (D77). The spec says
   `bg.void` / `bg.panel`; the code says `bg.base` / `bg.surface`. Translate.
 - **`brass.contrast` differs per scheme** — `#241C05` on dark, `#FFFFFF` on
-  light. Dark ink on *light* brass is 2.65:1 and fails, so this is a **token
+  light. Dark ink on _light_ brass is 2.65:1 and fails, so this is a **token
   pair, not a component branch**; D15's "no component branches on theme" holds
   because the pair does the work.
-- **Serif renders proper nouns only** (D70), and it is a *semantic* rule, not a
+- **Serif renders proper nouns only** (D70), and it is a _semantic_ rule, not a
   dimensional one — which is what makes a single-weight face safe. A name that
   must be set below 15px renders in Archivo. That is the only exception.
 - **`--font-serif` and `--font-mono` are Tailwind's own theme keys.** A
@@ -1133,7 +1133,7 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 
 - 🔴 **T11 starts with five red e2e specs, and that is the plan's own sequencing.**
   `season-setup`, `draft`, `leagues`, `dashboard` and `award-shows` gate on the
-  *Playwright process* holding Clerk keys, but after T10 the *server* has none.
+  _Playwright process_ holding Clerk keys, but after T10 the _server_ has none.
   T11 converts them to `signInAs`. `npm run test:e2e` is not green until it lands.
 
 - 🔴 **Owner: confirm `E2E_TEST_AUTH` is absent from every Vercel environment.**
@@ -1169,7 +1169,7 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - ✅ **"The future" was empty, and T9 fixed it — but not the way the plan said.**
   The plan's cause (re-releases matching `release_date.gte`) was real and is
   fixed with `primary_release_date`. It was not why the page was empty. Measured
-  against the live API: sorting by date ascending returns *today's* long tail
+  against the live API: sorting by date ascending returns _today's_ long tail
   first — on pages 1 and 3, **none** of the twenty films cleared any usable
   quality floor, so every one was dropped client-side and the shelf rendered
   "Nothing is scheduled" under a counter claiming 71 pages.
@@ -1183,7 +1183,7 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
   - **Future popularity floor: 5, not 25.** TMDB's popularity scale for
     unreleased films is an order of magnitude below the plan's assumption — the
     whole upcoming slate ran 236, 42, 42, 26, 26, 20, 18, … and was under 8 by
-    rank 21, with *Whalefall*, *Wildwood* and *Shaun the Sheep* sitting there. A
+    rank 21, with _Whalefall_, _Wildwood_ and _Shaun the Sheep_ sitting there. A
     floor of 25 would have kept five films and cut real studio releases.
 
   `e2e/browse.spec.ts`'s "months reverse when looking forward" is green again;
@@ -1211,7 +1211,7 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
   had never run there: no `pg_trgm`, no `movies_title_trgm` index, and
   `nominations.year` still the wrong type. That is why the search panel 500s on
   `next.cinemadraft.com` with `function word_similarity(unknown, text) does not
-  exist` while it works against local Docker — the defect predates P15.T3,
+exist` while it works against local Docker — the defect predates P15.T3,
   which only made the failing query reachable from every page instead of the
   draft console alone.
 

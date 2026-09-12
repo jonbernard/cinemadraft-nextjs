@@ -31,6 +31,11 @@ const isPublic = createRouteMatcher([
   '/tokens',
   '/auth/(.*)',
   '/api/webhooks/(.*)',
+  // 🔴 Public for the same reason as the webhook: it authenticates by shared
+  // secret, not by session, because the caller is a script and has none. It
+  // reads nothing and writes nothing — it only asks four pages to re-render.
+  // See app/api/revalidate/route.ts.
+  '/api/revalidate',
   // 🔴 League pages, deliberately (D44/D45). The source app never guarded
   // them, and the link people paste into a group chat has to open for whoever
   // taps it. Signing in only marks the viewer's own seat.
