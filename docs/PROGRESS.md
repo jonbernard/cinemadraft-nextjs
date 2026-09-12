@@ -1067,11 +1067,46 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 - [x] P15.T7 — `/browse` auto-append (D80) — _landed in `41405b0`, not its own commit; see the note below_
 - [x] P15.T8 — `/browse` header photo
 - [x] P15.T9 — the discover query: future returns pre-release films only, and the quality floors move server-side
-- [ ] P15.T10 — 🔴 test-only auth cookie (D82) — security-bearing, reviewer pass
+- [x] P15.T10 — 🔴 test-only auth cookie (D82) — security-bearing, reviewer pass **done** (`05e2a4c` + `1ab3702`)
 - [ ] P15.T11 — E2E: the league lifecycle, nominations, winners, points
 - [ ] P15.T12 — group randomisation ceremony
 
 ### Phase 15 notes
+
+- 🔴 **T11 starts with five red e2e specs, and that is the plan's own sequencing.**
+  `season-setup`, `draft`, `leagues`, `dashboard` and `award-shows` gate on the
+  *Playwright process* holding Clerk keys, but after T10 the *server* has none.
+  T11 converts them to `signInAs`. `npm run test:e2e` is not green until it lands.
+
+- 🔴 **Owner: confirm `E2E_TEST_AUTH` is absent from every Vercel environment.**
+  Neither the implementer nor the reviewer could run `vercel env ls` — this
+  working copy is not linked (`.vercel/` holds only `repo.json`). It is absent
+  from `.env`, `.env.local`, the repo and `ci.yml`. Setting it on a deployed
+  environment together with a 32-character secret is the one configuration that
+  would matter, and the import-time throw only catches it while Vercel's
+  **"Enable access to System Environment Variables"** checkbox is on.
+
+- **T10's security review: four properties CONFIRMED, five findings, all closed
+  in `1ab3702`.** The two that mattered:
+
+  - **The e2e server was LAN-reachable and signed with a secret committed to the
+    repo.** `playwright.config.mts` held `'local-e2e-secret-at-least-32-chars'`,
+    `next start` binds `0.0.0.0`, and under the flag the proxy is a pass-through
+    with no route protection — so while a local e2e server was up, anyone on the
+    network could sign a cookie and be any user, admin included, against the
+    restored production copy. Now a per-run `randomBytes(32)` secret and a
+    `-H 127.0.0.1` bind. **Consequence for local runs:** a server left over from
+    an earlier run holds that run's secret, so reuse now fails as "not signed
+    in" — kill whatever is on port 3000.
+  - **"Impossible on Vercel" rested entirely on `VERCEL_ENV`**, which is behind a
+    project checkbox; with it off the guard is inert, and `VERCEL`/`VERCEL_URL`
+    share the same toggle. `testSessionUserId` now also requires a loopback
+    `Host`, which no dashboard setting controls. The import-time throw stays as
+    defence in depth.
+
+  Also closed: `proxy.ts` had no test at all despite being the file that drops
+  route protection; two guards in `test-auth.ts` survived deletion untested; and
+  `sign()` would HMAC with an empty key. Every new test was mutation-checked.
 
 - ✅ **"The future" was empty, and T9 fixed it — but not the way the plan said.**
   The plan's cause (re-releases matching `release_date.gte`) was real and is
