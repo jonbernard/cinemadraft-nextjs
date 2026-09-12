@@ -1305,6 +1305,28 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 - [x] P17.T35 — brass means an **award outcome only**; the review's "320 instances on the draft board" does not reproduce (570 elements, every one of them the word `Won`, from one source site rendered twice per seat). **P18.T6 and T21 unblocked.** Method and numbers in the Phase 17 notes below; 🔴 T26 owes it a D-row in the D85+ block
 - [x] P17.T36 — `/list` has three left edges (445 / 469 / 493). Re-measured at 1440px before touching anything and the review's numbers reproduce exactly: heading 445, search field 469, empty state 493. The middle edge was a `Panel` wrapping the whole page body at the same `surface` tone as `AppShell`'s content panel — invisible, worth only a 24px gutter. Deleted; heading and field now both sit at 445. Audited the other single-column pages at 1440px: `/leagues` h1 445, `/admin` h1 445 / first card 445, `/leagues/new` h1 573 / first field 573, `/members/[uuid]` column 445 — all aligned. 🔴 `/watchlist` measured and left alone (h1 x=381)
 
+- [ ] P17.T37 — 🔴 **`/members/[uuid]` becomes public, with initials for a
+  signed-out reader.** Owner's decision 2026-09-12, after the PII audit it
+  asked for. The DTO is already clean — `ProfileMember` is uuid, name, image,
+  memberSince, and its own comment records that the source's public projection
+  carried no email. **The avatar is the leak.** 51 of 60 members carry Gravatar
+  URLs whose path is `MD5(email)`: `s.gravatar.com/avatar/b1354…` publishes a
+  weak hash of the address, so a stranger can confirm a guessed email against a
+  member, and common addresses fall to published tables. 4 are Google-hosted
+  (no email), 5 null.
+
+  So: render initials — the fallback `Avatar` already has — when there is no
+  session, and only then. Members still see each other's faces. Also needs
+  `requireUser()` → `getCurrentUser()` with the composer and delete gated on a
+  null viewer, `/members/(.*)` added to `proxy.ts` (`proxy.test.ts` pins that
+  list verbatim), and `robots: index:false` **kept** — public so a pasted link
+  opens, not discoverable, exactly like a league page.
+
+  🔴 Re-hosting the images or taking them from Clerk would remove the hash for
+  everyone rather than only for strangers, and is the better long-term answer;
+  those 51 URLs are legacy Auth0 data and Clerk owns identity now. That is a
+  migration, not this task.
+
 ### Recording the decisions
 
 - 🔴 **The league page IS the member index — decided by the owner 2026-09-12,
