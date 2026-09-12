@@ -286,7 +286,7 @@ flag, so nothing else has to change, and until it flips the nav cannot link to a
 
 **Gate:** every row in `PARITY.md` closed; E2E green per feature.
 
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
 
 ---
 
@@ -324,7 +324,7 @@ are recorded as vacuous rather than dropped silently.
 **Gate:** images render through `next/image`; the logos are served from Blob;
 no `noImgElement` ignore remains.
 
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
 
 ---
 
@@ -361,7 +361,7 @@ reproducible today on the Development instance.
 **Gate:** every defect above verified fixed in a browser at 1440px and 390px in
 both schemes; `npm run verify` green; the new E2E specs green in CI.
 
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
 
 ---
 
@@ -484,7 +484,7 @@ in both schemes; `npm run verify` green; the type/colour measurements in
 T18–T25 re-run and recorded in `PROGRESS.md` so the change is a number, not an
 impression.
 
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
 
 ---
 
@@ -555,7 +555,7 @@ audit, and it is still the last thing that happens.
 
 **Gate:** full manual pass with zero blocking defects; free-tier headroom confirmed sufficient.
 
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
 
 ---
 
@@ -605,7 +605,7 @@ audit, and it is still the last thing that happens.
 
 **Gate:** site live on Vercel; Heroku scaled to zero.
 
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
 
 ---
 
@@ -630,7 +630,7 @@ Replaces the polling fallback (D13).
 
 **Gate:** live event works end to end with two concurrent clients.
 
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
 
 ---
 
@@ -648,4 +648,4 @@ Per §7, all post-cutover.
 
 **Gate:** per-feature E2E green.
 
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
