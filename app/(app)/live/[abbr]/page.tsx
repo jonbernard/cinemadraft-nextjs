@@ -1,0 +1,188 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+
+import { EmptyState } from '@/components/EmptyState';
+import { LiveCountdown } from '@/components/LiveCountdown';
+import { Panel } from '@/components/Panel';
+import { SectionHead } from '@/components/SectionHead';
+import { ShowLogo } from '@/components/ShowLogo';
+import { StatusChip } from '@/components/StatusChip';
+import { getCurrentUser } from '@/lib/auth';
+import { NotFoundError } from '@/lib/errors';
+import { canonical } from '@/lib/seo';
+import { getAwardShow } from '@/lib/services/award-show';
+import { getLiveShow } from '@/lib/services/live';
+import { getActiveYear } from '@/lib/services/season';
+
+/** `?year=` or the active season, resolved the way `/award-shows/[abbr]` does. */
+async function season(year: string | string[] | undefined): Promise<number> {
+  const requested = Number(year);
+  return Number.isSafeInteger(requested) && requested > 0
+    ? requested
+    : await getActiveYear();
+}
+
+/**
+ * A title and a canonical, because the route is public now (P17.T16). The
+ * canonical drops `?year=`, the same way `/award-shows/[abbr]` does — twelve
+ * shows times ten seasons is 120 URLs for one page otherwise.
+ *
+ * 🔴 Deliberately NOT added to `app/sitemap.ts`. Public and crawlable are
+ * different questions: this page is a thing you open during the two hours a
+ * show is on air, and the twelve URLs it would add are all `/award-shows`
+ * duplicates the rest of the year. Leave the sitemap alone.
+ */
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProps<'/live/[abbr]'>): Promise<Metadata> {
+  const { abbr } = await params;
+  const { year } = await searchParams;
+  const requested = await season(year);
+
+  try {
+    const show = await getAwardShow(abbr, requested);
+    return {
+      title: `${show.name} ${requested}, live`,
+      alternates: { canonical: canonical(`/live/${abbr}`) },
+    };
+  } catch {
+    return { title: 'Not here' };
+  }
+}
+
+/**
+ * One award show as it happens (P17.T16).
+ *
+ * 🔴 **Public, by the owner's ruling, which amends D40.** A stranger handed the
+ * link during a ceremony has to be able to watch — that is the whole reason the
+ * route exists. `proxy.ts` carries the matching entry and the reasoning; what
+ * this file owes is that everything on it is right for a reader with no
+ * session. The session is resolved once and the only thing it changes is which
+ * invitation renders where a member's roster goes.
+ *
+ * 🔴 **No transport (D23 stays deferred).** This does not close P14.T0–T3: the
+ * page renders the state at request time and a reload is what advances it.
+ */
+export default async function LivePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ abbr: string }>;
+  searchParams: Promise<{ year?: string }>;
+}) {
+  const { abbr } = await params;
+  const { year } = await searchParams;
+  const requested = await season(year);
+
+  // 🔴 `getCurrentUser()`, not Clerk's `auth()`, which throws when
+  // `clerkMiddleware` is absent — and under `E2E_TEST_AUTH` it is (D82/D84).
+  // The same call `/films/[tmdbId]` makes, for the same reason.
+  const user = await getCurrentUser();
+
+  let show: Awaited<ReturnType<typeof getLiveShow>>;
+  try {
+    show = await getLiveShow(abbr, requested, user?.id ?? null);
+  } catch (error) {
+    if (error instanceof NotFoundError) notFound();
+    throw error;
+  }
+
+  return (
+    <div className="mx-auto flex max-w-5xl flex-col gap-8">
+      <header className="flex flex-col gap-3">
+        {/* 🔴 `Panel`, not `CinemaFrame`, and the plan asked for this to be
+            measured rather than assumed. `CinemaFrame` is `aspect-ratio:
+            2.39/1` with `overflow-hidden`, which is right for the film page's
+            backdrop — an image that fills it. This header is a 96px mark and a
+            heading, and measured in a production build the box came out
+            **1024 × 428 holding 53px of content at 1440px: 376px of empty
+            frame** pushing the countdown and the first category below the
+            fold. At 390px it is 358 × 150 holding 117px, so a show whose name
+            runs to a fourth line clips inside `overflow-hidden` with no
+            warning. The surface table is guidance; a 376px void and a
+            clipping ceiling are not what it was guiding towards. */}
+        <Panel as="div" className="flex items-start gap-4 p-4">
+          <ShowLogo imageUrl={show.imageUrl} size="lg" />
+          <SectionHead
+            as="h1"
+            name
+            eyebrow={show.abbreviation}
+            right={String(show.year)}
+            className="pb-0"
+          >
+            {show.name}
+          </SectionHead>
+        </Panel>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* 🔴 Carmine, not brass. Brass means "drafted" in 320 places on the
+              draft board (P17.T35) and its meaning is not settled; carmine is
+              urgency, which a broadcast in progress is. */}
+          {show.onAir ? <StatusChip tone="carmine">Live</StatusChip> : null}
+          <LiveCountdown startsAt={show.startsAt} />
+        </div>
+      </header>
+
+      <section className="flex flex-col gap-3">
+        <SectionHead as="h2" right={`${show.resolved} of ${show.total}`} className="pb-0">
+          Categories
+        </SectionHead>
+
+        {show.total === 0 ? (
+          <EmptyState title="No categories yet">
+            Nothing has been entered for this show and season.
+          </EmptyState>
+        ) : (
+          <ol className="flex flex-col gap-3">
+            {show.categories.map((category) => (
+              <li key={category.awardId} className="flex flex-col gap-2">
+                <SectionHead as="h3" right={`${category.points} pts`} className="pb-0">
+                  {category.name}
+                </SectionHead>
+                {category.winner ? (
+                  // Brass here IS an award, which is its existing meaning —
+                  // the same usage as `PointsLedger.tsx:111`.
+                  <StatusChip tone="brass" className="w-fit">
+                    {category.winner.title}
+                  </StatusChip>
+                ) : (
+                  <StatusChip className="w-fit">
+                    {category.nomineeCount}{' '}
+                    {category.nomineeCount === 1 ? 'nominee' : 'nominees'}
+                  </StatusChip>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      {/* 🔴 Two empty states, not one, because the page is public (P17.T16,
+          amending D40). A signed-out reader must never be offered "Find a
+          league": `/leagues` is protected, so that link is a login page
+          wearing a league's name. They get the same invitation `/` gives a
+          stranger, in the same words, for the same reason (D44).
+
+          P17.T16b puts <LiveBoard> above this; the branch itself does not
+          change. */}
+      {user == null ? (
+        <EmptyState
+          title="Play the season"
+          action={{ label: 'Register', href: '/auth/register' }}
+        >
+          Draft a team of films before awards season and score points as they pick up
+          nominations and wins. Played before? Register with the same email and your
+          leagues, drafts and points come with you.
+        </EmptyState>
+      ) : (
+        <EmptyState
+          title="No league yet"
+          action={{ label: 'Find a league', href: '/leagues' }}
+        >
+          Join a league to draft a team and watch it score as this show resolves.
+        </EmptyState>
+      )}
+    </div>
+  );
+}

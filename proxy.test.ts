@@ -71,6 +71,10 @@ describe('proxy', () => {
       '/browse',
       '/join/(.*)',
       '/rules-and-scoring',
+      // 🔴 Public by the owner's ruling, which narrowly amends D40 (P17.T16).
+      // The mechanism is unchanged — this list still enumerates the public and a
+      // page under `(app)` is still protected by default.
+      '/live/(.*)',
       '/robots.txt',
       '/sitemap.xml',
       '/opengraph-image',

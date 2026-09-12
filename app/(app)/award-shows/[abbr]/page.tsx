@@ -121,6 +121,24 @@ export default async function AwardShowPage({
             {show.categories.length === 1 ? 'category' : 'categories'}
           </p>
 
+          {/* The live surface, while the ceremony is on air. No session gate:
+              `/live/[abbr]` is public (P17.T16, amending D40), and a stranger
+              handed this link during a ceremony being able to follow it is the
+              whole point of the route.
+
+              🔴 `needsWinners` is `events.awards_active` — the source's own
+              flag for "the winners are being worked on", i.e. the broadcast
+              window. The prop name reads admin-ish because that is the only
+              thing it fed until now; it is the right column. */}
+          {show.needsWinners ? (
+            <Link
+              href={`/live/${show.abbreviation}?year=${show.year}`}
+              className="text-accent-text hover:text-text-primary focus-visible:outline-accent-fill w-fit text-sm focus-visible:outline-2"
+            >
+              Follow live →
+            </Link>
+          ) : null}
+
           {seasons.length > 1 ? (
             <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
               {seasons.map((entry) => (

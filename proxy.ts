@@ -84,6 +84,21 @@ const isPublic = createRouteMatcher([
   // here anyway: until that lands, a redirect source that is protected and a
   // redirect target that is public is the worst of both.
   '/rules-and-scoring',
+  // 🔴 The live surface, public by the owner's ruling (P17.T16). A stranger
+  // handed the link during a ceremony has to be able to watch — that is the
+  // whole reason the route exists, and a sign-in wall at the product's second
+  // peak moment is the mistake D44 exists to prevent on `/`.
+  //
+  // 🔴 This is a narrow amendment to D40. The mechanism is unchanged: the list
+  // still enumerates PUBLIC routes, a page under `(app)` is still protected by
+  // default, and forgetting one still fails closed. This is one deliberate
+  // addition to the list, the same shape as the entries above it.
+  //
+  // Safe for the same reason `/` is: `getLiveShow(abbr, year, null)` does not
+  // query leagues rather than querying with a sentinel, so there is no code
+  // path on which an anonymous reader resolves somebody else's team. The page
+  // never writes.
+  '/live/(.*)',
   // 🔴 Crawler and scraper endpoints, which are useless behind a redirect: a
   // bot asking for robots.txt or a sitemap gets a 307 to the login page, and a
   // scraper building a link preview gets one for the share card. All three are
