@@ -1,5 +1,6 @@
-import { clerkSetup, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, type Page, test } from '@playwright/test';
+
+import { signInAs } from './support/session';
 
 /**
  * 🔴 The Phase 6 gate: the owner can run a draft, and nobody else can touch it.
@@ -16,10 +17,6 @@ import { expect, type Page, test } from '@playwright/test';
 const TAG = 'e2e-draft';
 const YEAR = 2996;
 const FILMS = [`${TAG} Alpha`, `${TAG} Bravo`, `${TAG} Charlie`];
-
-const hasClerk = Boolean(
-  process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-);
 
 /**
  * Raw `pg` rather than the Prisma client: Playwright does not resolve the
@@ -53,44 +50,24 @@ async function cleanup(): Promise<void> {
     );
     await query('delete from leagues where name like $1', [`${TAG}%`]);
     await query('delete from movies where title like $1', [`${TAG}%`]);
-    // Scoped to this spec's own prefix — the other specs sign up in parallel,
-    // and a blanket delete takes their identities mid-flow.
-    await query("delete from users where email like 'e2e_draft_%+clerk_test@%'");
+    // Scoped to this spec's own prefix — the other specs seed identities of
+    // their own, and a blanket delete takes one of them mid-flow.
+    await query(`delete from users where email like '${TAG}-%@example.test'`);
   });
 }
 
 /**
- * Sign up a throwaway identity and build it a league to run.
+ * Seat a throwaway identity and build it a league to run.
  *
- * The uniqueness goes BEFORE the `+`, because the subaddress must be exactly
- * `clerk_test` for Clerk to treat this as a test address.
+ * The session is the signed test cookie rather than a Clerk sign-up (D82/D84):
+ * the app under test boots with no Clerk at all, and what this spec is about is
+ * the console, not the door.
  */
 async function signInAsOwner(page: Page): Promise<{ leagueId: number }> {
-  await setupClerkTestingToken({ page });
-  const address = `e2e_draft_${Date.now()}+clerk_test@example.com`;
-
-  await page.goto('/auth/register');
-  await page.getByLabel(/email address/i).fill(address);
-
-  // Wait for the code to be SENT before entering one — the OTP field submits
-  // as soon as it is full, and filling it early races prepare_verification.
-  const codeSent = page.waitForResponse(
-    (response) => response.url().includes('prepare_verification') && response.ok(),
-    { timeout: 20_000 },
-  );
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await codeSent;
-
-  await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
+  const address = `${TAG}-${Date.now()}-${Math.floor(performance.now())}@example.test`;
+  const ownerId = await signInAs(page, { email: address, firstName: 'Owner' });
 
   return withDb(async (query) => {
-    const users = (await query('select id from users where email = $1', [address])) as {
-      id: number;
-    }[];
-    const ownerId = users[0]?.id;
-    if (!ownerId) throw new Error('sign-up did not provision an account');
-
     const leagues = (await query(
       `insert into leagues (name, owner, uuid, drafting_status, created_at, updated_at)
          values ($1, $2, gen_random_uuid(), 'active', now(), now())
@@ -138,18 +115,13 @@ async function picksInLeague(leagueId: number) {
 }
 
 test.describe('draft', () => {
-  test.skip(!hasClerk, 'Clerk keys not configured');
-
-  // Serial, not parallel. Each test signs up its own identity and `afterEach`
-  // clears every `+clerk_test` account — run side by side, one test's cleanup
-  // deletes another's account mid-flight, and the failure looks like a broken
-  // sign-up flow rather than a fixture racing itself.
+  // Serial, not parallel. Each test seats its own identity and `afterEach`
+  // clears every account and league matching this spec's tag — run side by
+  // side, one test's cleanup deletes another's league mid-flight, and the
+  // failure looks like a broken console rather than a fixture racing itself.
   test.describe.configure({ mode: 'serial' });
 
-  test.beforeAll(async () => {
-    await clerkSetup();
-    await cleanup();
-  });
+  test.beforeAll(cleanup);
 
   test.afterEach(cleanup);
 

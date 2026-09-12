@@ -23,7 +23,11 @@ test.describe('points ledger', () => {
 
     // League 1's 2025 season drafts in four groups, so the page renders four
     // boards. The first is enough — they share a component.
-    const board = page.getByRole('table').first();
+    //
+    // 🔴 Named, not `getByRole('table').first()`: the league page puts the
+    // standings above the boards (P10.T10) and that is a table too, so the
+    // unnamed locator resolved to a table with no ledgers in it at all.
+    const board = page.getByRole('table', { name: /Draft board/i }).first();
     await expect(board).toBeVisible();
 
     // The first pick that actually scored something — a zero-point film has
@@ -55,7 +59,11 @@ test.describe('points ledger', () => {
     // the keyboard path is actually proven.
     await page.goto(`/leagues/${LEAGUE}?year=${YEAR}`);
 
-    const ledger = page.getByRole('table').first().getByRole('group').first();
+    const ledger = page
+      .getByRole('table', { name: /Draft board/i })
+      .first()
+      .getByRole('group')
+      .first();
     await ledger.locator('summary').focus();
     await page.keyboard.press('Enter');
 
@@ -65,7 +73,7 @@ test.describe('points ledger', () => {
   test('a win is named, not just coloured', async ({ page }) => {
     await page.goto(`/leagues/${LEAGUE}?year=${YEAR}`);
 
-    const board = page.getByRole('table').first();
+    const board = page.getByRole('table', { name: /Draft board/i }).first();
     // Open several ledgers; some film in a league's season has won something.
     const expanders = board.getByRole('group');
     const count = Math.min(await expanders.count(), 8);
@@ -73,6 +81,10 @@ test.describe('points ledger', () => {
       await expanders.nth(index).locator('summary').click();
     }
 
-    await expect(board.getByText('· won').first()).toBeVisible();
+    // 🔴 The word, wherever it is rendered. `PointsLedger` now names a win with
+    // a `StatusChip` reading "Won" rather than the "· won" suffix this
+    // originally matched — the assertion is that the fact is in the text at
+    // all, so it follows the wording rather than pinning the punctuation.
+    await expect(board.getByText('Won', { exact: true }).first()).toBeVisible();
   });
 });

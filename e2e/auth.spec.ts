@@ -14,15 +14,25 @@ import { expect, test } from '@playwright/test';
  * no mail. `setupClerkTestingToken` bypasses bot protection, which would
  * otherwise fail the run on a fresh browser.
  *
- * Skipped when Clerk keys are absent, so a checkout without secrets can still
- * run the suite.
+ * 🔴 **Skipped whenever the app under test boots without Clerk** (D82/D84), not
+ * merely when this process lacks keys. Since P15.T10 the suite's own server
+ * runs under `E2E_TEST_AUTH`, where `proxy.ts` installs a pass-through and
+ * `app/providers.tsx` mounts no `ClerkProvider` — there is no widget on the
+ * page for these tests to drive, and holding keys in *this* process changes
+ * nothing about that. `playwright.config.mts` puts the test session's signing
+ * secret in this environment, which is the signal: it is set for exactly the
+ * runs whose server has no Clerk.
+ *
+ * To run this spec, start a server with `E2E_TEST_AUTH` unset and real Clerk
+ * keys, and point Playwright at it.
  */
 const hasClerk = Boolean(
   process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
 );
+const appHasClerk = hasClerk && !process.env.E2E_TEST_AUTH_SECRET;
 
 test.describe('auth', () => {
-  test.skip(!hasClerk, 'Clerk keys not configured');
+  test.skip(!appHasClerk, 'the app under test boots without Clerk (D84)');
 
   test.beforeAll(async () => {
     await clerkSetup();

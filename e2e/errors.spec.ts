@@ -13,6 +13,17 @@ test.describe('failure surfaces', () => {
   test('🔴 an unmatched URL sends a logged-out visitor to log in, by design', async ({
     page,
   }) => {
+    // 🔴 Skipped whenever the suite's own server is the one under test. Under
+    // `E2E_TEST_AUTH` (D82/D84) `proxy.ts` installs a pass-through with no
+    // route protection at all, so there is no redirect to observe — the
+    // behaviour below is a property of the real proxy, and asserting it
+    // against the test-session build would only prove the build is not it.
+    // The secret is set by `playwright.config.mts` for exactly those runs.
+    test.skip(
+      Boolean(process.env.E2E_TEST_AUTH_SECRET),
+      'the app under test runs a pass-through proxy (D84)',
+    );
+
     // Not a 404, and deliberately so. The proxy enumerates PUBLIC routes and
     // protects everything else (D45), so a path matching no page is protected
     // like any other unknown path — which is what makes forgetting to list a

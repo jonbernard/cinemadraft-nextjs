@@ -1,5 +1,6 @@
-import { clerkSetup, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, type Page, test } from '@playwright/test';
+
+import { signInAs } from './support/session';
 
 /**
  * 🔴 The Phase 5 gate from `docs/PLAN.md`:
@@ -20,10 +21,6 @@ import { expect, type Page, test } from '@playwright/test';
 /** A real restored account with a 2026 roster in league 1. Referenced by id. */
 const MEMBER_ID = 6;
 
-const hasClerk = Boolean(
-  process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-);
-
 /**
  * Raw `pg` rather than the Prisma client: Playwright does not resolve the
  * `@/` alias into `generated/prisma`, so importing `lib/db` fails at require
@@ -42,18 +39,6 @@ async function withDb<T>(
   }
 }
 
-/**
- * Sign up a throwaway Clerk identity, then attach it to a real restored
- * account.
- *
- * This is the only honest way to see the signed-in dashboard: a fresh sign-up
- * has no leagues, so it would only ever exercise the empty state. Moving the
- * identity onto a real row is what the admin relink path does in production
- * (P4.T8), and it is undone in `afterAll`.
- *
- * The uniqueness goes BEFORE the `+`, because the subaddress must be exactly
- * `clerk_test` for Clerk to treat this as a test address.
- */
 /**
  * The longest title on this member's roster, read from the database.
  *
@@ -78,61 +63,36 @@ async function longestRosterTitle(): Promise<string> {
   });
 }
 
+/**
+ * Sign in **as** the restored member, rather than as a throwaway identity
+ * relinked onto them.
+ *
+ * 🔴 This spec has to see a real roster: a fresh account has no leagues, so it
+ * would only ever exercise the empty state and the truncation assertions below
+ * would have nothing to measure. Under Clerk that meant signing up, then moving
+ * the new `clerk_id` onto row 6 and undoing it afterwards — a write into the
+ * restored data for the sake of reading it. The test session takes the row as
+ * it is (D82/D84): nothing about user 6 changes, so there is nothing to put
+ * back, and the spec can no longer leave a test identity attached to a real
+ * person if it fails halfway.
+ *
+ * The address is read from the row rather than written here — it belongs to a
+ * real person and does not go in a source file.
+ */
 async function signInAsMember(page: Page): Promise<void> {
-  await setupClerkTestingToken({ page });
-  const address = `e2e_dash_${Date.now()}+clerk_test@example.com`;
-
-  await page.goto('/auth/register');
-  await page.getByLabel(/email address/i).fill(address);
-
-  // Wait for the code to be SENT before entering one — the OTP field submits
-  // as soon as it is full, and filling it early races prepare_verification.
-  const codeSent = page.waitForResponse(
-    (response) => response.url().includes('prepare_verification') && response.ok(),
-    { timeout: 20_000 },
-  );
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await codeSent;
-
-  await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
-
-  await withDb(async (query) => {
-    const rows = (await query('select clerk_id from users where email = $1', [
-      address,
-    ])) as {
-      clerk_id: string | null;
+  const email = await withDb(async (query) => {
+    const rows = (await query('select email from users where id = $1', [MEMBER_ID])) as {
+      email: string;
     }[];
-    const clerkId = rows[0]?.clerk_id;
-    if (!clerkId) throw new Error('sign-up did not provision an account');
-
-    // Free the id from the throwaway row before moving it: clerk_id is unique.
-    await query('update users set clerk_id = null where email = $1', [address]);
-    await query('update users set clerk_id = $1 where id = $2', [clerkId, MEMBER_ID]);
+    const address = rows[0]?.email;
+    if (!address) throw new Error(`user ${MEMBER_ID} is not in this database`);
+    return address;
   });
+
+  await signInAs(page, { email });
 }
 
 test.describe('dashboard', () => {
-  test.beforeAll(async () => {
-    // Resolves the Clerk Frontend API URL that setupClerkTestingToken needs to
-    // bypass bot protection. It is per-file, not global.
-    if (hasClerk) await clerkSetup();
-  });
-
-  test.afterAll(async () => {
-    // Put the restored account back exactly as the migration left it. Leaving
-    // a test identity attached to real production data would make the next
-    // run assert against a state the restore never produced.
-    await withDb(async (query) => {
-      await query('update users set clerk_id = null where id = $1', [MEMBER_ID]);
-      // Scoped to this spec's own prefix. The specs run in parallel, and a
-      // blanket delete of every `+clerk_test` account removes the identity
-      // another file is mid-sign-up with — which fails as a broken auth flow
-      // rather than as the fixture collision it is.
-      await query("delete from users where email like 'e2e_dash_%+clerk_test@%'");
-    });
-  });
-
   test('🔴 signed out, it shows the season and no one else’s team (D44)', async ({
     page,
   }) => {
@@ -145,26 +105,23 @@ test.describe('dashboard', () => {
     ).toBeVisible();
     await expect(page.getByRole('link', { name: /register/i }).first()).toBeVisible();
 
-    // And nothing that belongs to a person.
-    await expect(page.getByRole('table')).toHaveCount(0);
+    // And nothing that belongs to a person. 🔴 Named rather than "no table at
+    // all": the season leaderboard is a table and it is *supposed* to be here
+    // — it is the season, not anybody's team (P10.T4). Standings and a roster
+    // are the two things a visitor must not see.
+    await expect(page.getByRole('table', { name: /League standings/i })).toHaveCount(0);
     await expect(page.getByRole('list', { name: /drafted films/i })).toHaveCount(0);
   });
 
   test.describe('signed in', () => {
-    test.skip(!hasClerk, 'Clerk keys not configured');
-
-    // Serial. Every test here signs up a throwaway identity and moves it onto
-    // the same restored account; run side by side they queue behind Clerk's
-    // rate limit and stall on the verification step, which reads as a broken
-    // sign-up flow rather than as four tests competing for one account.
-    test.describe.configure({ mode: 'serial' });
-
     test('shows the member’s roster, total and standings', async ({ page }) => {
       await signInAsMember(page);
       await page.goto('/');
 
       await expect(page.getByRole('list', { name: /drafted films/i })).toBeVisible();
-      await expect(page.getByRole('table')).toBeVisible();
+      // The member's own standings, named: the page also carries the season
+      // leaderboard, and an unnamed `getByRole('table')` matches both.
+      await expect(page.getByRole('table', { name: /League standings/i })).toBeVisible();
       // The viewer is findable without relying on colour.
       await expect(page.getByText('You', { exact: true })).toBeVisible();
     });

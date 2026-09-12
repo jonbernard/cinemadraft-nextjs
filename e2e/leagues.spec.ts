@@ -1,19 +1,18 @@
-import { clerkSetup, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, type Page, test } from '@playwright/test';
+
+import { signInAs } from './support/session';
 
 /**
  * 🔴 The Batch B gate: a league can come into existence and someone else can
  * join it. Until this shipped, no new league could be created at all.
  *
  * Everything is scratch data the test creates. Two throwaway identities are
- * needed — the whole point is that a *second* person follows the link — so
- * these run serially, like every other spec that signs up.
+ * needed — the whole point is that a *second* person follows the link — and
+ * both are seeded directly: the app under test boots with no Clerk at all
+ * (D82/D84), so the session comes from `signInAs` rather than a sign-up flow.
+ * What is being proven is the invite, not how either person got an account.
  */
 const TAG = 'e2e-league';
-
-const hasClerk = Boolean(
-  process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-);
 
 async function withDb<T>(
   fn: (query: (sql: string, params?: unknown[]) => Promise<unknown[]>) => Promise<T>,
@@ -35,27 +34,16 @@ async function cleanup(): Promise<void> {
       [`${TAG}%`],
     );
     await query('delete from leagues where name like $1', [`${TAG}%`]);
-    await query("delete from users where email like 'e2e_league_%+clerk_test@%'");
+    // Scoped to this spec's own prefix — the other specs seed identities of
+    // their own, and a blanket delete takes one of them mid-flow.
+    await query(`delete from users where email like '${TAG}-%@example.test'`);
   });
 }
 
-/** Register a throwaway identity in this browser context. */
+/** Seat a throwaway identity in this browser context. */
 async function register(page: Page): Promise<void> {
-  await setupClerkTestingToken({ page });
-  const address = `e2e_league_${Date.now()}_${Math.floor(performance.now())}+clerk_test@example.com`;
-
-  await page.goto('/auth/register');
-  await page.getByLabel(/email address/i).fill(address);
-
-  const codeSent = page.waitForResponse(
-    (response) => response.url().includes('prepare_verification') && response.ok(),
-    { timeout: 20_000 },
-  );
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await codeSent;
-
-  await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
+  const address = `${TAG}-${Date.now()}-${Math.floor(performance.now())}@example.test`;
+  await signInAs(page, { email: address, firstName: 'Member' });
 }
 
 /** Seats in the scratch league, as the database has them. */
@@ -71,13 +59,11 @@ async function seats() {
 }
 
 test.describe('leagues', () => {
-  test.skip(!hasClerk, 'Clerk keys not configured');
+  // Serial: `seats()` counts every seat matching the tag, so a second test
+  // creating its own league alongside would change the number under the first.
   test.describe.configure({ mode: 'serial' });
 
-  test.beforeAll(async () => {
-    await clerkSetup();
-    await cleanup();
-  });
+  test.beforeAll(cleanup);
 
   test.afterAll(cleanup);
 

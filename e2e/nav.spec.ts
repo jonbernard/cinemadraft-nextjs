@@ -157,21 +157,27 @@ test.describe('navigation', () => {
     const sheet = page.getByRole('dialog', { name: 'More' });
     await expect(sheet).toBeVisible();
 
-    // 🔴 `/list` is the first `yours` page to exist (P10.T20), so the group and
-    // its heading are no longer gated away. The other two are still
-    // `ready: false` and the sheet filters on that flag rather than linking at
-    // a 404 — which is what makes their absence here an assertion rather than
-    // an omission. When T19 and T24 ship, this count moves again.
+    // 🔴 All three `yours` pages now exist — the count this test's own comment
+    // said would move when T19 and T24 shipped has moved. The sheet still
+    // filters on `ready`, which is what keeps a link from pointing at a 404;
+    // what changed is that nothing is unready any more.
     await expect(sheet.getByText('Yours')).toBeVisible();
     await expect(sheet.getByRole('link', { name: 'Draft list' })).toHaveAttribute(
       'href',
       '/list',
     );
-    await expect(sheet.getByRole('link', { name: 'Watchlist' })).toHaveCount(0);
-    await expect(sheet.getByRole('link', { name: 'Rules & scoring' })).toHaveCount(0);
+    await expect(sheet.getByRole('link', { name: 'Watchlist' })).toHaveAttribute(
+      'href',
+      '/watchlist',
+    );
+    await expect(sheet.getByRole('link', { name: 'Rules & scoring' })).toHaveAttribute(
+      'href',
+      '/rules-and-scoring',
+    );
 
-    // The destination and the account control; the theme toggle is a button.
-    await expect(sheet.getByRole('link')).toHaveCount(2);
+    // The three destinations and the account control; the theme toggle is a
+    // button.
+    await expect(sheet.getByRole('link')).toHaveCount(4);
     await expect(sheet.getByRole('link', { name: 'Log in' })).toBeVisible();
     await expect(sheet.getByRole('button', { name: /theme/i })).toBeVisible();
   });

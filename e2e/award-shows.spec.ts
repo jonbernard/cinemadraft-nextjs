@@ -1,5 +1,6 @@
-import { clerkSetup, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, type Page, test } from '@playwright/test';
+
+import { signInAs } from './support/session';
 
 /**
  * 🔴 The Phase 8 gate: an admin can enter nominations and winners, a correction
@@ -14,9 +15,6 @@ const TAG = 'e2e-awards';
 const YEAR = 2994;
 const FILMS = [`${TAG} Alpha`, `${TAG} Bravo`];
 
-const hasClerk = Boolean(
-  process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-);
 const hasTmdb = Boolean(process.env.TMDB_API_KEY);
 
 /**
@@ -73,7 +71,9 @@ async function cleanup(): Promise<void> {
       [UNCACHED.tmdbId],
     );
     await query('delete from movies where tmdb_id = $1', [UNCACHED.tmdbId]);
-    await query("delete from users where email like 'e2e_awards_%+clerk_test@%'");
+    // Scoped to this spec's own prefix — the other specs seed identities of
+    // their own, and a blanket delete takes one of them mid-flow.
+    await query(`delete from users where email like '${TAG}-%@example.test'`);
   });
 }
 
@@ -113,32 +113,24 @@ async function seedShow(): Promise<{ abbreviation: string }> {
   });
 }
 
-/** Sign up a throwaway identity and make it an admin. */
+/**
+ * Seat a throwaway identity and make it an admin.
+ *
+ * The session is the signed test cookie rather than a Clerk sign-up (D82/D84):
+ * the app under test boots with no Clerk at all. The *role* is still a real
+ * column read by the real guard — what these tests are about is what an admin
+ * may do, not how they signed in.
+ */
 async function signInAsAdmin(page: Page): Promise<void> {
-  await setupClerkTestingToken({ page });
-  const address = `e2e_awards_${Date.now()}+clerk_test@example.com`;
-
-  await page.goto('/auth/register');
-  await page.getByLabel(/email address/i).fill(address);
-
-  // Wait for the code to be SENT before entering one — the OTP field submits
-  // as soon as it is full, and filling it early races prepare_verification.
-  const codeSent = page.waitForResponse(
-    (response) => response.url().includes('prepare_verification') && response.ok(),
-    { timeout: 20_000 },
-  );
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await codeSent;
-
-  await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
+  const address = `${TAG}-${Date.now()}-${Math.floor(performance.now())}@example.test`;
+  await signInAs(page, { email: address, firstName: 'Admin' });
 
   await withDb(async (query) => {
     const rows = (await query(
       "update users set role = 'admin' where email = $1 returning id",
       [address],
     )) as { id: number }[];
-    if (!rows[0]) throw new Error('sign-up did not provision an account');
+    if (!rows[0]) throw new Error('the seeded admin has no row');
   });
 }
 
@@ -171,14 +163,12 @@ async function stateOfShow() {
 }
 
 test.describe('award shows', () => {
-  // Serial: each test signs up a Clerk identity, and parallel sign-ups queue
-  // behind the rate limit and stall on verification.
+  // Serial: every test here seeds a show matching the same tag, and the
+  // teardown clears the tag wholesale — run side by side, one test's cleanup
+  // takes another's show out from under it.
   test.describe.configure({ mode: 'serial' });
 
-  test.beforeAll(async () => {
-    if (hasClerk) await clerkSetup();
-    await cleanup();
-  });
+  test.beforeAll(cleanup);
 
   test.afterEach(cleanup);
 
@@ -191,7 +181,7 @@ test.describe('award shows', () => {
 
   test('🔴 the page is public, and a visitor gets no controls', async ({ page }) => {
     // D44: the source never guarded these, and they are what a member opens
-    // mid-ceremony. This test needs no Clerk keys — that is the point of it.
+    // mid-ceremony. This test signs nobody in at all — that is the point of it.
     const { abbreviation } = await seedShow();
 
     const response = await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
@@ -231,8 +221,6 @@ test.describe('award shows', () => {
   });
 
   test.describe('as an admin', () => {
-    test.skip(!hasClerk, 'Clerk keys not configured');
-
     test('🔴 nominates a film, marks a winner, then corrects it', async ({ page }) => {
       const { abbreviation } = await seedShow();
       await signInAsAdmin(page);

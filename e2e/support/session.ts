@@ -34,10 +34,13 @@ export async function signInAs(
     {
       name: TEST_SESSION_COOKIE,
       value: signTestSession(id),
+      // 🔴 `url` and `path` together are rejected — "Cookie should have either
+      // url or path" — and the rejection is thrown by `addCookies`, so it fails
+      // every spec that signs anybody in rather than one. The url already
+      // implies domain `localhost` and path `/`, which is what this needs.
       url: 'http://localhost:3000',
       httpOnly: true,
       sameSite: 'Lax',
-      path: '/',
     },
   ]);
 

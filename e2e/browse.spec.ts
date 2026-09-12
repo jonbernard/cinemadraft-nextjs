@@ -1,5 +1,6 @@
-import { clerkSetup, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, type Page, test } from '@playwright/test';
+
+import { signInAs } from './support/session';
 
 /**
  * Browse, in a real browser.
@@ -13,10 +14,8 @@ import { expect, type Page, test } from '@playwright/test';
  * throwaway identity, reloads, unmarks it, and then deletes the account — so the
  * restored data's 486 watchlist rows are untouched either way.
  */
+const TAG = 'e2e-browse';
 const hasTmdb = Boolean(process.env.TMDB_API_KEY);
-const hasClerk = Boolean(
-  process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-);
 
 /**
  * Raw `pg` rather than the Prisma client: Playwright does not resolve the `@/`
@@ -36,26 +35,16 @@ async function withDb<T>(
   }
 }
 
-/** Sign up a throwaway identity, and return its address so it can be removed. */
+/**
+ * Seat a throwaway identity, and return its address so it can be removed.
+ *
+ * The session is the signed test cookie rather than a Clerk sign-up (D82/D84):
+ * the app under test boots with no Clerk at all, and what this test is about is
+ * the badge surviving a reload, not how the reader signed in.
+ */
 async function signUp(page: Page): Promise<string> {
-  await setupClerkTestingToken({ page });
-  const address = `e2e_browse_${Date.now()}+clerk_test@example.com`;
-
-  await page.goto('/auth/register');
-  await page.getByLabel(/email address/i).fill(address);
-
-  // Wait for the code to be SENT before entering one — the OTP field submits as
-  // soon as it is full, and filling it early races prepare_verification.
-  const codeSent = page.waitForResponse(
-    (response) => response.url().includes('prepare_verification') && response.ok(),
-    { timeout: 20_000 },
-  );
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await codeSent;
-
-  await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
-
+  const address = `${TAG}-${Date.now()}-${Math.floor(performance.now())}@example.test`;
+  await signInAs(page, { email: address, firstName: 'Reader' });
   return address;
 }
 
@@ -246,14 +235,7 @@ test.describe('browse', () => {
 });
 
 test.describe('marking a film watched', () => {
-  test.skip(!hasTmdb || !hasClerk, 'TMDB or Clerk keys not configured');
-  // Serial: each test signs up a Clerk identity, and parallel sign-ups queue
-  // behind the rate limit and stall on verification.
-  test.describe.configure({ mode: 'serial' });
-
-  test.beforeAll(async () => {
-    if (hasClerk) await clerkSetup();
-  });
+  test.skip(!hasTmdb, 'TMDB_API_KEY not configured');
 
   test('🔴 survives a reload, and can be undone', async ({ page }) => {
     const address = await signUp(page);

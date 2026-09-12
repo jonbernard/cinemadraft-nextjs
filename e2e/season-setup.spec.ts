@@ -1,5 +1,6 @@
-import { clerkSetup, setupClerkTestingToken } from '@clerk/testing/playwright';
 import { expect, type Page, test } from '@playwright/test';
+
+import { signInAs } from './support/session';
 
 /**
  * 🔴 The Batch C gate: an owner can arrange a season and open the draft, and
@@ -7,12 +8,13 @@ import { expect, type Page, test } from '@playwright/test';
  *
  * Scratch league throughout — this writes seats and statuses, and league 1 is
  * sixty people's real history.
+ *
+ * Signed in through the test session rather than Clerk (D82/D84): the app under
+ * test boots with no Clerk at all, so a sign-up flow here would be typing into
+ * a widget that is not on the page. What this spec is about — who may arrange a
+ * season — is unchanged by how the person got a session.
  */
 const TAG = 'e2e-season';
-
-const hasClerk = Boolean(
-  process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-);
 
 async function withDb<T>(
   fn: (query: (sql: string, params?: unknown[]) => Promise<unknown[]>) => Promise<T>,
@@ -34,24 +36,21 @@ async function cleanup(): Promise<void> {
       [`${TAG}%`],
     );
     await query('delete from leagues where name like $1', [`${TAG}%`]);
-    await query("delete from users where email like 'e2e_season_%+clerk_test@%'");
+    // Scoped to this spec's own prefix — the other specs seed identities of
+    // their own, and a blanket delete takes one of them mid-flow.
+    await query(`delete from users where email like '${TAG}-%@example.test'`);
   });
 }
 
+/**
+ * Seat a throwaway identity in this browser context.
+ *
+ * A fresh address every call: two of the tests below need a *second* person,
+ * and reusing one would make "somebody else's league" mean "my own".
+ */
 async function register(page: Page): Promise<void> {
-  await setupClerkTestingToken({ page });
-  const address = `e2e_season_${Date.now()}_${Math.floor(performance.now())}+clerk_test@example.com`;
-
-  await page.goto('/auth/register');
-  await page.getByLabel(/email address/i).fill(address);
-  const codeSent = page.waitForResponse(
-    (response) => response.url().includes('prepare_verification') && response.ok(),
-    { timeout: 20_000 },
-  );
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await codeSent;
-  await page.getByRole('textbox', { name: /verification code/i }).fill('424242');
-  await expect(page).not.toHaveURL(/\/auth\/register/, { timeout: 20_000 });
+  const address = `${TAG}-${Date.now()}-${Math.floor(performance.now())}@example.test`;
+  await signInAs(page, { email: address, firstName: 'Owner' });
 }
 
 /** Create a league through the UI and return its id. */
@@ -83,13 +82,11 @@ const statusOf = (leagueId: number) =>
   ) as Promise<{ drafting_status: string }[]>;
 
 test.describe('season setup', () => {
-  test.skip(!hasClerk, 'Clerk keys not configured');
+  // Serial: every test here works on a league matching the same tag, and the
+  // teardown clears the tag wholesale.
   test.describe.configure({ mode: 'serial' });
 
-  test.beforeAll(async () => {
-    await clerkSetup();
-    await cleanup();
-  });
+  test.beforeAll(cleanup);
 
   test.afterAll(cleanup);
 
