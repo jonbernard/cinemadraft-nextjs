@@ -8,6 +8,20 @@ import { findFilmsAction } from '@/actions/search/find-films';
 import { FilmSearch, type SearchedFilm } from './FilmSearch';
 
 /**
+ * The top slice the design asks for (§3).
+ *
+ * Cut here rather than in `findFilms`: the draft console ranks against a whole
+ * league's taken list and wants the longer tail, and the number nine is a
+ * property of *this panel* — what fits under the chrome without the reader
+ * scrolling — not of the search.
+ *
+ * 🔴 Ranking already put the answer first. Twenty rows is not twenty chances
+ * to be right, it is nineteen rows of noise below the one the reader wanted,
+ * and it is what pushed the panel off the bottom of a 900px screen.
+ */
+const TOP_RESULTS = 9;
+
+/**
  * The global film search, as a panel over whatever page is open (P15.T3).
  *
  * 🔴 **Search is not `/browse`.** The chrome's search icon used to link to the
@@ -64,7 +78,23 @@ export function SearchOverlay({
 
     setError(null);
     setEmpty(result.data.length === 0);
-    return result.data;
+    return result.data.slice(0, TOP_RESULTS);
+  }, []);
+
+  // 🔴 **Escape closes on the first press.** The field is `<input
+  // type="search">`, whose native behaviour spends the first Escape clearing
+  // the value instead of letting the `<dialog>`'s own cancel through — so for
+  // anyone who had typed something, which is everyone, "Escape closes" was
+  // two Escapes.
+  //
+  // Fixed here rather than in `FilmSearch`: the draft console and the award
+  // admin use the same typeahead inline on a page, where clearing the field is
+  // the right answer to Escape and there is no dialog to close. And this is
+  // still D75 — it calls `close()`, the same thing the platform would have
+  // done, so the focus trap, the backdrop and focus returning to the trigger
+  // all stay the platform's.
+  const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLDialogElement>) => {
+    if (event.key === 'Escape') dialog.current?.close();
   }, []);
 
   const onSelect = useCallback(
@@ -81,11 +111,23 @@ export function SearchOverlay({
       id={id}
       open={open}
       ref={mergeRefs(dialog, ref)}
+      onKeyDown={onKeyDown}
       aria-label="Search films"
-      // Top-aligned rather than centred: the panel reads as a search bar
-      // dropping out of the chrome the icon lives in, not as a modal that
-      // interrupted the page.
-      className="bg-bg-surface text-text-primary mt-16 mb-auto w-full max-w-3xl rounded-lg p-0 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      // Top-aligned rather than centred *vertically*: the panel reads as a
+      // search bar dropping out of the chrome the icon lives in, not as a
+      // modal that interrupted the page.
+      //
+      // 🔴 `mx-auto` and the calc'd width are not decoration. Preflight zeroes
+      // the UA's `dialog { margin: auto }`, so a top-aligned dialog with no
+      // horizontal margin of its own pins itself to the left edge — and
+      // `w-full` leaves a phone no gutter at all. The calc keeps 1rem either
+      // side at 390px and `max-w-3xl` still governs from ~832px up.
+      //
+      // The height cap is the floor under the nine-result cut: nine rows fit
+      // 844px, but a landscape phone or a short window would still push the
+      // panel off-screen, and a panel that runs past the viewport is the
+      // thing to prevent, not a row count.
+      className="bg-bg-surface text-text-primary mx-auto mt-16 mb-auto max-h-[calc(100dvh-5rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-lg p-0 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
     >
       <div className="flex flex-col gap-4 p-4">
         <FilmSearch

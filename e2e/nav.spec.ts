@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 /**
  * The scratch shows this file's last test needs, and the tag that removes them.
@@ -52,6 +52,24 @@ async function cleanup(): Promise<void> {
   await withDb(async (query) =>
     query('delete from events where abbreviation like $1', [`${TAG}-%`]),
   );
+}
+
+/**
+ * Open the global search panel from whichever trigger the width actually
+ * shows — the strip's icon above `xl`, the More sheet's row below it. Both are
+ * in the DOM at every width and only one is ever clickable.
+ */
+async function openSearchPanel(page: Page, width: number): Promise<void> {
+  if (width >= 1280) {
+    await page.getByRole('button', { name: 'Search' }).click();
+  } else {
+    await page.getByRole('button', { name: 'More', exact: true }).click();
+    await page
+      .getByRole('dialog', { name: 'More' })
+      .getByRole('button', { name: 'Search' })
+      .click();
+  }
+  await expect(page.getByRole('dialog', { name: 'Search films' })).toBeVisible();
 }
 
 /**
@@ -239,6 +257,94 @@ test.describe('navigation', () => {
     await expect(sheet.getByRole('link')).toHaveCount(4);
     await expect(sheet.getByRole('link', { name: 'Log in' })).toBeVisible();
     await expect(sheet.getByRole('button', { name: /theme/i })).toBeVisible();
+  });
+
+  /**
+   * 🔴 The search panel's Escape (P15.T3), which only a browser can show.
+   *
+   * Its field is `<input type="search">`, and the browser spends the first
+   * Escape clearing that field instead of letting the `<dialog>`'s own cancel
+   * through — so until the panel handled the key itself, "Escape closes" was
+   * two Escapes for anybody who had typed anything, which is everybody. jsdom
+   * implements neither the native clear nor the dialog's focus restoration, so
+   * `SearchOverlay.test.tsx` can only prove the handler runs; the behaviour is
+   * here.
+   */
+  test('🔴 one Escape closes the search panel, and the trigger gets focus back', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto('/');
+
+    const trigger = page.getByRole('button', { name: 'Search' });
+    await trigger.click();
+
+    const panel = page.getByRole('dialog', { name: 'Search films' });
+    await expect(panel).toBeVisible();
+    await expect(page.getByRole('searchbox', { name: 'Find a film' })).toBeFocused();
+
+    // Typed, not left empty: the browser only spends an Escape on a search
+    // field that has something in it, so an empty box hides the whole bug.
+    await page.getByRole('searchbox', { name: 'Find a film' }).fill('sinners');
+    await page.keyboard.press('Escape');
+
+    await expect(panel).toBeHidden();
+    await expect(trigger).toBeFocused();
+  });
+
+  test('🔴 the panel opens from the More sheet, and one Escape closes it there too', async ({
+    page,
+  }) => {
+    await page.setViewportSize(PHONE);
+    await page.goto('/');
+
+    await page.getByRole('button', { name: 'More', exact: true }).click();
+    const sheet = page.getByRole('dialog', { name: 'More' });
+    await sheet.getByRole('button', { name: 'Search' }).click();
+
+    const panel = page.getByRole('dialog', { name: 'Search films' });
+    await expect(panel).toBeVisible();
+    // Opening the panel closes the sheet — two modal dialogs at once leaves
+    // the reader trapped behind the wrong one — so the element focus returns
+    // to is the sheet's trigger, not the row that was clicked.
+    await expect(sheet).toBeHidden();
+
+    await page.getByRole('searchbox', { name: 'Find a film' }).fill('sinners');
+    await page.keyboard.press('Escape');
+
+    await expect(panel).toBeHidden();
+    await expect(page.getByRole('button', { name: 'More', exact: true })).toBeFocused();
+  });
+
+  test('🔴 the search panel is centred, guttered and inside the viewport', async ({
+    page,
+  }) => {
+    for (const size of [DESKTOP, PHONE]) {
+      await page.setViewportSize(size);
+      await page.goto('/');
+      await openSearchPanel(page, size.width);
+
+      const panel = page.getByRole('dialog', { name: 'Search films' });
+      const box = await panel.boundingBox();
+      if (!box) throw new Error('the search panel rendered no box');
+
+      // 🔴 Preflight zeroes the UA's `dialog { margin: auto }`, so a dialog
+      // that sets its own top margin and nothing else sits flush against the
+      // left edge — measured at `left=0, right=768` in a 1440px window. Both
+      // gaps are asserted, because equal gaps are what centring is, and a
+      // gutter at the narrow end is what `w-full` never left.
+      expect(box.x).toBeGreaterThanOrEqual(16);
+      expect(Math.round(box.x)).toBe(Math.round(size.width - (box.x + box.width)));
+
+      // The panel used to end at 926px in a 900px window. The height is the
+      // symptom; the cap is the guarantee, and both are checked because a
+      // short result set would satisfy the first on a panel that had no cap.
+      expect(box.y + box.height).toBeLessThanOrEqual(size.height);
+      const cap = await panel.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).maxHeight),
+      );
+      expect(cap).toBeLessThan(size.height);
+    }
   });
 
   test('🔴 the tab bar does not cover the bottom of the page', async ({ page }) => {
