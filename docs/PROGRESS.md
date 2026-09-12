@@ -1516,6 +1516,37 @@ Plan: _not yet written — write it before starting T0._
 
 ---
 
+## Phase 19 — Journey suites
+
+🔴 **Runs here, before the go-live phases.** The e2e suite is 85 tests that each
+prove one thing; none of them walks the product the way a member does. These
+five journeys are the confidence layer, recorded and paced so a person can
+watch them. The slice specs stay as the diagnostic layer.
+Plan: _not yet written — write it before starting T0._
+
+- [ ] P19.T0 — journey harness: `DEMO_PACE` (0 in CI), an on-screen step caption, video config, `npm run e2e:journeys`, scratch-data discipline
+- [ ] P19.T1 — 🔴 **finish the draft**: `completeDraft` exists and no UI calls it, so journey 1 has no end. Build the control or record why there isn't one
+- [ ] P19.T2 — Journey 1: create → invite → seat members and placeholders → deal ≥4 groups → draft round by round with film search → finish
+- [ ] P19.T3 — Journey 2: read the league back — teams, rosters, standings, the ledger, and scores moved by journey 1
+- [ ] P19.T4 — Journey 3: award shows — create and edit a show and its categories, nominate, pick winners, watch points land
+- [ ] P19.T5 — Journey 4: browse → film detail → the search panel, as a reader
+- [ ] P19.T6 — Journey 5: the watchlist and the draft list
+- [ ] P19.T7 — the five run as one ordered film; the recording is the artefact
+
+### Phase 19 notes
+
+- **Why this phase exists:** asked to watch the app work, the owner got fourteen
+  files of slices. A journey that fails says "the league lifecycle is broken";
+  a slice says which assertion moved. Both are wanted, and only one existed.
+- 🔴 **`completeDraft` has no caller.** Found by the tranche-3 planner while
+  writing P17.T16. The draft has no end state in the UI, which is why P19.T1
+  precedes the journeys rather than being folded into one.
+- **Artificial waits are deliberate here and nowhere else.** `DEMO_PACE`
+  defaults to 0 so CI pays nothing; a hardcoded `waitForTimeout` in a slice spec
+  is still a defect.
+
+---
+
 ## Phase 12 — Parallel run
 
 - [ ] P12 not started

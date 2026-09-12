@@ -533,6 +533,56 @@ or the `points` table by a test; readable at 390px; `npm run verify` green.
 
 ---
 
+### Phase 19 — Journey suites
+
+🔴 **Runs here, before the go-live phases.** Numbering note as Phase 17: the
+number is an identifier, the position is the order.
+
+The e2e suite is 85 tests that each prove one thing, and it is good at that —
+but nothing in it walks the product the way a member does. Asked to watch the
+app work, the owner got fourteen files of slices. This phase adds five
+**journeys**: long, ordered, watchable runs that go end to end through a real
+browser against a real database, and that a person can sit and watch.
+
+🔴 **Watchable is a requirement, not a nicety.** The suites record video and are
+paced so a human can follow them. But a permanently slow suite is a suite
+nobody runs, so the pacing is a knob: `DEMO_PACE` defaults to 0 and CI never
+pays for it. The same spec is a fast assertion in CI and a film on a laptop.
+
+🔴 **These do not replace the slice specs.** A journey that fails tells you
+"the league lifecycle is broken" — it does not tell you which of forty
+assertions moved. The slices stay as the diagnostic layer; the journeys are the
+confidence layer. Where a journey duplicates an existing spec outright
+(`league-lifecycle.spec.ts`, `awards-lifecycle.spec.ts`), that spec is folded
+into the journey rather than left to rot as a second, shorter version.
+
+- T0: journey harness — `DEMO_PACE`, an on-screen caption naming the current
+  step, video config, a `npm run e2e:journeys` script, and the scratch-data
+  discipline every journey inherits
+- T1: 🔴 **Finish the draft** — `completeDraft` exists in the service layer and
+  **no UI calls it**. Journey 1 cannot end without it. Build the control, or
+  record why the draft has no end state
+- T2: Journey 1 — create a league → invite → seat members and placeholders →
+  deal **at least four** groups → draft, visibly, round by round, searching for
+  films → finish
+- T3: Journey 2 — read the league back: teams, rosters, standings, the points
+  ledger, and scores that moved because of what journey 1 did
+- T4: Journey 3 — award shows: create and edit a show and its categories, add
+  nominations, pick winners, and watch the points land
+- T5: Journey 4 — browse → film detail → the search panel, as a reader
+- T6: Journey 5 — the watchlist and the draft list
+- T7: The five journeys run as one ordered film, and the recording is the
+  artefact the owner reviews
+
+**Gate:** all five journeys green against a restored database and against a
+seeded-empty one; every journey cleans up after itself, verified by count;
+`DEMO_PACE=0` adds no measurable time to CI; and the owner can watch the
+recording end to end and see the product work.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display` and the Archivo `wdth` axis no longer exist (D69–D77); do not reach for any of them. `/tokens` exists again, but only as the cascade-layer probe `e2e/smoke.spec.ts` measures — two buttons and a word. It is **not** a design-system page and must not grow back into one; Storybook is where components are reviewed.
+
+---
+
 ### Phase 12 — Parallel run
 
 🔴 **The go-live phases sit last in this document, and that is the running
