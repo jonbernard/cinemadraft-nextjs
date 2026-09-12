@@ -1311,6 +1311,19 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 
 ### Phase 17 notes
 
+- **The "avatar detached at the bottom" of the NavRail (T14) was the Next.js
+  dev-tools indicator**, not the product. It renders as a dark circle in the
+  bottom-left under `next dev`, which is exactly where the rail's empty column
+  is, and it is absent from a production build. The account control is in
+  `AppShell`'s top-right desktop strip and stays there. T14 is therefore the one
+  class that closes the dead column, and nothing moves.
+
+  🔴 The general form of this is worth carrying: the 2026-09-12 review was run
+  against a dev server, so dev-only chrome and dev-only console output could be
+  recorded as product defects. Verify a finding in `npm run start` before fixing
+  it. Four of the review's premises have already failed against the real code
+  (T11's blocker, T15's seal, T18's 75 files, T21's 320 brass instances).
+
 _Fill these in as you go. The gate requires the T18–T25 measurements re-run and
 recorded here, so the change is a number rather than an impression._
 
