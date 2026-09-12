@@ -23,8 +23,13 @@ import { cached } from './cache';
 
 const BASE = 'https://www.omdbapi.com/';
 
-/** A day, matching TMDB's. Neither a box-office total nor a Metascore moves fast. */
-const TTL_SECONDS = 86_400;
+/**
+ * A week, matching TMDB's, and for the reason spelled out on that constant:
+ * every expiry is a metered Runtime Cache write, and this is the *second*
+ * cache a single film page fills. Neither a box-office total nor a Metascore
+ * moves fast enough for a week to show.
+ */
+const TTL_SECONDS = 604_800;
 
 /** Same budget as TMDB: a film page must not hang on a third party. */
 const TIMEOUT_MS = 3_000;

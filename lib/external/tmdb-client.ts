@@ -23,10 +23,21 @@ import { cached } from './cache';
 const BASE = 'https://api.themoviedb.org/3';
 
 /**
- * A day. TMDB's catalogue moves slowly and the same handful of queries are
- * typed over and over during a live draft, which is the case this exists for.
+ * A week.
+ *
+ * 🔴 **The TTL is a billing knob, not just a freshness one.** The Runtime Cache
+ * meters *writes*, and every expiry is a future write: the sitemap publishes
+ * 5,000 film URLs, each film page writes here and to OMDb, so a once-a-day
+ * crawl at a one-day TTL costs 5,000 x 2 x 30 = 300,000 writes a month — over
+ * the free tier on crawler traffic alone, before a single person visits.
+ *
+ * A week divides that by seven and costs nothing real: a film's runtime, cast
+ * and poster do not move, and the two lists that *are* date-sensitive
+ * (`tmdb-discover`, `tmdb-now-playing`) carry the day in their key, so they
+ * still turn over daily no matter what this says. Anything that genuinely
+ * cannot wait has `expireTag('tmdb-film-page')`.
  */
-export const TTL_SECONDS = 86_400;
+export const TTL_SECONDS = 604_800;
 
 /** How long to wait before giving up and letting local data stand. */
 export const TIMEOUT_MS = 3_000;
