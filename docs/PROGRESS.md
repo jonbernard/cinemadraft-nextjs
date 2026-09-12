@@ -1666,7 +1666,7 @@ watch them. The slice specs stay as the diagnostic layer.
 Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 - [x] P19.T0 — journey harness: `DEMO_PACE` (0 in CI), an on-screen step caption, video config, `npm run e2e:journeys`, scratch-data discipline
-- [ ] P19.T1 — 🔴 **finish the draft**: `completeDraft` exists and no UI calls it, so journey 1 has no end. Build the control or record why there isn't one
+- [x] P19.T1 — 🔴 **finish the draft**: `completeDraft` exists and no UI calls it, so journey 1 has no end. Build the control or record why there isn't one
 - [ ] P19.T2 — Journey 1: create → invite → seat members and placeholders → deal ≥4 groups → draft round by round with film search → finish
 - [ ] P19.T3 — Journey 2: read the league back — teams, rosters, standings, the ledger, and scores moved by journey 1
 - [ ] P19.T4 — Journey 3: award shows — create and edit a show and its categories, nominate, pick winners, watch points land
@@ -1685,6 +1685,11 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 - **Artificial waits are deliberate here and nowhere else.** `DEMO_PACE`
   defaults to 0 so CI pays nothing; a hardcoded `waitForTimeout` in a slice spec
   is still a defect.
+- 🔴 **`stageNextSeason` has no caller either.** Found while building P19.T1.
+  Unlike `completeDraft` it is not merely a missing button — it copies a
+  league's people into a new season and moves `activeYear`, and nobody has
+  decided where an owner should be offered that or what it should say. Left
+  uncalled; it belongs to whoever owns the turn of the season.
 
 ---
 

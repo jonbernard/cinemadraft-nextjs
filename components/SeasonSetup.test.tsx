@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -28,6 +28,7 @@ const randomiseGroups = vi.hoisted(() =>
 );
 const removeSeat = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
 const startDraft = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
+const completeDraft = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
 
 vi.mock('@/actions/leagues/manage-seats', () => ({
   assignSeats,
@@ -35,7 +36,7 @@ vi.mock('@/actions/leagues/manage-seats', () => ({
   randomiseGroups,
   removeSeat,
 }));
-vi.mock('@/actions/leagues/manage-league', () => ({ startDraft }));
+vi.mock('@/actions/leagues/manage-league', () => ({ startDraft, completeDraft }));
 
 import { SeasonSetup, type SetupSeatView } from '@/components/SeasonSetup';
 
@@ -260,6 +261,45 @@ describe('SeasonSetup', () => {
     setup({ status: 'complete' });
 
     expect(screen.getByText(/This draft is complete/)).toBeInTheDocument();
+  });
+
+  it('🔴 offers a way to end the draft once it is running', async () => {
+    // The defect this closes: `completeDraft` has existed since P10.T17 and
+    // nothing called it, so an owner on the one page that manages the season
+    // had no way to say the draft was over. A draft with no end state is why
+    // journey 1 could not finish.
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = setup({ status: 'active' });
+
+    await user.click(screen.getByRole('button', { name: 'Finish the draft' }));
+
+    expect(completeDraft).toHaveBeenCalledWith({ leagueId: 7, year: 2026 });
+    await waitFor(() =>
+      expect(screen.getByText('The draft is finished')).toBeInTheDocument(),
+    );
+    confirm.mockRestore();
+  });
+
+  it('🔴 confirms before finishing, and a refusal writes nothing', async () => {
+    // Same reasoning as starting: the league is told the draft is over, and
+    // people stop watching. A mis-click must not be the thing that says so.
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const user = setup({ status: 'active' });
+
+    await user.click(screen.getByRole('button', { name: 'Finish the draft' }));
+
+    expect(confirm).toHaveBeenCalled();
+    expect(completeDraft).not.toHaveBeenCalled();
+    confirm.mockRestore();
+  });
+
+  it('offers nothing to finish before it has started, or after it has ended', () => {
+    setup({ status: 'pending' });
+    expect(screen.queryByRole('button', { name: 'Finish the draft' })).toBeNull();
+
+    cleanup();
+    setup({ status: 'complete' });
+    expect(screen.queryByRole('button', { name: 'Finish the draft' })).toBeNull();
   });
 
   it('reports a refusal rather than pretending it worked', async () => {
