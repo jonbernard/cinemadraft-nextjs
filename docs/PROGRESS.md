@@ -1073,6 +1073,30 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 
 ### Phase 15 notes
 
+- ✅ **Phase gate met on `main`.** `npm run verify` (lint, typecheck, layering,
+  1,634 unit tests, the CI subset, build), `npm run build-storybook`, and
+  `npm run test:e2e` — 67 passed, 5 skipped, 0 failed — plus a browser pass over
+  `/`, `/browse` (both sides), a film page, an award show and a scratch league's
+  setup at 1440px and 390px in both schemes. Zero console errors and zero
+  horizontal overflow on every surface.
+
+  🔴 The gate's browser pass found three things the ticks had missed, all fixed
+  before the phase closed: the season stepper could not reach five of its own
+  boxes at 390px (including the last three shows of the season) while announcing
+  that it could; the search panel needed two Escapes, sat flush to the left edge
+  and hung off the bottom of the viewport; and the JSON-LD T6 claimed had never
+  been written. Two of the three had passing tests over them the whole time —
+  the stepper's tests never set a narrow width, and nothing asserted the search
+  panel's geometry. **A ticked box is not evidence; the browser is.**
+
+- ⚠️ **One intermittent e2e failure, recorded rather than chased.**
+  `awards-lifecycle.spec.ts`'s "a nomination and a win reach the film, the board
+  and the leaderboard" failed once in a full parallel run, then passed in
+  isolation and passed again in a second full run. The spec is byte-identical on
+  both branches and no scratch data was left behind, so the likely cause is
+  `fullyParallel: true` plus season state shared with another spec. If it
+  recurs, that is where to look first.
+
 - 🔴 **T6 was ticked as including JSON-LD, and JSON-LD did not exist.** The
   design doc's §6 asks for a schema.org `Movie` on film pages; the T6 plan
   section never mentions it, so it was dropped when the plan was written and the
