@@ -23,6 +23,16 @@ import { signInAs } from './support/session';
 const MEMBER_ID = 6;
 
 /**
+ * The prefix every row this spec creates is named with, so the cleanup below
+ * can delete exactly its own and nothing else.
+ *
+ * 🔴 The database this runs against locally is a restored copy of production.
+ * League 1 is sixty real people's draft history; the only rows this file may
+ * remove are the `@example.test` identities it minted itself.
+ */
+const TAG = 'e2e-dashboard';
+
+/**
  * Raw `pg` rather than the Prisma client: Playwright does not resolve the
  * `@/` alias into `generated/prisma`, so importing `lib/db` fails at require
  * time and takes the whole spec with it.
@@ -94,6 +104,12 @@ async function signInAsMember(page: Page): Promise<void> {
 }
 
 test.describe('dashboard', () => {
+  test.afterAll(async () => {
+    await withDb(async (query) => {
+      await query(`delete from users where email like '${TAG}-%@example.test'`);
+    });
+  });
+
   test('🔴 signed out, it shows the season and no one else’s team (D44)', async ({
     page,
   }) => {
@@ -112,6 +128,36 @@ test.describe('dashboard', () => {
     // are the two things a visitor must not see.
     await expect(page.getByRole('table', { name: /League standings/i })).toHaveCount(0);
     await expect(page.getByRole('list', { name: /drafted films/i })).toHaveCount(0);
+  });
+
+  test('🔴 a signed-out reader is told what this is, above the fold', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    const lede = page.getByTestId('signed-out-lede');
+    await expect(lede).toBeVisible();
+    await expect(lede).toContainText(/draft a team of films/i);
+    await expect(lede.getByRole('link', { name: 'Register' })).toBeVisible();
+
+    // Above the fold, which is the whole point — the invitation already
+    // existed, four sections down, where nobody arriving mid-ceremony met it.
+    const box = await lede.boundingBox();
+    expect(box?.y ?? Infinity).toBeLessThan(600);
+
+    // And above the rail it introduces.
+    const rail = await page.getByTestId('season-window').boundingBox();
+    expect(box?.y ?? Infinity).toBeLessThan(rail?.y ?? 0);
+  });
+
+  test('🔴 and it is gone the moment they are signed in', async ({ page }) => {
+    await signInAs(page, { email: `${TAG}-lede@example.test`, firstName: 'Reader' });
+    await page.goto('/');
+
+    await expect(page.getByTestId('signed-out-lede')).toHaveCount(0);
+    // The heading it sat under is still there, so this is the lede going and
+    // not the whole section.
+    await expect(page.getByRole('heading', { level: 1, name: 'Season' })).toBeVisible();
   });
 
   test('🔴 the page has a valid heading outline', async ({ page }) => {

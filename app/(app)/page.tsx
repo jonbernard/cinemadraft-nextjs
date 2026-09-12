@@ -78,6 +78,37 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
           Season
         </SectionHead>
 
+        {/* 🔴 The front door, for the only reader who needs one (P17.T5).
+            `/` is public during awards season and opened with an h1 reading
+            "Season" and a rail of dates — nothing that says what the product
+            is, and no way in until four sections further down. One line and
+            one action, and it is gone for a member, who does not need to be
+            told what the app they are logged into does.
+
+            Below the `SectionHead` rather than above it: content before the
+            document's first heading breaks the outline P17.T1 just fixed.
+
+            The action is the same `<Link>` lockup `EmptyState` uses for its
+            own — `accent.fill` with white on it, 6.58:1, `rounded-sm` for
+            D73's 6px — rather than a second primary-action pattern. */}
+        {user == null ? (
+          <div
+            data-testid="signed-out-lede"
+            className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <p className="text-text-secondary max-w-prose text-sm leading-relaxed">
+              Draft a team of films before awards season, and score every nomination and
+              win they pick up.
+            </p>
+            <Link
+              href="/auth/register"
+              className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 shrink-0 items-center rounded-sm px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Register
+            </Link>
+          </div>
+        ) : null}
+
         {/* Renders nothing when the season has no shows yet, so the heading
             above it is unconditional and the page always has an h1. */}
         <SeasonStepper phases={view.events} />
@@ -118,10 +149,13 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
       </section>
 
       {user == null ? (
-        <EmptyState
-          title="Play the season"
-          action={{ label: 'Register', href: '/auth/register' }}
-        >
+        /* No action here any more: the lede at the top of the page carries it
+           (P17.T5), and two identical Register buttons 2,000px apart is a
+           choice a reader has to make twice. What stays is the half the lede
+           cannot carry — the returning member's reassurance that their history
+           follows their email — which belongs at the end of a page somebody has
+           read rather than in a one-line opener. */
+        <EmptyState title="Play the season">
           Draft a team of films before awards season and score points as they pick up
           nominations and wins. Played before? Register with the same email and your
           leagues, drafts and points come with you.

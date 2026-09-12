@@ -1252,7 +1252,7 @@ order, the tranche boundaries and the browser-verification protocol.
 - [x] P17.T2 — `AppShell` breakpoints: close the 1024–1280px dead zone; **decided — identity, search and sign-in fold into the tab bar row**, wordmark left, search right. Watch that the chrome does not read as a sixth tab
 - [x] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
 - [ ] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
-- [ ] P17.T5 — signed-out lede above `SeasonStepper`
+- [x] P17.T5 — signed-out lede above `SeasonStepper`
 - [x] P17.T6 — `/browse` **`replaceState`s the cursor as you scroll** — auto-append stays exactly as D80 wanted, Back and shareability come back, no new UI. Narrowest possible amendment to D80
 - [x] P17.T7 — draft console never returns silently from `assign`
 
@@ -1378,6 +1378,24 @@ recorded here, so the change is a number rather than an impression._
   nothing on the bar is invisible in light mode. Signed in, the bar's account
   control is a 44×44 square named "Log out" at 1024 and the strip's 80×44
   button at 1440; the two never render at once.
+
+- **P17.T5, the signed-out lede, and the judgement call the plan asked for.**
+  Measured in a production build at 1440/1280/1024/390px in both schemes. The
+  lede's `y` is 187 at 1440 and 1280 and 107 at 1024 and 390 — above the fold
+  at every width, against an 844px viewport. At 390 it stacks (`flex-direction:
+  column`), the Register target is 44px tall and starts at `y` 168 against a
+  sentence ending at 152, so nothing collides, and `scrollWidth` is 390. Signed
+  in, `[data-testid="signed-out-lede"]` is 0 at all four widths and the "Season"
+  `h1` is still the first heading. `text-text-secondary` on the panel ground is
+  **7.35:1** dark and **6.78:1** light.
+  🔴 **Which way the duplicate action went: the `EmptyState` lost its action
+  and kept its copy**, as the plan's default. Recorded honestly, because it is
+  a near thing — the page now ends on "Played before? Register with the same
+  email…" with nothing to click in that block, so the closing copy reads as an
+  instruction without an affordance. It was left that way because the fix this
+  task exists for is a way in *above the fold*, and restoring the lower action
+  would put two identical Register buttons 2,000px apart. **P17.T29 rebuilds
+  the signed-in half of `/` and should revisit this block's ending.**
 
 - **Amendments awaiting a D-number (recorded by P17.T26, from D85 up).** The
   ledger is complete through D84; nothing in tranche 1 edits `DECISIONS.md`,
