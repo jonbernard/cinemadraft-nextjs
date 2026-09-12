@@ -31,11 +31,13 @@ export const metadata: Metadata = {
 export default function TokensPage() {
   return (
     <main className="bg-bg-base text-text-primary flex min-h-dvh flex-col items-start gap-8 p-8">
-      {/* The smoke run's "the page renders" assertion looks for this word. The
-          wordmark alone — the MUI Minimal pinwheel is not ours (§6.10). */}
-      <span className="font-display text-lg font-bold uppercase [font-variation-settings:'wdth'_120]">
-        Cinemadraft
-      </span>
+      {/* 🔴 Plain text, deliberately. The smoke run's "the page renders" check
+          only needs this word on screen, and the markup this page was rebuilt
+          from carried `font-display`, `uppercase` and the Archivo `wdth` axis —
+          all three retired by D69–D77. Copying a deleted page brought them back
+          with it, which is exactly how a retired primitive returns: not by
+          decision, but by transcription. */}
+      <span className="text-lg">Cinemadraft</span>
 
       <div className="flex flex-wrap items-center gap-4">
         {/* A themed background proves Tailwind's preflight did not strip MUI —

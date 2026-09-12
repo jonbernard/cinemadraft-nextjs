@@ -328,94 +328,9 @@ no `noImgElement` ignore remains.
 
 ---
 
-### Phase 12 — Parallel run
-
-- T1: Deploy to `next.cinemadraft.com` against a copy of production data
-- T2: Manual verification pass, feature by feature, against `PARITY.md`
-- T3: Measure Neon free-tier headroom and Runtime Cache hit rate under realistic load
-- T4: Load-test draft-day search
-- T5: Fix everything found
-
-**Gate:** full manual pass with zero blocking defects; free-tier headroom confirmed sufficient.
-
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
-
----
-
-### Phase 13 — Cutover
-
-- T1: Swap Clerk to its Production instance — create it for `cinemadraft.com`, add DNS records, set `pk_live_`/`sk_live_` in Vercel Production, recreate the webhook and its signing secret (all per-instance)
-- T2: Final `pg_dump` from Heroku → Neon
-- T3: **Restore the twelve award-show logo URLs that T2 just clobbered.**
-  `events.image` is data: the dump restored in T2 still holds the old
-  `/images/awards/*.jpg` paths, so it overwrites every Blob URL Phase 11's
-  `scripts/upload-award-logos.mjs` wrote, and turns
-  `lib/repositories/events.test.ts` red the next time it runs against Neon.
-  By this phase, `scripts/upload-award-logos.mjs` cannot fix it — the write
-  token was deleted and revoked at the end of Phase 11 (deliberately: nothing
-  in the running app writes to Blob), and its default `srcDir`,
-  `../cinemadraft/public/images/awards`, is a checkout of the app this phase
-  retires, not guaranteed to exist here. The Blob objects, though, are
-  untouched — Phase 11 uploaded them to deterministic paths — so this is a
-  plain, idempotent SQL update against the twelve rows, run before T4's
-  verification pass:
-
-  ```sql
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/ace.jpg'    WHERE abbreviation = 'ace';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/adg.jpg'    WHERE abbreviation = 'adg';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/afi.png'    WHERE abbreviation = 'afi';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/asc.jpg'    WHERE abbreviation = 'asc';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/bafta.jpg'  WHERE abbreviation = 'bafta';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/dga.jpg'    WHERE abbreviation = 'dga';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/gg.jpg'     WHERE abbreviation = 'gg';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/oscars.jpg' WHERE abbreviation = 'oscars';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/pga.jpg'    WHERE abbreviation = 'pga';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/raz.jpg'    WHERE abbreviation = 'raz';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/sag.jpg'    WHERE abbreviation = 'sag';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/wga.jpg'    WHERE abbreviation = 'wga';
-  ```
-
-  These URLs were read back from the local restored database on 2026-08-24,
-  after Phase 11's upload ran against it — verify a couple against Neon (or
-  the Blob dashboard) before trusting them again if much time has passed.
-  Idempotent: running this against a database that already has these values
-  is a no-op, so re-running it by mistake is harmless. Needs neither the Blob
-  write token (deleted) nor a checkout of the app being retired.
-- T4: Add `cinemadraft.com` to the Vercel project and point its DNS at Vercel; add or repoint the Clerk webhook to the apex
-- T5: Verify production sign-in, draft, and scoring — plus the award-show logos, which T3 restores
-- T6: Monitor for 48 hours
-- T7: Retire Heroku
-
-**Gate:** site live on Vercel; Heroku scaled to zero.
-
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
-
----
-
-### Phase 14 — Realtime
-
-
-> **Also covers the draft board (D48).** The owner enters picks live on a call while the league watches, so the board needs the same transport as the live award show — one mechanism, both surfaces. The components already take plain props, so this is a change of supplier, not a rewrite.
-
-Replaces the polling fallback (D13).
-
-- T0: **Choose the realtime transport** (D23 deferred this) — evaluate Upstash direct, Pusher, Ably, and Postgres `LISTEN`/`NOTIFY`, then record the decision
-- T1: Publisher wired into the winner-marking Server Action
-- T2: `/api/live/[event]/stream` SSE route
-- T3: Client subscription replacing the polling hook
-- T4: Winner-seal stamp animation — the one orchestrated motion moment (§6.8)
-- T5: Reconnection handling
-- T6: E2E: two clients, admin marks winner, viewer receives it
-
-**Gate:** live event works end to end with two concurrent clients.
-
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
-
----
-
 ### Phase 15 — Pre-cutover polish
 
-🔴 **This phase runs before Phase 12, despite its number.** Everything in it
+🔴 **Runs where it sits here, before the go-live phases.** Everything in it
 was found by the owner using `next.cinemadraft.com`, or is release work a live
 site needs and a port did not. The number is 15 because phase numbers are
 referenced from `PROGRESS.md`, `PARITY.md` and a year of commit messages, and
@@ -450,27 +365,9 @@ both schemes; `npm run verify` green; the new E2E specs green in CI.
 
 ---
 
-### Phase 16 — New features
-
-
-> **Possible future enhancement, not planned work:** a self-service timed draft (clock, on-the-clock cell, per-turn deadline). The owner confirmed that entering picks during a video call is the intended workflow (D46), so this would be a change in how the product works, not a gap to close. Only build it if the owner asks.
-
-Per §7, all post-cutover.
-
-- Season timeline rail (already built in phase 5 — extend to a full-season view)
-- Points ledger (already built in phase 9 — extend)
-- Head-to-head roster comparison, with shared vs unique picks called out
-- Public logged-out league board replacing the welcome card
-
-**Gate:** per-feature E2E green.
-
-🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
-
----
-
 ### Phase 17 — Design review remediation
 
-🔴 **This phase runs before Phase 12, like Phase 15.** The number is 17 because
+🔴 **Runs where it sits here, before the go-live phases.** The number is 17 because
 phase numbers are referenced from `PROGRESS.md`, `PARITY.md` and a year of
 commit messages; inserting a 15.5 or renumbering would invalidate them. Read
 the number as an identifier, not as an order.
@@ -593,7 +490,8 @@ impression.
 
 ### Phase 18 — How it works
 
-🔴 **Also runs before Phase 12.** See the numbering note on Phase 17.
+🔴 **Runs where it sits here, before the go-live phases.** See the numbering
+note on Phase 17: the number is an identifier, not a position.
 
 Replaces `/rules-and-scoring` with `/how-it-works`, public, and treats it as
 the product's front door rather than as a reference page. It is the only page
@@ -632,3 +530,122 @@ list; Razzie nominations cost you points.
 or the `points` table by a test; readable at 390px; `npm run verify` green.
 
 🔴 **Also gated, from Phase 3.5:** built from the Phase 3.5 primitives, with Storybook stories, and none of the retired treatments (D69–D77).
+
+---
+
+### Phase 12 — Parallel run
+
+🔴 **The go-live phases sit last in this document, and that is the running
+order.** They were written second — Phase 12 followed Phase 11 — and everything
+added since (15, 17, 18) had to carry a note saying it ran *before* 12 despite
+its number. Four such notes is a convention nobody can hold in their head, so
+the document now reads in execution order and the notes are gone. **Phase
+numbers are identifiers, not sequence**: they are referenced from
+`PROGRESS.md`, `PARITY.md` and a year of commit messages, so they never move.
+The order is the order they appear here.
+
+Nothing about the cutover changed — it is still gated on Phase 7's parity
+audit, and it is still the last thing that happens.
+
+- T1: Deploy to `next.cinemadraft.com` against a copy of production data
+- T2: Manual verification pass, feature by feature, against `PARITY.md`
+- T3: Measure Neon free-tier headroom and Runtime Cache hit rate under realistic load
+- T4: Load-test draft-day search
+- T5: Fix everything found
+
+**Gate:** full manual pass with zero blocking defects; free-tier headroom confirmed sufficient.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+
+---
+
+### Phase 13 — Cutover
+
+- T1: Swap Clerk to its Production instance — create it for `cinemadraft.com`, add DNS records, set `pk_live_`/`sk_live_` in Vercel Production, recreate the webhook and its signing secret (all per-instance)
+- T2: Final `pg_dump` from Heroku → Neon
+- T3: **Restore the twelve award-show logo URLs that T2 just clobbered.**
+  `events.image` is data: the dump restored in T2 still holds the old
+  `/images/awards/*.jpg` paths, so it overwrites every Blob URL Phase 11's
+  `scripts/upload-award-logos.mjs` wrote, and turns
+  `lib/repositories/events.test.ts` red the next time it runs against Neon.
+  By this phase, `scripts/upload-award-logos.mjs` cannot fix it — the write
+  token was deleted and revoked at the end of Phase 11 (deliberately: nothing
+  in the running app writes to Blob), and its default `srcDir`,
+  `../cinemadraft/public/images/awards`, is a checkout of the app this phase
+  retires, not guaranteed to exist here. The Blob objects, though, are
+  untouched — Phase 11 uploaded them to deterministic paths — so this is a
+  plain, idempotent SQL update against the twelve rows, run before T4's
+  verification pass:
+
+  ```sql
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/ace.jpg'    WHERE abbreviation = 'ace';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/adg.jpg'    WHERE abbreviation = 'adg';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/afi.png'    WHERE abbreviation = 'afi';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/asc.jpg'    WHERE abbreviation = 'asc';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/bafta.jpg'  WHERE abbreviation = 'bafta';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/dga.jpg'    WHERE abbreviation = 'dga';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/gg.jpg'     WHERE abbreviation = 'gg';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/oscars.jpg' WHERE abbreviation = 'oscars';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/pga.jpg'    WHERE abbreviation = 'pga';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/raz.jpg'    WHERE abbreviation = 'raz';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/sag.jpg'    WHERE abbreviation = 'sag';
+  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/wga.jpg'    WHERE abbreviation = 'wga';
+  ```
+
+  These URLs were read back from the local restored database on 2026-08-24,
+  after Phase 11's upload ran against it — verify a couple against Neon (or
+  the Blob dashboard) before trusting them again if much time has passed.
+  Idempotent: running this against a database that already has these values
+  is a no-op, so re-running it by mistake is harmless. Needs neither the Blob
+  write token (deleted) nor a checkout of the app being retired.
+- T4: Add `cinemadraft.com` to the Vercel project and point its DNS at Vercel; add or repoint the Clerk webhook to the apex
+- T5: Verify production sign-in, draft, and scoring — plus the award-show logos, which T3 restores
+- T6: Monitor for 48 hours
+- T7: Retire Heroku
+
+**Gate:** site live on Vercel; Heroku scaled to zero.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+
+---
+
+### Phase 14 — Realtime
+
+🔴 **After the cutover, with Phase 16.** Realtime was always deferred — D23 put
+the transport choice off, and P17.T16 ships a live page that deliberately does
+not need it. Nothing here gates going live.
+
+
+> **Also covers the draft board (D48).** The owner enters picks live on a call while the league watches, so the board needs the same transport as the live award show — one mechanism, both surfaces. The components already take plain props, so this is a change of supplier, not a rewrite.
+
+Replaces the polling fallback (D13).
+
+- T0: **Choose the realtime transport** (D23 deferred this) — evaluate Upstash direct, Pusher, Ably, and Postgres `LISTEN`/`NOTIFY`, then record the decision
+- T1: Publisher wired into the winner-marking Server Action
+- T2: `/api/live/[event]/stream` SSE route
+- T3: Client subscription replacing the polling hook
+- T4: Winner-seal stamp animation — the one orchestrated motion moment (§6.8)
+- T5: Reconnection handling
+- T6: E2E: two clients, admin marks winner, viewer receives it
+
+**Gate:** live event works end to end with two concurrent clients.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+
+---
+
+### Phase 16 — New features
+
+
+> **Possible future enhancement, not planned work:** a self-service timed draft (clock, on-the-clock cell, per-turn deadline). The owner confirmed that entering picks during a video call is the intended workflow (D46), so this would be a change in how the product works, not a gap to close. Only build it if the owner asks.
+
+Per §7, all post-cutover.
+
+- Season timeline rail (already built in phase 5 — extend to a full-season view)
+- Points ledger (already built in phase 9 — extend)
+- Head-to-head roster comparison, with shared vs unique picks called out
+- Public logged-out league board replacing the welcome card
+
+**Gate:** per-feature E2E green.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
