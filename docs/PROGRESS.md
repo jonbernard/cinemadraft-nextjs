@@ -1057,18 +1057,18 @@ unseeded) passes 1061/1061; `npm run verify` is all green.
 Design: `docs/superpowers/specs/2026-08-24-phase-15-pre-cutover-polish-design.md`.
 Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
 
-- [ ] P15.T0 — renumber the plan, record D79–D82
+- [x] P15.T0 — renumber the plan, record D79–D82 — _done in `d96e5ec`, which recorded D79–**D84**; box ticked retroactively 2026-09-12_
 - [x] P15.T1 — leaderboard: top 10 + "Show 10 more", and the mobile layout (D79)
 - [x] P15.T2 — `SeasonStepper`: a box per show phase, anchored to the end (D81)
 - [x] P15.T3 — global search panel
-- [ ] P15.T4 — Clerk combined sign-in-or-up flow, and the login copy
+- [x] P15.T4 — Clerk combined sign-in-or-up flow, and the login copy — _done in `3119618`; box ticked retroactively 2026-09-12_
 - [x] P15.T5 — brand mark, icons, favicon (records D83)
 - [x] P15.T6 — SEO: metadata, canonicals, robots, sitemap, OG images, JSON-LD
 - [x] P15.T7 — `/browse` auto-append (D80) — _landed in `41405b0`, not its own commit; see the note below_
 - [x] P15.T8 — `/browse` header photo
 - [x] P15.T9 — the discover query: future returns pre-release films only, and the quality floors move server-side
 - [x] P15.T10 — 🔴 test-only auth cookie (D82) — security-bearing, reviewer pass **done** (`05e2a4c` + `1ab3702`)
-- [ ] P15.T11 — E2E: the league lifecycle, nominations, winners, points
+- [x] P15.T11 — E2E: the league lifecycle, nominations, winners, points — _done in `d78485b`; box ticked retroactively 2026-09-12_
 - [ ] P15.T12 — group randomisation ceremony
 
 ### Phase 15 notes
@@ -1167,6 +1167,120 @@ Plan: `docs/superpowers/plans/2026-08-25-phase-15-pre-cutover-polish.md`.
   🔴 **Owner:** set `DIRECT_URL` in Vercel (Preview and Production) to the
   non-pooled Neon connection string before the next deploy, or the build step
   runs against the pooler and may hang on the lock.
+
+---
+
+## Phase 17 — Design review remediation
+
+🔴 **Runs here, before Phase 12, despite its number** — see `docs/PLAN.md`.
+Source: the design review of 2026-09-12 against `7a1e8d8`. All 21 findings
+marked **ship** by the owner. The legacy app is evidence, not a target — no
+task below is justified by "the old app did it".
+Plan: _not yet written — write it before starting T0._
+
+### Product and structure
+
+- [ ] P17.T0 — `/rules-and-scoring` joins `isPublic`; fix the docstring that already claims it is public
+- [ ] P17.T1 — `SectionHead` sizes **28 / 20 / 17** keyed to `as`; fix the `h1 → h3 → h2` order on `/`
+- [ ] P17.T2 — `AppShell` breakpoints: close the 1024–1280px dead zone; **decided — identity, search and sign-in fold into the tab bar row**, wordmark left, search right. Watch that the chrome does not read as a sixth tab
+- [ ] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
+- [ ] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
+- [ ] P17.T5 — signed-out lede above `SeasonStepper`
+- [ ] P17.T6 — `/browse` **`replaceState`s the cursor as you scroll** — auto-append stays exactly as D80 wanted, Back and shareability come back, no new UI. Narrowest possible amendment to D80
+- [ ] P17.T7 — draft console never returns silently from `assign`
+
+### Accessibility and correctness
+
+- [ ] P17.T8 — a11y batch: 17 unnamed poster links, skip link, focus-ring token on the rail and the theme toggle
+- [ ] P17.T9 — 🔴 Clerk appearance tokens break the fill-only rule (2.45:1 light, 3.79:1 dark); extend `contrast.test.ts` to cover the appearance map
+- [ ] P17.T10 — `/films/[tmdbId]` 390px light overflow (430/390) and the 46px light-vs-dark intrinsic-width delta
+
+### Visual
+
+- [ ] P17.T11 — media through to rosters (`app/(app)/page.tsx:171, :315` pass `posterUrl: null`)
+- [ ] P17.T12 — award-show marks at 64px `contain` on a neutral plate; pluralise the count
+- [ ] P17.T13 — film detail title/year lockup
+- [ ] P17.T14 — `NavRail` owns its column
+- [ ] P17.T15 — winner seal, pulled forward from P14.T4 (does not close it)
+- [ ] P17.T16 — `/live/[abbr]` without a transport (does not close P14.T0–T3)
+- [ ] P17.T17 — LCP priority on the first shelf frames
+
+### Type and colour system
+
+🔴 All six questions in this group were **decided 2026-09-12** — the task text in
+`docs/PLAN.md` carries the chosen answer, not a choice. Two amend a locked
+decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
+
+- [ ] P17.T18 — body size to **15px / 13px small** (amends D71)
+- [ ] P17.T19 — 🔴 poster captions get **serif at 15px** — `PosterFrame.tsx:120` and `BrowseMonth.tsx:89` set film titles in Archivo, which D70 says are names. Newsreader deferred to after Phase 18
+- [ ] P17.T20 — `beam` **spent on live + the `Next · date TBA` chip**; not done until it renders
+- [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 Now blocked by P17.T35 — brass already means "drafted" on the draft board
+- [ ] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
+- [ ] P17.T23 — **40px section step** (16px within a section, 8px within a group)
+- [ ] P17.T24 — **enforce the 4px grid in `scripts/layering.sh`** (43 gaps off it today)
+- [ ] P17.T25 — **6px is the default radius; fix the drift** (upholds D73; `md` 58 vs `sm` 36, `lg` unused)
+
+### Signed-in surfaces
+
+🔴 Reviewed 2026-09-12 via the `E2E_TEST_AUTH` cookie against the restored
+production database — the gap both earlier reviews flagged. **Do not flatten the
+draft console or the watchlist:** they are the best-designed screens in the
+product and should only inherit tokens from this phase, not be redesigned by it.
+
+- [ ] P17.T27 — `not-found` renders inside the app shell; `/live` and `/members` currently drop the whole shell
+- [ ] P17.T28 — 🔴 `/admin/season` confirms before re-scoping the app for every user. **Safety-bearing; own reviewer pass.** `/admin/broadcast` is the model
+- [ ] P17.T29 — signed-in home shows the member's own state (today it is the signed-out page plus three icons)
+- [ ] P17.T30 — league page: promote the owner actions, move the raw invite URL behind an Invite action, hide it on a complete season
+- [ ] P17.T31 — roster beside standings, into the empty 55% of the content width
+- [ ] P17.T32 — `/leagues`: one label for one action; mark the admin section
+- [ ] P17.T33 — 88% of signed-in text is 12px; kill the `text-[0.65rem]` arbitrary value (117 elements at 10.4px)
+- [ ] P17.T34 — `text-dim` outnumbers `text-primary` 3.6:1; audit what deserves it
+- [ ] P17.T35 — 🔴 brass already means "drafted" (320 instances on the draft board). **Blocks P18.T6** until its meaning is decided
+- [ ] P17.T36 — `/list` has three left edges (445 / 469 / 493)
+
+### Recording the decisions
+
+- [ ] P17.T26 — record **D85–D97** for the thirteen answers above and in P18.T0. 🔴 **Not D84 — that is taken** (`E2E runs in CI, with Clerk absent rather than credentialled`, added by `d96e5ec` alongside D79–D83). The ledger is complete through D84; the earlier claim that it was four entries behind was wrong — P15.T0 had shipped and only its checkbox was stale. Newsreader is a deferral, not a decision: it belongs in `DECISIONS.md` → Still open
+
+### Phase 17 notes
+
+_Fill these in as you go. The gate requires the T18–T25 measurements re-run and
+recorded here, so the change is a number rather than an impression._
+
+- Baseline, measured 2026-09-12 across `/`, `/browse`, `/award-shows`,
+  `/films/[id]` at 1440px, both schemes, 1,272 visible text elements:
+  Archivo 1088 · Plex Mono 182 · Instrument Serif 37 · Sora 4 · Newsreader 1.
+  Gaps: 12px ×250, 8px ×103, 4px ×57, 16px ×36, 6px ×26, 24px+ ×11.
+  Radii: poster-clamp ×158, 10px ×58, 6px ×36, pill ×28, 16px ×0.
+
+---
+
+## Phase 18 — How it works
+
+🔴 **Runs here, before Phase 12, despite its number** — see `docs/PLAN.md`.
+Replaces `/rules-and-scoring` with a public `/how-it-works`. Every number on
+the page must trace to `lib/services/scoring.ts` or the `points` table; no
+invented claims.
+Plan: _not yet written — write it before starting T0._
+
+- [x] P18.T0 — **decided 2026-09-12:** route is `/how-it-works` with `/rules-and-scoring` permanently redirecting; the scoring table stays on the page, **below the worked example**. Nav label changes with the route. (Recording the D-number is P17.T26)
+- [ ] P18.T1 — page shell and section spine, public
+- [ ] P18.T2 — the worked example from live season data, with an empty-season fallback
+- [ ] P18.T3 — the scoring table rebuilt legibly, grouped by show, readable at 390px
+- [ ] P18.T4 — the twelve shows, using the P17.T12 mark treatment
+- [ ] P18.T5 — the season shape as a timeline, from the `SeasonStepper` data
+- [ ] P18.T6 — motion and colour; brass carries the awards beat (closes P17.T21)
+- [ ] P18.T7 — the way in: one primary action, repeated at most twice
+- [ ] P18.T8 — SEO: metadata, canonical, OG image
+- [ ] P18.T9 — E2E: renders signed out, survives an empty season, numbers match the scoring service
+
+### Phase 18 notes
+
+- Point values as at 2026-09-12 (`points` table): Alphabet 5/5/5 for tiers 3/2/1
+  — flat, not tiered. Golden Globes 5/10/15. Oscars 10/15/20. Razzies
+  −10/−15/−20. Tier 1 = Best Picture, tier 2 = acting/writing/directing,
+  tier 3 = every other televised category. A nomination earns P, a win earns
+  it twice.
 
 ---
 

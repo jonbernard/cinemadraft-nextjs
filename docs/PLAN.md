@@ -465,3 +465,170 @@ Per §7, all post-cutover.
 **Gate:** per-feature E2E green.
 
 🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+
+---
+
+### Phase 17 — Design review remediation
+
+🔴 **This phase runs before Phase 12, like Phase 15.** The number is 17 because
+phase numbers are referenced from `PROGRESS.md`, `PARITY.md` and a year of
+commit messages; inserting a 15.5 or renumbering would invalidate them. Read
+the number as an identifier, not as an order.
+
+**Source:** a design review run 2026-09-12 against commit `7a1e8d8` — the
+running app at 1440px and 390px in both schemes, plus the live legacy app as
+evidence. Two isolated assessments (a design review and a mechanical
+detector/browser pass) plus hand inspection. The owner marked all 21 findings
+**ship**. The published review is the artifact of record for the reasoning; the
+tasks below are the work.
+
+🔴 **The legacy app is evidence, not a target.** Several findings were first
+noticed as "the old app did this and the rewrite does not". That is how they
+were *found*; it is not why they are being fixed. Every task below is justified
+on its own merits, and "restore what cinemadraft.com did" is never an
+acceptable rationale in a plan step or a commit message.
+
+🔴 **Phase 14 already owns two of these.** The winner-seal stamp is P14.T4 and
+the live transport is P14.T0–T3. T15 below deliberately pulls the seal forward
+because it does not need realtime, and T16 ships a live page that does not
+need the transport decision. Neither task closes its Phase 14 counterpart.
+
+🔴 **Three tasks touch decisions the ledger marks locked. They amend, they do
+not ignore.** `DECISIONS.md` is "locked, do not re-litigate", so a task that
+changes a recorded outcome has to say so and earn a new D-number — otherwise
+the ledger and the code disagree and the next reader trusts the wrong one.
+
+| Task | Decision | Standing |
+|---|---|---|
+| T6 `/browse` URL state | **D80** | Reverses it in part. D80 records that the owner was shown exactly what auto-append traded away — "a linkable page, a working Back button" — and chose it anyway. The 2026-09-12 review argued the trade was wrong for this page and the owner marked it ship. That is a second decision with the same information, not a forgotten one: **write it as an amendment to D80, keeping auto-append and buying back only the URL** |
+| T18 body size | **D71** | Contests its rationale. D71 keeps Archivo partly for legibility "at 11–13px, which is where a league app lives" — so small type is a chosen outcome, not drift. T18 must argue that 79%-of-text-at-14px is past what that reasoning intended, or stand down |
+| T22 surfaces | **D72** | Compatible. D72 locks *no hairline outlines, separation by surface step*; T22 says the step it specifies is too small to read and that `raised` has become the default surface. Making the mechanism work is not re-litigating it — but if the answer is "add a border back", that is a D72 amendment and needs saying |
+
+T1 (heading sizes) is **not** a D70 conflict and should not be written as one:
+D70 assigns faces semantically — serif for names, Archivo for structure — and
+says nothing about size. An Archivo `h1` at 28px honours D70 exactly.
+
+🔴 **The next free decision number is D85.** `DECISIONS.md` is complete through
+**D84** — D79–D83 and D84 all landed in `d96e5ec` ("P15.T0: plan phase 15, and
+record D79-D84"). An earlier draft of this phase claimed the ledger was four
+entries behind; that was read off P15.T0's unticked checkbox rather than off the
+ledger, and was wrong. The checkbox was stale, not the ledger. (The one genuine
+gap, D42, predates this work and is unrelated.)
+
+#### Product and structure
+
+- T0: `/rules-and-scoring` joins `isPublic` in `proxy.ts` — the page's own docstring already claims it is public and the matcher disagrees. Fix the comment too. (Superseded in scope by Phase 18, which replaces the page; do T0 first so the route is public regardless of when 18 lands)
+- T1: `SectionHead` — **28 / 20 / 17** keyed to `as` (decided 2026-09-12), keeping the serif `name` variant at 24px as an orthogonal axis rather than as the hierarchy. 28 is chosen so an `h1` outranks a league name; today it does not. Then fix the `h1 → h3 → h2` order on `/`, which becomes visible once the sizes differ
+- T2: `AppShell` breakpoints — separate the rail's gate from the strip's, and close the 1024–1280px dead zone (currently phone tab bar, no rail, no header). **Decided 2026-09-12: identity, search and sign-in fold into the tab bar row** — wordmark left, search right, on the bar that already exists. No new vertical space on a phone, and the bar becomes the app's identity rather than only its navigation. 🔴 Note the consequence: the tab bar now carries five destinations *and* three chrome affordances, so the bottom-nav-max-5 rule applies to the destinations only and the chrome must not read as a sixth tab
+- T3: `SeasonStepper` — fall back to the last incomplete show regardless of date, chip it `Next · date TBA`, and anchor the window to that show rather than to the end of the array. With live data the widget currently highlights nothing
+- T4: `LeaderboardTable` — persistent column labels rather than `title` tooltips (dead on touch); a year control that is the current year plus a picker, which also fixes ten 33.6×20px targets; sticky film column; and on mobile an expandable row that breaks the total into its shows instead of hiding them
+- T5: Signed-out lede — one line and one action above `SeasonStepper` when `user == null`, dropped the moment someone signs in
+- T6: `/browse` — write the appended page or cursor into the URL so Back restores position and a position is shareable (revisits D80's trade without abandoning auto-append)
+- T7: Draft console — `assign` must never return silently. Name the film and the reason on the `movieId == null` and no-seat branches
+
+#### Accessibility and correctness
+
+- T8: a11y batch — take the 17 unnamed poster-wrapper links on `/browse` out of the tab order (`aria-hidden` + `tabindex="-1"`); add a skip-to-content link as the first focusable element in `AppShell`; fix `focus-visible:outline-accent-fill` resolving to `currentcolor` on the seven sidebar links, and give the theme toggle a focus class so it stops falling back to Chrome's default ring
+- T9: 🔴 Clerk appearance tokens — the config passes `accent.fill` through as both a button foreground pairing and a link colour, breaking the fill-only rule `tokens.ts` states. Measured: light "Continue" 2.45:1, dark "Register" 3.79:1, the only contrast failures in the product. Pin the on-primary text to white (5.23:1, the pairing the token was measured for), map links to `accent.text`, and **extend `contrast.test.ts` to cover the Clerk appearance map** so the rule is enforced where it is currently only written down
+- T10: `/films/[tmdbId]` — the grid item overruns its 326px track in both schemes (352px dark, 398px light) and light pushes the document to 430px at a 390px viewport. Fix the overflow, and find the 46px light-vs-dark delta on the closed Trailers `<details>` buttons: a `light:` variant changing an element's intrinsic width is adding box, not colour
+
+#### Visual
+
+- T11: Media through to rosters — `app/(app)/page.tsx` passes `posterUrl: null` at :171 and :315, so a member's own drafted team renders as grey two-letter initials. A TMDB fallback beats an initials box if the Phase 11 migration is the blocker
+- T12: Award-show marks — 64px minimum, `object-fit: contain` on a neutral plate that stays light in both schemes so dark-on-transparent logos survive, and pluralise the category count ("1 categories"). Twelve award bodies are the app's primary vocabulary and the page whose job is to teach them renders them as grey smudges
+- T13: Film detail lockup — pull the year inside the scrim beside the title, same serif at a smaller optical size in `text.secondary`, baseline-aligned. It currently sits below the image in 12px dim grey, cut from the name by a hard edge
+- T14: `NavRail` — the card ends after seven items leaving ~530px of dead column with the avatar detached at the bottom. Either run the surface full height with the avatar docked inside, or pull the avatar into the card
+- T15: Winner seal — **pulled forward from P14.T4.** A win marked by an admin can stamp on the next render; this does not need the realtime transport. Respect `prefers-reduced-motion` and read as permanent afterwards. P14.T4 then only has to make it fire from a live event
+- T16: A live page that does not need a transport — `/live/[abbr]` currently 404s from an empty `.gitkeep`. Ship the show, a countdown, and each member's roster with points as categories resolve, rendering server-side. **Does not close P14.T0–T3**; it removes a 404 from the product's second peak moment while the transport decision stays deferred
+- T17: LCP — mark the first one or two frames in the `In cinemas now` shelf as priority. Next.js warns on every load of `/` that the largest contentful paint is a lazy TMDB poster
+
+#### Type and colour system
+
+Measured across `/`, `/browse`, `/award-shows` and `/films/[id]`, both schemes,
+1,272 visible text elements. These are system-level findings, not per-page
+defects, and they are why the product reads denser and quieter than its tokens
+intend.
+
+- T18: Body size moves to **15px, with 13px as the small step** (decided 2026-09-12, one notch up from 14/12). 🔴 **This amends D71**, which kept Archivo partly for its x-height "at 11–13px, which is where a league app lives" — the face reasoning stands, the resulting density does not. Archivo's x-height carries 15px with almost no density cost, and it puts real air between body text and the 11px `Eyebrow`. Sweep every `text-sm` and `text-xs` rather than adding a third size alongside them
+- T19: 🔴 **Poster captions are a D70 violation and get the serif at 15px** (decided 2026-09-12). D70 renders proper nouns — "films, members and leagues" — in Instrument Serif, and `PosterFrame.tsx:120` and `BrowseMonth.tsx:89` set film titles in `text-sm` Archivo with no serif class. D70's sub-15px fallback technically covered them at 14px, which is exactly why the fix is **15px serif**, not a face swap at the old size: it lifts them over the floor so the rule is true rather than narrowly escaped. Every poster grid in the app gains the brand face at once, which is also most of the 2.9% serif figure.
+  **Newsreader is deferred, not decided** — it renders once on a public page today, and Phase 18 is a prose page that will change the arithmetic. Re-judge the payload after 18 ships; do not drop it now
+- T20: `beam` is **spent on live and countdowns** (decided 2026-09-12), closing a token that has zero consumers today despite being defined, mirrored, contrast-tested in both schemes and wired into MUI as `info.main`. It reads as a projector beam and there are now two jobs for it: the live surface (T16) and the `Next · date TBA` chip (T3), neither of which has a colour of its own. If T16 slips, `beam` stays unspent — so this task is not done until it renders somewhere
+- T21: Brass never renders on a public page — all 25 references sit behind auth or on award-show detail, so a logged-out visitor never meets the awards accent. **Decided 2026-09-12: How-it-works carries it** (P18.T6), the one public page whose subject is the awards, rather than sprinkling brass elsewhere to raise a count. 🔴 This task therefore *closes in Phase 18* and is a verification step here, not an implementation one: confirm brass renders on a route a stranger can reach
+- T22: Surface names are **renamed to match reality** (decided 2026-09-12). `bg-raised` renders 204 times, `bg-surface` 45 and `bg-base` 8 — the surface called "raised" is the product's default and the ground is the rarest thing on screen. 🔴 **D72 is unchanged and is not being re-litigated**: separation by surface step rather than hairline outline stays, and no border comes back. This is a rename so the tokens stop describing an elevation the app does not use — a pure token/class sweep with **no visual diff**, which is also how it should be verified (screenshot before and after must match)
+- T23: Spacing gains a large end: **40px between sections** (decided 2026-09-12), against 16px inside a section and 8px inside a group. 12px currently accounts for more than half of every gap and 24px+ appears 11 times across four pages, which is the mechanical reason D74's "space instead of rules" never read as a section boundary — the space was never sized for the job it inherited
+- T24: The 4px grid becomes **enforced in `scripts/layering.sh`** (decided 2026-09-12), the same mechanism as the existing raw-hex and layering greps. 43 gaps are off it today (6px ×26, 10px ×8, 2px ×9). Precedent for enforcing rather than remembering: two files carrying retired `uppercase` shipped with every gate green until inventory found them
+- T25: Radius — **6px is the default and the drift gets fixed** (decided 2026-09-12), upholding D73 rather than amending it. Today `md` (10px) outnumbers `sm` (6px) 58 to 36 and `--radius-lg` (16px) has no consumers at all, so the documented anchor is not the real one. D73 argued 6px deliberately — soft enough not to read as a developer tool, hard enough to stay a projection room — and that argument still holds; the components drifted, the decision did not. Leave `lg` in the scale or drop it, but do not leave it unused and undiscussed
+
+#### Signed-in surfaces
+
+Reviewed 2026-09-12 by signing in with the `E2E_TEST_AUTH` cookie (P15.T10)
+against the restored production database — a complete 18-member league with
+1,020 picks and an active 4-seat draft. **Both earlier reviews carried
+"signed-in surfaces unmeasured" as a caveat; this closes it.** 5,744 text
+elements measured across six routes, against 1,272 on the public ones.
+
+🔴 **Two screens are not to be touched by this phase except to inherit tokens:**
+the draft console and the watchlist are the best-designed screens in the
+product, and the density and type work below must not flatten them.
+
+- T27: `not-found` renders **inside the app shell** — today `/live` and `/members` return a bare page with no rail, no tab bar and no header, so a mistyped URL drops a member out of the application with one link back. Centre it in the content column. Then either build `/members` or stop the route resolving; `members/[uuid]` exists, the index does not
+- T28: 🔴 `/admin/season` — **confirm before re-scoping the app.** Ten adjacent "Make active" buttons each change the active year for every user immediately, by the page's own description, with no confirmation and no undo. `/admin/broadcast` in the same section already does this correctly: it names the blast radius in numbers, says twice that nothing can be recalled, and gates the action. Match it, and prefer one selection control over ten buttons. **Security/safety-bearing; gets its own reviewer pass**
+- T29: Signed-in home shows the member's own state. Today `/` signed in is `/` signed out plus three header icons — no standing, no roster, no league name, no next action, for a member who has two leagues. The season rail and shelf become supporting material rather than the whole page
+- T30: League page hierarchy — promote "Run the draft" / "Set up the season" from underlined metadata text to real controls, primary on the state that needs them; move the raw `join/<uuid>` URL behind an Invite action and hide it entirely on a complete season (it is currently the second element on the page, and wraps to two mono lines at 390px)
+- T31: Put the reader's own roster beside the standings. Standings use ~45% of the content width at 1440px with the rest empty, while rosters sit below 5,554px of page — the dead column is exactly the space they need
+- T32: `/leagues` — one label for one action ("Create league" in the header and "Start a league" on the page are 700px apart), and mark the admin section so a page that re-scopes the product is not visually a settings list
+- T33: 🔴 Signed-in type is **88% at 12px** (5,065 of 5,744) against 14px-dominant in public, and 117 elements render at **10.4px** from a hardcoded `text-[0.65rem]` on the poster round-number badge — an arbitrary value outside the scale, below the 11px `Eyebrow` floor. The decided 15/13 move (T18) must reach these routes, and the arbitrary value goes on the scale
+- T34: `text-dim` carries the content it exists to de-emphasise — 3,349 uses against 920 of `text-primary` (3.6:1), and 6,102 dim elements at ≤12px on `/leagues/1` alone. It measures 4.69:1 on raised, which passes AA by 0.19 at 12px for most of the page's words. Audit what actually deserves `dim`; most of these are table cells and metadata that should be `secondary`
+- T35: 🔴 **Brass already means "drafted".** The public audit found zero brass renders and T21/P18.T6 decided to spend it as the awards accent — but signed in there are **320 brass instances, all on the draft board**, marking picks. Giving one token two meanings is the exact fault D69 split carmine and brass to fix. **Decide what brass means before P18.T6 spends it**, and treat this as a blocker on that task rather than a note
+- T36: `/list` has three left edges — eyebrow and heading at x=445, search field at x=469, empty state at x=493, from nested containers each adding their own gutter. Structural rather than local; check the other single-column pages
+
+**Gate:** every item verified in a browser at 1440px, 1280px, 1024px and 390px
+in both schemes; `npm run verify` green; the type/colour measurements in
+T18–T25 re-run and recorded in `PROGRESS.md` so the change is a number, not an
+impression.
+
+🔴 **Also gated, from Phase 3.5:** every new surface is built from the Phase 3.5 primitives — `SectionHead`, `Panel`, `Shelf`, `Button`, `StatusChip`, `Eyebrow`, `CinemaFrame`, `PosterFrame` — and carries a Storybook story. No new component may introduce a hairline card border, an all-caps heading outside `Eyebrow`, a squared or pill button, or a machine-formatted date. `LetterboxRule`, `font-display`, the Archivo `wdth` axis and the `/tokens` page no longer exist (D69–D77); do not reach for any of them.
+
+---
+
+### Phase 18 — How it works
+
+🔴 **Also runs before Phase 12.** See the numbering note on Phase 17.
+
+Replaces `/rules-and-scoring` with `/how-it-works`, public, and treats it as
+the product's front door rather than as a reference page. It is the only page
+that explains why the game is interesting, and today it is two panels of grey
+14px prose behind a login wall.
+
+🔴 **Not a marketing page with invented claims.** Every number on it comes from
+`lib/services/scoring.ts` and the `points` table, and every example is drawn
+from real season data. If a figure cannot be sourced, it does not go on the
+page. Do not write testimonials, logos-of-companies-using-us, or metrics.
+
+**Content that already exists and must survive the rewrite:** the twelve award
+shows and their grouping; the three tiers and what each means; the full point
+table; nomination = P, win = 2P; you may pick any film with no authoritative
+list; Razzie nominations cost you points.
+
+**What the current page is missing, and is the reason for the phase:**
+
+- **A worked example.** Nothing on the page shows the arithmetic happening. One real film from the current season, its actual nominations across shows, and the total — this is what makes the game click, and it is one query
+- **The Razzie twist is buried.** Negative points are the game's hook and the most fun thing about it. It is currently the eighth paragraph
+- **No sense of the season's shape.** Nomination dates and ceremony dates exist in the data; a reader has no idea whether this takes a weekend or five months
+- **No path in.** The page explains a game and then offers nothing to do
+
+- T0: Decision — route (`/how-it-works`, with `/rules-and-scoring` redirecting), and whether the scoring table stays a reference on the same page or moves to its own. Record it
+- T1: Page shell, public, with the section spine: what the game is → how a season runs → how points work → the shows → what it costs you (Razzies) → start
+- T2: The worked example — a real film, its real nominations, the real total, from live data with a fallback when the season is empty
+- T3: The scoring table, rebuilt legibly — grouped by show with the tier meaning inline rather than as a bare 3-column grid, and readable on a phone
+- T4: The twelve shows, using the T12 mark treatment from Phase 17 — this is the page that teaches the vocabulary the leaderboard assumes
+- T5: The season shape — nomination and ceremony dates as a timeline, driven by the same data as `SeasonStepper`
+- T6: Motion and colour — this is the one public page where brass should carry the awards beat (Phase 17 T21). Reduced-motion path required
+- T7: The way in — create a league, or see this season. One primary action, repeated at most twice
+- T8: SEO — `generateMetadata`, canonical, OG image. This is the page most likely to be found by search and shared into a group chat
+- T9: E2E — the page renders signed out, the worked example survives an empty season, the scoring numbers match `lib/services/scoring.ts`
+
+**Gate:** reachable signed out; every number traceable to the scoring service
+or the `points` table by a test; readable at 390px; `npm run verify` green.
+
+🔴 **Also gated, from Phase 3.5:** built from the Phase 3.5 primitives, with Storybook stories, and none of the retired treatments (D69–D77).
