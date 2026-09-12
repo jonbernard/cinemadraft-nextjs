@@ -15,7 +15,7 @@ export type Palette = {
   bg: { base: string; surface: string; raised: string };
   border: { rule: string };
   text: { primary: string; secondary: string; dim: string };
-  accent: { fill: string; text: string };
+  accent: { fill: string; text: string; contrast: string };
   /**
    * 🔴 Brass is the awards accent; carmine is the urgency accent (D69). One
    * red doing both is why a winner and a countdown currently look identical.
@@ -59,9 +59,14 @@ export const palettes: Record<ColorScheme, Palette> = {
     border: { rule: '#302938' },
     text: { primary: '#EFECE9', secondary: '#A8A1B2', dim: '#8C8598' },
     // `fill` is still fill-only: white on #C03D4E is 5.23:1, but #C03D4E as
-    // text on the ground is below AA. Components needing carmine *text* use
-    // accent.text, never palette.primary.main.
-    accent: { fill: '#C03D4E', text: '#E78E99' },
+    // text on the ground is below AA (3.79:1). Components needing carmine
+    // *text* use accent.text, never palette.primary.main.
+    //
+    // 🔴 `contrast` is the pairing `fill` was measured for, and it is white in
+    // both schemes. Anything that paints text ON accent.fill uses it. Handing
+    // that slot `text.primary` instead is what put the Clerk sign-in button at
+    // 2.45:1 in light and 4.44:1 in dark (P17.T9).
+    accent: { fill: '#C03D4E', text: '#E78E99', contrast: '#FFFFFF' },
     brass: { fill: '#CFA93A', text: '#CFA93A', contrast: '#241C05' },
     beam: '#7FA6B8',
     score: { high: '#63C08A', mid: '#D6A64A', low: '#E06C74' },
@@ -73,7 +78,7 @@ export const palettes: Record<ColorScheme, Palette> = {
     // the previous palette, which had no dedicated light `dim` and reused
     // secondary's colour for it.
     text: { primary: '#1A151F', secondary: '#5C5566', dim: '#665E70' },
-    accent: { fill: '#9B2F3C', text: '#8E2A36' },
+    accent: { fill: '#9B2F3C', text: '#8E2A36', contrast: '#FFFFFF' },
     brass: { fill: '#7A5A12', text: '#7A5A12', contrast: '#FFFFFF' },
     // Darkened from the dark theme's #7FA6B8, which is 1.9:1 on warm paper.
     beam: '#3F6273',
@@ -85,6 +90,36 @@ export const palettes: Record<ColorScheme, Palette> = {
     score: { high: '#1F6B41', mid: '#7A5410', low: '#8C2F39' },
   },
 };
+
+/**
+ * A palette as the CSS custom properties it becomes: `accent-fill` → `#c03d4e`.
+ *
+ * Lives here rather than in a test because two tests need it — `tokens.test.ts`
+ * to prove globals.css agrees with this file, and `contrast.test.ts` to resolve
+ * the `var(--color-…)` strings in the Clerk appearance map back to colours.
+ */
+export function flatPalette(palette: Palette): Map<string, string> {
+  const pairs: [string, string][] = [
+    ['bg-base', palette.bg.base],
+    ['bg-surface', palette.bg.surface],
+    ['bg-raised', palette.bg.raised],
+    ['border-rule', palette.border.rule],
+    ['text-primary', palette.text.primary],
+    ['text-secondary', palette.text.secondary],
+    ['text-dim', palette.text.dim],
+    ['accent-fill', palette.accent.fill],
+    ['accent-text', palette.accent.text],
+    ['accent-contrast', palette.accent.contrast],
+    ['brass-fill', palette.brass.fill],
+    ['brass-text', palette.brass.text],
+    ['brass-contrast', palette.brass.contrast],
+    ['beam', palette.beam],
+    ['score-high', palette.score.high],
+    ['score-mid', palette.score.mid],
+    ['score-low', palette.score.low],
+  ];
+  return new Map(pairs.map(([k, v]) => [k, v.toLowerCase()]));
+}
 
 /**
  * Motion budget (§6.8). Everything sits at 150–200ms with ease-out on enter.

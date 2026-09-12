@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { clerkAppearance } from './clerk';
 import { contrastRatio, parseHex, relativeLuminance } from './contrast';
-import { palettes } from './tokens';
+import { type ColorScheme, flatPalette, palettes } from './tokens';
 
 /**
  * 🔴 The gate named in §6.4. No component may consume a token until this
@@ -109,5 +110,90 @@ describe('the §6.4 corrections stay corrected', () => {
     ['#6E757F as dark mono label', '#6E757F', palettes.dark.bg.base],
   ])('%s was replaced because it failed', (_label, rejected, bg) => {
     expect(contrastRatio(rejected, bg)).toBeLessThan(TEXT);
+  });
+});
+
+/**
+ * 🔴 The Clerk appearance map, held to the same threshold as the palette.
+ *
+ * This is the gate the fill-only rule never had. `app/providers.tsx` used to
+ * declare the map inline, where no test could see it, and it drifted: the
+ * primary button's label was pinned to `text.primary`, which is near-black in
+ * light, and the links inherited `colorPrimary`, which is a fill. Both shipped.
+ *
+ * The rows below are not decoration — each one names a pair Clerk actually
+ * paints. Adding a `color*` variable to `theme/clerk.ts` without adding its
+ * pair here puts a colour into the sign-in card that nothing checks.
+ */
+function resolve(value: string, scheme: ColorScheme): string {
+  const name = /^var\(--color-([a-z-]+)\)$/.exec(value)?.[1];
+  if (!name) throw new TypeError(`not a colour token: ${value}`);
+  const hex = flatPalette(palettes[scheme]).get(name);
+  if (!hex) throw new TypeError(`unknown colour token: --color-${name}`);
+  return hex;
+}
+
+describe.each(['dark', 'light'] as const)(
+  'the Clerk appearance map meets WCAG AA in %s',
+  (scheme) => {
+    const v = clerkAppearance.variables;
+    const linkColor = clerkAppearance.elements?.footerActionLink;
+
+    it.each([
+      // 🔴 The pair that shipped at 2.45:1 in light and 4.44:1 in dark. Clerk
+      // paints colorPrimaryForeground ON colorPrimary — solid primary buttons,
+      // per the Variables doc comment in @clerk/react.
+      ['the primary button label on its fill', v.colorPrimaryForeground, v.colorPrimary],
+      ['card text on the card', v.colorForeground, v.colorBackground],
+      ['muted text on the card', v.colorMutedForeground, v.colorBackground],
+      ['field text on the field', v.colorInputForeground, v.colorInput],
+      ['error text on the card', v.colorDanger, v.colorBackground],
+    ])('%s', (_label, fg, bg) => {
+      expect(
+        contrastRatio(resolve(fg, scheme), resolve(bg, scheme)),
+      ).toBeGreaterThanOrEqual(TEXT);
+    });
+
+    // 🔴 Two grounds, not one. The card is bg.surface, but the footer action —
+    // "Register" / "Log in" — renders *outside* the card on the auth layout's
+    // bg.base. Measured in the browser: the shipped link was 3.51:1 on the card
+    // and 3.79:1 on the ground. Asserting only the card would miss the worse of
+    // the two.
+    it.each([
+      ['the footer link on the card', 'colorBackground'],
+      ['the footer link on the page ground', 'bg-base'],
+    ])('%s', (_label, ground) => {
+      const bg =
+        ground === 'colorBackground'
+          ? resolve(v.colorBackground, scheme)
+          : palettes[scheme].bg.base;
+      expect(linkColor).toBeDefined();
+      expect(
+        contrastRatio(resolve((linkColor as { color: string }).color, scheme), bg),
+      ).toBeGreaterThanOrEqual(TEXT);
+    });
+  },
+);
+
+describe('the P17.T9 corrections stay corrected', () => {
+  it('🔴 rejects text.primary as a foreground on accent.fill', () => {
+    // 2.45:1 light, 4.44:1 dark — what shipped. If either of these ever passes,
+    // somebody has changed a palette and this pair needs re-measuring, not
+    // deleting.
+    expect(
+      contrastRatio(palettes.light.text.primary, palettes.light.accent.fill),
+    ).toBeLessThan(TEXT);
+    expect(
+      contrastRatio(palettes.dark.text.primary, palettes.dark.accent.fill),
+    ).toBeLessThan(TEXT);
+  });
+
+  it('accent.contrast is the pairing accent.fill was measured for', () => {
+    expect(
+      contrastRatio(palettes.dark.accent.contrast, palettes.dark.accent.fill),
+    ).toBeGreaterThanOrEqual(TEXT); // 5.23
+    expect(
+      contrastRatio(palettes.light.accent.contrast, palettes.light.accent.fill),
+    ).toBeGreaterThanOrEqual(TEXT); // 7.33
   });
 });

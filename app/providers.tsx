@@ -9,6 +9,7 @@ import type { ReactNode } from 'react';
 
 import { SIGN_IN_URL, SIGN_UP_URL } from '@/lib/auth-routes';
 import { theme } from '@/theme';
+import { clerkAppearance } from '@/theme/clerk';
 
 /**
  * `enableCssLayer` is what puts emotion's output into the `mui` cascade layer
@@ -74,24 +75,7 @@ export function Providers({ children }: { children: ReactNode }) {
         },
         userButton: { action__signOut: 'Log out' },
       }}
-      appearance={{
-        variables: {
-          colorBackground: 'var(--color-bg-surface)',
-          colorPrimary: 'var(--color-accent-fill)',
-          // White on carmine is 6.58:1; carmine as text on the ground is
-          // 2.96:1 and fails, which is why accent.fill is fill-only.
-          colorPrimaryForeground: 'var(--color-text-primary)',
-          colorForeground: 'var(--color-text-primary)',
-          colorMutedForeground: 'var(--color-text-secondary)',
-          colorInput: 'var(--color-bg-raised)',
-          colorInputForeground: 'var(--color-text-primary)',
-          colorBorder: 'var(--color-border-rule)',
-          colorDanger: 'var(--color-accent-text)',
-          // Buttons are always 6px, never the 2px Clerk shipped with (D73).
-          borderRadius: 'var(--radius-sm)',
-          fontFamily: 'var(--font-archivo)',
-        },
-      }}
+      appearance={clerkAppearance}
     >
       <Shell>{children}</Shell>
     </ClerkProvider>

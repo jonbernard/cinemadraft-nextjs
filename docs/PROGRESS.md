@@ -1259,7 +1259,7 @@ order, the tranche boundaries and the browser-verification protocol.
 ### Accessibility and correctness
 
 - [ ] P17.T8 — a11y batch: 17 unnamed poster links, skip link, focus-ring token on the rail and the theme toggle
-- [ ] P17.T9 — 🔴 Clerk appearance tokens break the fill-only rule (2.45:1 light, 3.79:1 dark); extend `contrast.test.ts` to cover the appearance map
+- [x] P17.T9 — 🔴 Clerk appearance tokens break the fill-only rule (2.45:1 light, 3.79:1 dark); extend `contrast.test.ts` to cover the appearance map
 - [ ] P17.T10 — `/films/[tmdbId]` 390px light overflow (430/390) and the 46px light-vs-dark intrinsic-width delta
 
 ### Visual

@@ -41,6 +41,7 @@
   --color-text-dim: #8c8598;
   --color-accent-fill: #c03d4e;
   --color-accent-text: #e78e99;
+  --color-accent-contrast: #ffffff;
   --color-brass-fill: #cfa93a;
   --color-brass-text: #cfa93a;
   --color-brass-contrast: #241c05;
@@ -130,6 +131,7 @@
   --color-text-dim: #665e70;
   --color-accent-fill: #9b2f3c;
   --color-accent-text: #8e2a36;
+  --color-accent-contrast: #ffffff;
   --color-brass-fill: #7a5a12;
   --color-brass-text: #7a5a12;
   --color-brass-contrast: #ffffff;

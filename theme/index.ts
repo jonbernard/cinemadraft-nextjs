@@ -35,7 +35,7 @@ function scheme(name: ColorScheme) {
       // both filled and text buttons, so a text-variant Button in the primary
       // colour is an accessibility failure. Components needing carmine *text*
       // use the accent-text token, never palette.primary.main.
-      primary: { main: p.accent.fill, contrastText: '#FFFFFF' },
+      primary: { main: p.accent.fill, contrastText: p.accent.contrast },
       info: { main: p.beam },
       divider: p.border.rule,
     },

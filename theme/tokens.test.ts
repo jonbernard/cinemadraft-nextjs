@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { type ColorScheme, type Palette, palettes, radius } from './tokens';
+import { type ColorScheme, flatPalette, palettes, radius } from './tokens';
 
 /**
  * The anti-drift test.
@@ -27,28 +27,6 @@ function propsIn(block: string): Map<string, string> {
   return found;
 }
 
-function flatten(palette: Palette): Map<string, string> {
-  const pairs: [string, string][] = [
-    ['bg-base', palette.bg.base],
-    ['bg-surface', palette.bg.surface],
-    ['bg-raised', palette.bg.raised],
-    ['border-rule', palette.border.rule],
-    ['text-primary', palette.text.primary],
-    ['text-secondary', palette.text.secondary],
-    ['text-dim', palette.text.dim],
-    ['accent-fill', palette.accent.fill],
-    ['accent-text', palette.accent.text],
-    ['brass-fill', palette.brass.fill],
-    ['brass-text', palette.brass.text],
-    ['brass-contrast', palette.brass.contrast],
-    ['beam', palette.beam],
-    ['score-high', palette.score.high],
-    ['score-mid', palette.score.mid],
-    ['score-low', palette.score.low],
-  ];
-  return new Map(pairs.map(([k, v]) => [k, v.toLowerCase()]));
-}
-
 describe('globals.css agrees with tokens.ts', () => {
   const blocks: [ColorScheme, RegExp][] = [
     ['dark', /@theme\s*\{([^}]*)\}/],
@@ -58,7 +36,7 @@ describe('globals.css agrees with tokens.ts', () => {
   it.each(blocks)('%s palette', (scheme, pattern) => {
     const block = css.match(pattern)?.[1];
     expect(block, `no ${scheme} block found in globals.css`).toBeDefined();
-    expect(propsIn(block as string)).toEqual(flatten(palettes[scheme]));
+    expect(propsIn(block as string)).toEqual(flatPalette(palettes[scheme]));
   });
 
   it('declares every token in both schemes — a missing light override falls back to dark', () => {
