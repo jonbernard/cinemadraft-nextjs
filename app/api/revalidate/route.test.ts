@@ -64,4 +64,17 @@ describe('POST /api/revalidate', () => {
     expect(response.status).toBe(404);
     expect(revalidatePath).not.toHaveBeenCalled();
   });
+
+  // 🔴 A malformed body is a prober, not a client. It must meet the same 404
+  // as a wrong secret — a 500 here would confirm the route exists.
+  it('answers 404 to a body that is not JSON', async () => {
+    const response = await POST(
+      new Request('https://cinemadraft.com/api/revalidate', {
+        method: 'POST',
+        body: 'not json',
+      }),
+    );
+    expect(response.status).toBe(404);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
 });

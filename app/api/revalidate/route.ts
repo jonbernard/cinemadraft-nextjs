@@ -56,7 +56,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const paths = [`/award-shows/${abbreviation}`, '/award-shows', '/leaderboard', '/'];
-  revalidatePath(paths[0] as string, 'layout');
+  revalidatePath(`/award-shows/${abbreviation}`, 'layout');
   revalidatePath('/award-shows');
   revalidatePath('/leaderboard');
   revalidatePath('/');
