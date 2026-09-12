@@ -70,13 +70,24 @@ export function ErrorPanel({
   const copy = COPY[kind];
 
   return (
-    <main
+    // 🔴 A <div>, not a <main> (P17.T27). Inside the app shell this renders
+    // within AppShell's `Panel as="main"`, and a nested landmark makes the
+    // landmark list ambiguous for a screen reader. The two callers outside the
+    // shell — app/not-found.tsx and app/error.tsx — supply their own.
+    //
+    // No `bg-bg-base` either: the ground belongs to whatever is hosting this.
+    // Inside the shell the host is a surface panel, and repainting it the
+    // colour of the ground punched a hole in it.
+    <div
       className={cn(
-        'bg-bg-base text-text-primary flex min-h-[60dvh] items-center p-4 md:p-8',
+        'text-text-primary flex min-h-[60dvh] items-center justify-center p-4 md:p-8',
         className,
       )}
     >
-      <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+      {/* The handle is on the column rather than the heading: the heading is a
+          shrink-to-fit flex item, so its box says nothing about where the
+          column sits. `e2e/errors.spec.ts` measures this one. */}
+      <div data-testid="error-panel" className="flex w-full max-w-xl flex-col gap-4">
         <SectionHead as="h1">{copy.title}</SectionHead>
 
         <p className="text-text-secondary text-sm leading-relaxed">{copy.body}</p>
@@ -98,6 +109,6 @@ export function ErrorPanel({
           ) : null}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

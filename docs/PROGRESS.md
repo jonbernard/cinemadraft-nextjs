@@ -1294,7 +1294,7 @@ production database — the gap both earlier reviews flagged. **Do not flatten t
 draft console or the watchlist:** they are the best-designed screens in the
 product and should only inherit tokens from this phase, not be redesigned by it.
 
-- [ ] P17.T27 — `not-found` renders inside the app shell; `/live` and `/members` currently drop the whole shell
+- [x] P17.T27 — `not-found` renders inside the app shell; `/live` and `/members` currently drop the whole shell. 🔴 A catch-all inside `(app)` fixes every unmatched URL at once, not the two the review tried; `ErrorPanel` stopped rendering its own `<main>` (it was nesting a landmark inside `AppShell`'s on *every* in-shell 404). **`/members` deliberately not built** — nothing links to it and a directory of sixty real people is an owner's product decision, not a polish-phase gap; it 404s inside the shell instead
 - [ ] P17.T28 — 🔴 `/admin/season` confirms before re-scoping the app for every user. **Safety-bearing; own reviewer pass.** `/admin/broadcast` is the model
 - [ ] P17.T29 — signed-in home shows the member's own state (today it is the signed-out page plus three icons)
 - [ ] P17.T30 — league page: promote the owner actions, move the raw invite URL behind an Invite action, hide it on a complete season

@@ -31,7 +31,14 @@ export default function AppError({
     console.error('[error boundary]', { digest: error.digest, message: error.message });
   }, [error]);
 
-  return <ErrorPanel kind={kindOf(error)} onRetry={reset} />;
+  // The `<main>` is here because `ErrorPanel` no longer renders one
+  // (P17.T27): outside the shell there is nothing else to supply the content
+  // landmark.
+  return (
+    <main className="bg-bg-base min-h-dvh">
+      <ErrorPanel kind={kindOf(error)} onRetry={reset} />
+    </main>
+  );
 }
 
 /**

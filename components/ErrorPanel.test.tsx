@@ -53,21 +53,32 @@ describe('ErrorPanel', () => {
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
+  it('🔴 renders no landmark of its own', () => {
+    // AppShell supplies the app's one <main> (`Panel as="main"`). A second one
+    // nested inside it is what this component used to produce on every 404 and
+    // every caught error inside the shell — and the `getByRole('main')` reads
+    // that used to be below were satisfied by that inner one, which is exactly
+    // why nothing caught it.
+    const { container } = render(<ErrorPanel kind="not-found" />);
+
+    expect(container.querySelector('main')).toBeNull();
+  });
+
   it('🔴 never renders a raw error message', () => {
     // The component takes a *kind*, not a message — the leak is impossible by
     // construction rather than by remembering to sanitise. This asserts the
     // shape stays that way.
-    render(<ErrorPanel kind="unknown" />);
+    const { container } = render(<ErrorPanel kind="unknown" />);
 
-    const text = screen.getByRole('main').textContent ?? '';
-    expect(text).not.toMatch(/select |from |column|postgres|prisma/i);
+    expect(container.textContent ?? '').not.toMatch(
+      /select |from |column|postgres|prisma/i,
+    );
   });
 
   it('does not apologise or shout', () => {
     for (const kind of ['not-found', 'forbidden', 'conflict', 'unknown'] as const) {
-      const { unmount } = render(<ErrorPanel kind={kind} />);
-      const text = screen.getByRole('main').textContent ?? '';
-      expect(text).not.toMatch(/sorry|oops|!/i);
+      const { container, unmount } = render(<ErrorPanel kind={kind} />);
+      expect(container.textContent ?? '').not.toMatch(/sorry|oops|!/i);
       unmount();
     }
   });
