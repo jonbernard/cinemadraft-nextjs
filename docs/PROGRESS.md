@@ -1249,7 +1249,7 @@ order, the tranche boundaries and the browser-verification protocol.
 
 - [x] P17.T0 — `/rules-and-scoring` joins `isPublic`; fix the docstring that already claims it is public
 - [ ] P17.T1 — `SectionHead` sizes **28 / 20 / 17** keyed to `as`; fix the `h1 → h3 → h2` order on `/`
-- [ ] P17.T2 — `AppShell` breakpoints: close the 1024–1280px dead zone; **decided — identity, search and sign-in fold into the tab bar row**, wordmark left, search right. Watch that the chrome does not read as a sixth tab
+- [x] P17.T2 — `AppShell` breakpoints: close the 1024–1280px dead zone; **decided — identity, search and sign-in fold into the tab bar row**, wordmark left, search right. Watch that the chrome does not read as a sixth tab
 - [ ] P17.T3 — `SeasonStepper` falls back to the last incomplete show; anchor the window to it
 - [ ] P17.T4 — `LeaderboardTable`: persistent labels, year picker, sticky film column, mobile expandable row
 - [ ] P17.T5 — signed-out lede above `SeasonStepper`
@@ -1326,6 +1326,40 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 
 _Fill these in as you go. The gate requires the T18–T25 measurements re-run and
 recorded here, so the change is a number rather than an impression._
+
+- **P17.T2, the 390px width budget — measured before any code, and it chose a
+  third branch.** At 390px the bar's five slots are **78px** each and the
+  labels render **Home 29.8 · Leagues 41.9 · Browse 37.0 · Award shows 64.8 ·
+  More 25.2**, in 11px Archivo. So `T` = 65 + 8 = **73px**, and five slots need
+  **365px** of the 390 available. The plan's two branches were 258px (all three
+  chrome controls) and 302px (the pre-agreed relief valve, account control
+  dropped below `sm`). **Neither fits**, and the failure is not theoretical: at
+  both 51.6px and 60.4px a slot, "Award shows" wraps to two lines and the bar
+  grows **48.5px → 65px**, past the 56px ceiling the task's own spec asserts.
+
+  **Shipped: the whole chrome group is `hidden sm:flex`** — mark, search and
+  account control together, present from 640px up. That closes the 1024–1280px
+  dead zone, which is what the finding was about, and leaves the phone the bar
+  it already had. Measured at the gate: chrome on at **640px**, off at **639px**;
+  each control **44×44** (the mark and search 44×49 inside a 48.5px row); the
+  bar **48.5px** tall at 1024 and at 390, never 65. Below `sm`, search and the
+  account control are still one tap into the More sheet, where D75 put them.
+
+  🔴 **Carried forward for tranche 4**: the phone bar cannot take chrome at any
+  price the 11px label leaves. Either the label shrinks (T18 owns body/label
+  sizes) or "Award shows" gets a shorter form on the bar. Neither is T2's, and
+  neither is needed for the dead zone.
+
+- **P17.T2, the other measured numbers.** Rail **208px** at 1280 and 1440 and
+  hidden at 1024 and 390 — its `xl` gate is untouched. Content panel at 1024:
+  **1024px**, unchanged by this task (nothing in the diff touches the layout
+  tree; the bar is `fixed`). `scrollingElement.scrollWidth` equals the viewport
+  at all four widths. Both schemes: the bar's ground is `bg-bg-surface` —
+  `rgb(22,19,28)` dark, `rgb(251,249,246)` light — with chrome icons
+  `rgb(168,161,178)` / `rgb(92,85,102)` and the mark at full text strength, so
+  nothing on the bar is invisible in light mode. Signed in, the bar's account
+  control is a 44×44 square named "Log out" at 1024 and the strip's 80×44
+  button at 1440; the two never render at once.
 
 - **Amendments awaiting a D-number (recorded by P17.T26, from D85 up).** The
   ledger is complete through D84; nothing in tranche 1 edits `DECISIONS.md`,

@@ -1,34 +1,45 @@
 'use client';
 
-import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
-import { logOutOfTestSession } from '@/actions/auth/log-out';
-
+import { AccountControl } from './AccountControl';
 import { MoreSheet } from './MoreSheet';
 import { NavRail } from './NavRail';
 import { NotificationBell, type NotificationItem } from './NotificationBell';
 import { Panel } from './Panel';
 import { SearchOverlay } from './SearchOverlay';
-import { TabBar } from './TabBar';
+import { SearchIcon, TabBar } from './TabBar';
 import { ThemeToggle } from './ThemeToggle';
 
 /**
  * The application shell (D67, D75): a floating rail plus a content panel on
  * a darker ground from `xl` up, bottom tabs and a More sheet below it.
  *
- * 🔴 The rail's breakpoint is `xl` (1280px), not Tailwind's default `lg`
- * (1024px). Spec §11.4 measured the rail's width cost at 1280px — at that
- * width the rail leaves the league board 966px where the old full-width
- * container gave it 1152px — so `xl` is where the shell has room to add a
- * fixed-width rail without squeezing the content below a usable minimum.
- * `NavRail` itself carries no responsive visibility classes on purpose;
- * showing and hiding it is this component's job, done here with a wrapper
- * rather than a prop so `NavRail` stays free of layout concerns Storybook
- * doesn't need.
+ * 🔴 The rail's breakpoint is `xl` (1280px) and the chrome's is not.
+ *
+ * `xl` is measured and correct **for the rail**: 208px of rail at 1280px
+ * leaves a 10-seat board 930px and its poster cells 66–81px, and anything
+ * lower puts them under the legibility floor (see `NavRail`; spec §11.4
+ * measured the same cost against the old full-width container, 966px against
+ * 1152px). `NavRail` itself carries no responsive visibility classes on
+ * purpose; showing and hiding it is this component's job, done here with a
+ * wrapper rather than a prop so `NavRail` stays free of layout concerns
+ * Storybook doesn't need.
+ *
+ * It was never right for the *strip*, which is 52px of horizontal chrome
+ * costing the content column no width at all — and because the two shared one
+ * gate, 1024–1280px (iPad landscape, a small laptop, half a screen) got the
+ * phone layout with no wordmark, no search and no account control anywhere but
+ * two taps into the More sheet.
+ *
+ * The chrome now travels with the tab bar instead, from `sm` up to `xl`, which
+ * closes that range without costing a phone any vertical space (decided
+ * 2026-09-12; `TabBar` carries the 390px measurement that made the floor `sm`
+ * rather than every width). The strip is unchanged and still `xl`-only; the two
+ * never render at once.
  *
  * `usePathname()` is read once, here, and passed down to `NavRail`, `TabBar`
  * and `MoreSheet` — one router read for the whole shell rather than three.
@@ -143,6 +154,9 @@ export function AppShell({
         onMore={openMore}
         isMoreOpen={isMoreOpen}
         moreId={moreId}
+        isSignedIn={isSignedIn}
+        onSearch={openSearch}
+        searchId={searchId}
       />
       <MoreSheet
         id={moreId}
@@ -232,25 +246,6 @@ function Strip({
   );
 }
 
-function SearchIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      focusable="false"
-      viewBox="0 0 24 24"
-      className="h-5 w-5 shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
-
 function PlusIcon() {
   return (
     <svg
@@ -267,48 +262,6 @@ function PlusIcon() {
       <path d="M12 5v14M5 12h14" />
     </svg>
   );
-}
-
-/**
- * Logged in: Clerk's account menu. Logged out: a way in.
- *
- * Vocabulary: log in, never sign in. Duplicated rather than shared with
- * `MoreSheet`'s own `AccountControl` — the same small component already
- * exists twice in the reviewed code this task composes, and a shared export
- * is not this task's call to make.
- *
- * 🔴 `UserButton` throws outside a `<ClerkProvider>`, and the e2e run mounts
- * none (D84) — so the same key `app/providers.tsx` branches on decides this
- * too, and the two cannot disagree. The plain control carries the same
- * accessible name Clerk's menu item does, so a spec asserting on "Log out"
- * reads either world.
- */
-function AccountControl({ isSignedIn }: { isSignedIn: boolean }) {
-  if (!isSignedIn) {
-    return (
-      <Link
-        href="/auth/login"
-        className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
-      >
-        Log in
-      </Link>
-    );
-  }
-
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    return (
-      <form action={logOutOfTestSession}>
-        <button
-          type="submit"
-          className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
-        >
-          Log out
-        </button>
-      </form>
-    );
-  }
-
-  return <UserButton />;
 }
 
 function GearIcon() {

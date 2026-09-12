@@ -56,12 +56,21 @@ async function cleanup(): Promise<void> {
 
 /**
  * Open the global search panel from whichever trigger the width actually
- * shows — the strip's icon above `xl`, the More sheet's row below it. Both are
- * in the DOM at every width and only one is ever clickable.
+ * shows — the strip's icon above `xl`, the bar's own icon from `sm` up, the
+ * More sheet's row below that. All three are in the DOM at every width and
+ * only one is ever clickable.
+ *
+ * 🔴 The `< 1280` branch used to be the More sheet, because below `xl` there
+ * was no other way in — the shape of the defect P17.T2 closed. The sheet's
+ * route still exists and keeps its own test below; it is simply no longer the
+ * only one.
  */
 async function openSearchPanel(page: Page, width: number): Promise<void> {
-  if (width >= 1280) {
-    await page.getByRole('button', { name: 'Search' }).click();
+  if (width >= 640) {
+    // `.first()` on purpose: the strip's trigger and the bar's are both in the
+    // DOM at every width, and Playwright's visibility filter leaves exactly
+    // one of them clickable.
+    await page.getByRole('button', { name: 'Search' }).first().click();
   } else {
     await page.getByRole('button', { name: 'More', exact: true }).click();
     await page
@@ -87,6 +96,12 @@ async function openSearchPanel(page: Page, width: number): Promise<void> {
  * renders exactly one of the two navigations visibly — both are always in the
  * DOM, which is why every locator here is scoped to a named landmark.
  *
+ * 🔴 The bar's *chrome* is gated separately, at `sm` (640px), and that is the
+ * whole of P17.T2: until it was, 1024–1280px got the phone layout — no rail,
+ * no header, no wordmark, no search, no way in except two taps into the More
+ * sheet. The four widths below are the four that decide something: 1440 the
+ * design target, 1280 the rail's edge, 1024 the dead zone, 390 the phone.
+ *
  * Accessible names are the contract, hard-coded on purpose: the rail is
  * `Main`, the tab bar is `Primary, mobile`, the sheet is `More`. They differ
  * because both navigations coexist in the DOM and identical names would make
@@ -97,6 +112,8 @@ async function openSearchPanel(page: Page, width: number): Promise<void> {
  */
 test.describe('navigation', () => {
   const DESKTOP = { width: 1440, height: 900 };
+  const RAIL_EDGE = { width: 1280, height: 900 };
+  const DEAD_ZONE = { width: 1024, height: 800 };
   const PHONE = { width: 390, height: 844 };
 
   // Before as well as after: a run killed halfway leaves rows behind, and the
@@ -113,21 +130,110 @@ test.describe('navigation', () => {
     await expect(rail.getByRole('link', { name: 'Browse' })).toBeVisible();
 
     // Both navigations are in the DOM at every width; only CSS decides. The
-    // tab bar and its More trigger belong to the phone layout, so at 1440px
-    // the media query must be hiding them — a fact jsdom cannot show.
+    // bar is gated at `xl` and the rail is its complement, so at 1440px the
+    // media query must be hiding the whole bar — a fact jsdom cannot show.
+    // (The bar's chrome has its own, lower gate at `sm`; above `xl` it goes
+    // with the bar, and the strip carries identity, search and the account
+    // control instead. The two never render at once.)
     await expect(page.getByRole('navigation', { name: 'Primary, mobile' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'More', exact: true })).toBeHidden();
   });
 
-  test('the rail is 208px wide', async ({ page }) => {
-    await page.setViewportSize(DESKTOP);
+  test('🔴 1280px is the rail edge — the rail appears at 208px and the bar goes', async ({
+    page,
+  }) => {
+    // The width the rail's own number was measured at: 208px, not the spec's
+    // 236px, because Task 18 measured the wider rail's cost to a 10-seat league
+    // board *here* and narrowed it. Rendered width is the only place that
+    // number is real, and 1280 is the first width at which the rail exists.
+    await page.setViewportSize(RAIL_EDGE);
     await page.goto('/');
 
-    // 🔴 208px, not the spec's 236px: Task 18 measured the wider rail's cost
-    // to a 10-seat league board at 1280px and narrowed it. Rendered width is
-    // the only place that number is real.
     const box = await page.getByRole('navigation', { name: 'Main' }).boundingBox();
     expect(box?.width).toBe(208);
+    await expect(page.getByRole('navigation', { name: 'Primary, mobile' })).toBeHidden();
+  });
+
+  test('🔴 1024px is not a phone — the bar carries identity, search and the way in', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DEAD_ZONE);
+    await page.goto('/');
+
+    // The defect this closes: at 1024px the app used to render a phone tab bar
+    // with no rail, no header, no wordmark and no search — a reader on an iPad
+    // in landscape could not tell which app they were in.
+    await expect(page.getByRole('navigation', { name: 'Main' })).toBeHidden();
+    await expect(page.getByRole('navigation', { name: 'Primary, mobile' })).toBeVisible();
+
+    await expect(page.getByRole('link', { name: 'Cinemadraft, home' })).toBeVisible();
+    // Unqualified on purpose: the strip's copies are `xl:flex` and the More
+    // sheet's are inside a closed `<dialog>`, so neither is in the
+    // accessibility tree here. One match each means the bar's is the one on
+    // screen, which is the whole claim.
+    await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+
+    // And nothing the chrome added pushed the page sideways.
+    expect(
+      await page.evaluate(() => document.scrollingElement?.scrollWidth ?? 0),
+    ).toBeLessThanOrEqual(1024);
+  });
+
+  test('🔴 every destination still clears 44px at 390px, and the bar stays one row', async ({
+    page,
+  }) => {
+    await page.setViewportSize(PHONE);
+    await page.goto('/');
+
+    // The arithmetic the decision risks: five destinations on one 390px row.
+    // Geometry, measured — a jsdom test cannot see a single one of these
+    // numbers, which is why this assertion is here and not in TabBar.test.tsx.
+    const slots = page.locator(
+      'nav[aria-label="Primary, mobile"] > a, nav[aria-label="Primary, mobile"] > button',
+    );
+    await expect(slots).toHaveCount(5);
+    for (const slot of await slots.all()) {
+      const box = await slot.boundingBox();
+      expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    }
+
+    // 🔴 And no label wrapped: a two-line label is the bar growing taller,
+    // which is exactly what folding the chrome in was chosen to avoid — and
+    // the measurement (P17.T2 Step 1) that put the chrome's floor at `sm`
+    // rather than at every width. 48.5px today; 65px the moment a slot drops
+    // below about 65px of label.
+    const bar = page.locator('nav[aria-label="Primary, mobile"]');
+    const height = (await bar.boundingBox())?.height ?? 0;
+    expect(height).toBeLessThanOrEqual(56);
+  });
+
+  test('🔴 the chrome is not a sixth tab, and is absent where it would not fit', async ({
+    page,
+  }) => {
+    await page.setViewportSize(PHONE);
+    await page.goto('/');
+
+    // Five destinations in the landmark, whatever else sits on the bar.
+    await expect(
+      page.locator(
+        'nav[aria-label="Primary, mobile"] > a, nav[aria-label="Primary, mobile"] > button',
+      ),
+    ).toHaveCount(5);
+
+    // At 390px the chrome is in the DOM and displayed nowhere: the row has no
+    // slack for it. Search and the account control are in the More sheet,
+    // which is where D75 put them and where they stayed.
+    await expect(page.getByRole('link', { name: 'Cinemadraft, home' })).toBeHidden();
+
+    // At 1024 it is on the bar — and even there it never claims to be the
+    // current page, on `/` or anywhere else. Current-ness is a destination
+    // property.
+    await page.setViewportSize(DEAD_ZONE);
+    const mark = page.getByRole('link', { name: 'Cinemadraft, home' });
+    await expect(mark).toBeVisible();
+    await expect(mark).not.toHaveAttribute('aria-current', /.*/);
   });
 
   test('marks the current page', async ({ page }) => {
@@ -140,6 +246,8 @@ test.describe('navigation', () => {
     await expect(current).toHaveText(/Award shows/);
   });
 
+  // 390px: the bar is the phone's navigation and nothing else. Its chrome
+  // starts at `sm` — see the two tests above for why, and for what 1024px gets.
   test('phone shows bottom tabs with labels, and no rail', async ({ page }) => {
     await page.setViewportSize(PHONE);
     await page.goto('/');
