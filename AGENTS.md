@@ -46,6 +46,18 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
 
   Each worktree exports its own `DATABASE_URL` (5433 or 5434) and starts its own server on its own port. Commit on the task branch and merge; two worktrees cannot both check out `main`.
 
+  🔴 **Tear the worktree down when the work is done, and check before you do.** A worktree left lying around is where work goes to be forgotten — and the two ways it disappears are different. Uncommitted changes are safe by accident: `git worktree remove` refuses unless you pass `--force`, so never reach for `--force` to make an error go away. **Committed work on an unmerged branch is the real hazard** — removing the worktree leaves the branch behind, nothing complains, and the commits sit there invisible until somebody runs `git branch`. Check, merge, then remove:
+
+  ```bash
+  git -C <worktree> status --porcelain      # must be empty
+  git log main..<task-branch> --oneline     # must be empty, or merge it first
+  git worktree remove <worktree>            # no --force
+  git branch -d <task-branch>               # -d, not -D: it refuses if unmerged
+  git worktree list                         # what is actually left
+  ```
+
+  `git branch -d` refusing is a feature — it is the last thing standing between "cleaned up" and "deleted a day's work". If it refuses, something is unmerged; go and look.
+
 - 🔴 **A verification step that cannot fail is not verification.** This is the single most recurring defect in this project's plans — seven instances in one day, several written by the people checking for them. Before relying on any check, ask what would make it go red, and if the answer is "nothing", replace it and say so. Real examples: a nameless-link counter that counted `aria-hidden` anchors, so it could never reach zero; a "year top within 2px of title top" bound that baseline alignment makes *unreachable by a correct implementation*; Chrome's `Priority: High`, which it sets on in-viewport images regardless; `animation-name: stamp`, which reads back with the `@keyframes` block deleted; a "two leagues differ" test that called one function twice with one argument; a total-equals-sum check reading both numbers from the same map; a query-count bound set so loose it would not have noticed the query being added.
 
   The habit that catches these: **mutate the implementation, watch the test go red, restore.** Every task in Phases 15 and 17 does this, and it has caught real holes — including a plan's own test that passed against a deliberately broken build.
