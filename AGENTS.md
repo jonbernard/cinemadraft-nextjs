@@ -27,7 +27,10 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
 
 - **Biome**, not ESLint or Prettier. `npm run lint` covers linting, formatting, and import order. Biome does not typecheck — `npm run typecheck` is separate.
 - **MUI for components, Tailwind for custom styling.** They coexist through CSS cascade layers ordered `theme, base, mui, components, utilities`. Never reach for `!important` to make a Tailwind class beat MUI; if that seems necessary the layer order is wrong. Three Playwright tests in `e2e/smoke.spec.ts` pin this — do not relax them.
-- **All local databases run in Docker** (`npm run db:up`). There is no native Postgres server on the dev machine, and the local Postgres binaries are clients only.
+- **All local databases run in Docker** (`npm run db:up`, which starts both). There is no native Postgres server on the dev machine, and the local Postgres binaries are clients only.
+  - **5433 is the primary** — a restored copy of production. League 1 is sixty real people's history, and `lib/db.test.ts` asserts exact row counts against it (60 users / 13 leagues / 1,355 movies / 156 drafts).
+  - **5434 is the second worktree's database**, an identical clone. It exists so two agents can run tests and browsers at once: the suite's DB-backed project is serial by design, because `available_years_one_active` is a global partial unique index with no per-worker copy, so two runs against *one* database race it. Point a run at it by exporting `DATABASE_URL=postgresql://cinemadraft:local@localhost:5434/cinemadraft` — process env beats `.env.local` in Vitest, Playwright and Next alike.
+  - Re-clone it whenever it drifts: `pg_dump -h localhost -p 5433 … -Fc` piped into `pg_restore -h localhost -p 5434 … --clean --if-exists`. Both must sit at the baseline counts above, or `lib/db.test.ts` fails on whichever one a run happens to use.
 - **`fixtures/` is generated** by `scripts/scrub-fixtures.mjs` from the gitignored raw capture in `.local/`. Never hand-edit it, and never let a formatter touch it — the scrubber asserts byte-identical output on re-run.
 - **Award nominations and winners are entered by the `award-entry` skill**, not
   by hand through the admin UI. It drives `scripts/award-import.mjs`, which is
