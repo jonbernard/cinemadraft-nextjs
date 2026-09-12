@@ -1281,7 +1281,7 @@ decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
 - [ ] P17.T18 — body size to **15px / 13px small** (amends D71)
 - [ ] P17.T19 — 🔴 poster captions get **serif at 15px** — `PosterFrame.tsx:120` and `BrowseMonth.tsx:89` set film titles in Archivo, which D70 says are names. Newsreader deferred to after Phase 18
 - [ ] P17.T20 — `beam` **spent on live + the `Next · date TBA` chip**; not done until it renders
-- [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 Now blocked by P17.T35 — brass already means "drafted" on the draft board
+- [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 **Unblocked by P17.T35**: brass means an award outcome only, and the "already means drafted" reading rested on a figure that does not reproduce
 - [ ] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
 - [ ] P17.T23 — **40px section step** (16px within a section, 8px within a group)
 - [ ] P17.T24 — **enforce the 4px grid in `scripts/layering.sh`** (43 gaps off it today)
@@ -1302,7 +1302,7 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 - [ ] P17.T32 — `/leagues`: one label for one action; mark the admin section
 - [ ] P17.T33 — 88% of signed-in text is 12px; kill the `text-[0.65rem]` arbitrary value (117 elements at 10.4px)
 - [ ] P17.T34 — `text-dim` outnumbers `text-primary` 3.6:1; audit what deserves it
-- [ ] P17.T35 — 🔴 brass already means "drafted" (320 instances on the draft board). **Blocks P18.T6** until its meaning is decided
+- [x] P17.T35 — brass means an **award outcome only**; the review's "320 instances on the draft board" does not reproduce (570 elements, every one of them the word `Won`, from one source site rendered twice per seat). **P18.T6 and T21 unblocked.** Method and numbers in the Phase 17 notes below; 🔴 T26 owes it a D-row in the D85+ block
 - [ ] P17.T36 — `/list` has three left edges (445 / 469 / 493)
 
 ### Recording the decisions
@@ -1322,10 +1322,100 @@ product and should only inherit tokens from this phase, not be redesigned by it.
   against a dev server, so dev-only chrome and dev-only console output could be
   recorded as product defects. Verify a finding in `npm run start` before fixing
   it. Four of the review's premises have already failed against the real code
-  (T11's blocker, T15's seal, T18's 75 files, T21's 320 brass instances).
+  (T11's blocker, T15's seal, T18's 75 files, T21's 320 brass instances — the
+  last of which T35 has now re-measured and found to be 570, all of them the
+  word `Won`).
 
 _Fill these in as you go. The gate requires the T18–T25 measurements re-run and
 recorded here, so the change is a number rather than an impression._
+
+- **P17.T35 — brass means an award outcome, and only that. The review's "320
+  brass instances on the draft board" does not reproduce; the board's brass is
+  one source site multiplied by a loop.** 🔴 **For T26: this is the D-row T35
+  owes the ledger. Assign it a number in the D85+ block — nothing was written
+  to `docs/DECISIONS.md` by this task, on purpose, so the block stays
+  contiguous.**
+
+  Measured at `86aacde`, in a production build (`KEEP_TEST_IDS=1 npm run build`
+  → `npm run start`, **not** `next dev`), signed in through the `E2E_TEST_AUTH`
+  cookie, Chromium at 1440×900, dark scheme, against the restored production
+  corpus. Three counts, each with its method stated — because the review's was
+  not, and a source grep and a rendered-element count are different
+  measurements of different things:
+
+  | # | Method | Result |
+  |---|---|---|
+  | 1 | `grep -rnE "brass" components app --include='*.tsx'`, minus `.stories.`/`.test.`/doc-comment lines — **source sites** | **18 lines**, of which **4** are `tone="brass"` call sites (`PointsLedger:111`, `CategoryAdmin:218`, `NomineeGrid:57`, `award-shows/[abbr]/page:185`). `DraftBoard.tsx`, `DraftConsole.tsx` and `PickCell.tsx` contain **zero**. (The tranche-4 plan's "11" does not reproduce exactly either — same conclusion, different line-filtering convention.) |
+  | 2a | `document.querySelectorAll('[class*="brass"]').length` on `/leagues/1` — **elements carrying a brass class** | **570** |
+  | 2b | walk every element, compare computed `backgroundColor`/`color` against `--color-brass-{fill,text,contrast}` — **elements resolving to the token** | **570** (570 by background, 570 by colour — the *same* 570 elements) |
+  | 3 | `textContent` histogram of the same set — **what they say** | `{ "Won": 570 }`. One key. |
+
+  **(2b) equalling (2a) exactly is itself a finding, and it falsifies the
+  inflation hypothesis.** The tranche-4 plan expected a computed-value walk to
+  inflate an inherited custom property into one hit per descendant, which would
+  have made the review's figure an artifact. It does not: nothing on the league
+  page sets a brass `color` on an ancestor, so the two counts describe the same
+  570 `<span>`s. The multiplier is a loop, not the cascade.
+
+  **Where the 570 comes from, and why it is not 320.** `PickCell.tsx:78` embeds
+  a `PointsLedger` under every pick's score, and `PointsLedger.tsx:111` renders
+  `<StatusChip tone="brass">Won</StatusChip>` once per *winning nomination
+  line*. `DraftBoard` renders the whole seat list **twice** — the stacked mobile
+  `<ul class="md:hidden">` and the desktop `<table class="hidden md:block">` —
+  and both are in the DOM at every width, only one painted. So the board's brass
+  is `285 × 2`. The 285 was predicted from SQL before the browser was opened and
+  matched exactly: for league 1 / 2026 (112 picks, 35 distinct films), the
+  pick × scored-winning-nomination pairs number **285**, and the rendered split
+  is **285 in the `<table>`, 285 in the mobile `<ul>`, 0 elsewhere**. 🔴 **320
+  is neither 285 nor 570 and reproduces at no viewport** — the review's number
+  is wrong, though its order of magnitude and its location are right.
+
+  **The histogram is the decision, and the count is a distraction.** Every one
+  of the 570 says `Won`. Not one film title, round number or seat name. That is
+  D69's brass verbatim. The board is simply where the ledgers live, so the count
+  follows the *wins*, not the picks — proven by the control: **`/leagues/1?year=2017`
+  is the largest board in the corpus (20 seats, 140 picks) and renders `byClass`
+  **0**, because none of its films holds a scored 2017 win.** A token that meant
+  "drafted" could not render zero on the pickiest board in the database.
+  Cross-routes, same run: `/award-shows/oscars` **49** (`Winner` ×25,
+  `5 nominations` ×23, `10 nominations` ×1 — all award outcomes), `/watchlist`
+  (default `?view=films`) **0**, `/` **0**.
+
+  What the board uses for its *own* marks, checked as the other half of the
+  question: `PickCell` sets the round badge and the initials placeholder in
+  `text-dim` and the title in `text-primary`; `DraftBoard` marks the viewer's
+  seat in **carmine** (`border-l-accent-fill`) and an unclaimed seat with
+  `StatusChip tone="neutral"`. Nothing colours a pick brass for being a pick.
+
+  🔴 **Therefore P17.T21 and P18.T6 are unblocked.** Spending brass as the public
+  awards accent on How-it-works is the *same* meaning reaching a public page, not
+  a second one. The permitted brass call sites are `PointsLedger`, `NomineeGrid`,
+  `CategoryAdmin`, the award-show page, and `Eyebrow`/`Button`'s opt-in `brass`
+  tone; a new one needs a reason in review.
+
+  **One genuinely off-label use, recorded and deliberately not changed:**
+  `components/SeenMeter.tsx:30` fills a `<progress>` bar with `bg-brass-fill`
+  for *how many films you have seen*, which is not an award outcome by any
+  reading. It has no text, so it never appears in histogram (3) — confirmed by
+  hand instead: `/watchlist?view=awards` renders **24** brass bars and
+  `?view=nominations` **1**, metering "2 of 50 films seen" and "22 of 125
+  nominations seen". It is on the watchlist, which this phase may not redesign,
+  so it stands. The fix is a one-class swap whenever a phase owns that screen.
+  `SeenMeter`'s docstring still justifies brass by elimination ("carmine marks
+  *this one*"), which is not a reason; correcting it was left to T26 rather than
+  done here, so the comment can cite the real D-number instead of guessing it.
+
+  Data discipline: read-only against league 1. The only writes were one scratch
+  `users` row and five scratch `watchlists` rows, deleted and verified by count
+  (`users` 60, `watchlists` 2363, both unchanged).
+
+  🔴 **One more of the review's figures to distrust downstream: "a complete
+  18-member league, 1,020 picks" is not a board.** 1,020 is league 1's picks
+  across **nine seasons**; 18 is its distinct members across all of them. A
+  single rendered board is one season — 112 picks for the active 2026, 140 for
+  the largest (2017). Any per-board number the review quotes was taken on a
+  board an order of magnitude smaller than "1,020 picks" implies. T33's and
+  T34's element counts rest on the same page and inherit the caution.
 
 - **P17.T2, the 390px width budget — measured before any code, and it chose a
   third branch.** At 390px the bar's five slots are **78px** each and the
@@ -1501,7 +1591,7 @@ Plan: _not yet written — write it before starting T0._
 - [ ] P18.T3 — the scoring table rebuilt legibly, grouped by show, readable at 390px
 - [ ] P18.T4 — the twelve shows, using the P17.T12 mark treatment
 - [ ] P18.T5 — the season shape as a timeline, from the `SeasonStepper` data
-- [ ] P18.T6 — motion and colour; brass carries the awards beat (closes P17.T21)
+- [ ] P18.T6 — motion and colour; brass carries the awards beat (closes P17.T21). Unblocked by P17.T35
 - [ ] P18.T7 — the way in: one primary action, repeated at most twice
 - [ ] P18.T8 — SEO: metadata, canonical, OG image
 - [ ] P18.T9 — E2E: renders signed out, survives an empty season, numbers match the scoring service
