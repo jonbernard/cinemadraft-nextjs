@@ -1435,6 +1435,48 @@ recorded here, so the change is a number rather than an impression._
     `router.replace` is not the fix — it would re-run the Server Component and
     discard every appended month.
 
+- **P17.T2, the 1024px content panel — before and after.** **1024px before,
+  1024px after.** The "before" is a production build of `350e5e3`, the commit
+  under T2, measured the same way; the panel is full-bleed below `xl` in both,
+  because T2's diff touches no class in the layout tree and the bar is `fixed`.
+  What changed at 1024 is the chrome, not the width: before, the strip was
+  `display: none` and the mark and search measured **0 × 0** — the dead zone —
+  against **44 × 48.5** each after.
+  🔴 Cheap to reproduce: `git worktree` of the parent commit with
+  `node_modules` **hardlinked** (`cp -al`), 8s to build. A *symlinked*
+  `node_modules` breaks Turbopack.
+
+- **Tranche 1 gate — the browser pass, 2026-09-12.** Production build
+  (`KEEP_TEST_IDS=1 next build`, then `next start -H 127.0.0.1` on its own
+  port), `E2E_TEST_AUTH=1`, no Clerk. `/browse`, `/rules-and-scoring` and a
+  scratch draft console, at 1440 / 1280 / 1024 / 390px in both schemes — the
+  surfaces T1/T3/T4/T5's own passes over `/` did not cover.
+  `documentElement.scrollWidth` **equals the viewport on all 24 combinations**,
+  and the console is **empty on every one** — no errors, no React warnings.
+  - **`/browse` (T6).** The cursor lands in the URL as pages append
+    (`?when=past&page=2…24`), and `history.length` does not move across six
+    appends: `replaceState`, not `pushState`, as D80's amendment says.
+  - **`/rules-and-scoring` (T0).** 200, no redirect, signed out.
+  - **The draft console (T7).** Renders at all four widths; the assign control
+    is three enabled 64px-tall result buttons — 800px wide at 1440, 642 at
+    1280, 640 at 1024, 358 at 390.
+  - 🔴 **The 1024px dead zone, confirmed on three routes** (`/browse`,
+    `/rules-and-scoring`, the draft console). Bar **1024 × 48.5**; chrome group
+    present, mark, search and account **44 × 48.5** each; rail **0 × 0**.
+    Identical in both schemes.
+  - **The 390px bar, re-measured independently of T2's own run:** five slots at
+    **78px**, labels Home 29.8 · Leagues 41.9 · Browse 37.0 · Award shows 64.8 ·
+    More 25.1 (T2 recorded 25.2 — sub-pixel), bar still **48.5px**, chrome group
+    `display: none`. T2's numbers stand.
+  - 🔴 **Two artefacts of the `E2E_TEST_AUTH` boot, not defects.** `/leagues`
+    answers **500** signed out, because under that flag `proxy.ts` is a
+    pass-through with no route protection, so the page renders and throws
+    `FORBIDDEN` instead of being redirected to a sign-in that does not exist.
+    And a shared browser profile can carry *another* session's
+    `Clerk has been loaded with development keys` warning into this run — the
+    served HTML contains no Clerk reference at all with the publishable key
+    empty. Check `curl` before recording either.
+
 - Baseline, measured 2026-09-12 across `/`, `/browse`, `/award-shows`,
   `/films/[id]` at 1440px, both schemes, 1,272 visible text elements:
   Archivo 1088 · Plex Mono 182 · Instrument Serif 37 · Sora 4 · Newsreader 1.
@@ -1543,6 +1585,15 @@ Plan: _not yet written — write it before starting T0._
   by any tranche: tranche 2's T10 owns `/films/[tmdbId]`'s overflow, which
   measures **2304px** at 390px in the same pass, but nothing owns the league
   page. Same class of defect, one owner short.
+  🔴 **Cause, found by the tranche-1 gate pass and still 582 in a production
+  build** (so not a dev artefact; the document really scrolls, `scrollLeft` maxes
+  at **192.5**): the roster shelves' `overflow-x-auto` does clip, but **134
+  `position: absolute` descendants escape it** — `PosterFrame`'s poster `<img>`
+  and the `text-[0.65rem]` pick number — because no ancestor inside the scroller
+  is positioned, so their containing block is outside it. Their right edges run
+  to 673px; the furthest that counts toward the document is an `sr-only` span at
+  exactly **582**. No *in-flow* element exceeds 390 at any depth. The fix is
+  `relative` on the scroller (or on each shelf cell), not a width.
 
 - **Raise the past side's `vote_count.gte` from 200 to ~400?** It would sharpen
   "films anybody has heard of" and would also thin out genuinely good
