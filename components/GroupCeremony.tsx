@@ -133,6 +133,24 @@ export function GroupCeremony({
   const everyone = groups.flatMap((entry) => entry.names);
   // Groups landed so far. At step 0 this is none — the reel is showing instead.
   const landed = groups.slice(0, Math.min(step, groups.length));
+  /**
+   * 🔴 As square as the count allows, because the real counts are 3, 4 and 5.
+   *
+   * The first build wrapped the groups in a flex row of `min-w-56 flex-1`
+   * cards inside `max-w-4xl`. Three 224px cards fit that width, so **four
+   * groups — the everyday shape, every season since 2018 — put three on one
+   * row and stretched the fourth to the full 896px on its own**, one banner
+   * under three cards, as if group 4 were the answer. Five gave 3 + 2 with the
+   * bottom pair at half width each. The count only ever looked right at the
+   * two groups it was built with.
+   *
+   * `ceil(sqrt(n))` is the column count that keeps the last row as full as the
+   * rows above it: 4 → 2×2, 5 → 3+2, 3 → 2+1, 20 → four rows of five, 1 → one
+   * card that is one card wide rather than a full-width slab. 2×2 also uses the
+   * vertical space a single row of four leaves empty, which is most of the
+   * screen.
+   */
+  const columns = Math.ceil(Math.sqrt(groups.length));
 
   return (
     <dialog
@@ -179,12 +197,25 @@ export function GroupCeremony({
             {everyone[tick % everyone.length] ?? ''}
           </p>
         ) : (
-          <ol className="flex w-full max-w-4xl flex-wrap justify-center gap-6">
+          <ol
+            data-testid="group-listing"
+            // Two up at phone width whatever the count — three 98px cards do
+            // not hold a name — and the square-ish count from `sm` up. Tracks
+            // are capped at 18rem so one group is a card, not a billboard, and
+            // floored at 0 so five of them still fit a 390px screen.
+            style={
+              {
+                '--cols': columns,
+                '--cols-sm': Math.min(columns, 2),
+              } as React.CSSProperties
+            }
+            className="grid w-full max-w-5xl grid-cols-[repeat(var(--cols-sm),minmax(0,18rem))] justify-center gap-6 sm:grid-cols-[repeat(var(--cols),minmax(0,18rem))]"
+          >
             {landed.map((entry, index) => (
               <li
                 key={entry.group}
                 className={cn(
-                  'border-border-rule bg-bg-surface min-w-56 flex-1 rounded-md border p-4',
+                  'border-border-rule bg-bg-surface rounded-md border p-4',
                   // The last group to land is the one being looked at.
                   !still && index === landed.length - 1 && 'animate-deal-in',
                 )}

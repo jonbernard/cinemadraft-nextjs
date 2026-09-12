@@ -25,6 +25,20 @@ const TWO_GROUPS: CeremonyGroup[] = [
   { group: 2, names: ['Grace', 'Margaret'] },
 ];
 
+/**
+ * 🔴 The shape league 1 has actually used every season since 2018.
+ *
+ * The component was built and watched with two groups, and two is the one count
+ * whose layout could not go wrong. Four is the everyday case (four groups of
+ * four, 16 seats), five has happened, and `SeasonSetup` offers 1–20.
+ */
+const FOUR_GROUPS: CeremonyGroup[] = [
+  { group: 1, names: ['Ada', 'Katherine', 'Grace', 'Margaret'] },
+  { group: 2, names: ['Dorothy', 'Mary', 'Annie', 'Evelyn'] },
+  { group: 3, names: ['Hedy', 'Jean', 'Frances', 'Betty'] },
+  { group: 4, names: ['Ruth', 'Marlyn', 'Kathleen', 'Adele'] },
+];
+
 const REEL_MS = 1600;
 const REVEAL_MS = 500;
 
@@ -142,6 +156,62 @@ describe('GroupCeremony', () => {
     await user.click(screen.getByRole('button', { name: /done/i }));
     expect(onDone).toHaveBeenCalledTimes(1);
   });
+
+  it('deals four groups — the real-world shape — into a grid, not one stretched card', async () => {
+    vi.useFakeTimers();
+    render(<GroupCeremony groups={FOUR_GROUPS} onDone={vi.fn()} />);
+
+    await watchToTheEnd(FOUR_GROUPS.length);
+
+    expect(
+      screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent),
+    ).toEqual(['Group 1', 'Group 2', 'Group 3', 'Group 4']);
+    for (const name of FOUR_GROUPS.flatMap((entry) => entry.names)) {
+      expect(screen.getByText(name)).toBeInTheDocument();
+    }
+
+    /**
+     * 🔴 Two columns, so four groups read 2×2.
+     *
+     * The first build laid the groups out as `min-w-56 flex-1` cards wrapping
+     * inside `max-w-4xl`: three 224px cards fit that row, so the fourth wrapped
+     * alone and `flex-1` stretched it to the full 896px — one banner under three
+     * cards. The column count is the thing that decides that, so it is the thing
+     * this pins; a layout that goes back to letting the last card stretch has no
+     * column count at all and fails here.
+     */
+    const ol = screen.getByTestId('group-listing');
+    expect(ol.style.getPropertyValue('--cols')).toBe('2');
+    expect(ol.style.getPropertyValue('--cols-sm')).toBe('2');
+  });
+
+  it.each([
+    [1, '1', '1'],
+    [3, '2', '2'],
+    [5, '3', '2'],
+    [20, '5', '2'],
+  ])(
+    'lays %i groups out as columns that keep the last row full',
+    (count, columns, phoneColumns) => {
+      // 🔴 Never one card stretched across a row of its own, at any count the
+      // setup form offers. Phone width stays at two whatever the count — three
+      // cards across 390px are 98px wide, which does not hold a name.
+      render(
+        <GroupCeremony
+          groups={Array.from({ length: count }, (_, index) => ({
+            group: index + 1,
+            names: ['Ada'],
+          }))}
+          onDone={vi.fn()}
+          reducedMotion
+        />,
+      );
+
+      const ol = screen.getByTestId('group-listing');
+      expect(ol.style.getPropertyValue('--cols')).toBe(columns);
+      expect(ol.style.getPropertyValue('--cols-sm')).toBe(phoneColumns);
+    },
+  );
 
   it('settles rather than closing when Escape interrupts the animation', async () => {
     const onDone = vi.fn();
