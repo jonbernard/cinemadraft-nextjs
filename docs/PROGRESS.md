@@ -1592,6 +1592,24 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 ## Open questions carried forward
 
+- 🔴 **`next dev` answers 403 for every `_next/static` chunk on `127.0.0.1`**
+  (found 2026-09-12 during P17.T9). `localhost` serves the same server fine.
+  An agent or a person measuring a dev server on `127.0.0.1` therefore reads an
+  **unstyled page** and will record geometry, contrast and overflow numbers that
+  mean nothing. Production builds are unaffected. Measure dev on `localhost`,
+  and treat any dev-server measurement taken on `127.0.0.1` as void.
+
+- **756 of 1,287 elements under `<main>` on a film page compute to
+  `content-box`**, from exactly 24 roots — every one a `<summary>` or `<ul>`
+  inside a `<details>`. `html` and `body` are both `border-box`, and `/browse`
+  has none of it. 🔴 Enumerating every CSS rule matching one of those `<summary>`
+  roots returns **no `box-sizing` declaration at all**: neither Tailwind
+  preflight's universal rule nor MUI's `*, *::before, *::after` reaches them, so
+  both fall back to the initial value. Nobody has explained why. P17.T10 fixed
+  the one element that was causing visible overflow (`box-border`) and left the
+  rest alone. It may be behind P17.T30's wrapping invite URL and P17.T36's three
+  left edges — check this before treating either as a local defect.
+
 - **🔴 Found by P17.T4's browser pass, not reproducible — the leaderboard does
   not overflow at 1024px.** The 2026-09-12 review recorded that twelve per-show
   columns overflow the content panel at `lg` "taking the document with them",
