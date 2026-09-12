@@ -12,10 +12,17 @@ afterAll(async () => {
 });
 
 describe('db', () => {
-  it('connects to the local Docker database, not Neon', () => {
+  it('connects to a local Docker database, not Neon', () => {
     // A test that reaches Neon is a bug: Neon holds the only restored copy of
     // production data, and the suite would be mutating it.
-    expect(process.env.DATABASE_URL).toContain('localhost:5433');
+    //
+    // 🔴 Either local port. 5433 is the primary restored copy; 5434 is its
+    // clone, which exists so two agents can run suites at once — the DB-backed
+    // project is serial by design, so two runs against one database race the
+    // active-year index. Pinning 5433 here made the second database fail this
+    // test and nothing else, which reads as "the clone is broken" rather than
+    // "the assertion is narrower than the rule it states".
+    expect(process.env.DATABASE_URL).toMatch(/localhost:543[34]\b/);
     expect(process.env.DATABASE_URL).not.toContain('neon.tech');
   });
 

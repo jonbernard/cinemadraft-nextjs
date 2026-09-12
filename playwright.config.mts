@@ -35,12 +35,33 @@ export default defineConfig({
   // the file for what that broke.
   globalTeardown: './e2e/global-teardown.ts',
   fullyParallel: true,
+  // 🔴 Four, not the default. Measured 2026-09-12: at the default (7 here) two
+  // dashboard specs time out waiting for a `rowheader`, and it is not those
+  // specs' fault — a throwaway file of three trivial `/leagues` visits
+  // reproduces it exactly, and the whole suite is green serially and at 4. So
+  // the ceiling is the app under concurrent load, not a flaky assertion, and
+  // the next person to add three tests would have read it as "I broke the
+  // dashboard". Raise this only with a measurement that says the ceiling moved.
+  workers: 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+    /**
+     * 🔴 The recording is the artefact the owner reviews (P19.T7), so a paced
+     * run records everything and an ordinary run records only what failed.
+     *
+     * Cost is not the objection — a full 80-spec run recorded 9.1MB of webm on
+     * 2026-09-12 — the objection is that eighty videos of a green run are
+     * eighty files nobody opens. `retain-on-failure` keeps the debugging value
+     * at no cost on green.
+     *
+     * `DEMO_PACE` is read here, in the test process. The app under test knows
+     * nothing about pacing and must not: `webServer.env` is unchanged.
+     */
+    video: Number(process.env.DEMO_PACE ?? 0) > 0 ? 'on' : 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
