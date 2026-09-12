@@ -479,6 +479,7 @@ async function main(argv) {
   }
 
   if (command === 'apply') {
+    // 🔴 Handles both plan.kind values: nominations (new entries) and winners (replaces).
     const planPath = rest.find((arg) => !arg.startsWith('--'));
     const commit = rest.includes('--commit');
     const { readFileSync } = await import('node:fs');
