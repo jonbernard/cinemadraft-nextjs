@@ -160,6 +160,33 @@ test.describe('navigation', () => {
     await expect(page.getByRole('navigation', { name: 'Primary, mobile' })).toBeHidden();
   });
 
+  test('🔴 the rail reaches the bottom of its column at desktop width', async ({
+    page,
+  }) => {
+    // Geometry, not a class name. Three defects in this codebase shipped with
+    // green tests over them because nothing measured a box.
+    await page.setViewportSize(DESKTOP);
+    await page.goto('/');
+
+    const rail = await page.getByRole('navigation', { name: 'Main' }).boundingBox();
+    const main = await page.getByRole('main').boundingBox();
+    if (rail === null || main === null) throw new Error('the shell has no boxes');
+
+    // The rail and the content panel are siblings in the shell's flex row and
+    // must end together. 4px of slack for sub-pixel layout.
+    expect(Math.abs(rail.y + rail.height - (main.y + main.height))).toBeLessThan(4);
+    // And it is genuinely tall, not merely aligned because both are short.
+    expect(rail.height).toBeGreaterThan(600);
+
+    // 🔴 Nothing was added to fill the column, so the rail's own content must
+    // not have grown a scrollbar inside it. Empty surface is the point.
+    const scrolls = await page.evaluate(() => {
+      const nav = document.querySelector('nav[aria-label="Main"]');
+      return nav ? nav.scrollHeight > nav.clientHeight + 1 : null;
+    });
+    expect(scrolls).toBe(false);
+  });
+
   test('🔴 1024px is not a phone — the bar carries identity, search and the way in', async ({
     page,
   }) => {

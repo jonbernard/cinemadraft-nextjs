@@ -48,7 +48,14 @@ export function NavRail({
   return (
     <nav
       aria-label="Main"
-      className="bg-bg-surface rounded-md flex w-[208px] flex-col gap-6 p-3"
+      // 🔴 `h-full`, not a height value. The rail is the first child of
+      // AppShell's `xl:flex` row and its wrapper already stretches; the <nav>
+      // itself was `height: auto`, so the card stopped after the seventh link
+      // and left ~1200px of ground below it on the dashboard at 1440x900. D67
+      // asks for a floating panel and a panel occupies its column. Nothing is
+      // added to fill the space — empty surface is the point, and inventing
+      // rail content to justify the height would be the wrong fix.
+      className="bg-bg-surface rounded-md flex h-full w-[208px] flex-col gap-6 p-3"
     >
       <Link
         href="/"
