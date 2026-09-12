@@ -102,7 +102,8 @@ export default async function AwardShowsPage() {
                   {show.name}
                 </span>
                 <span className="text-text-secondary tabular font-mono text-xs">
-                  {show.categoryCount} categories
+                  {show.categoryCount}{' '}
+                  {show.categoryCount === 1 ? 'category' : 'categories'}
                 </span>
               </Link>
             </li>

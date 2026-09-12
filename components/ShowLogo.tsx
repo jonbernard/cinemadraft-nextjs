@@ -7,7 +7,16 @@ export type ShowLogoProps = {
   className?: string;
 };
 
-const DIMENSIONS = { sm: 40, lg: 72 } as const;
+/**
+ * How big a mark has to be to be a mark.
+ *
+ * 🔴 64px is a floor, not a taste call (2026-09-12 design review). Twelve award
+ * bodies are this product's primary vocabulary and most of their logos are
+ * wordmarks; at the previous 40px they were unreadable, so the page whose job is
+ * to teach the twelve taught nothing. `lg` moves with it so the two sizes stay
+ * distinguishable — 64 beside 72 is a prop with no visible effect.
+ */
+const DIMENSIONS = { sm: 64, lg: 96 } as const;
 
 /**
  * An award show's mark, beside its name.
@@ -32,7 +41,21 @@ export function ShowLogo({ imageUrl, size = 'sm', className }: ShowLogoProps) {
       alt=""
       width={px}
       height={px}
-      className={cn('bg-bg-raised shrink-0 rounded-md object-contain', className)}
+      className={cn(
+        // 🔴 `bg-white` in both schemes, deliberately, and it is the only
+        // surface in the product that does not follow the theme. The marks are
+        // third-party artwork drawn dark-on-transparent for print; `bg-raised`
+        // is near-black in dark and near-parchment in light, so in dark mode
+        // most of the twelve rendered as dark shapes on a dark square. A plate
+        // is paper, and paper does not have a
+        // dark mode. `white` is a keyword, not a hex literal, so it passes the
+        // layering grep — the same reason StatusChip's carmine tone uses it.
+        //
+        // `object-contain` plus padding: the mark is letterboxed onto the plate
+        // with a margin, never cropped to it and never bled to the edge.
+        'bg-white shrink-0 rounded-sm object-contain p-1.5',
+        className,
+      )}
       style={{ width: px, height: px }}
     />
   );

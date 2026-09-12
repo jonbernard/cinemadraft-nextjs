@@ -194,6 +194,27 @@ test.describe('award shows', () => {
     await expect(page.getByRole('button', { name: 'Mark winner' })).toHaveCount(0);
   });
 
+  test('says "1 category", not "1 categories"', async ({ page }) => {
+    // seedShow() builds exactly one category, which is why this is the spec
+    // that can assert it. The detail page already gets this right; the index
+    // printed the plural unconditionally.
+    //
+    // 🔴 Scoped to the scratch show's own card rather than matched by text.
+    // The restored corpus already contains a real show with exactly one
+    // category (AFI), so a bare `getByText('1 category')` matches two elements
+    // and fails Playwright's strict mode — green or red for the wrong reason.
+    // `not.toContainText('1 categories')` is the load-bearing half: the
+    // positive one would also pass on the plural, since it is a substring.
+    const { abbreviation } = await seedShow();
+
+    await page.goto('/award-shows');
+
+    const card = page.getByRole('link', { name: new RegExp(`${TAG} Show`) });
+    await expect(card).toHaveAttribute('href', new RegExp(`/${abbreviation}\\?`));
+    await expect(card).toContainText('1 category');
+    await expect(card).not.toContainText('1 categories');
+  });
+
   test('🔴 shows the resolved point value, not the raw foreign key', async ({ page }) => {
     // `awards.points` holds a foreign key into `points.id` (D41). The scratch
     // category points at a tier worth 7; if the page printed the column it

@@ -22,3 +22,22 @@ export const Small: StoryObj<typeof meta> = {
 export const Missing: StoryObj<typeof meta> = {
   args: { imageUrl: null },
 };
+
+export const OnAPlate: StoryObj<typeof meta> = {
+  name: 'Dark mark on the neutral plate',
+  args: {
+    size: 'lg',
+    imageUrl:
+      'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/oscars.jpg',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The plate stays white in both schemes. These marks are third-party ' +
+          'artwork drawn dark-on-transparent; a plate that followed the theme ' +
+          'rendered them dark on near-black in dark mode.',
+      },
+    },
+  },
+};
