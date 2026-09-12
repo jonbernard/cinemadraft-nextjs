@@ -572,8 +572,21 @@ test.describe('navigation', () => {
 
     const settled = async (locator: ReturnType<typeof page.locator>) => {
       await locator.focus();
-      // Longer than the 150ms motion budget, so the transition has finished.
-      await page.waitForTimeout(300);
+      /**
+       * 🔴 Wait for the transition itself, not for a number of milliseconds.
+       *
+       * This was a hardcoded 300ms sleep — "longer than the 150ms motion
+       * budget". P19.T0 makes `e2e/journeys/support/pace.ts` the suite's only
+       * clock wait (D85), and this one did not need a clock anyway:
+       * `transition-colors` registers a running `CSSTransition` on the element,
+       * and `getAnimations()` reports it until it finishes. Polling that asks
+       * the real question — "has the ring stopped moving" — instead of
+       * guessing how long moving takes, and it costs the actual 150ms rather
+       * than 300.
+       */
+      await expect
+        .poll(() => locator.evaluate((el) => el.getAnimations().length))
+        .toBe(0);
       return locator.evaluate((el) => {
         const style = getComputedStyle(el);
         return {

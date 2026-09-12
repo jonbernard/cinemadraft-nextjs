@@ -60,4 +60,13 @@ check "no next/image import outside RemoteImage" \
   "$(grep -rlE "from ['\"]next/image['\"]" app lib actions components 2>/dev/null \
      | grep -v -e '^components/RemoteImage\.tsx$' -e '\.test\.tsx?$' || true)"
 
+# 🔴 Pacing is a knob, and a knob has exactly one place it is turned.
+# `e2e/journeys/support/pace.ts` owns the only `waitForTimeout` in the suite: a
+# journey that grows a sleep of its own is a journey CI pays for forever, and a
+# slice spec with one is the plain defect it has always been. This is the check
+# that keeps P19's deliberate exception from becoming a habit.
+check "only the journey pacing helper waits on a clock" \
+  "$(grep -rn 'waitForTimeout' e2e 2>/dev/null \
+     | grep -v '^e2e/journeys/support/pace\.ts:' || true)"
+
 exit $fail

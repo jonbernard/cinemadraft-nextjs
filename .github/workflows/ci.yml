@@ -211,6 +211,18 @@ jobs:
           fi
           echo "db client boundary intact"
 
+      - name: Only the journey pacing helper waits on a clock
+        run: |
+          # Pacing is a knob (D85), and a knob has exactly one place it is
+          # turned. `e2e/journeys/support/pace.ts` owns the suite's only
+          # `waitForTimeout`; anywhere else a hardcoded sleep is a flake with a
+          # delay on it, and CI pays for it on every run forever.
+          if grep -rn 'waitForTimeout' e2e | grep -v '^e2e/journeys/support/pace\.ts:'; then
+            echo "a deliberate wait belongs in e2e/journeys/support/pace.ts"
+            exit 1
+          fi
+          echo "only the pacing helper waits on a clock"
+
       - name: Components carry no raw hex colours
         run: |
           set -uo pipefail

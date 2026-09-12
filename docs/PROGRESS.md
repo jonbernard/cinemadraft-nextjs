@@ -1646,7 +1646,7 @@ five journeys are the confidence layer, recorded and paced so a person can
 watch them. The slice specs stay as the diagnostic layer.
 Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
-- [ ] P19.T0 — journey harness: `DEMO_PACE` (0 in CI), an on-screen step caption, video config, `npm run e2e:journeys`, scratch-data discipline
+- [x] P19.T0 — journey harness: `DEMO_PACE` (0 in CI), an on-screen step caption, video config, `npm run e2e:journeys`, scratch-data discipline
 - [ ] P19.T1 — 🔴 **finish the draft**: `completeDraft` exists and no UI calls it, so journey 1 has no end. Build the control or record why there isn't one
 - [ ] P19.T2 — Journey 1: create → invite → seat members and placeholders → deal ≥4 groups → draft round by round with film search → finish
 - [ ] P19.T3 — Journey 2: read the league back — teams, rosters, standings, the ledger, and scores moved by journey 1
