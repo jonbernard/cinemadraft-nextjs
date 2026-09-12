@@ -45,6 +45,7 @@ Every task inherits these. Values copied verbatim from the spec.
 - **Scoring rule is defined in exactly one place:** `lib/services/scoring.ts`. Nomination = P, win = 2P total.
 - **No secret is ever committed.** Credentials live in Vercel env. Most are Sensitive and write-only, so local connection strings are copied from the provider console into the gitignored `.local/`.
 - **Neon is Preview/Production only.** The Development `DATABASE_URL` points at the Docker container. Local shells and tests must never target Neon.
+- 🔴 **Stay on the free tier as long as possible** (owner, 2026-09-12). Vercel Hobby, Neon free, no paid add-on unless nothing free can do the job. This is a design constraint, not a preference to note afterwards: it ranks options. A hosted service whose free tier genuinely covers 60 users is not disqualified for being a dependency, and an architecture that is elegant but burns the Neon compute allowance in one evening is disqualified for being expensive. Where the best technical answer and the best free answer differ, both go to the owner.
 - **Reduced motion respected** on every animation.
 - **Contrast:** every token pair meets WCAG AA — 4.5:1 text, 3:1 large text and non-text UI.
 
