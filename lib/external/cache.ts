@@ -59,7 +59,12 @@ export async function cached<T>(
 ): Promise<T> {
   try {
     const hit = await store().get(key);
-    if (hit !== undefined && hit !== null) return hit as T;
+    // 🔴 The value is wrapped so that a cached `null` is a *hit*. Stored bare,
+    // `get` answers null for both "cached a null" and "nothing here", so every
+    // repeat request for a film TMDB does not have re-fetched *and re-wrote*
+    // the same entry — an unbounded write loop against a metered store, paced
+    // by whoever was asking. Only `undefined` is a miss.
+    if (hit !== undefined && hit !== null) return (hit as { v: T }).v;
   } catch {
     // A cache that cannot be read is a slow path, not an error path.
   }
@@ -67,11 +72,15 @@ export async function cached<T>(
   const value = await produce();
 
   try {
-    await store().set(key, value, {
-      ttl: options.ttlSeconds,
-      ...(options.tags ? { tags: [...options.tags] } : {}),
-      ...(options.name ? { name: options.name } : {}),
-    });
+    await store().set(
+      key,
+      { v: value },
+      {
+        ttl: options.ttlSeconds,
+        ...(options.tags ? { tags: [...options.tags] } : {}),
+        ...(options.name ? { name: options.name } : {}),
+      },
+    );
   } catch {
     // The value is already computed and is being returned regardless.
   }
