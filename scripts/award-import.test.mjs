@@ -408,3 +408,154 @@ describe('applyWinners', () => {
     expect(client.ran.some((call) => /INSERT INTO winners/.test(call.text))).toBe(false);
   });
 });
+
+import { finishShow, refresh } from './award-import.mjs';
+
+describe('finishShow', () => {
+  const context = {
+    event: {
+      id: 7,
+      name: 'DGA',
+      abbreviation: 'dga',
+      nomActive: true,
+      awardsActive: false,
+    },
+    awards: [],
+    activeYear: 2025,
+    existingNominations: [],
+    seasonYears: [],
+  };
+
+  it('refuses an empty message rather than broadcasting a blank', async () => {
+    const client = fakeClient([]);
+    await expect(
+      finishShow(client, context, { message: '   ', kind: 'nominations', commit: true }),
+    ).rejects.toThrow(/message/);
+    expect(client.ran).toHaveLength(0);
+  });
+
+  it('counts recipients without writing when not committing', async () => {
+    const client = fakeClient([[/FROM users/, [{ count: '61' }]]]);
+    const result = await finishShow(client, context, {
+      message: 'DGA nominations are in.',
+      kind: 'nominations',
+      commit: false,
+    });
+    expect(result.recipients).toBe(61);
+    expect(client.ran.some((call) => /INSERT INTO notifications/.test(call.text))).toBe(
+      false,
+    );
+  });
+
+  // nom_active = true means "needs nominations" — finishing turns it off.
+  it('clears nom_active and links the notification at the show', async () => {
+    const client = fakeClient([[/FROM users/, [{ count: '2' }]]]);
+    await finishShow(client, context, {
+      message: 'DGA nominations are in.',
+      kind: 'nominations',
+      commit: true,
+    });
+    const update = client.ran.find((call) => /UPDATE events/.test(call.text));
+    expect(update.text).toMatch(/nom_active = false/);
+    const insert = client.ran.find((call) => /INSERT INTO notifications/.test(call.text));
+    expect(insert.params).toContain('/award-shows/dga');
+  });
+
+  it('clears awards_active for a winners run', async () => {
+    const client = fakeClient([[/FROM users/, [{ count: '2' }]]]);
+    await finishShow(
+      client,
+      { ...context, event: { ...context.event, awardsActive: true } },
+      {
+        message: 'The DGA winners are in.',
+        kind: 'winners',
+        commit: true,
+      },
+    );
+    expect(client.ran.find((call) => /UPDATE events/.test(call.text)).text).toMatch(
+      /awards_active = false/,
+    );
+  });
+});
+
+describe('refresh', () => {
+  it('posts the secret, then confirms the titles render', async () => {
+    const calls = [];
+    const fetchImpl = async (url, init) => {
+      calls.push({ url: String(url), init });
+      if (String(url).endsWith('/api/revalidate')) {
+        return {
+          ok: true,
+          status: 200,
+          async json() {
+            return { revalidated: ['/award-shows/dga'] };
+          },
+        };
+      }
+      return {
+        ok: true,
+        status: 200,
+        async text() {
+          return '<h2>Sinners</h2>';
+        },
+      };
+    };
+
+    const result = await refresh({
+      abbreviation: 'dga',
+      year: 2025,
+      titles: ['Sinners'],
+      baseUrl: 'https://cinemadraft.com',
+      secret: 's3cret',
+      fetchImpl,
+    });
+
+    expect(JSON.parse(calls[0].init.body).secret).toBe('s3cret');
+    expect(calls[1].url).toBe('https://cinemadraft.com/award-shows/dga?year=2025');
+    expect(result.missing).toEqual([]);
+  });
+
+  // 🔴 The check that makes the revalidation honest. A 200 from the endpoint
+  // proves nothing about what the reader sees.
+  it('reports a title that does not appear on the live page', async () => {
+    const fetchImpl = async (url) =>
+      String(url).endsWith('/api/revalidate')
+        ? {
+            ok: true,
+            status: 200,
+            async json() {
+              return { revalidated: [] };
+            },
+          }
+        : {
+            ok: true,
+            status: 200,
+            async text() {
+              return '<h2>Something else</h2>';
+            },
+          };
+
+    const result = await refresh({
+      abbreviation: 'dga',
+      year: 2025,
+      titles: ['Sinners'],
+      baseUrl: 'https://cinemadraft.com',
+      secret: 's3cret',
+      fetchImpl,
+    });
+    expect(result.missing).toEqual(['Sinners']);
+  });
+
+  it('throws rather than silently skipping the clear when no secret is set', async () => {
+    await expect(
+      refresh({
+        abbreviation: 'dga',
+        year: 2025,
+        titles: [],
+        baseUrl: 'https://cinemadraft.com',
+        secret: null,
+        fetchImpl: async () => ({ ok: true }),
+      }),
+    ).rejects.toThrow(/REVALIDATE_SECRET/);
+  });
+});

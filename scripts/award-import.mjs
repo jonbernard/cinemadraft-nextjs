@@ -457,6 +457,96 @@ export async function applyWinners(client, plan, context, { commit }) {
   return report;
 }
 
+/**
+ * Mark the show entered and tell everyone.
+ *
+ * 🔴 `nom_active = true` means "this show still needs nominations" — see
+ * `needsNominations` in lib/services/award-show.ts. Finishing clears it.
+ *
+ * 🔴 Irreversible. The app has no notification deletion (R8), so this is the
+ * one command whose effect cannot be corrected by re-running it.
+ */
+export async function finishShow(client, context, { message, kind, commit }) {
+  const text = (message ?? '').trim();
+  if (text === '') throw new Error('a broadcast needs a message');
+
+  const column = kind === 'winners' ? 'awards_active' : 'nom_active';
+  const counted = await client.query('SELECT count(*)::int AS count FROM users');
+  const recipients = Number(counted.rows[0]?.count ?? 0);
+
+  if (!commit) return { recipients, flag: column };
+
+  const link = `/award-shows/${context.event.abbreviation}`;
+  await client.query('BEGIN');
+  try {
+    await client.query(
+      `UPDATE events SET ${column} = false, updated_at = now() WHERE id = $1`,
+      [context.event.id],
+    );
+    // One statement for every recipient, matching notificationRepository.broadcast
+    // — which shares a single createdAt across the whole broadcast on purpose.
+    await client.query(
+      `INSERT INTO notifications (user_id, message, icon, link, read, created_at, updated_at)
+       SELECT id, $1, NULL, $2, false, now(), now() FROM users`,
+      [text, link],
+    );
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  }
+
+  return { recipients, flag: column };
+}
+
+/**
+ * Clear the cache, then prove it.
+ *
+ * 🔴 This is the "regenerate the scores" step, and it is a cache clear rather
+ * than a recompute because there is nothing to recompute: scoring is a pure
+ * function applied on read (D59), so a nomination is live the moment it
+ * commits. What goes stale is the render — every award write through the app
+ * ends in `revalidatePath`, and this script makes none of those calls.
+ *
+ * Step two is what makes step one honest: a 200 from the endpoint proves
+ * nothing about what a reader sees.
+ *
+ * 🔴 If materialized totals ever return, the recompute call goes HERE and in
+ * the route this posts to — nowhere else. Every command routes through it.
+ */
+export async function refresh({
+  abbreviation,
+  year,
+  titles,
+  baseUrl,
+  secret,
+  fetchImpl = fetch,
+}) {
+  if (!secret) {
+    throw new Error(
+      'REVALIDATE_SECRET is not set — refusing to skip the cache clear silently',
+    );
+  }
+
+  const posted = await fetchImpl(`${baseUrl}/api/revalidate`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ secret, abbreviation }),
+  });
+  if (!posted.ok) {
+    throw new Error(
+      `/api/revalidate answered ${posted.status} — the cache was not cleared`,
+    );
+  }
+  const { revalidated } = await posted.json();
+
+  const page = await fetchImpl(`${baseUrl}/award-shows/${abbreviation}?year=${year}`);
+  const html = await page.text();
+  const missing = titles.filter((title) => !html.includes(title));
+
+  return { revalidated, missing };
+}
+
 import { pathToFileURL } from 'node:url';
 
 const COMMANDS = ['context', 'apply', 'finish', 'refresh'];
@@ -514,6 +604,57 @@ async function main(argv) {
       );
     } finally {
       await client.end();
+    }
+  }
+
+  if (command === 'finish') {
+    const commit = rest.includes('--commit');
+    const kind = rest.includes('--winners') ? 'winners' : 'nominations';
+    const message = rest[rest.indexOf('--message') + 1];
+
+    const client = await connect();
+    try {
+      const context = await loadContext(client, rest[0]);
+      const result = await finishShow(client, context, { message, kind, commit });
+      console.log(
+        `${commit ? 'SENT' : 'DRY RUN'}: "${message}" to ${result.recipients} members, ` +
+          `${result.flag} → false` +
+          (commit ? '' : ' — re-run with --commit to send. This cannot be undone.'),
+      );
+    } finally {
+      await client.end();
+    }
+  }
+
+  if (command === 'refresh') {
+    const abbreviation = rest[0];
+    const yearArg = rest[rest.indexOf('--year') + 1];
+    const titlesArg = rest.includes('--titles') ? rest[rest.indexOf('--titles') + 1] : '';
+
+    const client = await connect();
+    let year = Number(yearArg);
+    try {
+      if (!Number.isSafeInteger(year)) {
+        year = (await loadContext(client, abbreviation)).activeYear;
+      }
+    } finally {
+      await client.end();
+    }
+
+    const result = await refresh({
+      abbreviation: abbreviation.toLowerCase(),
+      year,
+      titles: titlesArg ? titlesArg.split(',').map((title) => title.trim()) : [],
+      baseUrl: process.env.SITE_URL ?? 'https://cinemadraft.com',
+      secret: process.env.REVALIDATE_SECRET ?? null,
+    });
+
+    console.log(`revalidated: ${result.revalidated.join(', ')}`);
+    if (result.missing.length > 0) {
+      console.error(`NOT VISIBLE on the live page: ${result.missing.join(', ')}`);
+      process.exitCode = 1;
+    } else {
+      console.log('every title checked is visible on the live page');
     }
   }
 }
