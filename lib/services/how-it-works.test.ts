@@ -1,0 +1,241 @@
+// @vitest-environment node
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const getLeaderboard = vi.fn();
+const ledgerForMovies = vi.fn();
+const getActiveYear = vi.fn();
+const availableSeasons = vi.fn();
+const findManyByIds = vi.fn();
+
+vi.mock('@/lib/services/leaderboard', () => ({ getLeaderboard, availableSeasons }));
+vi.mock('@/lib/services/scoring', () => ({ ledgerForMovies }));
+vi.mock('@/lib/services/season', () => ({ getActiveYear }));
+vi.mock('@/lib/repositories/movies', () => ({
+  movieRepository: { findManyByIds },
+}));
+
+const { getWorkedExample } = await import('./how-it-works');
+
+/** A board row as `getLeaderboard` shapes one. */
+function row(movieId: number, title: string, total: number) {
+  return { movieId, title, events: {}, total };
+}
+
+/** A ledger as `ledgerForMovies` shapes one: total IS the sum of lines. */
+function ledger(movieId: number, lines: { points: number; won: boolean }[]) {
+  const full = lines.map((line, index) => ({
+    nominationId: movieId * 100 + index,
+    awardId: index,
+    awardName: `Award ${index}`,
+    eventAbbreviation: 'oscars',
+    eventName: 'Academy Awards',
+    points: line.points,
+    won: line.won,
+    earned: line.won ? line.points * 2 : line.points,
+  }));
+  return {
+    movieId,
+    lines: full,
+    total: full.reduce((sum, line) => sum + line.earned, 0),
+  };
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  findManyByIds.mockResolvedValue([]);
+});
+
+describe('getWorkedExample', () => {
+  it('takes the top-scoring film of the active season', async () => {
+    getActiveYear.mockResolvedValue(2026);
+    availableSeasons.mockResolvedValue([2026, 2025]);
+    getLeaderboard.mockResolvedValue({
+      year: 2026,
+      events: [],
+      rows: [row(7, 'Top', 90), row(8, 'Middle', 40)],
+    });
+    ledgerForMovies.mockResolvedValue(
+      new Map([
+        [
+          7,
+          ledger(7, [
+            { points: 20, won: true },
+            { points: 15, won: true },
+            { points: 20, won: false },
+          ]),
+        ],
+        [8, ledger(8, [{ points: 20, won: true }])],
+      ]),
+    );
+
+    const example = await getWorkedExample();
+
+    expect(example?.year).toBe(2026);
+    expect(example?.isActiveSeason).toBe(true);
+    expect(example?.best.title).toBe('Top');
+    expect(example?.best.movieId).toBe(7);
+  });
+
+  // 🔴 The board row says 999 and the ledger says 75. The ledger wins: it is
+  // the object whose `total` is by construction the sum of its lines
+  // (lib/services/scoring.ts). A service that trusted the row would print a
+  // total its own line items do not add up to.
+  it('reports the ledger own total, never a re-sum of the board row', async () => {
+    getActiveYear.mockResolvedValue(2026);
+    availableSeasons.mockResolvedValue([2026]);
+    getLeaderboard.mockResolvedValue({
+      year: 2026,
+      events: [],
+      rows: [row(7, 'Top', 999)],
+    });
+    const only = ledger(7, [
+      { points: 20, won: true },
+      { points: 35, won: false },
+    ]);
+    ledgerForMovies.mockResolvedValue(new Map([[7, only]]));
+
+    const example = await getWorkedExample();
+
+    expect(example?.best.total).toBe(75);
+    expect(example?.best.lines.reduce((sum, line) => sum + line.earned, 0)).toBe(75);
+  });
+
+  it('falls back to the newest season that has data, and says so', async () => {
+    getActiveYear.mockResolvedValue(2026);
+    availableSeasons.mockResolvedValue([2027, 2026, 2025]);
+    getLeaderboard.mockImplementation(async (year: number) =>
+      year === 2025
+        ? { year, events: [], rows: [row(7, 'Old', 30)] }
+        : { year, events: [], rows: [] },
+    );
+    ledgerForMovies.mockResolvedValue(
+      new Map([[7, ledger(7, [{ points: 15, won: true }])]]),
+    );
+
+    const example = await getWorkedExample();
+
+    expect(example?.year).toBe(2025);
+    expect(example?.isActiveSeason).toBe(false);
+    // 2027 is newer than the active season and must never be reached for.
+    expect(getLeaderboard).not.toHaveBeenCalledWith(2027);
+  });
+
+  it('returns null rather than a zero when no season has been scored at all', async () => {
+    getActiveYear.mockResolvedValue(2026);
+    availableSeasons.mockResolvedValue([2026, 2025]);
+    getLeaderboard.mockResolvedValue({ year: 2026, events: [], rows: [] });
+
+    expect(await getWorkedExample()).toBeNull();
+  });
+
+  it('returns null rather than throwing when no season exists at all', async () => {
+    // 🔴 `getActiveYear` really does throw on an empty `available_years` —
+    // "no seasons exist", by design, because a guessed year would silently
+    // scope every query to a season that is not there. A signed-out reader on
+    // a freshly migrated database must get the page's prose, not a 500, so the
+    // service asks which season is active only once it knows there is one.
+    // Mocked as a rejection here rather than as `[]`, because a bare empty
+    // list passes with or without the guard and would be a check that cannot
+    // fail.
+    getActiveYear.mockRejectedValue(new Error('no seasons exist'));
+    availableSeasons.mockResolvedValue([]);
+
+    expect(await getWorkedExample()).toBeNull();
+    expect(getActiveYear).not.toHaveBeenCalled();
+    expect(getLeaderboard).not.toHaveBeenCalled();
+  });
+
+  it('names the season casualty only when its total is actually negative', async () => {
+    getActiveYear.mockResolvedValue(2026);
+    availableSeasons.mockResolvedValue([2026]);
+    getLeaderboard.mockResolvedValue({
+      year: 2026,
+      events: [],
+      rows: [row(7, 'Top', 40), row(9, 'Razzed', -30)],
+    });
+    ledgerForMovies.mockResolvedValue(
+      new Map([
+        [7, ledger(7, [{ points: 20, won: true }])],
+        [
+          9,
+          ledger(9, [
+            { points: -20, won: true },
+            { points: 10, won: false },
+          ]),
+        ],
+      ]),
+    );
+
+    const example = await getWorkedExample();
+    expect(example?.worst?.title).toBe('Razzed');
+    expect(example?.worst?.total).toBeLessThan(0);
+  });
+
+  it('names no casualty when the lowest-scoring film still scored something', async () => {
+    getActiveYear.mockResolvedValue(2026);
+    availableSeasons.mockResolvedValue([2026]);
+    getLeaderboard.mockResolvedValue({
+      year: 2026,
+      events: [],
+      rows: [row(7, 'Top', 40), row(9, 'Modest', 5)],
+    });
+    ledgerForMovies.mockResolvedValue(
+      new Map([
+        [7, ledger(7, [{ points: 20, won: true }])],
+        [9, ledger(9, [{ points: 5, won: false }])],
+      ]),
+    );
+
+    expect((await getWorkedExample())?.worst).toBeNull();
+  });
+
+  it('attaches the poster of each chosen film, and null when there is none', async () => {
+    getActiveYear.mockResolvedValue(2026);
+    availableSeasons.mockResolvedValue([2026]);
+    getLeaderboard.mockResolvedValue({
+      year: 2026,
+      events: [],
+      rows: [row(7, 'Top', 40), row(9, 'Razzed', -30)],
+    });
+    ledgerForMovies.mockResolvedValue(
+      new Map([
+        [7, ledger(7, [{ points: 20, won: true }])],
+        [9, ledger(9, [{ points: -30, won: false }])],
+      ]),
+    );
+    findManyByIds.mockResolvedValue([
+      { id: 7, poster: '/abc.jpg' },
+      { id: 9, poster: null },
+    ]);
+
+    const example = await getWorkedExample();
+    expect(example?.best.posterUrl).toBe('https://image.tmdb.org/t/p/w342/abc.jpg');
+    expect(example?.worst?.posterUrl).toBeNull();
+  });
+});
+
+describe('the rule the page states in words', () => {
+  // The page says "a win earns it a second time — twice a nomination's value".
+  // That sentence is the one number on the page that is a word, so it is
+  // pinned here against the function rather than against a comment. If the
+  // rule ever stops doubling, this fails and the copy must change with it.
+  it('makes a win worth exactly twice a nomination, per the scoring rule itself', async () => {
+    const { scoreMovies } =
+      await vi.importActual<typeof import('./scoring')>('./scoring');
+
+    const nominated = scoreMovies({
+      nominations: [{ id: 1, movieId: 1, awardId: 9 }],
+      pointsByAward: new Map([[9, 7]]),
+      winnersByAward: new Map(),
+    });
+    const won = scoreMovies({
+      nominations: [{ id: 1, movieId: 1, awardId: 9 }],
+      pointsByAward: new Map([[9, 7]]),
+      winnersByAward: new Map([[9, new Set([1])]]),
+    });
+
+    expect(nominated.get(1)).toBe(7);
+    expect(won.get(1)).toBe(14);
+  });
+});

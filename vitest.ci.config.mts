@@ -94,6 +94,14 @@ export default config([
   // member, auth or admin URL may ever be published — is `sitemap.test.ts`,
   // which holds on an empty database and runs here.
   'app/sitemap.production.test.ts',
+  // The worked example on /how-it-works, read against the restored season: it
+  // asserts agreement with the real leaderboard — the top row of league 1's
+  // scored season, its `nominations`/`winners`/`awards.points` rows and the
+  // film's own title and poster path. CI has the schema and none of them, so
+  // `getWorkedExample` correctly returns null there. The season-walk and
+  // selection rules are `how-it-works.test.ts`, which mocks the repositories
+  // and runs on every push.
+  'lib/services/how-it-works.production.test.ts',
   // Query-count guards, measured against the restored corpus — a season of
   // real nominations is what makes "one film costs the same as 123"
   // meaningful.
