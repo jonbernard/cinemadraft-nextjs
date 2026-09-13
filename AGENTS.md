@@ -46,6 +46,19 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
 
   Each worktree exports its own `DATABASE_URL` (5433 or 5434) and starts its own server on its own port. Commit on the task branch and merge; two worktrees cannot both check out `main`.
 
+  🔴 **Never `git stash` while two worktrees are live.** The stash stack is a
+  property of the **repository**, not of the worktree — `git stash` in one and
+  `git stash pop` in another crosses the streams. This happened on 2026-09-13:
+  two agents each stashed to check a clean baseline, and one popped the other's
+  uncommitted work into its own tree, sending three new spec files into the
+  wrong worktree and stripping a page and two services out of the other. Both
+  were recovered, by hand, from a patch — the next pair might not be.
+
+  The stash is the *second* shared thing agents assume is private. The index is
+  the first, and it is documented above. If you need a clean tree to measure
+  something, commit to your branch, copy the files aside, or add a third
+  worktree. Never the stash.
+
   🔴 **Tear the worktree down when the work is done, and check before you do.** A worktree left lying around is where work goes to be forgotten — and the two ways it disappears are different. Uncommitted changes are safe by accident: `git worktree remove` refuses unless you pass `--force`, so never reach for `--force` to make an error go away. **Committed work on an unmerged branch is the real hazard** — removing the worktree leaves the branch behind, nothing complains, and the commits sit there invisible until somebody runs `git branch`. Check, merge, then remove:
 
   ```bash
