@@ -529,6 +529,7 @@ list; Razzie nominations cost you points.
 - T7: The way in — create a league, or see this season. One primary action, repeated at most twice
 - T8: SEO — `generateMetadata`, canonical, OG image. This is the page most likely to be found by search and shared into a group chat
 - T9: E2E — the page renders signed out, the worked example survives an empty season, the scoring numbers match `lib/services/scoring.ts`
+- T10: The signed-out dashboard leads with the pitch rather than ending with it — a hero derived from this page's own opener (one component, one string, so they cannot drift), the season rail directly beneath it, and the duplicate `Play the season` block at the bottom deleted; its returning-member sentence moves beside the register action. Runs after T7 settles the wording
 
 **Gate:** reachable signed out; every number traceable to the scoring service
 or the `points` table by a test; readable at 390px; `npm run verify` green.
