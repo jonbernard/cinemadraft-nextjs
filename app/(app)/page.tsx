@@ -84,7 +84,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
   ).length;
 
   return (
-    <div className="text-text-primary mx-auto flex max-w-6xl flex-col gap-10">
+    <div className="text-text-primary mx-auto flex max-w-6xl flex-col gap-16 my-16">
       {/* The hero, and only for a stranger: it is the whole pitch, above the
           season it is arguing about (P18.T10). */}
       {user == null ? <SignedOutHero facts={facts} /> : null}
