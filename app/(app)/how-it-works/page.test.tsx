@@ -17,6 +17,7 @@ vi.mock('@/lib/services/how-it-works', () => ({
 }));
 vi.mock('@/lib/services/season', () => ({ getSeasonPhases }));
 
+import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import type { Point } from '@/lib/repositories/points';
 import HowItWorksPage from './page';
 
@@ -315,5 +316,24 @@ describe('HowItWorksPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       /Draft a team of films/,
     );
+  });
+
+  it('makes the same claim as the signed-out home, from the same strings', async () => {
+    withData();
+
+    render(await HowItWorksPage());
+
+    // 🔴 The pin that keeps one pitch from becoming two (P18.T10). The
+    // signed-out `/` hero renders `lib/copy.ts` directly; this page still
+    // holds the literals inline, because T10 ran beside an SEO pass on this
+    // file and could not edit it. Equality both ways, so editing *either* copy
+    // goes red here and the fix is to move the change into `lib/copy.ts` —
+    // which is the point. When the branches meet, these literals become the
+    // same imports and this test becomes redundant.
+    const flat = (element: HTMLElement) =>
+      element.textContent?.replace(/\s+/g, ' ').trim();
+
+    expect(flat(screen.getByRole('heading', { level: 1 }))).toBe(PITCH_HEADLINE);
+    expect(flat(screen.getByText(/Pick before the nominations land/))).toBe(PITCH);
   });
 });

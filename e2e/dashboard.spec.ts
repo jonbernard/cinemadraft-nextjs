@@ -133,7 +133,9 @@ test.describe('dashboard', () => {
     await expect(
       page.getByRole('heading', { name: 'Season', exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: /register/i }).first()).toBeVisible();
+    // A way in, addressed by where it goes rather than by its label: the hero
+    // calls it "Start a league" (P18.T10) and the chrome calls it "Log in".
+    await expect(page.locator('main a[href="/auth/register"]').first()).toBeVisible();
 
     // And nothing that belongs to a person. 🔴 Named rather than "no table at
     // all": the season leaderboard is a table and it is *supposed* to be here
@@ -143,31 +145,84 @@ test.describe('dashboard', () => {
     await expect(page.getByRole('list', { name: /drafted films/i })).toHaveCount(0);
   });
 
-  test('a signed-out reader is told what this is, above the fold', async ({ page }) => {
+  test('a signed-out reader gets the whole pitch first, and the rail beneath it', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
 
-    const lede = page.getByTestId('signed-out-lede');
-    await expect(lede).toBeVisible();
-    await expect(lede).toContainText(/draft a team of films/i);
-    await expect(lede.getByRole('link', { name: 'Register' })).toBeVisible();
+    const hero = page.getByTestId('signed-out-hero');
+    await expect(hero).toBeVisible();
+    await expect(hero).toContainText(/draft a team of films/i);
+    // 🔴 The Razzie clause. It is the beat Phase 18 exists to raise, and the
+    // one-line lede this hero replaced did not carry it.
+    await expect(hero).toContainText(/Razzie takes points back/);
+    await expect(hero.getByRole('link', { name: 'Start a league' })).toHaveAttribute(
+      'href',
+      '/auth/register',
+    );
+    await expect(hero.getByRole('link', { name: 'How it works' })).toHaveAttribute(
+      'href',
+      '/how-it-works',
+    );
+    // The returning member's reassurance, beside the action rather than in a
+    // block at the foot of the page (P18.T10).
+    await expect(hero).toContainText(/Register with the same email/);
 
-    // Above the fold, which is the whole point — the invitation already
-    // existed, four sections down, where nobody arriving mid-ceremony met it.
-    const box = await lede.boundingBox();
-    expect(box?.y ?? Infinity).toBeLessThan(600);
-
-    // And above the rail it introduces.
+    // 🔴 The season rail is still on the fold at 1440x900. A hero that fills
+    // the viewport hides the product's own evidence (D44) — the reason this
+    // measurement exists is that the poster wall can grow without anybody
+    // noticing.
+    const box = await hero.boundingBox();
     const rail = await page.getByTestId('season-window').boundingBox();
     expect(box?.y ?? Infinity).toBeLessThan(rail?.y ?? 0);
+    expect(rail?.y ?? Infinity).toBeLessThan(900);
+
+    // And the pitch is made exactly once: the duplicate `Play the season`
+    // block at the foot of this page is what the task deleted.
+    await expect(page.getByText('Play the season')).toHaveCount(0);
+    await expect(page.getByText(/Draft a team of films/)).toHaveCount(1);
   });
 
-  test('and it is gone the moment they are signed in', async ({ page }) => {
+  test('the hero reads at 390 without the page scrolling sideways', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    const hero = page.getByTestId('signed-out-hero');
+    await expect(hero.getByRole('link', { name: 'Start a league' })).toBeVisible();
+    await expect(hero).toContainText(/Razzie takes points back/);
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test('the season’s posters are the hero’s artwork, and nothing to tab through', async ({
+    page,
+  }) => {
+    await skipWithoutRestoredCorpus();
+    await page.goto('/');
+
+    const wall = page.getByTestId('hero-films');
+    await expect(wall).toHaveAttribute('aria-hidden', 'true');
+    // 🔴 Decorative by decision: as links these put eight tab stops and eight
+    // read-aloud titles between the headline and the action the page exists
+    // for. The same films are linked from the leaderboard directly below.
+    expect(await wall.locator('a, button, [tabindex]').count()).toBe(0);
+    const images = wall.locator('img');
+    expect(await images.count()).toBe(8);
+    expect(await wall.locator('img:not([alt=""])').count()).toBe(0);
+  });
+
+  test('and the hero is gone the moment they are signed in', async ({ page }) => {
     await signInAs(page, { email: `${TAG}-lede@example.test`, firstName: 'Reader' });
     await page.goto('/');
 
-    await expect(page.getByTestId('signed-out-lede')).toHaveCount(0);
-    // The heading it sat under is still there, so this is the lede going and
-    // not the whole section.
+    await expect(page.getByTestId('signed-out-hero')).toHaveCount(0);
+    await expect(page.getByTestId('hero-films')).toHaveCount(0);
+    // The season is the member's own `h1` again, so this is the hero going and
+    // not the whole section (P17.T29's ordering is untouched).
     await expect(page.getByRole('heading', { level: 1, name: 'Season' })).toBeVisible();
   });
 
@@ -190,9 +245,10 @@ test.describe('dashboard', () => {
     }
   });
 
-  test('headings render at 28 / 20 / 17, and an h1 outranks a league name', async ({
+  test('the hero leads at display size and the section ramp holds beneath it', async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
 
     const px = (selector: string) =>
@@ -203,7 +259,12 @@ test.describe('dashboard', () => {
 
     // Rendered px, not class names: the whole defect was that four different
     // `as` values compiled to one size, which no class assertion would show.
-    expect(await px('main h1')).toBeCloseTo(28, 0);
+    //
+    // 🔴 Signed out, the `h1` is the hero's — `--text-display`, which is
+    // `clamp(40px, 6vw, 64px)` and therefore 64 at this width (globals.css
+    // says public surfaces only, and this is one). The app's 28/20/17 ramp
+    // continues underneath it: `Season` is the first `h2`.
+    expect(await px('main h1')).toBeCloseTo(64, 0);
     expect(await px('main h2')).toBeCloseTo(20, 0);
     // A serif name is 24px on its own axis (D70), so the h1 must clear it.
     expect(await px('main h1')).toBeGreaterThan(24);
@@ -292,7 +353,7 @@ test.describe('dashboard', () => {
    *
    * Two exact, not "at least one": both a zero and a twelve have to fail.
    */
-  test('the first two In cinemas now frames preload, and only those two', async ({
+  test('three posters preload: the hero’s first, then the shelf’s first two', async ({
     page,
   }) => {
     await page.goto('/');
@@ -306,14 +367,21 @@ test.describe('dashboard', () => {
     const preloads = await page
       .locator('head link[rel="preload"][as="image"]')
       .evaluateAll((links) => links.map((l) => l.getAttribute('href')));
-    expect(preloads).toHaveLength(2);
+    // 🔴 Three, and the third is the hero's (P18.T10): a preload is a link in
+    // the head per image, so the budget is small and spent deliberately — one
+    // on the wall that now opens the page, two on the shelf, and none of the
+    // other eighteen posters on it.
+    expect(preloads).toHaveLength(3);
 
-    // And they are the shelf's own first two, in order — not two arbitrary
-    // posters from somewhere else on the page.
+    // The hero's own first poster leads, then the shelf's first two in order —
+    // not arbitrary posters from somewhere else on the page.
+    const hero = await page
+      .locator('[data-testid="hero-films"] img')
+      .evaluateAll((imgs) => imgs.slice(0, 1).map((i) => i.getAttribute('src')));
     const firstTwo = await shelf
       .locator('img')
       .evaluateAll((imgs) => imgs.slice(0, 2).map((i) => i.getAttribute('src')));
-    expect(preloads).toEqual(firstTwo);
+    expect(preloads).toEqual([...hero, ...firstTwo]);
 
     // The point of the preload: those two are no longer lazy, the rest are.
     await expect(shelf.locator('img').nth(0)).not.toHaveAttribute('loading', 'lazy');
