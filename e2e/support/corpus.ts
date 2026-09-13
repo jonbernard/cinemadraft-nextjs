@@ -12,9 +12,9 @@ import { test } from '@playwright/test';
  *
  *   - scoring's value is that the numbers on screen are the numbers sixty
  *     people actually played for. A scratch league proves the same arithmetic,
- *     and `awards-lifecycle.spec.ts` already does exactly that on scratch rows,
- *     end to end, and passes on CI. Seeding one here would delete the only
- *     difference between the two files.
+ *     and `journeys/03-a-ceremony-night.spec.ts` already does exactly that on
+ *     scratch rows, end to end, and passes on CI. Seeding one here would delete
+ *     the only difference between the two files.
  *   - dashboard's truncation tests derive the longest title on a real roster,
  *     precisely so the assertion points at the hardest real case rather than a
  *     string somebody chose. Choosing the string back makes them vacuous.

@@ -104,8 +104,8 @@ async function scratchLeague(
       const mine = drafts.find((draft) => draft.order === 1);
 
       // A show, a points tier and one category of their own (P17.T34), the
-      // shape `awards-lifecycle.spec.ts` seeds: `awards.points` is a foreign
-      // key into `points` (D41), not a value.
+      // shape `journeys/03-a-ceremony-night.spec.ts` seeds: `awards.points` is
+      // a foreign key into `points` (D41), not a value.
       let awardId: number | undefined;
       if (options.ledger) {
         const { rows: events } = await query<{ id: number }>(
