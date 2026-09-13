@@ -38,7 +38,8 @@ export async function signInAs(
       // url or path" — and the rejection is thrown by `addCookies`, so it fails
       // every spec that signs anybody in rather than one. The url already
       // implies domain `localhost` and path `/`, which is what this needs.
-      url: 'http://localhost:3000',
+      // The port follows `E2E_PORT`, as the server's does (playwright.config.mts).
+      url: `http://localhost:${process.env.E2E_PORT ?? '3000'}`,
       httpOnly: true,
       sameSite: 'Lax',
     },

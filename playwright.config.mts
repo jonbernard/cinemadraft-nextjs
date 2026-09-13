@@ -28,6 +28,15 @@ loadEnv({ path: '.env', quiet: true });
  */
 process.env.E2E_TEST_AUTH_SECRET ??= randomBytes(32).toString('hex');
 
+/**
+ * 🔴 One port per worktree. Two worktrees running the suite at once on a shared
+ * 3000 do not fail — `reuseExistingServer` hands the second run the first
+ * one's server, so it tests the other checkout's code and, with a different
+ * secret, fails every spec as "not signed in". `E2E_PORT` separates them;
+ * `e2e/support/session.ts` reads the same variable for the cookie's origin.
+ */
+const port = process.env.E2E_PORT ?? '3000';
+
 export default defineConfig({
   testDir: './e2e',
   // Runs after every browser has closed. The specs create real accounts, and a
@@ -47,7 +56,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: `http://localhost:${port}`,
     trace: 'on-first-retry',
     /**
      * 🔴 The recording is the artefact the owner reviews (P19.T7), so a paced
@@ -84,7 +93,7 @@ export default defineConfig({
     // The URLs below stay `localhost` deliberately: it resolves to this same
     // listener, and it is the origin `e2e/support/session.ts` pins the session
     // cookie to. Changing one without the other signs nobody in.
-    command: 'KEEP_TEST_IDS=1 npm run build && npm run start -- -H 127.0.0.1',
+    command: `KEEP_TEST_IDS=1 npm run build && npm run start -- -H 127.0.0.1 -p ${port}`,
     // 🔴 `/tokens`, not `/`. The readiness probe asks "is the server up", and
     // `/` is the dashboard: it calls `getActiveYear()`, which THROWS
     // `no seasons exist` against a database with no `available_years` row. On
@@ -102,10 +111,10 @@ export default defineConfig({
     // would go green for a server whose React runtime is broken.
     //
     // `use.baseURL` deliberately stays `/` — the specs navigate relative to it.
-    url: 'http://localhost:3000/tokens',
+    url: `http://localhost:${port}/tokens`,
     // A server left over from an earlier run holds *that* run's secret, so
     // reuse after the change above fails every spec as "not signed in" rather
-    // than as a mismatch. Kill whatever is on 3000 and run again.
+    // than as a mismatch. Kill whatever is on the port and run again.
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     // 🔴 The app under test boots with no Clerk at all (D82/D84). The test
