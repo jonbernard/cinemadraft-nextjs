@@ -18,9 +18,38 @@ import { signInAs } from './support/session';
  *   # on the commit AFTER
  *   VISUAL=1 npx playwright test e2e/visual.spec.ts
  *
- * 🔴 Read-only against the restored production database. `signInAs` creates one
- * throwaway account and reads league 1; it writes nothing to league 1 itself.
+ * 🔴 Read-only against the restored production database. One throwaway account,
+ * reused by every signed-in surface, deleted in `afterAll` and verified by
+ * count — league 1 is sixty real people's history and `lib/db.test.ts` asserts
+ * exactly 60 users against it.
+ *
+ * 🔴 The plan's version generated `visual-${Date.now()}@example.test` per test
+ * and cleaned up nothing. `e2e/global-teardown.ts` only deletes
+ * `%+clerk_test@%`, so that would have left 16 rows per run in a restored copy
+ * of production and broken `lib/db.test.ts`. This follows the convention
+ * `e2e/signed-in.spec.ts` already set: one tagged address, one `afterAll`.
  */
+const TAG = 'e2e-p17-visual';
+
+/** The same `pg` route e2e/support/session.ts uses — Playwright cannot resolve `@/`. */
+async function withDb<T>(run: (query: Client['query']) => Promise<T>): Promise<T> {
+  const { Client } = await import('pg');
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  try {
+    return await run(client.query.bind(client) as Client['query']);
+  } finally {
+    await client.end();
+  }
+}
+type Client = import('pg').Client;
+
+test.afterAll(async () => {
+  await withDb(async (query) => {
+    await query(`delete from users where email like $1`, [`${TAG}-%@example.test`]);
+  });
+});
+
 const WIDTHS = [1440, 1280, 1024, 390] as const;
 const SCHEMES = ['dark', 'light'] as const;
 
@@ -44,7 +73,7 @@ test.describe('the surface rename moves no pixels', () => {
       for (const width of WIDTHS) {
         test(`${surface.name} ${scheme} ${width}`, async ({ page }) => {
           if (surface.auth) {
-            await signInAs(page, { email: `visual-${Date.now()}@example.test` });
+            await signInAs(page, { email: `${TAG}-reader@example.test` });
           }
           await page.setViewportSize({ width, height: 1000 });
           await page.goto(surface.path);
