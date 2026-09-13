@@ -52,6 +52,19 @@ export type ExampleRow = {
  * right-aligned and `tabular`, so a minus sign changes no column width and the
  * layout does not move between the winner and the casualty.
  *
+ * 🔴 **`limit` exists because the real example is fifty rows long.** The
+ * season's best film collects nominations from twelve shows, and the whole
+ * ledger is true but unreadable as one beat in a page somebody is skimming.
+ * The cap keeps the arithmetic honest rather than hiding rows: the biggest
+ * contributors are shown, and everything else collapses into one stated row
+ * whose value is **`total` minus what is displayed**. So the column still adds
+ * up to the printed total by construction — the remainder cannot disagree with
+ * it the way a second `reduce` over the hidden lines could, because it is
+ * defined as the difference rather than recomputed from the parts.
+ *
+ * Uncapped is still the default: a story, a short ledger, or a page with room
+ * passes no `limit` and gets every line.
+ *
  * Sized for a beat in the page's season spine — a content column, not a hero.
  * The poster stacks above the table until `sm`. **Motion is the page's**
  * (P18.T6): this is a Server Component with no state, and `className` is the
@@ -62,15 +75,32 @@ export function WorkedExample({
   posterUrl,
   total,
   lines,
+  limit,
   className,
 }: {
   title: string;
   posterUrl: string | null;
   total: number;
   lines: readonly ExampleRow[];
+  /** Show at most this many lines, the largest contributors first, and state the rest as one row. */
+  limit?: number;
   className?: string;
 }) {
   const won = lines.some((line) => line.won);
+
+  // Largest contribution first, by size rather than by sign: on the season's
+  // Razzie casualty every line is negative, and ranking by raw value there
+  // would show the six least damaging ones.
+  const shown =
+    limit == null || lines.length <= limit
+      ? lines
+      : [...lines]
+          .sort((a, b) => Math.abs(b.earned) - Math.abs(a.earned))
+          .slice(0, limit);
+  const hidden = lines.length - shown.length;
+  // 🔴 The difference, never a second sum over the hidden lines. Defined this
+  // way the visible column adds to `total` whatever the ledger holds.
+  const rest = total - shown.reduce((sum, line) => sum + line.earned, 0);
 
   return (
     <div className={cn('flex flex-col gap-4 sm:flex-row sm:items-start', className)}>
@@ -98,7 +128,7 @@ export function WorkedExample({
             </tr>
           </thead>
           <tbody>
-            {lines.map((line) => (
+            {shown.map((line) => (
               <tr key={line.nominationId} className="border-border-rule border-t">
                 <th scope="row" className="py-2 pr-4 font-normal">
                   <span className="text-text-primary block leading-tight">
@@ -124,6 +154,27 @@ export function WorkedExample({
                 </td>
               </tr>
             ))}
+            {hidden > 0 ? (
+              <tr className="border-border-rule border-t">
+                <th scope="row" className="py-2 pr-4 font-normal">
+                  <span className="text-text-secondary block leading-tight">
+                    {hidden} more {hidden === 1 ? 'nomination' : 'nominations'}
+                  </span>
+                  <span className="text-text-dim block text-xs leading-tight">
+                    across the rest of the season
+                  </span>
+                </th>
+                <td className="text-text-dim py-2 pr-4 text-right align-top font-mono">
+                  &mdash;
+                </td>
+                <td
+                  data-testid="worked-example-rest"
+                  className="text-text-secondary py-2 text-right align-top font-mono"
+                >
+                  {rest}
+                </td>
+              </tr>
+            ) : null}
           </tbody>
           <tfoot>
             <tr className="border-border-rule border-t-2">

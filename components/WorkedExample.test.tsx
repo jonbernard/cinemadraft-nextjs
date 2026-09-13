@@ -107,4 +107,148 @@ describe('WorkedExample', () => {
     render(<WorkedExample title="A Film" posterUrl={null} total={21} lines={twice} />);
     expect(screen.getAllByRole('row', { name: /Original Song/ })).toHaveLength(2);
   });
+
+  describe('with a limit, because the real ledger is fifty rows', () => {
+    // Twelve lines: one big win, then eleven small ones. Total is deliberately
+    // NOT their sum — the service's total is authoritative, and the remainder
+    // row is defined as total minus what is shown, so the visible column has
+    // to add up to it whatever the parts say.
+    const many: ExampleRow[] = [
+      {
+        nominationId: 1,
+        awardName: 'Best Picture',
+        eventName: 'Academy Awards',
+        points: 7,
+        won: true,
+        earned: 14,
+      },
+      ...Array.from({ length: 11 }, (_, index) => ({
+        nominationId: index + 2,
+        awardName: `Category ${index + 2}`,
+        eventName: 'Alphabet Awards',
+        points: 5,
+        won: false,
+        earned: 5,
+      })),
+    ];
+
+    it('shows the biggest contributors and states how many it did not', () => {
+      render(
+        <WorkedExample
+          title="A Film"
+          posterUrl={null}
+          total={99}
+          lines={many}
+          limit={3}
+        />,
+      );
+
+      expect(screen.getByText('Best Picture')).toBeInTheDocument();
+      expect(screen.getByText('9 more nominations')).toBeInTheDocument();
+      // Three shown plus the remainder row; the twelve-line ledger does not
+      // put twelve rows in a beat somebody is skimming.
+      // Three shown plus the remainder row, in the body; the `<tfoot>` total
+      // is the fifth rowheader on the page and is not one of them.
+      const body = screen.getByRole('table').querySelector('tbody');
+      if (!body) throw new Error('no table body');
+      expect(within(body).getAllByRole('rowheader')).toHaveLength(4);
+    });
+
+    it('makes the visible column add up to the printed total', () => {
+      render(
+        <WorkedExample
+          title="A Film"
+          posterUrl={null}
+          total={99}
+          lines={many}
+          limit={3}
+        />,
+      );
+
+      // 🔴 Scoped to the body. `getAllByRole('row')` also returns the `<tfoot>`
+      // total, and adding that to the lines double-counts the answer into
+      // agreeing with itself — the first version of this test read 198 and
+      // would have passed had the expectation been written to match.
+      const body = screen.getByRole('table').querySelector('tbody');
+      if (!body) throw new Error('no table body');
+      const shown = within(body)
+        .getAllByRole('row')
+        .map((row) => {
+          const cells = within(row).getAllByRole('cell');
+          return Number(cells[cells.length - 1]?.textContent?.replace(/[^\d.-]/g, ''));
+        })
+        .filter((value) => !Number.isNaN(value));
+
+      // 14 + 5 + 5 shown, remainder 75, and 99 is what the service said.
+      expect(shown.reduce((sum, value) => sum + value, 0)).toBe(99);
+      expect(screen.getByTestId('worked-example-total')).toHaveTextContent('99');
+    });
+
+    it('ranks a negative ledger by damage done, not by raw value', () => {
+      // The season's Razzie casualty: every line negative, so ordering by raw
+      // value would surface the six least damaging ones and call them the
+      // headline. -60 is the story.
+      const razzies: ExampleRow[] = [
+        {
+          nominationId: 1,
+          awardName: 'Worst Picture',
+          eventName: 'Razzies',
+          points: -30,
+          won: true,
+          earned: -60,
+        },
+        {
+          nominationId: 2,
+          awardName: 'Worst Actor',
+          eventName: 'Razzies',
+          points: -10,
+          won: false,
+          earned: -10,
+        },
+        {
+          nominationId: 3,
+          awardName: 'Worst Screenplay',
+          eventName: 'Razzies',
+          points: -5,
+          won: false,
+          earned: -5,
+        },
+      ];
+      render(
+        <WorkedExample
+          title="A Film"
+          posterUrl={null}
+          total={-75}
+          lines={razzies}
+          limit={1}
+        />,
+      );
+
+      expect(screen.getByText('Worst Picture')).toBeInTheDocument();
+      expect(screen.queryByText('Worst Screenplay')).not.toBeInTheDocument();
+      expect(screen.getByTestId('worked-example-rest')).toHaveTextContent('-15');
+    });
+
+    it('shows every line when there is no limit, and when the ledger is short', () => {
+      const { unmount } = render(
+        <WorkedExample title="A Film" posterUrl={null} total={99} lines={many} />,
+      );
+      expect(screen.queryByTestId('worked-example-rest')).not.toBeInTheDocument();
+      const body = screen.getByRole('table').querySelector('tbody');
+      if (!body) throw new Error('no table body');
+      expect(within(body).getAllByRole('rowheader')).toHaveLength(12);
+      unmount();
+
+      render(
+        <WorkedExample
+          title="A Film"
+          posterUrl={null}
+          total={17}
+          lines={lines}
+          limit={9}
+        />,
+      );
+      expect(screen.queryByTestId('worked-example-rest')).not.toBeInTheDocument();
+    });
+  });
 });

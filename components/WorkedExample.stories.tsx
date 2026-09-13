@@ -102,3 +102,36 @@ export const RazzieCasualty: StoryObj<typeof meta> = {
 export const SingleLine: StoryObj<typeof meta> = {
   args: { total: 14, lines: [bestPicture] },
 };
+
+/**
+ * The shape the page actually renders. The season's best film collects
+ * nominations from twelve shows — fifty ledger lines — and the whole thing is
+ * true but unreadable as one beat somebody is skimming. The biggest
+ * contributors show; the rest collapses into a stated row whose value is the
+ * printed total minus what is displayed, so the column still adds up.
+ */
+export const CappedLikeThePage: StoryObj<typeof meta> = {
+  args: {
+    limit: 4,
+    total: 620,
+    lines: [
+      bestPicture,
+      {
+        nominationId: 90,
+        awardName: 'Directing',
+        eventName: 'Academy Awards',
+        points: 12,
+        won: true,
+        earned: 24,
+      },
+      ...Array.from({ length: 46 }, (_, index) => ({
+        nominationId: 100 + index,
+        awardName: `Category ${index + 1}`,
+        eventName: 'Alphabet Awards',
+        points: 5,
+        won: false,
+        earned: 5,
+      })),
+    ],
+  },
+};
