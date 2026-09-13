@@ -123,6 +123,26 @@ export type LiveLeague = {
   standings: LiveStanding[];
 };
 
+/**
+ * `?league=<id>`, or null — the validated 4th argument to `getLiveShow`.
+ *
+ * 🔴 Validated rather than trusted: a stranger can put anything in a query
+ * string, and `Number('')` is 0 while `Number('7x')` is NaN. Both have to come
+ * out as "no pin" rather than as a league id the service then asks the
+ * database about.
+ *
+ * 🔴 **Exported because there are two doors into this view now** — the page and
+ * `/api/live/[abbr]/stream` (P14.T3) — and the stream must be neither more nor
+ * less generous than the page. Two copies of this four-line rule is exactly how
+ * that stops being true: a stream that defaulted the pin instead of returning
+ * null would hand a signed-out stranger a league the page withholds. One
+ * definition, both callers.
+ */
+export function pinnedLeague(value: string | string[] | null | undefined): number | null {
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 /** A league the reader could switch to. Only ever the reader's own. */
 export type LiveLeagueOption = { id: number; name: string | null };
 

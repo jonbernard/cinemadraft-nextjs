@@ -566,4 +566,529 @@ test.describe('live show', () => {
     await link.click();
     await expect(page).toHaveURL(new RegExp(`/live/${abbreviation}`));
   });
+  /**
+   * Every fact this page exists to state, read off whatever is on screen.
+   *
+   * 🔴 Scoped to `<main>` for the headings and page-wide for the rest, on
+   * purpose: TV mode removes chrome from the screen, so anything that counted
+   * chrome would differ between the two modes for a reason that has nothing to
+   * do with the room. None of these live in the chrome in either mode.
+   */
+  async function roomFacts(page: Page) {
+    const main = page.getByRole('main');
+    return {
+      headings: await main.getByRole('heading').allInnerTexts(),
+      alpha: await page.getByText(FILMS[0] as string).count(),
+      bravo: await page.getByText(FILMS[1] as string).count(),
+      points: await page.getByText('7 pts').count(),
+      seals: await page.getByText('Winner', { exact: true }).count(),
+      sealed: (await page.getByTestId('live-winner').innerText()).trim(),
+      resolved: await page.getByText('1 of 2').count(),
+      mains: await page.getByRole('main').count(),
+      skipLinks: await page.getByRole('link', { name: 'Skip to content' }).count(),
+    };
+  }
+
+  test('TV mode hides the chrome, and changes nothing else', async ({ page }) => {
+    // P14.T6, and the plan asked for this shape by name: "the same assertions
+    // passing in both modes rather than by inspection". `roomFacts` is read
+    // twice from one build at one viewport and compared whole — the heading
+    // order, both films in both categories, the point value, the single seal
+    // and which film carries it, the resolved counter, the `<main>` landmark
+    // and the skip link. A TV mode that touched the room in any of those ways
+    // fails here rather than being noticed on a television.
+    const { abbreviation } = await seedShow();
+    // 1920 is the television, and it is also the only width where the rail is
+    // on screen at all (`xl`), so it is the width that can tell hidden from
+    // never-rendered.
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    const rail = page.locator('nav[aria-label="Main"]');
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+    await expect(rail).toBeVisible();
+    const plain = await roomFacts(page);
+    const plainBox = await page.getByRole('main').boundingBox();
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}&tv=1`);
+    // 🔴 Still in the DOM, and not on screen. `toHaveCount(1)` is what stops
+    // this passing against a shell that never rendered the rail — and a rail
+    // that is merely `visibility: hidden` or moved off-screen would still hold
+    // its 208px, which the geometry below would then catch.
+    await expect(rail).toHaveCount(1);
+    await expect(rail).toBeHidden();
+    const tv = await roomFacts(page);
+    const tvBox = await page.getByRole('main').boundingBox();
+
+    expect(tv).toEqual(plain);
+
+    // And the room got the chrome's pixels: the rail's column and the utility
+    // strip's 52px both go to `<main>`.
+    expect(tvBox?.width).toBeGreaterThan((plainBox?.width ?? 0) + 100);
+    expect(tvBox?.x).toBeLessThan(plainBox?.x ?? 0);
+    expect(tvBox?.y).toBeLessThan(plainBox?.y ?? 0);
+  });
+
+  test('the way out of TV mode is on the screen TV mode leaves behind', async ({
+    page,
+  }) => {
+    // A control that hides itself with the chrome strands a reader holding a
+    // remote: no address bar, no Escape key, no shortcut to know. Both
+    // directions, same place, and the label says what pressing it will do.
+    const { abbreviation } = await seedShow();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+    await expect(page.getByRole('link', { name: 'TV mode', exact: true })).toBeVisible();
+
+    await page.getByRole('link', { name: 'TV mode', exact: true }).click();
+    await expect(page).toHaveURL(/tv=1/);
+    // 🔴 Visible, not merely present. In TV mode this is the only control left.
+    await expect(page.getByRole('link', { name: 'Leave TV mode' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Leave TV mode' }).click();
+    await expect(page).not.toHaveURL(/tv=1/);
+    await expect(page.locator('nav[aria-label="Main"]')).toBeVisible();
+    // The season survived the round trip; TV mode is not a way to lose the URL.
+    await expect(page).toHaveURL(new RegExp(`year=${YEAR}`));
+  });
+
+  test('toggling TV mode does not reconnect the stream', async ({ page }) => {
+    // 🔴 The property P14.T4 bought by keying `LiveRoom` on the stream URL
+    // alone. `?tv=1` is not in that URL, so a toggle reconciles rather than
+    // remounts and the `EventSource` is never touched — which is the whole
+    // reason TV mode is a CSS rule and not a prop on the shell. Three client
+    // navigations, each a real round trip: a remount on any of them opens a
+    // second connection and this reads 4 instead of 1.
+    const { abbreviation } = await seedShow();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+
+    const opened: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes(`/api/live/${abbreviation}/stream`)) {
+        opened.push(request.url());
+      }
+    });
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+    // Not vacuous: the show is seeded on air, so exactly one stream opens.
+    await expect.poll(() => opened.length).toBe(1);
+
+    const rail = page.locator('nav[aria-label="Main"]');
+    await page.getByRole('link', { name: 'TV mode', exact: true }).click();
+    await expect(rail).toBeHidden();
+    await page.getByRole('link', { name: 'Leave TV mode' }).click();
+    await expect(rail).toBeVisible();
+    await page.getByRole('link', { name: 'TV mode', exact: true }).click();
+    await expect(rail).toBeHidden();
+
+    expect(opened).toHaveLength(1);
+  });
+
+  /* ----------------------------------------------------------------------- *
+   * P14.T7 — the gate.
+   *
+   * "Two clients, an admin marks a winner, the viewer receives it without a
+   * reload. Plus: the signed-out stream carries no seat names; a hidden tab
+   * closes its stream; the page renders at 1920 (the television), 1440 and
+   * 390." Everything above this line tests one surface at a time; everything
+   * below is the phase's claim that they work together.
+   * ----------------------------------------------------------------------- */
+
+  /**
+   * The first frame of an SSE connection, read as bytes.
+   *
+   * 🔴 The payload, not the page that renders it. "The signed-out stream
+   * carries no seat names" is a claim about what crosses the wire, and a DOM
+   * assertion would pass just as well against a stream that shipped sixty
+   * names and a component that happened not to print them. This opens the same
+   * URL the client opens, reads until the first `\n\n`, and hands back the
+   * text.
+   *
+   * `fetch` inside the page rather than `request.get`: an APIResponse's body is
+   * only readable once the response completes, and this one does not complete
+   * for 290 seconds. The reader is cancelled as soon as a frame is in hand,
+   * which is also what stops the test leaving a stream open behind it.
+   */
+  async function firstFrame(page: Page, url: string): Promise<string> {
+    return page.evaluate(async (target) => {
+      const response = await fetch(target);
+      if (!response.body) return `status:${response.status}`;
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let text = '';
+      try {
+        // Bounded: a frame is one enqueue today, and a loop with no ceiling
+        // against a stream with no end is a hung test rather than a red one.
+        for (let read = 0; read < 20 && !text.includes('\n\n'); read += 1) {
+          const chunk = await reader.read();
+          if (chunk.done) break;
+          text += decoder.decode(chunk.value, { stream: true });
+        }
+      } finally {
+        await reader.cancel();
+      }
+      return text;
+    }, url);
+  }
+
+  test('an admin marks a winner and a second client receives it, without navigating', async ({
+    page,
+    browser,
+  }) => {
+    // 🔴 The phase gate. Two browser contexts, two sessions, one database: the
+    // admin marks a winner on `/award-shows` and the ceremony screen the other
+    // context is sitting on changes under a reader who touched nothing.
+    test.setTimeout(60_000);
+
+    const { abbreviation, leagueId } = await seedShowWithLeague(page);
+    const userId = await withDb(async (query) => {
+      const rows = (await query(
+        `select user_id from drafts where league_id = $1 and user_id is not null limit 1`,
+        [leagueId],
+      )) as { user_id: number }[];
+      return rows[0]?.user_id as number;
+    });
+    // The member seeded above becomes the admin: one identity, because this
+    // test is about two *clients*, and a second seeded account would only add
+    // a thing to clean up.
+    await withDb(async (query) => {
+      await query("update users set role = 'admin' where id = $1", [userId]);
+    });
+
+    // The other client: a stranger, in a context of its own, pinned to the
+    // league — so the standings and the rosters are on screen as well as the
+    // categories, and a frame that failed to reach the room fails here.
+    const audience = await browser.newContext();
+    const viewer = await audience.newPage();
+    try {
+      /**
+       * 🔴 What "without a reload" is asserted as. A text assertion alone
+       * passes against a page that navigated and re-rendered — which is the
+       * product P14 replaced. So: every main-frame navigation is counted, and
+       * a value is stashed on `window` that only a fresh document loses.
+       */
+      let navigations = 0;
+      viewer.on('framenavigated', (frame) => {
+        if (frame === viewer.mainFrame()) navigations += 1;
+      });
+
+      await viewer.goto(`/live/${abbreviation}?year=${YEAR}&league=${leagueId}`);
+      await expect(viewer.getByText('1 of 2')).toBeVisible();
+      await expect(viewer.getByText('Winner', { exact: true })).toHaveCount(1);
+      // Nothing has been announced to this reader yet, and the seeded winner
+      // is not replayed on arrival — `LiveAward`'s `reveal` is off unless a
+      // frame changed something while the page was open.
+      await expect(viewer.locator('.animate-reveal-mark')).toHaveCount(0);
+      await viewer.evaluate(() => {
+        (window as unknown as { __gateDocument?: string }).__gateDocument = 'the first';
+      });
+      const settled = navigations;
+
+      // Backstage. The second category is open and both films are up in it;
+      // Alpha already won the first, so its row there reads "Clear winner" and
+      // this locator is the one "Mark winner" button Alpha has anywhere.
+      await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+      await page
+        .getByRole('listitem')
+        .filter({ hasText: FILMS[0] as string })
+        .getByRole('button', { name: 'Mark winner' })
+        .click();
+      // The envelope is actually open before anything is claimed about the
+      // other screen: the row, not the button's own optimistic state.
+      await expect
+        .poll(() =>
+          withDb(async (query) => {
+            const rows = (await query(
+              `select count(*)::int as n from winners w
+                 join awards a on a.id = w.award_id
+                 join events e on e.id = a.event_id
+                where e.abbreviation = $1 and w.year = $2`,
+              [abbreviation, YEAR],
+            )) as { n: number }[];
+            return rows[0]?.n;
+          }),
+        )
+        .toBe(2);
+
+      // And the other client carries it. The poll waits on the stream's 2s
+      // tick, which is the only thing that can deliver this.
+      await expect(viewer.getByText('2 of 2')).toBeVisible({ timeout: 20_000 });
+      await expect(viewer.getByText('Winner', { exact: true })).toHaveCount(2);
+      // 🔴 The reveal played, for exactly one category. This is what says the
+      // change arrived as an *announcement* rather than as a re-render: the
+      // class is only ever set by `justDecided`, which compares two frames and
+      // cannot fire on a first paint.
+      await expect(viewer.locator('.animate-reveal-mark')).toHaveCount(1);
+      // And the standings moved under it — the same frame, the other column.
+      // D41: a win earns the category's points a second time, so Alpha goes
+      // from 7 + 14 to 14 + 14 and the seat holding it from 21 to 28. `exact`,
+      // for the reason the roster test above records: the countdown's digits
+      // are not this test's subject and a substring match made them so.
+      await expect(viewer.getByText('28', { exact: true }).first()).toBeVisible();
+      await expect(viewer.getByText('21', { exact: true })).toHaveCount(0);
+
+      expect(navigations).toBe(settled);
+      expect(
+        await viewer.evaluate(
+          () => (window as unknown as { __gateDocument?: string }).__gateDocument,
+        ),
+      ).toBe('the first');
+    } finally {
+      await audience.close();
+    }
+  });
+
+  test('the signed-out stream carries no seat names, and the pinned one does', async ({
+    page,
+    browser,
+  }) => {
+    // 🔴 The stream is a second door into the same data, and the page's
+    // privacy line has to hold at both. Asserted as a pair against ONE seeded
+    // league read by ONE session-less reader: with `?league=` the names are
+    // there, without it they are not. Either half alone is unfalsifiable — an
+    // absence proves nothing against data that was never seeded, and a
+    // presence proves nothing about what a stranger is refused.
+    const { abbreviation, leagueId } = await seedShowWithLeague(page);
+
+    const stranger = await browser.newContext();
+    try {
+      const anon = await stranger.newPage();
+      // A document on the origin, so `fetch` below is same-origin — and with
+      // no cookie, because this context has never signed anybody in.
+      await anon.goto(`/live/${abbreviation}?year=${YEAR}`);
+
+      const base = `/api/live/${abbreviation}/stream?year=${YEAR}`;
+      const open = await firstFrame(anon, base);
+      const pinned = await firstFrame(anon, `${base}&league=${leagueId}`);
+
+      // Not vacuous: the same stranger, pinned, is handed both seat names and
+      // the league. (D44/D45 — league pages are public, so the pin grants
+      // nothing `/leagues/[id]` would not.)
+      expect(pinned).toContain('Member');
+      expect(pinned).toContain(`${TAG} Placeholder`);
+      expect(pinned).toContain(`${TAG} league`);
+
+      // And unpinned it is the show and nothing else.
+      expect(open).toContain(`${TAG} Best Picture`);
+      expect(open).not.toContain('Member');
+      expect(open).not.toContain(`${TAG} Placeholder`);
+      expect(open).not.toContain(`${TAG} league`);
+      // The shape, not only the strings: no league and no picker to enumerate
+      // one from.
+      expect(JSON.parse(open.replace(/^data: /, '').trim())).toMatchObject({
+        league: null,
+        leagueOptions: [],
+      });
+    } finally {
+      await stranger.close();
+    }
+  });
+
+  /**
+   * Put this document into the hidden state, or take it back out.
+   *
+   * 🔴 **Chromium in this suite is headless, and a headless browser has no
+   * background tab.** Verified rather than assumed: opening a second page in
+   * the same context and letting it take the front leaves the first one's
+   * `document.hidden` reading `false` forever, so the test written that way
+   * failed on the emulation and not on the application. So the signal is
+   * driven directly — and it is the real signal: `LiveRoom` listens for
+   * `visibilitychange` and reads `document.hidden`, which is the entire
+   * contract a browser offers it, and both are what this sets.
+   *
+   * What that leaves unproved is Chromium firing the event, which is not this
+   * repository's code. What it proves, and what no unit test can, is that the
+   * connection to a real server is genuinely released when it does.
+   */
+  async function hide(page: Page, hidden: boolean): Promise<void> {
+    await page.evaluate((value) => {
+      Object.defineProperty(document, 'hidden', {
+        configurable: true,
+        get: () => value,
+      });
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => (value ? 'hidden' : 'visible'),
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, hidden);
+  }
+
+  test('a hidden tab closes its stream, and opens a fresh one on the way back', async ({
+    page,
+  }) => {
+    /**
+     * 🔴 One forgotten monitor is 180 CU-hrs a month against a 100 CU-hr
+     * allowance, so this is the assertion the free tier rests on.
+     *
+     * 🔴 **What is watched is the request ending, not a quiet interval.** The
+     * plan's shape for this was "no request to `/api/live/` for longer than the
+     * route's 290s self-close", on the grounds that a shorter window cannot
+     * tell a closed stream from one that has not reconnected yet. True of a
+     * window — and unnecessary, because the distinction is directly
+     * observable: a stream the client closed ENDS, and Chromium reports that
+     * end to Playwright the moment it happens. A tab that had merely not
+     * reconnected still has its request in flight and produces no end event at
+     * all until the server's own 290s close, which is five minutes from here.
+     * So the three facts below — one connection, it ends within seconds of the
+     * tab being hidden, and no second one opens while it stays hidden — are
+     * what a 293-second window was a proxy for, measured rather than waited
+     * out. A five-minute test on every CI run was the alternative, and a suite
+     * nobody runs catches nothing.
+     */
+    const { abbreviation } = await seedShow();
+
+    const opened: string[] = [];
+    let ended = 0;
+    const mine = (url: string) => url.includes(`/api/live/${abbreviation}/stream`);
+    page.on('request', (request) => {
+      if (mine(request.url())) opened.push(request.url());
+    });
+    // Either is an ending. A client-side `close()` surfaces as one or the
+    // other depending on how far the response had got, and this test does not
+    // care which — only that the connection is no longer held.
+    page.on('requestfinished', (request) => {
+      if (mine(request.url())) ended += 1;
+    });
+    page.on('requestfailed', (request) => {
+      if (mine(request.url())) ended += 1;
+    });
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+    // The show is on air, so exactly one stream opens — and it stays open,
+    // which is what makes the ending below a measurement.
+    await expect.poll(() => opened.length).toBe(1);
+    expect(ended).toBe(0);
+
+    await hide(page, true);
+
+    // 🔴 The connection is released. Poll rather than assert once: the close
+    // is a round trip, not a synchronous fact.
+    await expect.poll(() => ended).toBe(1);
+    // And nothing replaces it while the tab stays hidden.
+    expect(opened).toHaveLength(1);
+
+    await hide(page, false);
+    // Coming back opens a new one — whose first frame is complete state, which
+    // is why closing was safe in the first place.
+    await expect.poll(() => opened.length).toBe(2);
+  });
+
+  test('the room reads the same at 1920, 1440 and 390, and never scrolls sideways', async ({
+    page,
+  }) => {
+    // The three widths the gate names: the television, the laptop the ceremony
+    // is usually cast from, and the phone in a hand during it. `roomFacts` is
+    // compared whole across all three, so a width that dropped a poster, a
+    // heading or the seal fails here rather than on somebody's sofa.
+    test.setTimeout(60_000);
+    const { abbreviation } = await seedShow();
+
+    const facts: Record<number, Awaited<ReturnType<typeof roomFacts>>> = {};
+    for (const [width, height] of [
+      [1920, 1080],
+      [1440, 900],
+      [390, 844],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+      facts[width] = await roomFacts(page);
+
+      // 🔴 Sideways scroll is the failure mode a fixed-width room has at 390
+      // and the one nothing else in this file would notice. The nominee rows
+      // scroll horizontally on purpose, inside their own `overflow-x-auto`;
+      // the document must not.
+      const [document_, viewport] = await page.evaluate(() => [
+        document.documentElement.scrollWidth,
+        window.innerWidth,
+      ]);
+      expect(document_, `${width}px scrolls sideways`).toBeLessThanOrEqual(viewport + 1);
+    }
+
+    expect(facts[1440]).toEqual(facts[1920]);
+    expect(facts[390]).toEqual(facts[1920]);
+  });
+
+  test('the television renders in both colour schemes', async ({ page }) => {
+    // 🔴 "At 1920 in both schemes" — and at 1920 the screen this page exists
+    // for is TV mode, so that is the mode this reads. The two renders are
+    // compared with `roomFacts`, and the backgrounds are compared as well so
+    // the comparison is between two genuinely different renders rather than
+    // between one render read twice.
+    const { abbreviation } = await seedShow();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    const rail = page.locator('nav[aria-label="Main"]');
+
+    const read = async (scheme: 'dark' | 'light') => {
+      // Before load, not after: `app/providers.tsx` mounts MUI's
+      // `InitColorSchemeScript`, which runs before paint and writes the
+      // attribute from storage — an attribute stamped after `goto` is a race
+      // that script wins about one time in sixteen (e2e/visual.spec.ts records
+      // the run where it did). Init scripts apply in the order they were
+      // added, so the second call wins on the second load.
+      await page.addInitScript((value) => {
+        try {
+          window.localStorage.setItem('mui-mode', value);
+        } catch {
+          // Storage blocked. `emulateMedia` below still applies, and the
+          // background assertion catches it if neither did.
+        }
+      }, scheme);
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto(`/live/${abbreviation}?year=${YEAR}&tv=1`);
+      await expect(rail).toHaveCount(1);
+      await expect(rail).toBeHidden();
+      return {
+        facts: await roomFacts(page),
+        background: await page.evaluate(
+          () => getComputedStyle(document.body).backgroundColor,
+        ),
+      };
+    };
+
+    const dark = await read('dark');
+    const light = await read('light');
+
+    // 🔴 The check that stops the comparison below being vacuous: two schemes
+    // that painted the same ground are one scheme read twice.
+    expect(light.background).not.toBe(dark.background);
+    expect(light.facts).toEqual(dark.facts);
+  });
+
+  test('switching league from inside TV mode stays inside TV mode', async ({ page }) => {
+    // 🔴 Found by P14.T6 and deliberately left: the picker built its links
+    // from `abbr`, `year` and the league id, and nothing else — so a reader on
+    // a television who chose their other league was dropped back into the
+    // application chrome, with a remote in their hand and no address bar to
+    // type their way back with. `TvModeLink` argues at length that the way out
+    // must never disappear; a link that silently takes it is the same defect
+    // from the other end. One prop, and the links lead back to the page the
+    // reader is already on.
+    const { abbreviation, leagueId } = await seedShowWithLeague(page);
+    const userId = await withDb(async (query) => {
+      const rows = (await query(
+        `select user_id from drafts where league_id = $1 and user_id is not null limit 1`,
+        [leagueId],
+      )) as { user_id: number }[];
+      return rows[0]?.user_id as number;
+    });
+    const otherId = await seedSecondLeague(userId);
+
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto(`/live/${abbreviation}?year=${YEAR}&league=${leagueId}&tv=1`);
+    const rail = page.locator('nav[aria-label="Main"]');
+    await expect(rail).toBeHidden();
+
+    await page
+      .getByRole('navigation', { name: 'Your leagues' })
+      .getByRole('link', { name: `${TAG} other league` })
+      .click();
+
+    await expect(page).toHaveURL(new RegExp(`league=${otherId}`));
+    await expect(page).toHaveURL(/tv=1/);
+    // Not merely the URL: the chrome really is still gone, and the way out is
+    // still on the screen.
+    await expect(rail).toBeHidden();
+    await expect(page.getByRole('link', { name: 'Leave TV mode' })).toBeVisible();
+  });
 });

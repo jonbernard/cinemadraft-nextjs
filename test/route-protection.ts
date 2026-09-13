@@ -219,6 +219,19 @@ export const PUBLIC_ROUTES = [
   // resolves somebody else's team for an anonymous reader, and
   // `scoring.batching.test.ts` pins that as a query-count equality.
   '/live/[abbr]',
+  // 🔴 The same ruling, one door further in: the SSE stream the page's client
+  // opens (P14.T3/D102). It is not covered by `/live/[abbr]` — nothing here
+  // wildcards, and `/api/…` was never inside the page's entry anyway — so
+  // without this line a stranger's `EventSource` is refused the moment it
+  // opens and the public page they were handed simply never updates.
+  //
+  // It grants exactly what the page grants and is the same shape of safe: the
+  // handler resolves the reader with `getCurrentUser()` and calls
+  // `getLiveShow` with the page's four arguments, so a signed-out reader with
+  // no `?league=` gets `league: null` and `leagueOptions: []` — no seat name
+  // reaches a stranger through the stream that the page withholds. Its own
+  // `route.test.ts` pins that, in both directions.
+  '/api/live/[abbr]/stream',
   // 🔴 Member profiles, by the owner's ruling (P17.T37). The league page is the
   // member index — every seat on it links to `/members/<uuid>` — and league
   // pages are public, so without this every name on a shared league page

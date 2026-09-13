@@ -68,6 +68,12 @@ export function TabBar({
     // the landmark must contain destinations only.
     <div
       className="bg-bg-panel xl:hidden fixed inset-x-0 bottom-0 z-40 flex items-stretch"
+      // The third of the shell's three chrome hooks; `AppShell` carries the
+      // other two and the reasoning. The bar is already `xl:hidden`, so it is
+      // never on screen at the width TV mode exists for — it is marked anyway
+      // so "nothing but the room" is true at every width a browser can be made
+      // full-screen at, not only on a television.
+      data-app-chrome
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {/* Identity. `markOnly`, because the lockup's name would eat two tab

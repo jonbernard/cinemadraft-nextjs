@@ -138,7 +138,15 @@ export function AppShell({
         Skip to content
       </a>
 
-      <div className="hidden xl:block">
+      {/* 🔴 `data-app-chrome` is TV mode's only seam into the shell (P14.T6).
+          One unlayered rule in globals.css hides every element carrying it
+          while the page below sets `data-tv-mode`, and nothing here reads a
+          search param, holds state, or re-renders — which is exactly why the
+          live room's SSE connection survives the toggle. Remove the attribute
+          and TV mode silently stops working; the guard against that is in
+          components/awards/TvModeLink.test.tsx, which reads this file and the
+          stylesheet and asserts the two still agree. */}
+      <div className="hidden xl:block" data-app-chrome>
         <NavRail pathname={pathname} />
       </div>
 
@@ -227,7 +235,10 @@ function Strip({
   searchId: string;
 }) {
   return (
-    <div className="hidden h-[52px] shrink-0 items-center gap-2 px-2 xl:flex">
+    <div
+      className="hidden h-[52px] shrink-0 items-center gap-2 px-2 xl:flex"
+      data-app-chrome
+    >
       {/* Was a link to `/browse` — a release calendar ordered by date, which
           cannot answer "where is *Sinners*". It opens the search panel now. */}
       <button
