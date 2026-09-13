@@ -1,5 +1,7 @@
 import { currentUser } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 
+import { SIGN_IN_URL } from '@/lib/auth-routes';
 import { ForbiddenError } from '@/lib/errors';
 import { type User, userRepository } from '@/lib/repositories/users';
 import { syncClerkIdentity } from '@/lib/services/clerk-identity';
@@ -83,9 +85,9 @@ export async function getCurrentUser(): Promise<User | null> {
 /**
  * The signed-in user, or an error.
  *
- * Every page under `(app)` is already behind the proxy, so reaching here
- * without a session means the route escaped the matcher — a bug worth
- * surfacing rather than smoothing over with a redirect.
+ * For a Server Action, which is the only caller left: reaching here without a
+ * session is an answer the caller has to read, not a page to navigate. Pages
+ * use `requirePageUser` below, which bounces to the login form instead.
  *
  * Throws `ForbiddenError` rather than a bare `Error` so that a Server Action
  * can convert it into a failure the caller can read (`actions/result.ts`). A
@@ -108,6 +110,55 @@ export async function requireUser(): Promise<User> {
  */
 export async function requireAdmin(): Promise<User> {
   const user = await requireUser();
+  if (user.role !== 'admin') throw new ForbiddenError('admin only');
+  return user;
+}
+
+/**
+ * The page gate: the signed-in user, or a bounce to the login form.
+ *
+ * This is what `proxy.ts` used to do for every path its matcher did not call
+ * public (D40), moved onto the resource itself as Clerk's migration away from
+ * `createRouteMatcher` prescribes. The redirect rather than a throw is the
+ * whole difference from `requireUser`: a page render wants the login form and
+ * a way in, a Server Action wants a `ForbiddenError` that `actions/result.ts`
+ * can turn into `{ ok: false }` for the caller to read. Two callers, opposite
+ * answers, so two functions.
+ *
+ * 🔴 `getCurrentUser()` rather than Clerk's own `auth.protect()`, which is what
+ * the guide writes. `auth.protect()` needs `clerkMiddleware` to have run, and
+ * under `E2E_TEST_AUTH=1` it has not (D82/D84) — so using it would mean a
+ * branch, and the browser suite would then only ever exercise the branch that
+ * is not production's. `getCurrentUser()` already answers for both worlds, and
+ * routing the gate through it is what lets `e2e/route-protection.spec.ts`
+ * observe the real redirect for the first time.
+ *
+ * 🔴 What is given up: Clerk's redirect carried `?redirect_url=`, so a member
+ * landed back on the page they asked for. Next does not expose the request
+ * path to a render, so restoring it needs `proxy.ts` to set the pathname as a
+ * request header. Left out as the smaller change; the member lands on `/`.
+ *
+ * `AccountLinkError` is deliberately not caught — a collided account (D25) is
+ * not a signed-out one, and sending it to the login form is the loop D25
+ * exists to avoid. It reaches `(app)/error.tsx`, as it does today.
+ */
+export async function requirePageUser(): Promise<User> {
+  const user = await getCurrentUser();
+  if (!user) redirect(SIGN_IN_URL);
+  return user;
+}
+
+/**
+ * The page gate for the admin pages.
+ *
+ * Signed out is a redirect, signed in and not an admin is a `ForbiddenError` —
+ * which is exactly the pair the proxy and `requireAdmin` produced between them
+ * before this moved onto the page, and the split matters: a bounce to login
+ * for someone who is already logged in is a loop, and hiding a refusal behind
+ * a login form is how an attempt stays out of the logs.
+ */
+export async function requirePageAdmin(): Promise<User> {
+  const user = await requirePageUser();
   if (user.role !== 'admin') throw new ForbiddenError('admin only');
   return user;
 }

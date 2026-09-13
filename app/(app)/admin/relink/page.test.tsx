@@ -2,8 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const requireAdmin = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/auth', () => ({ requireAdmin }));
+const requirePageAdmin = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/auth', () => ({ requirePageAdmin }));
 
 import { ForbiddenError } from '@/lib/errors';
 import AdminRelinkPage from './page';
@@ -20,13 +20,13 @@ describe('AdminRelinkPage', () => {
   });
 
   it('refuses to render for a non-admin', async () => {
-    requireAdmin.mockRejectedValue(new ForbiddenError('admin only'));
+    requirePageAdmin.mockRejectedValue(new ForbiddenError('admin only'));
 
     await expect(AdminRelinkPage()).rejects.toThrow('admin only');
   });
 
   it('renders for an admin', async () => {
-    requireAdmin.mockResolvedValue({ id: 1, role: 'admin' });
+    requirePageAdmin.mockResolvedValue({ id: 1, role: 'admin' });
 
     const element = await AdminRelinkPage();
     expect(element).toBeTruthy();

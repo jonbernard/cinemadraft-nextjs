@@ -1,11 +1,11 @@
 import { RelinkPanel } from '@/components/admin/RelinkPanel';
 import { SectionHead } from '@/components/ui/SectionHead';
-import { requireAdmin } from '@/lib/auth';
+import { requirePageAdmin } from '@/lib/auth';
 
 /**
  * Relink an account (T49, D25).
  *
- * `requireAdmin()` gates the page independently of `relinkUser` gating the
+ * `requirePageAdmin()` gates the page independently of `relinkUser` gating the
  * action — a Server Action's id ships in the client bundle regardless of
  * whether this page exists, so the page gate alone would not be gating.
  *
@@ -13,7 +13,7 @@ import { requireAdmin } from '@/lib/auth';
  * admin searches for it, which is `RelinkPanel`'s job.
  */
 export default async function AdminRelinkPage() {
-  await requireAdmin();
+  await requirePageAdmin();
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-10">

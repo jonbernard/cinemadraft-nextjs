@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 
+import { requirePageUser } from '@/lib/auth';
+
 /**
  * Every URL that matches nothing else, pulled inside the app shell.
  *
@@ -20,7 +22,17 @@ import { notFound } from 'next/navigation';
  * segments both outrank a catch-all in Next's route ranking, so every real
  * route — `/leagues/1`, `/auth/login`, `/api/*` — is unaffected;
  * `e2e/errors.spec.ts` and `e2e/nav.spec.ts` are what prove it.
+ *
+ * 🔴 The gate is parity, not intent. The proxy protected every path its list
+ * did not name, so an unmatched URL has always sent a logged-out visitor to
+ * log in rather than saying "not here" — `e2e/errors.spec.ts` records that as
+ * deliberate, and the cost as accepted. Moving protection onto the resource
+ * would have dropped it silently, which is a change to the boundary made by
+ * forgetting, so it is written down instead. It is the one line here an owner
+ * might well want deleted: a typo'd URL is not a protected resource, and
+ * nothing behind this page reads anything.
  */
-export default function CatchAll() {
+export default async function CatchAll() {
+  await requirePageUser();
   notFound();
 }

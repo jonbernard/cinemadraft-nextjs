@@ -10,7 +10,7 @@ import {
   type DraftListStatus,
 } from '@/components/draft/DraftListEditor';
 import { SectionHead } from '@/components/ui/SectionHead';
-import { requireUser } from '@/lib/auth';
+import { requirePageUser } from '@/lib/auth';
 import { NOINDEX } from '@/lib/seo';
 import { getDraftList } from '@/lib/services/draft-list';
 import { getActiveYear } from '@/lib/services/season';
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DraftListPage() {
-  const user = await requireUser();
+  const user = await requirePageUser();
   const year = await getActiveYear();
   const entries = await getDraftList(user.id, year);
 

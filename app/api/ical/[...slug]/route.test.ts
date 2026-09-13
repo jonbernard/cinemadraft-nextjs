@@ -2,10 +2,23 @@
 
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/lib/db';
 import { GET } from './route';
+
+/**
+ * 🔴 The feed carries a session gate it should probably not have — see the
+ * route's own note — and none of these tests are about it. Every one asks a
+ * question about the calendar body, so the gate is mocked to a signed-in
+ * reader and gets out of the way. That the gate exists at all is
+ * `test/route-protection.test.ts`'s job; that it turns a stranger away is
+ * `e2e/route-protection.spec.ts`'s.
+ *
+ * It also has to be mocked rather than merely unused: `lib/auth.ts` imports
+ * Clerk's `currentUser`, which pulls in `server-only` and refuses to load here.
+ */
+vi.mock('@/lib/auth', () => ({ requirePageUser: vi.fn(async () => ({ id: 1 })) }));
 
 const DOMAIN = '@icaltest.example';
 

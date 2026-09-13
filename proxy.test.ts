@@ -3,12 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * 🔴 The only test that loads `proxy.ts` at all.
  *
- * That file is where route protection lives, and its branch is the most
- * consequential `?:` in the app: under `E2E_TEST_AUTH=1` it exports a
- * pass-through with no protection whatsoever. Nothing used to cover it — the
- * unit suite never imported the module, and the e2e suite only ever runs with
- * the flag *on*, so deleting the condition and exporting the pass-through
- * unconditionally would have been green in both.
+ * Route protection no longer lives in that file — Clerk deprecated
+ * `createRouteMatcher` and the checks moved onto the resources, where
+ * `test/route-protection.test.ts` and `e2e/route-protection.spec.ts` guard
+ * them. What is left here is still consequential: `clerkMiddleware` is what
+ * attaches the request context every `auth()` and `currentUser()` call reads,
+ * and under `E2E_TEST_AUTH=1` the module exports a pass-through instead. Get
+ * that branch wrong in a deployed environment and no session resolves at all.
  *
  * Clerk is mocked down to a sentinel deliberately. What is under test is which
  * branch the module takes, not what Clerk does with a request — and a real
@@ -16,8 +17,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  */
 const CLERK_MIDDLEWARE = Symbol('clerkMiddleware');
 const clerkMiddleware = vi.hoisted(() => vi.fn());
-const createRouteMatcher = vi.hoisted(() => vi.fn(() => () => false));
-vi.mock('@clerk/nextjs/server', () => ({ clerkMiddleware, createRouteMatcher }));
+vi.mock('@clerk/nextjs/server', () => ({ clerkMiddleware }));
 
 beforeEach(() => {
   // The module decides its branch at import, from an environment read at
@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 describe('proxy', () => {
-  it('protects routes with the real Clerk middleware when the test flag is unset', async () => {
+  it('installs the real Clerk middleware when the test flag is unset', async () => {
     const proxy = await import('./proxy');
 
     // Identity against the sentinel rather than `typeof === 'function'`: the
@@ -40,51 +40,17 @@ describe('proxy', () => {
   });
 
   it('matches every route except Next internals and static files', async () => {
-    // Pinned verbatim because the matcher is shared by both branches: narrow it
-    // and the proxy simply stops seeing a path, which shows up as a protected
-    // page rendering perfectly to a stranger.
+    // Pinned verbatim because the matcher is shared by both branches, and
+    // because it is now the only thing this file decides. Narrow it and
+    // `clerkMiddleware` never runs for the paths it dropped — `currentUser()`
+    // throws "clerkMiddleware() was not run" there, so every page on them
+    // fails rather than opening, which is the right direction and still not a
+    // failure anybody wants to ship.
     const { config } = await import('./proxy');
 
     expect(config.matcher).toEqual([
       '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
       '/(api|trpc)(.*)',
-    ]);
-  });
-
-  it('lists every route a stranger may reach, and no more', async () => {
-    // Pinned as a whole list rather than `arrayContaining`. This is the file
-    // where "public" is decided; a test that only checks for presence would
-    // stay green while somebody added a route that should not be here, which
-    // is the failure direction that actually costs something (D45).
-    await import('./proxy');
-
-    expect(createRouteMatcher).toHaveBeenCalledWith([
-      '/',
-      '/tokens',
-      '/auth/(.*)',
-      '/api/webhooks/(.*)',
-      '/api/revalidate',
-      '/leagues/(.*)',
-      '/award-shows/(.*)',
-      '/award-shows',
-      '/films/(.*)',
-      '/browse',
-      '/join/(.*)',
-      '/how-it-works',
-      '/how-it-works/opengraph-image(.*)',
-      // 🔴 Public by the owner's ruling, which narrowly amends D40 (P17.T16).
-      // The mechanism is unchanged — this list still enumerates the public and a
-      // page under `(app)` is still protected by default.
-      '/live/(.*)',
-      // 🔴 Public by the owner's ruling (P17.T37): the league page is the
-      // member index and league pages are public, so every seat name on a
-      // shared league page has to open. This test is the ONLY guard on that
-      // entry — under `E2E_TEST_AUTH=1` the proxy is a pass-through, so no
-      // browser test in this repo can ever observe the redirect it removes.
-      '/members/(.*)',
-      '/robots.txt',
-      '/sitemap.xml',
-      '/opengraph-image',
     ]);
   });
 });
