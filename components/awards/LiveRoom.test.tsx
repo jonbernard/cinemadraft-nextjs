@@ -173,6 +173,7 @@ function room(initial: LiveRoomView, wrapper: 'plain' | 'strict' = 'plain') {
       streamUrl={STREAM}
       abbr="oscars"
       year={2026}
+      tvMode={false}
       signedIn={false}
     />
   );
@@ -191,6 +192,7 @@ describe('LiveRoom', () => {
         streamUrl={STREAM}
         abbr="oscars"
         year={2026}
+        tvMode={false}
         signedIn={false}
       />,
     );

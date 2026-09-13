@@ -209,6 +209,11 @@ export default async function LivePage({
         streamUrl={stream}
         abbr={abbr}
         year={requested}
+        // 🔴 The one thing below the header that has to know, and it is a link
+        // target rather than behaviour: the league picker's hrefs point back at
+        // this page, and without this they point at it with the television
+        // turned off. Not part of `key` above, so a toggle still reconciles.
+        tvMode={tvMode}
         signedIn={user != null}
       />
     </div>

@@ -120,6 +120,7 @@ export function LiveRoom({
   streamUrl,
   abbr,
   year,
+  tvMode,
   signedIn,
 }: {
   initial: LiveRoomView;
@@ -131,6 +132,19 @@ export function LiveRoom({
   streamUrl: string;
   abbr: string;
   year: number;
+  /**
+   * 🔴 Carried through the league picker's links, and that is the whole of its
+   * job here. TV mode is chrome (P14.T6) and this component still knows nothing
+   * about it — but the picker builds a URL, and a URL that drops `?tv=1` drops
+   * the reader out of full screen for choosing a league. On a television that
+   * is a one-way door: the chrome comes back, the remote has no address bar,
+   * and the way back is a link the reader has to go looking for. The links
+   * below lead to the page the reader is already on.
+   *
+   * Deliberately NOT part of `streamUrl`, which is what `page.tsx` keys this
+   * component on — see the note there. A toggle must not reconnect the stream.
+   */
+  tvMode: boolean;
   /** Which of the two empty states a reader with no league is owed (D44). */
   signedIn: boolean;
 }) {
@@ -250,7 +264,9 @@ export function LiveRoom({
                   {view.leagueOptions.map((option) => (
                     <Link
                       key={option.id}
-                      href={`/live/${abbr}?year=${year}&league=${option.id}`}
+                      href={`/live/${abbr}?year=${year}&league=${option.id}${
+                        tvMode ? '&tv=1' : ''
+                      }`}
                       aria-current={option.id === view.league?.id ? 'page' : undefined}
                       className={
                         option.id === view.league?.id
