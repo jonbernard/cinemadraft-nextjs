@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { db } from '@/lib/db';
 import { NotFoundError } from '@/lib/errors';
+import { getLeagueBoard } from './draft';
 import { getLiveShow } from './live';
 
 afterAll(async () => {
@@ -99,7 +100,9 @@ describe('getLiveShow', () => {
     // and `toCategory` collapsed each category to a number; a page cannot put
     // posters on a television from a number.
     const view = await getLiveShow('oscars', 2025, null);
-    const picture = view.categories.find((category) => /best picture/i.test(category.name));
+    const picture = view.categories.find((category) =>
+      /best picture/i.test(category.name),
+    );
     expect(picture).toBeDefined();
 
     // Five to ten films in a Best Picture line-up; never one, and never zero.
@@ -140,27 +143,153 @@ describe('getLiveShow', () => {
     );
   });
 
-  it('shows a signed-out reader no leagues, where a member sees real ones', async () => {
-    // Same rule as the public dashboard (D44): the signed-out path does not
-    // query leagues rather than querying with a sentinel, so there is no code
-    // path on which this page can resolve somebody else's team.
+  it('shows a signed-out reader no league, where a member sees their own', async () => {
+    // Same rule as the public dashboard (D44): with no `?league=` the
+    // signed-out path does not query leagues rather than querying with a
+    // sentinel, so there is no code path on which an unpinned page resolves
+    // somebody else's team.
     //
-    // 🔴 Both halves, deliberately. `expect(leagues).toEqual([])` on its own is
-    // a literal compared with itself for as long as nothing produces a seat —
-    // it stayed green through all of T16a and could not have failed. The
-    // signed-in call is what gives it something to be the absence of.
+    // 🔴 Both halves, deliberately. `expect(league).toBeNull()` on its own is a
+    // literal compared with itself for as long as nothing produces a seat — it
+    // stayed green through all of T16a and could not have failed. The signed-in
+    // call is what gives it something to be the absence of.
     const anonymous = await getLiveShow('oscars', 2026, null);
     const member = await getLiveShow('oscars', 2026, 6);
 
-    expect(anonymous.leagues).toEqual([]);
-    expect(member.leagues.length).toBeGreaterThan(0);
-    expect(member.leagues[0]?.seats.length).toBeGreaterThan(0);
+    expect(anonymous.league).toBeNull();
+    expect(anonymous.leagueOptions).toEqual([]);
+    expect(member.league).not.toBeNull();
+    expect(member.league?.seats.length).toBeGreaterThan(0);
+    expect(member.league?.standings.length).toBeGreaterThan(0);
+  });
+
+  it('pins the league the URL names, for a reader with no session (P14.T2)', async () => {
+    // The owner's ruling: `?league=<id>` is readable by whoever opens the link.
+    // League 1 is the restored league with sixty real people's history in it —
+    // the same rows `/leagues/1` already serves a stranger (D44/D45).
+    const anonymous = await getLiveShow('oscars', 2026, null, 1);
+
+    expect(anonymous.league?.id).toBe(1);
+    expect(anonymous.league?.seats.length).toBeGreaterThan(0);
+    expect(anonymous.league?.standings.length).toBeGreaterThan(0);
+    // 🔴 And no seat is the reader's. `Seat.userId` is null on a dummy seat, so
+    // a bare `seat.userId === userId` marks every placeholder "your seat" for a
+    // reader who is signed out — league 1's 2026 season holds three of them.
+    expect(anonymous.league?.seats.some((seat) => seat.isViewer)).toBe(false);
+    expect(anonymous.league?.standings.some((row) => row.isViewer)).toBe(false);
+    // The pin is one league, not a door to the rest: no picker without a
+    // session, whatever the URL says.
+    expect(anonymous.leagueOptions).toEqual([]);
+  });
+
+  it('serves a pinned stranger nothing a league page would not (P14.T2)', async () => {
+    // 🔴 The privacy claim, proved rather than asserted. `/leagues/1` is public
+    // and renders `getLeagueBoard(1, 2026)` — every seat, every pick, every
+    // season total. This page must be a NARROWING of that and never an
+    // addition, so each assertion below is against the board itself.
+    const board = await getLeagueBoard(1, 2026);
+    const boardSeats = board.groups.flatMap((group) => group.seats);
+    const anonymous = await getLiveShow('oscars', 2026, null, 1);
+    const league = anonymous.league;
+    expect(league).not.toBeNull();
+
+    // Not vacuous: the board really does carry seats, films and scores.
+    expect(boardSeats.length).toBeGreaterThan(0);
+    expect(boardSeats.some((seat) => seat.picks.length > 0)).toBe(true);
+
+    // The league's own name and id are the board's.
+    expect(league?.name).toBe(board.leagueName);
+
+    // Every seat named here is a seat the league page names.
+    const boardNames = new Set(boardSeats.map((seat) => seat.name));
+    for (const seat of league?.seats ?? []) expect(boardNames.has(seat.name)).toBe(true);
+    expect(league?.seats.length).toBe(boardSeats.length);
+
+    // Every film shown is a film that seat actually drafted — this page cannot
+    // invent a pick, and cannot show one seat's film under another's name.
+    const picksByName = new Map(
+      boardSeats.map((seat) => [
+        seat.name,
+        new Set(seat.picks.map((pick) => pick.movie.id)),
+      ]),
+    );
+    for (const seat of league?.seats ?? []) {
+      for (const film of seat.films) {
+        expect(picksByName.get(seat.name)?.has(film.movieId)).toBe(true);
+      }
+    }
+
+    // And the standings are the board's own totals, not a second sum.
+    const boardTotals = new Map(boardSeats.map((seat) => [seat.name, seat.total]));
+    for (const row of league?.standings ?? []) {
+      expect(row.total).toBe(boardTotals.get(row.name));
+    }
+  });
+
+  it('ranks the standings by the season, densely, as the league page does', async () => {
+    const anonymous = await getLiveShow('oscars', 2026, null, 1);
+    const rows = anonymous.league?.standings ?? [];
+    expect(rows.length).toBeGreaterThan(1);
+
+    // Descending by total, and the position is dense: the first row is 1, and
+    // two rows level on points share a number.
+    const totals = rows.map((row) => row.total);
+    expect(totals).toEqual([...totals].sort((a, b) => b - a));
+    expect(rows[0]?.position).toBe(1);
+    for (let i = 1; i < rows.length; i += 1) {
+      const previous = rows[i - 1] as (typeof rows)[number];
+      const row = rows[i] as (typeof rows)[number];
+      expect(row.position).toBe(row.total === previous.total ? previous.position : i + 1);
+    }
+
+    // 🔴 The season, not tonight. A seat's take at one show cannot exceed what
+    // it has taken across twelve, and for league 1 in 2026 the two genuinely
+    // differ — so a standings column accidentally fed `earned` fails here.
+    const tonight = new Map(
+      anonymous.league?.seats.map((seat) => [seat.name, seat.earned]) ?? [],
+    );
+    for (const row of rows) {
+      expect(row.total).toBeGreaterThanOrEqual(tonight.get(row.name) ?? 0);
+    }
+    expect(rows.some((row) => row.total > (tonight.get(row.name) ?? 0))).toBe(true);
+  });
+
+  it('marks the reader’s own seat in a league they were pinned to', async () => {
+    // The other half of the `isViewer` rule: it is false for a stranger because
+    // there is no viewer, not because the flag is never set.
+    const member = await getLiveShow('oscars', 2026, 6, 1);
+    expect(member.league?.id).toBe(1);
+    expect(member.league?.seats.filter((seat) => seat.isViewer)).toHaveLength(1);
+    expect(member.league?.standings.filter((row) => row.isViewer)).toHaveLength(1);
+  });
+
+  it('offers a picker only to a reader who has a choice to make', async () => {
+    // User 3 holds seats in two leagues; user 6 in one. A picker for one league
+    // is a control that cannot do anything, and the name query behind it is a
+    // query spent on rendering nothing.
+    const several = await getLiveShow('oscars', 2026, 3);
+    const one = await getLiveShow('oscars', 2026, 6);
+
+    expect(several.leagueOptions.length).toBeGreaterThan(1);
+    expect(several.leagueOptions.map((option) => option.id)).toContain(
+      several.league?.id,
+    );
+    expect(one.leagueOptions).toEqual([]);
+    expect(one.league).not.toBeNull();
+  });
+
+  it('ignores a league id that is not a league, rather than losing the show', async () => {
+    // `?league=` is a number in a URL. 404ing the ceremony because a stranger
+    // mistyped the query string would take the show off the television.
+    const view = await getLiveShow('oscars', 2026, null, 999_999_999);
+    expect(view.league).toBeNull();
+    expect(view.categories.length).toBeGreaterThan(0);
   });
 
   it("a seat's take is this show's lines only, and the league total adds up", async () => {
     const view = await getLiveShow('oscars', 2026, 6);
-    const league = view.leagues[0];
-    expect(league).toBeDefined();
+    const league = view.league;
+    expect(league).not.toBeNull();
 
     // The league's total is the sum of its seats, never a second reduction —
     // the `MovieLedger` rule. And the seats are ranked by it.
@@ -193,7 +322,7 @@ describe('getLiveShow', () => {
     const globes = await getLiveShow('gg', 2026, 6);
 
     const take = (view: typeof oscars) =>
-      view.leagues[0]?.seats.find((seat) => seat.isViewer)?.earned ?? 0;
+      view.league?.seats.find((seat) => seat.isViewer)?.earned ?? 0;
 
     expect(take(oscars)).toBeGreaterThan(0);
     expect(take(globes)).toBeGreaterThan(0);

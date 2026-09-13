@@ -53,37 +53,40 @@ const meta = {
 export default meta;
 
 export const Ranked: StoryObj<typeof meta> = {
-  args: { leagues: [{ id: 1, name: 'The Main League', total: 40, seats }] },
+  args: { league: { id: 1, name: 'The Main League', total: 40, seats } },
 };
 
 /** Before a single category has resolved: everyone nominated, nobody won. */
 export const NothingResolvedYet: StoryObj<typeof meta> = {
   args: {
-    leagues: [
-      {
-        id: 1,
-        name: 'The Main League',
-        total: 20,
-        seats: seats.map((seat) => ({
-          ...seat,
-          earned: seat.films.length * 10,
-          films: seat.films.map((film) => ({
-            ...film,
-            earned: 10,
-            status: 'nominated' as const,
-          })),
+    league: {
+      id: 1,
+      name: 'The Main League',
+      total: 20,
+      seats: seats.map((seat) => ({
+        ...seat,
+        earned: seat.films.length * 10,
+        films: seat.films.map((film) => ({
+          ...film,
+          earned: 10,
+          status: 'nominated' as const,
         })),
-      },
-    ],
+      })),
+    },
   },
 };
 
-/** Two leagues, which is what a member playing more than one sees. */
-export const TwoLeagues: StoryObj<typeof meta> = {
+/**
+ * A league nobody in the room holds a seat in — what a stranger handed
+ * `?league=<id>` sees. No seat is marked, which is the P14.T2 privacy line.
+ */
+export const NobodysSeat: StoryObj<typeof meta> = {
   args: {
-    leagues: [
-      { id: 1, name: 'The Main League', total: 40, seats },
-      { id: 2, name: 'Work League', total: 10, seats: seats.slice(1) },
-    ],
+    league: {
+      id: 2,
+      name: 'Work League',
+      total: 40,
+      seats: seats.map((seat) => ({ ...seat, isViewer: false })),
+    },
   },
 };

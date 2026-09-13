@@ -174,6 +174,30 @@ async function seedShow({ onAir = true } = {}): Promise<{
   });
 }
 
+/**
+ * A second scratch league the same member sits in, so the page has a choice to
+ * offer. Just a seat: the picker is built from the reader's league list, not
+ * from what any of them scored.
+ */
+async function seedSecondLeague(userId: number): Promise<number> {
+  return withDb(async (query) => {
+    const leagues = (await query(
+      `insert into leagues (name, owner, uuid, drafting_status, created_at, updated_at)
+         values ($1, $2, gen_random_uuid(), 'active', now(), now()) returning id`,
+      [`${TAG} other league`, JSON.stringify([userId])],
+    )) as { id: number }[];
+    const id = leagues[0]?.id;
+    if (!id) throw new Error('could not create the second scratch league');
+    await query(
+      `insert into drafts (league_id, year, user_id, "group", "order", dummy, dummy_name,
+                           created_at, updated_at)
+         values ($1, $2, $3, 1, 1, false, null, now(), now())`,
+      [id, YEAR, userId],
+    );
+    return id;
+  });
+}
+
 /** A throwaway member. No admin role: this page only reads. */
 async function signInAsMember(page: Page): Promise<number> {
   return signInAs(page, {
@@ -393,11 +417,93 @@ test.describe('live show', () => {
     // match, so it also caught the live countdown — "29d 21:53:39" contains
     // 21 — and this test failed for the minutes of every hour whose digits
     // happened to line up. It had nothing to do with the roster it is about.
-    await expect(page.getByText('21', { exact: true })).toHaveCount(3);
+    // Five, not three, since P14.T2: the league's take tonight and the seat's
+    // and the film's, plus the standings column's season total for this seat
+    // and the same number on the standings heading. All five are 21 because
+    // this scratch season has exactly one show in it.
+    await expect(page.getByText('21', { exact: true })).toHaveCount(5);
     // Two seals now: the nominee's, in the category above (P14.T1), and this
     // one on the seat's own copy of the same film. Counted rather than
     // `toBeVisible`, which trips strict mode on the pair.
     await expect(page.getByRole('img', { name: 'Winner' })).toHaveCount(2);
+
+    // P14.T2: with no `?league=` a signed-in reader gets their own league's
+    // standings, and their row is marked.
+    await expect(page.getByRole('rowheader', { name: /Member/ })).toBeVisible();
+    await expect(page.getByText('You', { exact: true })).toBeVisible();
+  });
+
+  test('a signed-out reader pinned to a league sees what the league page shows, and no more', async ({
+    page,
+  }) => {
+    // 🔴 P14.T2's privacy claim, proved against the other page rather than
+    // asserted in a comment. `/leagues/<id>` is already public (D44/D45), so
+    // `?league=` grants nothing — but "grants nothing" is a statement about two
+    // rendered pages, and this compares them.
+    const { abbreviation, leagueId } = await seedShowWithLeague(page);
+    // The same league, seeded and populated, read with no session at all.
+    await page.context().clearCookies();
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}&league=${leagueId}`);
+
+    // Not vacuous: the pinned standings really did render, with both seats.
+    const live = await page.getByRole('rowheader').allInnerTexts();
+    expect(live.length).toBe(2);
+    await expect(page.getByRole('rowheader', { name: /Member/ })).toBeVisible();
+    await expect(page.getByRole('rowheader', { name: /Placeholder/ })).toBeVisible();
+
+    // 🔴 And nothing on it claims a seat for a reader who holds none. A dummy
+    // seat's `userId` is null, so an `isViewer` written without the session
+    // check marks every placeholder as the reader's own — on a page anybody can
+    // open, pointed at sixty real people's league.
+    await expect(page.getByText('Your seat', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('You', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Your seats' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Rosters' })).toBeVisible();
+    // The picker is the reader's own leagues, and a stranger has none.
+    await expect(page.getByRole('navigation', { name: 'Your leagues' })).toHaveCount(0);
+
+    // Every name the live page printed is a name the league page prints to the
+    // same signed-out reader — the same component, from the same board.
+    await page.goto(`/leagues/${leagueId}?year=${YEAR}`);
+    const onLeaguePage = await page.getByRole('rowheader').allInnerTexts();
+    for (const name of live) expect(onLeaguePage).toContain(name);
+  });
+
+  test('a member in two leagues is given the choice, and the URL keeps it', async ({
+    page,
+  }) => {
+    // P14.T2: "otherwise the reader's own; a picker when they have several".
+    // Without the second league the picker cannot render, so this seeds one.
+    const { abbreviation, leagueId } = await seedShowWithLeague(page);
+    const userId = await withDb(async (query) => {
+      const rows = (await query(
+        `select user_id from drafts where league_id = $1 and user_id is not null limit 1`,
+        [leagueId],
+      )) as { user_id: number }[];
+      return rows[0]?.user_id as number;
+    });
+    const otherId = await seedSecondLeague(userId);
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+
+    const picker = page.getByRole('navigation', { name: 'Your leagues' });
+    await expect(picker.getByRole('link')).toHaveCount(2);
+    // The one being shown is marked as the current page, and it is the default
+    // — the first of the reader's leagues, not whichever rendered last.
+    await expect(picker.getByRole('link', { name: `${TAG} league` })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+
+    // And following the other link pins it: a different league, still the
+    // reader's own, and the season is carried through rather than reset.
+    await picker.getByRole('link', { name: `${TAG} other league` }).click();
+    await expect(page).toHaveURL(new RegExp(`league=${otherId}`));
+    await expect(page).toHaveURL(new RegExp(`year=${YEAR}`));
+    await expect(page.getByRole('heading', { name: `${TAG} other league` })).toHaveCount(
+      2,
+    );
   });
 
   test('a seat with nothing nominated here says so', async ({ page }) => {
@@ -428,6 +534,8 @@ test.describe('live show', () => {
     await expect(page.getByText(`${TAG} Placeholder`)).toHaveCount(0);
     await expect(page.getByText('Your seat', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Your seats' })).toHaveCount(0);
+    // And no standings at all: an unpinned stranger is not shown a league.
+    await expect(page.getByRole('rowheader')).toHaveCount(0);
     // `exact` for the same reason as the roster test above: the countdown's
     // digits are not this test's subject, and a substring match made them so.
     await expect(page.getByText('21', { exact: true })).toHaveCount(0);
