@@ -271,15 +271,17 @@ export function SeasonStepper({
                 className="bg-bg-surface flex w-40 shrink-0 flex-col gap-2 rounded-sm p-3"
               >
                 <StatusChip
-                  // 🔴 P17.T20 (a later tranche) spends the `beam` token here
-                  // and on the live surface. Carmine until then — do not
-                  // "tidy" this to neutral in the meantime, or T20 will have
-                  // nothing to change and the token will stay unspent.
-                  tone={isNext ? 'carmine' : 'neutral'}
-                  // The card is already `raised`, so a neutral chip steps down
-                  // rather than up; `self-start` keeps it a badge rather than a
-                  // stretched banner in the flex column.
-                  className={cn('self-start', !isNext && 'bg-bg-panel')}
+                  // 🔴 Beam, not carmine (P17.T20): the next show is scheduled
+                  // and not yet, and nothing about it can be missed — carmine
+                  // is urgency (D69). Every next chip, dated or `date TBA`:
+                  // they are one state, and splitting it by whether the date is
+                  // known would make "next" two colours on one rail.
+                  tone={isNext ? 'beam' : 'neutral'}
+                  // The card is already `surface`, so every chip steps down to
+                  // `panel` rather than vanishing into it — beam on panel is a
+                  // row in `theme/contrast.test.ts`. `self-start` keeps it a
+                  // badge rather than a stretched banner in the flex column.
+                  className="bg-bg-panel self-start"
                 >
                   {phase.complete
                     ? 'Complete'

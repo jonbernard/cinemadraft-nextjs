@@ -67,6 +67,9 @@ describe.each(['dark', 'light'] as const)('%s palette meets WCAG AA', (scheme) =
     ['brass text on panel', p.brass.text, p.bg.panel, TEXT],
     ['brass text on surface', p.brass.text, p.bg.surface, TEXT],
     ['beam on ground', p.beam, p.bg.ground, TEXT],
+    // 🔴 The season rail's next chip steps down to `panel` inside a `surface`
+    // box, like its neutral siblings (P17.T20). This is that pair.
+    ['beam on panel', p.beam, p.bg.panel, TEXT],
     ['beam on surface', p.beam, p.bg.surface, TEXT],
     // A hairline divider is not UI a user must perceive to operate the app,
     // so it is held to visibility rather than to the 3:1 non-text threshold.

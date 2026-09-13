@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { palettes } from '../theme/tokens';
 import { skipWithoutRestoredCorpus } from './support/corpus';
 import { signInAs } from './support/session';
 
@@ -335,6 +336,81 @@ test.describe('dashboard', () => {
     expect(
       await page.evaluate(() => document.scrollingElement?.scrollWidth ?? 0),
     ).toBeLessThanOrEqual(390);
+  });
+
+  /**
+   * `beam` is spent on the season rail's next chip (P17.T20), and "spent" means
+   * the colour a reader sees, not a class somebody wrote: the tone's class name
+   * was never the defect — the token had zero rendered consumers.
+   *
+   * 🔴 Its own scratch show, so the rail exists on CI's empty calendar and the
+   * test controls which state "next" is in. Undated first (`Next · date TBA`),
+   * then dated (`Next`): both are beam, and a TBA-only spend fails the second.
+   * Both schemes, because light and dark are different hexes and a chip that
+   * read the dark token everywhere would pass one of them. Deleted in the
+   * test's own `finally`, for the same reason as the scratch season above.
+   */
+  test('the next show on the rail is beam ink on panel, in both schemes', async ({
+    page,
+  }) => {
+    const show = 'e2e-p17-beam';
+    await withDb((query) =>
+      query(
+        `insert into events (name, abbreviation, created_at, updated_at)
+           values ($1, $1, now(), now())`,
+        [show],
+      ),
+    );
+    const rgb = (hex: string) =>
+      `rgb(${[1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
+
+    try {
+      for (const [label, awardsDate] of [
+        ['Next · date TBA', null],
+        ['Next', Date.now() + 10 * 86_400_000],
+      ] as const) {
+        await withDb((query) =>
+          query('update events set awards_date = $2 where abbreviation = $1', [
+            show,
+            awardsDate,
+          ]),
+        );
+
+        for (const scheme of ['dark', 'light'] as const) {
+          // Storage before load, not the attribute after it: see visual.spec.ts
+          // for the race the other order loses one time in sixteen.
+          await page.addInitScript((mode) => {
+            try {
+              window.localStorage.setItem('mui-mode', mode);
+            } catch {}
+          }, scheme);
+          await page.emulateMedia({ colorScheme: scheme });
+          await page.goto('/');
+          await expect(page.locator('html')).toHaveAttribute(
+            'data-mui-color-scheme',
+            scheme,
+          );
+
+          const chip = page
+            .locator('li[aria-current="step"]')
+            .getByText(label, { exact: true });
+          const painted = await chip.evaluate((el) => {
+            const style = getComputedStyle(el);
+            return { color: style.color, background: style.backgroundColor };
+          });
+
+          expect(painted, `${label}, ${scheme}`).toEqual({
+            color: rgb(palettes[scheme].beam),
+            // The pair `theme/contrast.test.ts` proves: beam on panel.
+            background: rgb(palettes[scheme].bg.panel),
+          });
+        }
+      }
+    } finally {
+      await withDb((query) =>
+        query('delete from events where abbreviation = $1', [show]),
+      );
+    }
   });
 
   test.describe('signed in', () => {
