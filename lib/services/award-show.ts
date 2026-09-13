@@ -12,6 +12,14 @@ export type Nominee = {
   movieId: number;
   title: string;
   posterUrl: string | null;
+  /**
+   * The bare TMDB path, so a renderer that needs a different bucket can build
+   * its own URL. `lib/utils/poster.ts` says outright that the host and the size
+   * belong to the renderer rather than to the row, and the `posterUrl` above is
+   * this page's own choice of `w185`. `/live/[abbr]` is read from across a room
+   * and picks `w342`; without this it would have to string-edit a URL.
+   */
+  posterPath: string | null;
   /** The person, for categories that nominate one. */
   detailName: string | null;
   detailCharacter: string | null;
@@ -93,6 +101,7 @@ function toNominee(
     movieId: nomination.movieId,
     title: movie?.title ?? 'Untitled',
     posterUrl: posterUrl(movie?.poster ?? null, 'w185'),
+    posterPath: movie?.poster ?? null,
     detailName: nomination.detailName,
     detailCharacter: nomination.detailCharacter,
     isWinner: winningMovieIds.has(nomination.movieId),

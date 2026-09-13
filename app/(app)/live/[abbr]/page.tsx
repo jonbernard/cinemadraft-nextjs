@@ -1,12 +1,15 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { EmptyState } from '@/components/EmptyState';
+import { LiveAward } from '@/components/LiveAward';
 import { LiveBoard } from '@/components/LiveBoard';
 import { LiveCountdown } from '@/components/LiveCountdown';
 import { Panel } from '@/components/Panel';
 import { SectionHead } from '@/components/SectionHead';
 import { ShowLogo } from '@/components/ShowLogo';
+import { StandingsPanel } from '@/components/StandingsPanel';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
@@ -71,15 +74,28 @@ export async function generateMetadata({
  * 🔴 **No transport (D23 stays deferred).** This does not close P14.T0–T3: the
  * page renders the state at request time and a reload is what advances it.
  */
+/**
+ * `?league=<id>`, or null.
+ *
+ * 🔴 Validated here rather than trusted: a stranger can put anything in a
+ * query string, and `Number('')` is 0 while `Number('7x')` is NaN. Both must
+ * come out as "no pin" rather than as a league id the service then asks the
+ * database about.
+ */
+function pinnedLeague(value: string | string[] | undefined): number | null {
+  const id = Number(value);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
 export default async function LivePage({
   params,
   searchParams,
 }: {
   params: Promise<{ abbr: string }>;
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<{ year?: string; league?: string }>;
 }) {
   const { abbr } = await params;
-  const { year } = await searchParams;
+  const { year, league } = await searchParams;
   const requested = await season(year);
 
   // 🔴 `getCurrentUser()`, not Clerk's `auth()`, which throws when
@@ -89,14 +105,18 @@ export default async function LivePage({
 
   let show: Awaited<ReturnType<typeof getLiveShow>>;
   try {
-    show = await getLiveShow(abbr, requested, user?.id ?? null);
+    show = await getLiveShow(abbr, requested, user?.id ?? null, pinnedLeague(league));
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
     throw error;
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-10">
+    // 🔴 No `max-w-*`, and that is the P14 change: this page goes on a
+    // television. `max-w-5xl` centred 1024px of content inside the 1664px the
+    // shell leaves at 1920, so the poster rows T1 adds would have scrolled at
+    // the one width the page exists for. The shell's own `p-6` is the gutter.
+    <div className="flex flex-col gap-10">
       <header className="flex flex-col gap-3">
         {/* 🔴 `Panel`, not `CinemaFrame`, and the plan asked for this to be
             measured rather than assumed. `CinemaFrame` is `aspect-ratio:
@@ -136,77 +156,135 @@ export default async function LivePage({
         </div>
       </header>
 
-      <section className="flex flex-col gap-4">
-        <SectionHead as="h2" right={`${show.resolved} of ${show.total}`} className="pb-0">
-          Categories
-        </SectionHead>
+      {/* 🔴 The standings come FIRST in the DOM and sit second on the screen.
+          Below `lg` they stack above the awards, because on a phone during a
+          ceremony the standings are what you came for; at `lg` and up the grid
+          puts them in column two and the awards in column one. Explicit
+          `col-start`/`row-start` rather than `flex-row-reverse`, so the two
+          orders are stated rather than emergent — and the DOM order is the one
+          a screen reader and the tab key follow at every width, which is the
+          reading order a member wants. */}
+      <div className="flex flex-col gap-10 lg:grid lg:grid-cols-[1fr_20rem] lg:items-start">
+        <section className="flex flex-col gap-4 lg:col-start-2 lg:row-start-1 lg:sticky lg:top-6">
+          {show.league ? (
+            <>
+              <SectionHead
+                as="h2"
+                name
+                eyebrow="Standings"
+                right={String(show.league.total)}
+                className="pb-0"
+              >
+                {show.league.name ?? 'Your league'}
+              </SectionHead>
+              {/* 🔴 The right-hand number is what this league has taken at
+                  THIS show — `LiveLeague.total`, the sum of the seats below —
+                  while the table's column is the season. Two different
+                  questions, and the eyebrow says which table this is. */}
+              <StandingsPanel rows={show.league.standings} />
 
-        {show.total === 0 ? (
-          <EmptyState title="No categories yet">
-            Nothing has been entered for this show and season.
-          </EmptyState>
-        ) : (
-          <ol className="flex flex-col gap-3">
-            {show.categories.map((category) => (
-              <li key={category.awardId} className="flex flex-col gap-2">
-                <SectionHead as="h3" right={`${category.points} pts`} className="pb-0">
-                  {category.name}
-                </SectionHead>
-                {category.winner ? (
-                  // Brass here IS an award, which is its existing meaning —
-                  // the same usage as `PointsLedger.tsx:111`.
-                  <StatusChip tone="brass" className="w-fit">
-                    {category.winner.title}
-                  </StatusChip>
-                ) : (
-                  <StatusChip className="w-fit">
-                    {category.nomineeCount}{' '}
-                    {category.nomineeCount === 1 ? 'nominee' : 'nominees'}
-                  </StatusChip>
-                )}
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
-
-      {/* 🔴 Two empty states, not one, because the page is public (P17.T16,
-          amending D40). A signed-out reader must never be offered "Find a
-          league": `/leagues` is protected, so that link is a login page
-          wearing a league's name. They get the same invitation `/` gives a
-          stranger, in the same words, for the same reason (D44).
-
-          🔴 `show.leagues` is `[]` for a signed-out reader **by construction**
-          — the service does not query leagues when `userId` is null — so the
-          first branch can never render for a stranger even if the `user ==
-          null` check were removed. Two locks, the same shape as `/`'s. */}
-      {show.leagues.length > 0 ? (
-        // 🔴 The `h2` is not decoration. Measured in a production build, the
-        // outline without it ran h1 → h2 Categories → h3 ×6 → h3 league, so the
-        // league read as a seventh category to anything following the heading
-        // structure. It also gives the board the label it otherwise lacked:
-        // `LiveBoard` opens on a league's name, which does not say what it is.
-        <section className="flex flex-col gap-4">
-          <SectionHead as="h2">Your seats</SectionHead>
-          <LiveBoard leagues={show.leagues} />
+              {/* A reader with more than one league. Never rendered for a
+                  signed-out reader: `leagueOptions` is empty without a
+                  session, so a pinned league is one league and not a door to
+                  anybody else's. */}
+              {show.leagueOptions.length > 1 ? (
+                <nav aria-label="Your leagues" className="flex flex-wrap gap-3 text-sm">
+                  {show.leagueOptions.map((option) => (
+                    <Link
+                      key={option.id}
+                      href={`/live/${abbr}?year=${requested}&league=${option.id}`}
+                      aria-current={option.id === show.league?.id ? 'page' : undefined}
+                      className={
+                        option.id === show.league?.id
+                          ? 'text-accent-text'
+                          : 'text-text-secondary underline'
+                      }
+                    >
+                      {option.name ?? `League ${option.id}`}
+                    </Link>
+                  ))}
+                </nav>
+              ) : null}
+            </>
+          ) : user == null ? (
+            /* 🔴 Two empty states, not one, because the page is public
+               (P17.T16, amending D40). A signed-out reader must never be
+               offered "Find a league": `/leagues` is protected, so that link is
+               a login page wearing a league's name. They get the same
+               invitation `/` gives a stranger, in the same words, for the same
+               reason (D44). */
+            <EmptyState
+              title="Play the season"
+              action={{ label: 'Register', href: '/auth/register' }}
+            >
+              Draft a team of films before awards season and score points as they pick up
+              nominations and wins. Played before? Register with the same email and your
+              leagues, drafts and points come with you.
+            </EmptyState>
+          ) : (
+            <EmptyState
+              title="No league yet"
+              action={{ label: 'Find a league', href: '/leagues' }}
+            >
+              Join a league to draft a team and watch it score as this show resolves.
+            </EmptyState>
+          )}
         </section>
-      ) : user == null ? (
-        <EmptyState
-          title="Play the season"
-          action={{ label: 'Register', href: '/auth/register' }}
-        >
-          Draft a team of films before awards season and score points as they pick up
-          nominations and wins. Played before? Register with the same email and your
-          leagues, drafts and points come with you.
-        </EmptyState>
-      ) : (
-        <EmptyState
-          title="No league yet"
-          action={{ label: 'Find a league', href: '/leagues' }}
-        >
-          Join a league to draft a team and watch it score as this show resolves.
-        </EmptyState>
-      )}
+
+        <section className="flex min-w-0 flex-col gap-4 lg:col-start-1 lg:row-start-1">
+          <SectionHead
+            as="h2"
+            right={`${show.resolved} of ${show.total}`}
+            className="pb-0"
+          >
+            Categories
+          </SectionHead>
+
+          {show.total === 0 ? (
+            <EmptyState title="No categories yet">
+              Nothing has been entered for this show and season.
+            </EmptyState>
+          ) : (
+            <ol className="flex flex-col gap-6">
+              {show.categories.map((category) => (
+                <li key={category.awardId}>
+                  {/* 🔴 The chips this replaces are gone on purpose, not
+                    overlooked. A brass chip naming the winner and a neutral one
+                    counting the nominees were the whole category: the posters
+                    now say both — which film took it, from the seal, and how
+                    many are up, by being there. Keeping the chips would be two
+                    marks for one fact, which is the rule `NomineeGrid` records
+                    and the defect the source app shipped. */}
+                  <LiveAward
+                    name={category.name}
+                    points={category.points}
+                    nominees={category.nominees}
+                  />
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+      </div>
+
+      {/* 🔴 The `h2` is not decoration. Measured in a production build, the
+          outline without it ran h1 → h2 Categories → h3 ×6 → h3 league, so the
+          league read as a seventh category to anything following the heading
+          structure. It also gives the board the label it otherwise lacked:
+          `LiveBoard` opens on a league's name, which does not say what it is.
+
+          🔴 "Your seats" only when one of them IS the reader's. A pinned league
+          is readable by whoever opens the link, so a stranger and a member of
+          another league both land here — and telling them these are their seats
+          would be the page asserting something about their identity. */}
+      {show.league ? (
+        <section className="flex flex-col gap-4">
+          <SectionHead as="h2">
+            {show.league.seats.some((seat) => seat.isViewer) ? 'Your seats' : 'Rosters'}
+          </SectionHead>
+          <LiveBoard league={show.league} />
+        </section>
+      ) : null}
     </div>
   );
 }

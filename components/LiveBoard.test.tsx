@@ -71,7 +71,7 @@ const league = {
 
 describe('LiveBoard', () => {
   it('renders the seats in the order the service ranked them', () => {
-    render(<LiveBoard leagues={[league]} />);
+    render(<LiveBoard league={league} />);
     const seats = screen.getAllByRole('heading', { level: 4 });
     expect(seats.map((seat) => seat.textContent)).toEqual(['Zoe', 'Ada', 'Bo']);
   });
@@ -81,14 +81,14 @@ describe('LiveBoard', () => {
     // what it took tonight is the thing nobody can otherwise see. Each of these
     // is one element: 19 the league's take, 14 and 5 the seats', 10/4/3/2 the
     // films'.
-    render(<LiveBoard leagues={[league]} />);
+    render(<LiveBoard league={league} />);
     for (const value of ['19', '14', '5', '10', '4', '3', '2']) {
       expect(screen.getByText(value)).toBeInTheDocument();
     }
   });
 
   it('marks the reader’s own seat, and only that one', () => {
-    render(<LiveBoard leagues={[league]} />);
+    render(<LiveBoard league={league} />);
     // Not by colour alone (§6.4): the word is in the markup.
     expect(screen.getAllByText(/your seat/i)).toHaveLength(1);
   });
@@ -96,7 +96,7 @@ describe('LiveBoard', () => {
   it('says so when a seat holds nothing in play here', () => {
     // A real and common state — twelve shows, and most seats are not in most of
     // them. An empty strip with no words reads as a failed load.
-    render(<LiveBoard leagues={[league]} />);
+    render(<LiveBoard league={league} />);
     expect(screen.getByText(/nothing in play/i)).toBeInTheDocument();
   });
 
@@ -104,7 +104,7 @@ describe('LiveBoard', () => {
     // `status` is what T15 wired into PosterFrame, and passing it through is
     // the only reason a win is visible on this page at all. Exactly one of the
     // four films won.
-    render(<LiveBoard leagues={[league]} />);
+    render(<LiveBoard league={league} />);
     expect(screen.getAllByRole('img', { name: 'Winner' })).toHaveLength(1);
   });
 });
