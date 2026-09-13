@@ -207,37 +207,67 @@ export default async function HowItWorksPage() {
             <p className="text-accent-text font-mono text-2xl">{cost ?? '—'}</p>
             <p className="text-text-secondary text-sm leading-relaxed">
               A Razzie nomination takes points off you.{' '}
-              {negative ? `${negative.level}.` : null}
+              {/* 🔴 One clause, not a section. The inversion is the game's
+                  funniest rule and it is genuinely minor arithmetic — the
+                  owner's call, and the numbers agree: the worst pick of the
+                  season cost less than a third of what its best one earned.
+                  An earlier build gave it a full second ledger, which weighted
+                  a footnote like a headline. */}
+              {example?.worst
+                ? `The worst pick of ${
+                    example.isActiveSeason ? 'the season' : example.year
+                  } cost its team ${Math.abs(example.worst.total)}.`
+                : negative
+                  ? `${negative.level}.`
+                  : null}
             </p>
           </div>
         </div>
       </section>
 
-      {/* The cost. 🔴 A full ledger, not a headline number: the owner asked
-          for the film examples back, and the casualty is the funnier of the
-          two — the same table shape as the winner above, which is the point.
-          Reading them one after another is what makes the inversion land. */}
-      {example?.worst ? (
-        <section className={`${BAND} bg-bg-surface flex flex-col gap-6 py-12`}>
-          <SectionHead
-            as="h2"
-            right={
-              <span className="text-accent-text font-mono text-sm">
-                {example.worst.total}
+      {/* The flow, as four steps. 🔴 Numbered, which the house style otherwise
+          refuses: a numbered list earns its numbers only when the sequence
+          itself is the information, and here it is — you cannot draft before
+          you invite, and points cannot arrive before you draft. The figures
+          are the counted ones from the hero's own source, not new claims. */}
+      <section data-testid="how-to-play" className={`${BAND} flex flex-col gap-8 py-12`}>
+        <SectionHead as="h2">Four steps to a season</SectionHead>
+        <ol className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          {[
+            {
+              title: 'Start a league',
+              body: 'One person sets it up and runs it. Private, invite-only, one season at a time.',
+            },
+            {
+              title: 'Invite your friends',
+              body: 'Send them a link. Anyone who has played before keeps their history by registering with the same email.',
+            },
+            {
+              title: 'Draft your teams',
+              body: 'Take turns picking films before the nominations land. Once a film is taken, it is taken.',
+            },
+            {
+              title: 'Let the points roll in',
+              body: facts
+                ? `Every nomination your films collect pays out across ${facts.shows} award shows, all season.`
+                : 'Every nomination your films collect pays out, all season.',
+            },
+          ].map((step, index) => (
+            <li key={step.title} className="flex flex-col gap-2">
+              <span
+                aria-hidden="true"
+                className="text-text-dim font-mono text-sm tabular"
+              >
+                {index + 1}
               </span>
-            }
-          >
-            And somebody drafted this
-          </SectionHead>
-          <WorkedExample
-            title={example.worst.title}
-            posterUrl={example.worst.posterUrl}
-            total={example.worst.total}
-            lines={example.worst.lines}
-            limit={4}
-          />
-        </section>
-      ) : null}
+              <h3 className="text-text-primary font-sans text-base font-semibold">
+                {step.title}
+              </h3>
+              <p className="text-text-secondary text-sm leading-relaxed">{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       {/* The shows and their values, in one pass. 🔴 These were two sections
           — a wall of twelve marks, then the same four groups again as figures.

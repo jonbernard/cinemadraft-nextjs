@@ -167,7 +167,7 @@ describe('HowItWorksPage', () => {
       .map((heading) => heading.textContent);
     expect(headings).toEqual([
       'How the scoring works',
-      'And somebody drafted this',
+      'Four steps to a season',
       'Twelve shows, and what each pays',
       'Draft this season.',
     ]);
@@ -198,14 +198,19 @@ describe('HowItWorksPage', () => {
     expect(lede).toHaveTextContent(/Razzie takes points back/);
   });
 
-  it('renders both ledgers from the service, and nothing it worked out itself', async () => {
+  it('renders the ledger from the service, and nothing it worked out itself', async () => {
     withData();
 
     render(await HowItWorksPage());
 
-    // The winner in the hero, the casualty below it — both from the service.
+    // One ledger, in the hero. The casualty is a clause in the scoring rules
+    // rather than a second table: the inversion is minor arithmetic, and a
+    // full ledger weighted a footnote like a headline.
     const totals = screen.getAllByTestId('worked-example-total');
-    expect(totals.map((cell) => cell.textContent)).toEqual(['620', '-185']);
+    expect(totals.map((cell) => cell.textContent)).toEqual(['620']);
+    expect(screen.getByTestId('scoring-rules')).toHaveTextContent(
+      /worst pick .* cost its team 185/i,
+    );
   });
 
   it('states the season length from the calendar, not from a typed claim', async () => {
@@ -268,7 +273,7 @@ describe('HowItWorksPage', () => {
     // rulebook are absent rather than rendering empty shells.
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
-    ).toEqual(['How the scoring works', 'Draft this season.']);
+    ).toEqual(['How the scoring works', 'Four steps to a season', 'Draft this season.']);
     expect(screen.queryAllByTestId('worked-example-total')).toHaveLength(0);
     // The rules still read, with em dashes where the figures would be, rather
     // than "undefined" or a typed fallback number.
@@ -315,5 +320,35 @@ describe('HowItWorksPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       /Draft a team of films/,
     );
+  });
+
+  it('shows the four steps in order, because the order is the information', async () => {
+    withData();
+
+    render(await HowItWorksPage());
+
+    const steps = within(screen.getByTestId('how-to-play')).getAllByRole('listitem');
+    expect(steps.map((step) => step.querySelector('h3')?.textContent)).toEqual([
+      'Start a league',
+      'Invite your friends',
+      'Draft your teams',
+      'Let the points roll in',
+    ]);
+  });
+
+  it('keeps the four steps when there is no data to count', async () => {
+    // The flow is the one part of the page that needs no season at all: it
+    // describes what a reader would do, not what anybody has done.
+    findAll.mockResolvedValue([]);
+    getWorkedExample.mockResolvedValue(null);
+    getShowGroups.mockResolvedValue([]);
+    getSeasonPhases.mockResolvedValue([]);
+    getLandingFacts.mockResolvedValue(null);
+
+    render(await HowItWorksPage());
+
+    expect(
+      within(screen.getByTestId('how-to-play')).getAllByRole('listitem'),
+    ).toHaveLength(4);
   });
 });

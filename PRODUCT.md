@@ -31,9 +31,13 @@ between.
 
 The scoring rule is the product. Twelve real award shows, tiered categories,
 a nomination worth its category's points and a win worth those points twice
-(because a winner was necessarily nominated) — and **Razzie nominations score
-negative**, so a bad pick actively costs you. That last inversion is the thing
-a neighbouring product does not have and the reason the game is funny.
+(because a winner was necessarily nominated). **Razzie nominations score
+negative**, which is the rule people quote — but 🔴 **it is minor arithmetic,
+not the hook** (owner, 2026-09-12, correcting an earlier reading of this file):
+across a season the worst pick costs a fraction of what the best one earns, and
+a surface that gives the inversion its own section weights a footnote like a
+headline. What a neighbouring product does not have is the twelve-show scoring
+rule itself.
 
 Nothing about it is a marketplace or a public competition: leagues are private
 and invite-only, and there is no global directory of members (D100).
@@ -86,8 +90,8 @@ the page.
 
 1. Every number is computed, never typed. The page that explains the scoring is
    the worst possible place to drift from it.
-2. The Razzie inversion is the hook. It is the most fun fact about the game and
-   it should not be the eighth paragraph.
+2. The Razzie inversion is a good line, not the argument. Worth a clause
+   wherever the scoring is explained; never worth a section of its own.
 3. A league is private. Nothing here recruits strangers into a public
    competition; the audience is somebody a member already invited.
 4. The season has a shape, and a reader deciding whether to play needs to know
