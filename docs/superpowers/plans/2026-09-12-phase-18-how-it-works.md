@@ -43,12 +43,28 @@ already taken: `docs/PROGRESS.md` § Phase 18 — P18.T0, decided 2026-09-12.
   (D69–D77):** no `LetterboxRule`, no `font-display`, no Archivo `wdth` axis,
   no all-caps heading outside `Eyebrow`, no four-sided hairline card border, no
   squared or pill button.
-- **Old token vocabulary only.** Write `bg-bg-base` / `bg-bg-surface` /
-  `bg-bg-raised`, never `ground` / `panel` / `surface`. P17 tranche 4 renames
-  them app-wide with a guard grep; a file that pre-empts the rename is a file
-  the guard cannot catch. Same for type: **body 14px / small 12px** as the app
-  sets them today, not T18's 15/13. This page will be swept with everything
-  else. **Never mix the two vocabularies in one file.**
+- 🔴 **This constraint has INVERTED since the plan was written — Phase 17 is
+  complete.** It used to say "old token vocabulary only, never ground / panel /
+  surface". That is now exactly backwards:
+  - **`bg-bg-ground` / `bg-bg-panel` / `bg-bg-surface`** are the live names
+    (P17.T22, D90). `bg-bg-base` and `bg-bg-raised` are **retired** and
+    `scripts/layering.sh`'s `no retired surface token names` check **fails the
+    build** on either. `Panel`'s `tone` prop is `'panel' | 'surface'` — there
+    is no `'raised'`, so the T1 skeleton below is stale where it writes one.
+  - 🔴 **`surface` exists in both vocabularies and means different things**
+    (it used to be the middle tone, it is now the top one). The grep cannot
+    catch that. Read a neighbouring file rather than the plan.
+  - **Body type is 15px / 13px small** (P17.T18, D88), set through `@theme`, so
+    `text-sm` and `text-xs` already are those sizes — write the classes, not
+    literals. An arbitrary `text-[Npx]` fails `text sizes come from the scale`.
+  - **Spacing is on a 4px grid** and **6px is the default radius** (D92, D93),
+    both enforced by the same script.
+- 🔴 **No emoji at the start of a test title.** `no 🔴 in test titles` in
+  `scripts/layering.sh` fails the build; titles say what they guard in words.
+  Comments keep their 🔴.
+- 🔴 **T6 is unblocked.** The plan calls it blocked on P17.T35; that resolved —
+  brass means an award outcome only, and D99 records that spending it on a
+  public page is safe.
 - **No raw hex outside the token system.** `scripts/layering.sh` greps
   `components/`, `app/` and `.storybook/`.
 - **The repository layer is the only code allowed to touch Prisma**, and
@@ -341,7 +357,7 @@ export default async function HowItWorksPage() {
       <section id="points" className="flex flex-col gap-4">
         <SectionHead as="h2">How points work</SectionHead>
         {/* P18.T2 inserts the worked example here, ABOVE the table (P18.T0). */}
-        <Panel tone="raised" as="div" className="flex flex-col gap-4 p-5">
+        <Panel tone="surface" as="div" className="flex flex-col gap-4 p-5">
           {/* PASTE: the old file's scoring-table <Panel> children, unchanged.
               P18.T3 replaces this wholesale. */}
         </Panel>
@@ -446,7 +462,8 @@ renamed values.
 - [ ] **Step 13: Commit**
 
 ```bash
-git add -A
+# Explicit paths, never `git add -A` — other agents may have work in flight.
+git add app components lib e2e proxy.ts proxy.test.ts next.config.ts app/sitemap.ts docs/PARITY.md
 git commit -m "P18.T1: /how-it-works replaces /rules-and-scoring, content intact"
 ```
 
