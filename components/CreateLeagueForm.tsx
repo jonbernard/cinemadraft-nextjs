@@ -85,7 +85,7 @@ export function CreateLeagueForm({ className }: { className?: string }) {
           <label
             key={option.value}
             className={cn(
-              'bg-bg-surface flex min-h-11 cursor-pointer items-start gap-3 rounded-md p-3',
+              'bg-bg-surface flex min-h-11 cursor-pointer items-start gap-3 rounded-sm p-3',
               type === option.value && 'border-l-accent-fill bg-bg-raised border-l-2',
             )}
           >

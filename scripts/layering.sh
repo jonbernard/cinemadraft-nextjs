@@ -125,4 +125,23 @@ check "spacing sits on the 4px grid" \
      components app .storybook --include='*.tsx' --include='*.mdx' 2>/dev/null \
      || true)"
 
+# P17.T25. Radius comes from D73's scale, anchored at 6px.
+#
+# 🔴 Measured pre-sweep on this tree: `sm` (6px) ×116 against `md` (10px) ×94.
+# The plan's "md outnumbers sm 58 to 36" does NOT reproduce — the ratio has
+# flipped since, but the drift is the same one: Panel, the primitive every page
+# composes from, hardcoded `md`, so the documented anchor was not the real one.
+# `lg` (16px) has exactly one legitimate consumer, the full-width search
+# overlay, and is named here rather than left as an undiscussed dead token.
+#
+# `rounded-full` and `rounded-pill` are not radius: the first makes circles
+# (avatars, dots, toggles), the second is D73's chip treatment. Neither is
+# grepped. Neither is `poster-radius`, the proportional clamp.
+#
+# No {n,m} interval: see the `set +B` note at the top of this file.
+check "radius comes from the scale" \
+  "$(grep -rnE "rounded-(md|lg)\b|rounded-\[[0-9.]+(px|rem|%)\]" \
+     components app .storybook --include='*.tsx' --include='*.mdx' 2>/dev/null \
+     | grep -v -e '^components/SearchOverlay\.tsx:' -e '\.test\.tsx\?:' || true)"
+
 exit $fail

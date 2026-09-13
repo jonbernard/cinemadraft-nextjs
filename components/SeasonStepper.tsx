@@ -268,7 +268,7 @@ export function SeasonStepper({
                 // moves through, and assistive tech should land on the moment
                 // the league is actually waiting for.
                 aria-current={isNext ? 'step' : undefined}
-                className="bg-bg-raised flex w-40 shrink-0 flex-col gap-2 rounded-md p-3"
+                className="bg-bg-raised flex w-40 shrink-0 flex-col gap-2 rounded-sm p-3"
               >
                 <StatusChip
                   // 🔴 P17.T20 (a later tranche) spends the `beam` token here

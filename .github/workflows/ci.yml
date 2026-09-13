@@ -332,6 +332,31 @@ jobs:
           fi
           echo "spacing sits on the 4px grid"
 
+      - name: Radius comes from the scale
+        run: |
+          set -uo pipefail
+          # P17.T25. D73's scale, anchored at 6px. Measured pre-sweep: sm ×116
+          # against md ×94, because Panel — the primitive every page composes
+          # from — hardcoded `md`, so the documented anchor was not the real
+          # one. (The plan's "58 to 36" does not reproduce on this tree.)
+          #
+          # `lg` (16px) has exactly one legitimate consumer, the full-width
+          # search overlay, and is exempted by name rather than left as an
+          # undiscussed dead token.
+          #
+          # `rounded-full` and `rounded-pill` are not radius: the first makes
+          # circles (avatars, dots, toggles), the second is D73's chip
+          # treatment. Neither is `poster-radius`, the proportional clamp.
+          offenders=$(grep -rnE "rounded-(md|lg)\b|rounded-\[[0-9.]+(px|rem|%)\]" \
+            components app .storybook --include='*.tsx' --include='*.mdx' 2>/dev/null \
+            | grep -v -e '^components/SearchOverlay\.tsx:' -e '\.test\.tsx\?:' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::radius outside D73's scale; rounded-sm is the 6px default"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "radius comes from the scale"
+
   # package-lock.json must be generated on Linux.
   #
   # lightningcss (via Tailwind 4 and Vite) declares optional per-platform

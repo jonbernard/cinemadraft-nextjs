@@ -1285,7 +1285,7 @@ decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
 - [ ] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
 - [x] P17.T23 — **40px section step** (16px within a section, 8px within a group)
 - [x] P17.T24 — **enforce the 4px grid in `scripts/layering.sh`** (43 gaps off it today)
-- [ ] P17.T25 — **6px is the default radius; fix the drift** (upholds D73; `md` 58 vs `sm` 36, `lg` unused)
+- [x] P17.T25 — **6px is the default radius; fix the drift** (upholds D73; `md` 58 vs `sm` 36, `lg` unused)
 
 ### Signed-in surfaces
 
@@ -1847,6 +1847,52 @@ recorded here, so the change is a number rather than an impression._
   Browser: 48 checks green across `/`, `/browse`, `/award-shows`,
   `/films/313369`, `/leagues`, `/list` at 1440/1280/1024/390 in both schemes —
   no page overflow, no nav-rail overflow, tab destinations 51px.
+
+- **P17.T25 — 6px is the default radius, and `Panel` stops saying otherwise.**
+  🔴 **Upholds D73; does not amend it.** The scale stays 3/6/10/16/pill exactly
+  as locked. `components/Panel.tsx` hardcoded `rounded-md` and is the primitive
+  every page composes from, so one character fixed most of the drift; 13 other
+  card/panel sites followed.
+
+  🔴 **Two of the plan's premises about this task do not reproduce, and both
+  matter.**
+  1. *"`md` (10px) outnumbers `sm` (6px) 58 to 36."* Measured on this tree
+     pre-sweep: **`6px ×116` against `10px ×94`** — `sm` was already ahead. The
+     ratio has flipped since the review, but the drift is the same one and
+     `Panel` is still its source.
+  2. *"`--radius-lg` has no consumers"* / the baseline's `16px ×0`. That was a
+     **rendered** count across four routes. In source there is exactly one
+     consumer, `components/SearchOverlay.tsx:130`, a full-width modal that
+     renders zero times on those routes **because it is closed**. `lg` is
+     unused on the pages measured and used where it belongs.
+
+  **The call, flagged rather than silently resolved:** keep `lg` in the scale
+  and document `SearchOverlay` as its sole consumer, which is what
+  `app/globals.css` and `scripts/layering.sh` now both say. Dropping `lg` would
+  force a 768px modal to 10px or 6px, where it reads as an un-styled box, and
+  that would be a **D73 amendment needing a D-number**. 🔴 If the coordinator
+  prefers `lg` dropped, say so and it gets a number; it was not done here.
+
+  **Radii before → after, same harness and routes:**
+  - before: `poster-clamp ×216, 6px ×116, 10px ×94, 999px ×56`
+  - after: `poster-clamp ×216, 6px ×210, 999px ×56`
+
+  **`10px` goes to zero and 6px absorbs all of it** — 116 + 94 = 210 exactly.
+  `poster-clamp` and `pill` are untouched, which is the check that the sweep
+  did not reach past cards into circles or the proportional clamp.
+
+  **Guard: `check "radius comes from the scale"`**, in both files. Proven to
+  bite on all three spellings it must catch — `rounded-md`, `rounded-[7px]` and
+  `rounded-lg` outside `SearchOverlay`, each added to `components/Panel.tsx` in
+  turn, red every time and green again on restore. `rounded-full` and
+  `rounded-pill` are deliberately not grepped: the first makes circles
+  (avatars, the notification dot, the watched toggle), the second is D73's chip
+  treatment.
+
+  Browser at 1440px in both schemes: panels still read as floating surfaces
+  against the ground (D67/D72), the nav rail's corner still matches the panels
+  beside it, the award-show plates still look like plates, **and no border
+  appeared**.
 
 ---
 

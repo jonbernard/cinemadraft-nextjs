@@ -130,7 +130,7 @@ export function RelinkPanel() {
       </form>
 
       {user ? (
-        <div className="bg-bg-raised flex flex-col gap-4 rounded-md p-4">
+        <div className="bg-bg-raised flex flex-col gap-4 rounded-sm p-4">
           <p className="text-text-primary text-sm">
             <strong>{displayName(user)}</strong> is currently{' '}
             {user.clerkId ? (

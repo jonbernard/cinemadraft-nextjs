@@ -28,7 +28,7 @@ export const MarkOnly: StoryObj<typeof meta> = {
 export const InTheRail: StoryObj<typeof meta> = {
   args: { size: 'sm' },
   render: (args) => (
-    <div className="bg-bg-surface flex w-[208px] items-center rounded-md p-3">
+    <div className="bg-bg-surface flex w-[208px] items-center rounded-sm p-3">
       <Wordmark {...args} />
     </div>
   ),

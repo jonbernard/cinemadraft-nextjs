@@ -38,7 +38,7 @@ export function Panel({
       id={id}
       tabIndex={tabIndex}
       className={cn(
-        'rounded-md',
+        'rounded-sm',
         tone === 'raised' ? 'bg-bg-raised' : 'bg-bg-surface',
         className,
       )}

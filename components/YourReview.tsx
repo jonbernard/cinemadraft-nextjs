@@ -37,7 +37,7 @@ export function YourReview({
 
       {review ? <ReviewCard review={review} /> : null}
 
-      <details className="bg-bg-surface rounded-md">
+      <details className="bg-bg-surface rounded-sm">
         <summary className="focus-visible:outline-accent-fill text-text-primary flex min-h-11 cursor-pointer items-center px-4 text-sm focus-visible:outline-2">
           {review ? 'Edit your review' : 'Write a review'}
         </summary>

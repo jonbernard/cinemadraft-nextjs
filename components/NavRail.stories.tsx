@@ -60,7 +60,7 @@ export const InItsColumn: StoryObj<typeof meta> = {
     (Story) => (
       <div className="bg-bg-base flex h-[720px] gap-2 p-3">
         <Story />
-        <div className="bg-bg-surface rounded-md flex-1" />
+        <div className="bg-bg-surface rounded-sm flex-1" />
       </div>
     ),
   ],

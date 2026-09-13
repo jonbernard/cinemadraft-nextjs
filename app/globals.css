@@ -50,10 +50,21 @@
   --color-score-mid: #d6a64a;
   --color-score-low: #e06c74;
 
-  /* D73. Tailwind's `--radius-*` namespace, so these are `rounded-xs` …
-   * `rounded-pill` with no plugin. MUI's own default moves to 6px in
-   * theme/index.ts; the two are set from the same numbers by hand because
-   * MUI reads JS and Tailwind reads CSS, exactly as the colours do. */
+  /* D73, upheld by P17.T25. Tailwind's `--radius-*` namespace, so these are
+   * `rounded-xs` … `rounded-pill` with no plugin. MUI's own default is 6px in
+   * theme/index.ts; the two are set from the same numbers by hand because MUI
+   * reads JS and Tailwind reads CSS, exactly as the colours do.
+   *
+   * 🔴 `sm` (6px) is THE default — buttons, panels, cards, plates. `md` (10px)
+   * had drifted into being the default via Panel and is now unused; it stays
+   * in the scale because D73 locked the scale, not because anything wants it.
+   * `lg` (16px) has exactly one consumer, components/SearchOverlay.tsx: a
+   * full-width modal, where 6px reads as an unstyled box. scripts/layering.sh
+   * rejects `md`, `lg` and arbitrary radii everywhere else.
+   *
+   * `rounded-full` is not on this scale and is not drift — it makes circles
+   * (avatars, the notification dot, the watched toggle). Posters use the
+   * proportional `poster-radius` clamp below, not a token. */
   --radius-xs: 3px;
   --radius-sm: 6px;
   --radius-md: 10px;

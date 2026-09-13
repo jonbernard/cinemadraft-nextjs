@@ -142,7 +142,7 @@ export function NotificationBell({
         <div
           id={panelId}
           role="menu"
-          className="bg-bg-surface border-border-rule absolute top-full right-0 z-10 mt-2 w-80 rounded-md border p-3 shadow-lg"
+          className="bg-bg-surface border-border-rule absolute top-full right-0 z-10 mt-2 w-80 rounded-sm border p-3 shadow-lg"
         >
           <NotificationHeader
             unreadVisibleCount={unreadVisibleCount}

@@ -215,7 +215,7 @@ export function GroupCeremony({
               <li
                 key={entry.group}
                 className={cn(
-                  'border-border-rule bg-bg-surface rounded-md border p-4',
+                  'border-border-rule bg-bg-surface rounded-sm border p-4',
                   // The last group to land is the one being looked at.
                   !still && index === landed.length - 1 && 'animate-deal-in',
                 )}
