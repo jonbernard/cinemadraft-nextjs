@@ -69,6 +69,7 @@ describe('route protection', () => {
       '/how-it-works',
       '/how-it-works/opengraph-image',
       '/live/[abbr]',
+      '/api/live/[abbr]/stream',
       '/members/[uuid]',
       '/robots.txt',
       '/sitemap.xml',

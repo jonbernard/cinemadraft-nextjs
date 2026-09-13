@@ -15,7 +15,7 @@ import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import { NotFoundError } from '@/lib/errors';
 import { eventRepository } from '@/lib/repositories/events';
 import { canonical } from '@/lib/seo';
-import { getLiveShow } from '@/lib/services/live';
+import { getLiveShow, pinnedLeague } from '@/lib/services/live';
 import { getActiveYear } from '@/lib/services/season';
 
 /** `?year=` or the active season, resolved the way `/award-shows/[abbr]` does. */
@@ -74,19 +74,6 @@ export async function generateMetadata({
  * 🔴 **No transport (D23 stays deferred).** This does not close P14.T0–T3: the
  * page renders the state at request time and a reload is what advances it.
  */
-/**
- * `?league=<id>`, or null.
- *
- * 🔴 Validated here rather than trusted: a stranger can put anything in a
- * query string, and `Number('')` is 0 while `Number('7x')` is NaN. Both must
- * come out as "no pin" rather than as a league id the service then asks the
- * database about.
- */
-function pinnedLeague(value: string | string[] | undefined): number | null {
-  const id = Number(value);
-  return Number.isSafeInteger(id) && id > 0 ? id : null;
-}
-
 export default async function LivePage({
   params,
   searchParams,
