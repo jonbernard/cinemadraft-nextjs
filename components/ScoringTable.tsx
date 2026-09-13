@@ -94,7 +94,7 @@ export function ScoringTable({
   if (levels.length === 0) return null;
 
   return (
-    <div className={cn('flex flex-col gap-6', className)}>
+    <div className={cn('grid grid-cols-2 gap-6', className)}>
       {levels.map((group) => {
         const penalty = group.tiers.every((tier) => tier.points < 0);
         const meaning = penalty ? PENALTY_TIER_MEANING : TIER_MEANING;
@@ -107,7 +107,7 @@ export function ScoringTable({
           <div
             key={group.level}
             data-testid={`scoring-group-${group.level}`}
-            className="flex flex-col gap-1"
+            className={cn('flex flex-col gap-4', ['Oscars', 'Golden Globes'].includes(group.level) ? 'col-span-1' : 'col-span-2')}
           >
             <SectionHead as="h4" className="pb-1">
               {group.level}
