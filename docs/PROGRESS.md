@@ -1283,7 +1283,7 @@ decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
 - [ ] P17.T20 — `beam` **spent on live + the `Next · date TBA` chip**; not done until it renders
 - [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 **Unblocked by P17.T35**: brass means an award outcome only, and the "already means drafted" reading rested on a figure that does not reproduce
 - [ ] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
-- [ ] P17.T23 — **40px section step** (16px within a section, 8px within a group)
+- [x] P17.T23 — **40px section step** (16px within a section, 8px within a group)
 - [x] P17.T24 — **enforce the 4px grid in `scripts/layering.sh`** (43 gaps off it today)
 - [ ] P17.T25 — **6px is the default radius; fix the drift** (upholds D73; `md` 58 vs `sm` 36, `lg` unused)
 
@@ -1800,6 +1800,53 @@ recorded here, so the change is a number rather than an impression._
   The shell's content column shifts 2px right at `xl`; `e2e/signed-in.spec.ts`
   asserts left edges *relatively* (`|heading.x - field.x| < 2`), so T36's
   alignment finding is unaffected, but its recorded absolute 445px is now 447.
+
+- **P17.T23 — 40px between sections, 16px inside one.** 16 page-root stacks
+  moved to `gap-10` (three were already there: `/`, `/browse`, `/admin`), and
+  11 `<section>` stacks to `gap-4`. 🔴 **`gap-3` was deliberately not
+  blanket-converted** — 73 sites across 39 files, some within-a-section and
+  some within-a-group, and converting them one way is how a spacing fix becomes
+  a redesign of screens this phase may not touch. Rule 3 held: `gap-3`/`gap-2`
+  inside a `Panel` or a `<ul>` are groups and were left alone.
+
+  🔴 **The whole-product histogram understates this, and saying so is the
+  point.** On the harness's four routes the movement is small, because two of
+  them (`/`, `/browse`) were already at `gap-10`:
+  - before: `8px ×928, 4px ×310, 12px ×280, 16px ×202, 24px ×20, 32px ×16, 40px ×12`
+  - after: `8px ×928, 4px ×310, 12px ×268, 16px ×214, 24px ×20, 40px ×16, 32px ×12`
+
+  Measured instead on the public routes T23 actually changed
+  (`/award-shows/oscars`, `/rules-and-scoring`, 1440px, both schemes):
+  - before: `4px ×1016, 8px ×848, 16px ×224, 12px ×164, 24px ×8, 32px ×8`
+  - after: `4px ×1016, 8px ×848, 16px ×324, 12px ×64, 24px ×8, 40px ×8`
+
+  **32px goes to zero and 40px takes its place; 100 gaps move 12px → 16px.**
+  12px falls but does not vanish and is not supposed to — it is the
+  within-a-group value this task deliberately did not re-litigate. 24px ×8 is
+  untouched for the same reason.
+
+  🔴 **No grep guard, and none was invented.** "This `gap-6` is a section
+  boundary and that one is a group" is a judgement about the DOM's meaning; a
+  grep encoding it would flag every `gap-6` in the product or none. What T23
+  has instead is the histogram above and T24's grid check, which was live while
+  this was written and rejects anything off the grid.
+
+  🔴 **The two out-of-bounds screens got rule 1 and nothing else, and the diff
+  is the proof** — the entire change to `app/(app)/leagues/[id]/draft/page.tsx`
+  and `app/(app)/watchlist/page.tsx` is one line each, `gap-8` → `gap-10` on
+  the page-root stack. `watchlist:205` (`gap-6`) and `DraftConsole`'s `gap-3`
+  and `gap-2` sections were skipped explicitly.
+
+  🔴 **`app/auth/` was left alone and this is a deviation worth naming.** The
+  plan listed `auth/layout.tsx` and the login/register pages in its rule-1
+  worklist, but its own rule-1 grep does not match them — they are not
+  `mx-auto max-w-* flex-col` page-root stacks, and the login page's `gap-6`
+  separates a heading from its own paragraph and the Clerk widget. 40px there
+  would be wrong. Left for whoever owns the auth surface.
+
+  Browser: 48 checks green across `/`, `/browse`, `/award-shows`,
+  `/films/313369`, `/leagues`, `/list` at 1440/1280/1024/390 in both schemes —
+  no page overflow, no nav-rail overflow, tab destinations 51px.
 
 ---
 

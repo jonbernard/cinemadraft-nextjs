@@ -156,7 +156,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
       ) : (
         <>
           {view.leagues.map((league) => (
-            <section key={league.id} className="flex flex-col gap-6">
+            <section key={league.id} className="flex flex-col gap-4">
               <SectionHead
                 as="h2"
                 name

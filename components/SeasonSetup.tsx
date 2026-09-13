@@ -155,7 +155,7 @@ export function SeasonSetup({
 
   return (
     <div className={cn('flex flex-col gap-8', className)}>
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-4">
         <h2 className="text-text-dim text-xs font-normal">Who is playing</h2>
 
         <ul className="flex flex-col">
@@ -199,7 +199,7 @@ export function SeasonSetup({
       </section>
 
       {isPending ? (
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-4">
           <h2 className="text-text-dim text-xs font-normal">Groups</h2>
 
           <div className="flex flex-wrap items-end gap-3">
@@ -226,7 +226,7 @@ export function SeasonSetup({
         </section>
       ) : null}
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-4">
         <h2 className="text-text-dim text-xs font-normal">The draft</h2>
 
         {isPending ? (

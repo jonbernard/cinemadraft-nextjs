@@ -33,7 +33,7 @@ export default async function DraftListPage() {
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
         <SectionHead
           as="h1"
           eyebrow={`${year} season · only you can see this`}

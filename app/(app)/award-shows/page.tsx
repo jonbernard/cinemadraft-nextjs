@@ -56,7 +56,7 @@ export default async function AwardShowsPage() {
 
   return (
     <>
-      <div className="mx-auto flex max-w-5xl flex-col gap-8">
+      <div className="mx-auto flex max-w-5xl flex-col gap-10">
         <SectionHead as="h1" right={String(year)}>
           Award shows
         </SectionHead>

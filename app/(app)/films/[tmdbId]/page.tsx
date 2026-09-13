@@ -184,7 +184,7 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
           <TrailerReel trailers={film.trailers} />
 
           {film.posterUrls.length > 0 ? (
-            <section className="flex flex-col gap-3">
+            <section className="flex flex-col gap-4">
               <SectionHead as="h2">Posters</SectionHead>
               <PosterCarousel title={film.title} posterUrls={film.posterUrls} />
             </section>
@@ -319,7 +319,7 @@ function SimilarFilms({ films }: { films: FilmPage['similar'] }) {
   if (films.length === 0) return null;
 
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-4">
       <SectionHead as="h2">Similar films</SectionHead>
 
       <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">

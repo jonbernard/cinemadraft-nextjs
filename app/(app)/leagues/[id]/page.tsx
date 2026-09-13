@@ -131,7 +131,7 @@ export default async function LeaguePage({
 
   return (
     <>
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-10">
         <header className="flex flex-col gap-3">
           <SectionHead as="h1" name>
             {board.leagueName ?? 'League'}
@@ -206,7 +206,7 @@ export default async function LeaguePage({
           </p>
         ) : (
           board.groups.map((group) => (
-            <section key={group.group} className="flex flex-col gap-3">
+            <section key={group.group} className="flex flex-col gap-4">
               <h2 className="text-text-dim text-xs font-normal">Group {group.group}</h2>
 
               {isPending ? (

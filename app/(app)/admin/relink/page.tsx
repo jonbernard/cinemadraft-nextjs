@@ -16,7 +16,7 @@ export default async function AdminRelinkPage() {
   await requireAdmin();
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+    <div className="mx-auto flex max-w-2xl flex-col gap-10">
       <SectionHead as="h1">Relink an account</SectionHead>
 
       <p className="text-text-secondary max-w-prose text-sm leading-relaxed">

@@ -24,7 +24,7 @@ export default async function LeaguesPage() {
 
   return (
     <>
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <div className="mx-auto flex max-w-3xl flex-col gap-10">
         <SectionHead
           as="h1"
           right={

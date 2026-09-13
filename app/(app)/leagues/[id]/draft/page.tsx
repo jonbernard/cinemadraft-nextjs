@@ -61,7 +61,7 @@ export default async function DraftConsolePage({
 
   return (
     <>
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-10">
         <header className="flex flex-col gap-2">
           <SectionHead
             as="h1"

@@ -20,7 +20,7 @@ export default async function AdminBroadcastPage() {
   const recipientCount = (await userRepository.findAllIds()).length;
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+    <div className="mx-auto flex max-w-2xl flex-col gap-10">
       <SectionHead as="h1">Broadcast a notification</SectionHead>
 
       <p className="text-text-secondary max-w-prose text-sm leading-relaxed">

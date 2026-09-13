@@ -55,7 +55,7 @@ export default async function MemberProfilePage({
   const since = formatDay(member.memberSince);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
       <header className="flex items-center gap-4">
         <Avatar name={member.name} image={member.image} />
         <SectionHead

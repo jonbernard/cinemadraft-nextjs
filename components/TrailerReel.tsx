@@ -49,7 +49,7 @@ export function TrailerReel({ trailers }: { trailers: readonly Trailer[] }) {
   const hidden = trailers.slice(VISIBLE);
 
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-4">
       <SectionHead as="h2">Trailers</SectionHead>
 
       {playing ? (

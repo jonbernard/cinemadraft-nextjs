@@ -26,7 +26,7 @@ export default async function RulesAndScoringPage() {
   const levels = groupPointsByLevel(points);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8">
+    <div className="mx-auto flex max-w-3xl flex-col gap-10">
       <SectionHead as="h1">Rules & scoring</SectionHead>
 
       <Panel tone="raised" as="section" className="flex flex-col gap-4 p-5">

@@ -96,7 +96,7 @@ export default async function LivePage({
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-8">
+    <div className="mx-auto flex max-w-5xl flex-col gap-10">
       <header className="flex flex-col gap-3">
         {/* 🔴 `Panel`, not `CinemaFrame`, and the plan asked for this to be
             measured rather than assumed. `CinemaFrame` is `aspect-ratio:
@@ -136,7 +136,7 @@ export default async function LivePage({
         </div>
       </header>
 
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-4">
         <SectionHead as="h2" right={`${show.resolved} of ${show.total}`} className="pb-0">
           Categories
         </SectionHead>

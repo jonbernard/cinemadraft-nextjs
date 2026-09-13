@@ -101,7 +101,7 @@ export default async function AwardShowPage({
 
   return (
     <>
-      <div className="mx-auto flex max-w-5xl flex-col gap-8">
+      <div className="mx-auto flex max-w-5xl flex-col gap-10">
         <header className="flex flex-col gap-3">
           <div className="flex items-start gap-4">
             <ShowLogo imageUrl={show.imageUrl} size="lg" />
@@ -190,7 +190,7 @@ export default async function AwardShowPage({
           </EmptyState>
         ) : (
           show.categories.map((category) => (
-            <section key={category.awardId} className="flex flex-col gap-3">
+            <section key={category.awardId} className="flex flex-col gap-4">
               {/* A nomination earns the category's points; a win earns them a
                   second time, so it is worth twice this to whoever wins it. */}
               <SectionHead as="h2" right={`${category.points} pts`} className="pb-0">

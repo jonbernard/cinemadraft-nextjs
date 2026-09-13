@@ -13,7 +13,7 @@ export default async function NewLeaguePage() {
 
   return (
     <>
-      <div className="mx-auto flex max-w-lg flex-col gap-6">
+      <div className="mx-auto flex max-w-lg flex-col gap-10">
         <SectionHead as="h1">Start a league</SectionHead>
 
         <p className="text-text-secondary text-sm leading-relaxed">

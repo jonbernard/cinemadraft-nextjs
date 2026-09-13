@@ -113,7 +113,7 @@ export default async function WatchlistPage({ searchParams }: PageProps<'/watchl
   const drafted = view === 'drafted' ? await loadDraftedProgress(user.id, year) : null;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-10">
       <header className="flex flex-col gap-4">
         <SectionHead
           as="h1"
