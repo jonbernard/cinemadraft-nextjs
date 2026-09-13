@@ -5,6 +5,7 @@ import { SectionHead } from '@/components/SectionHead';
 import { WorkedExample } from '@/components/WorkedExample';
 import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import { pointRepository } from '@/lib/repositories/points';
+import { canonical } from '@/lib/seo';
 import {
   getLandingFacts,
   getShowGroups,
@@ -13,10 +14,30 @@ import {
 import { groupPointsByLevel } from '@/lib/services/scoring-table';
 import { getSeasonPhases } from '@/lib/services/season';
 
+/**
+ * What a crawler and a chat window are told about this page (P18.T8).
+ *
+ * Static rather than `generateMetadata`: every field here is a constant, and a
+ * function returning one is a function that can only be wrong. `canonical()`
+ * resolves against the apex rather than the deployment, which is what keeps a
+ * preview from telling a crawler it is the real page (lib/seo.ts).
+ *
+ * The share card is the sibling `opengraph-image.tsx`; Next fills `og:image`
+ * from it, so no `images` key belongs here — writing one would shadow the
+ * route's own card with a URL nothing regenerates.
+ */
 export const metadata: Metadata = {
   title: 'How it works',
   description:
-    'Draft a team of films before awards season, and score every nomination and win they pick up.',
+    'Draft a team of films before awards season, score every nomination and win they pick up, and lose points when one of them takes a Razzie nomination.',
+  alternates: { canonical: canonical('/how-it-works') },
+  openGraph: {
+    title: 'How Cinemadraft works',
+    description:
+      'Draft a team of films before awards season, and score every nomination and win they pick up.',
+    url: canonical('/how-it-works'),
+    type: 'website',
+  },
 };
 
 /**
