@@ -1264,13 +1264,13 @@ order, the tranche boundaries and the browser-verification protocol.
 
 ### Visual
 
-- [ ] P17.T11 — media through to rosters (`app/(app)/page.tsx:171, :315` pass `posterUrl: null`)
+- [x] P17.T11 — media through to rosters — `60f657b`. The dashboard was the **last** surface handing `PosterFrame` a null, so a member's own drafted team rendered as grey initials while the draft console two clicks away showed the same films with posters. 🔴 The `posters arrive in Phase 11` comment at both sites had been wrong since Phase 11 shipped: `movies.poster` is in the schema, the repository SELECT, the DTO, and nine other services already render it through `posterUrl()`. Verified before any code
 - [x] P17.T12 — award-show marks at 64px `contain` on a neutral plate; pluralise the count — `8430113`. 🔴 The review's premise was wrong: the twelve marks are **not** transparent (`transparentPct` 0.0 — eleven baseline JPEG, one 8-bit RGB), so the defect at 40px was size, not contrast against the ground
-- [ ] P17.T13 — film detail title/year lockup
-- [ ] P17.T14 — `NavRail` owns its column
-- [ ] P17.T15 — winner seal, pulled forward from P14.T4 (does not close it)
-- [ ] P17.T16 — `/live/[abbr]` without a transport (does not close P14.T0–T3)
-- [ ] P17.T17 — LCP priority on the first shelf frames
+- [x] P17.T13 — film detail title/year lockup — `720eb70`. The year moves into the `<h1>` as an inline span, same serif one optical step down, so two inline boxes share a baseline for free and the year sits inside the scrim rather than below the image's hard edge. Accessible name becomes "La La Land 2016", which is what `generateMetadata` already put on the share card. Side effect confirmed: the MPAA row now renders only when there is a rating, instead of as an empty flex row
+- [x] P17.T14 — `NavRail` owns its column — `602e9a4`. One class: the `<nav>` was `height:auto` inside a stretched wrapper, so the card stopped after the seventh link and left bare ground below it. 🔴 **The dead column is far larger than the plan's estimate** — measured in a production build at 1440×900 on `/`: rail bottom 468, content panel bottom 1668, a delta of **1201px**, not ~530. 1221px at 1280, 1452px on `/browse`. The plan's number was the viewport remainder; the real one is the whole scrolling column
+- [x] P17.T15 — winner seal, pulled forward from P14.T4 (does not close it) — `86aacde`. 🔴 **Half the task was that the seal had never rendered at all.** `PosterFrame` has carried `status='won'` and its carmine corner since Phase 3.5, `RosterStrip` passed it through, and nothing in the application ever set it — the only `'won'` in the repository was in a Storybook story, and a production build of `/` showed **0** seals. It now shows 9, read out of the ledger the roster was already loading. `prefers-reduced-motion` lands it stamped, not animated
+- [x] P17.T16 — `/live/[abbr]` without a transport (does not close P14.T0–T3) — split a/b behind a reviewer gate. **T16a** (`0e56c22`): the show, countdown and categories as they resolve, server-rendered; first consumer of `beam`, measured `#7fa6b8` dark / `#3f6273` light. 🔴 **Public by the owner's ruling, which amends D40** — the mechanism is unchanged (`proxy.ts` enumerates public routes, a page under `(app)` is protected by default, forgetting one still fails closed); this is one deliberate addition. **T16b** (`3d644d8`): every seat's films, scoring as the show resolves — no new scoring path, because `BoardPick.ledger` already names each line's show, so narrowing a season to one ceremony is a filter (D19/D41). 18 queries measured, bound at 19
+- [x] P17.T17 — LCP priority on the first shelf frames — `9c12f6f`. `priority` on the **first two** frames only: it emits a preload link per image, and marking all twelve would put them in contention and make the metric worse. Measured in a production build under 1.5Mbps/60ms throttling — LCP poster request starts at **+1137ms → +76ms** at 1440 and **+922ms → +76ms** at 390. Every other poster still goes out at ~+1050ms, which is the point
 
 ### Type and colour system
 
@@ -1280,8 +1280,8 @@ decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
 
 - [x] P17.T18 — body size to **15px / 13px small** (amends D71)
 - [x] P17.T19 — 🔴 poster captions get **serif at 15px** — `PosterFrame.tsx:120` and `BrowseMonth.tsx:89` set film titles in Archivo, which D70 says are names. Newsreader deferred to after Phase 18
-- [ ] P17.T20 — `beam` **spent on live + the `Next · date TBA` chip**; not done until it renders
-- [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 **Unblocked by P17.T35**: brass means an award outcome only, and the "already means drafted" reading rested on a figure that does not reproduce
+- [x] P17.T20 — `beam` **spent, and it renders** — `df13e89`. `StatusChip` gains a `beam` tone as **ink, not a fill** (`theme/contrast.test.ts` proves beam readable as text on the ground and proves nothing about white or black on top of it; a fill would need a `beam.contrast` token and two new rows there, for one chip). 🔴 **Spent on every `isNext` chip, not only the undated one the plan named** — "next" is one state, and the date being unpublished is not a second one; TBA-only would put two colours on one rail and change the chip's colour the day the calendar is announced. Verified by computed value in a production build, both schemes, dated and undated alike: `#7FA6B8` on `#16131C` dark, `#3F6273` on `#FBF9F6` light — exactly `beam` on `bg.panel`. D103
+- [x] P17.T21 — **verification only here, and it passed.** Brass reaches a public page in P18.T6; what T21 owed this phase was proof that spending it there is safe. 🔴 **Unblocked by P17.T35**: brass means an award outcome only, and the "it already means drafted" reading rested on a figure (320 instances on the draft board) that reproduces at no viewport — the real count is 570, every one of them the word `Won`, and the corpus's largest board renders **zero**. D99
 - [x] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
 - [x] P17.T23 — **40px section step** (16px within a section, 8px within a group)
 - [x] P17.T24 — **enforce the 4px grid in `scripts/layering.sh`** (43 gaps off it today)
@@ -1296,12 +1296,12 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 
 - [x] P17.T27 — `not-found` renders inside the app shell; `/live` and `/members` currently drop the whole shell. 🔴 A catch-all inside `(app)` fixes every unmatched URL at once, not the two the review tried; `ErrorPanel` stopped rendering its own `<main>` (it was nesting a landmark inside `AppShell`'s on *every* in-shell 404). **`/members` deliberately not built** — nothing links to it and a directory of sixty real people is an owner's product decision, not a polish-phase gap; it 404s inside the shell instead
 - [x] P17.T28 — 🔴 `/admin/season` confirms before re-scoping the app for every user. **Safety-bearing; own reviewer pass.** `/admin/broadcast` is the model. Ten adjacent "Make active" buttons became one `<select>` and one gated commit; the member count is read server-side and named in the form and again in the dialog. Reviewer pass done — no finding on any of the four paths to the action; five low/info findings addressed (a decorative alternation in one assertion, the active season no longer stated outside a disabled control, a doubled-space label when no season is active)
-- [ ] P17.T29 — signed-in home shows the member's own state (today it is the signed-out page plus three icons)
+- [x] P17.T29 — signed-in home shows the member's own state — `1ae0dbd`. Step 1's diagnosis settled it as an **order** problem, not a data one: both league sections already rendered, fourth and fifth, below the season stepper, the shelf and the leaderboard. Heading tops at 1440 before: Season 117, In cinemas now 428, Season leaderboard 824, first league **1499**; after: first league 117, second 932, Season 1423. At 390px the first league went 1628 → 37. No "No leagues yet" at any width, so `getDashboard`'s active-year scoping was not the cause and **no service change was made**. Next action derived from data already on `LeagueView`: "Open the league", plus "Build your draft list" only when the roster is empty
 - [x] P17.T30 — league page: promote the owner actions, move the raw invite URL behind an Invite action, hide it on a complete season. **Done 2026-09-12.** "Run the draft" and "Set up the season" were `text-accent-text underline` in a baseline row between the year and the status word; they are now 44px controls, and which one is filled comes from state the page already had — no seats → "Set up the season", `pending` → "Run the draft", otherwise both secondary. The year and status moved into the heading's `eyebrow`. 🔴 **The signal for "complete" is `draftingStatus` itself** — `LeagueDraftingStatus` is `pending | active | complete` (`prisma/schema.prisma:268`) and the restored data carries all three (5 active / 6 pending / 2 complete), so the plan's "if the schema has no complete value, fall back to every-seat-claimed" branch was not taken. `components/InviteAction.tsx` is a **native `<details>`, not a client component**: the plan's `useState` + `onToggle` only mirrored the element's own state, so it is a server component and `InviteLink` stays the one client island. 🔴 Two errors in the plan, both found by running it: it says "use `Button`, not a hand-rolled `<Link>`" and then specifies hand-rolled `<Link>`s — `Button` renders a `<button>` and both of these navigate, so the `<Link>`s are right and the sentence is wrong; and its own browser test asserts `getByText(/\/join\//)` has count 0 on arrival, which is **false against its own `<details>`** — a closed disclosure keeps its contents in the DOM and in the served HTML. `not.toBeVisible()` instead. That is not a secrecy claim quietly dropped: the invite renders only when `canManage`, so those bytes only ever reach an owner; what the disclosure fixes is that the credential was the loudest thing on the page. `e2e/leagues.spec.ts` caught the change as designed and now opens the disclosure first
 - [x] P17.T31 — roster beside standings, into the empty 55% of the content width. **Done 2026-09-12.** Measured before and after in a production build at 1440px: the standings table is 384px of an 1202px content box (31.9%) and used to sit alone; the pair now spans 95.8% of it. Nothing new is queried — the seat and its picks were already loaded and `share` is `pick.points / seat.total`, derived on the page the way `lib/services/dashboard.ts` derives it, rather than added to `getLeagueBoard`. Roster first in DOM order, so a phone reads the reader's own team before the table. 🔴 **The anonymous case is the ordinary one** — a league page is public (D44/D45) and a stranger has no seat, so the slot is a stated empty state ("Sign in to see your own roster here", with the sign-in action) rather than a hole the standings float beside; a signed-in member with no seat this season gets a different sentence, because "sign in" is not their remedy. Mutation-tested three ways: deleting the roster column reddens all three tests, swapping the DOM order reddens only the phone-order test, and removing just the anonymous empty state reddens only the stranger test
 - [x] P17.T32 — `/leagues`: one label for one action; mark the admin section. The strip said "Create league" and `/leagues` said "Start a league" ~700px apart; the latter wins (3 of 4 sites and the destination's own heading already said it), so only `AppShell` changed — `/leagues` needed no edit. 🔴 **The second half was re-pointed:** `/leagues` has no admin section; the page matching the description is `app/(app)/admin/page.tsx`, three identical cards two of which are irreversible for every member. Implemented there, split into "Affects every member" / "Affects one account". **If the owner meant something else on `/leagues`, this half needs re-pointing; the label fix stands either way**
-- [ ] P17.T33 — 88% of signed-in text is 12px; kill the `text-[0.65rem]` arbitrary value (117 elements at 10.4px)
-- [ ] P17.T34 — `text-dim` outnumbers `text-primary` 3.6:1; audit what deserves it
+- [x] P17.T33 — 🔴 **Collapsed to a measurement and one test:** T18 (`c554aed`) had already closed all three arbitrary values the plan named, plus `NotificationBell`'s `text-[10px]`, and added the `text sizes come from the scale` guard — so there was nothing to re-sweep and a second guard would have forked the rule. `3235fa7` adds what T18's grep cannot see: `no signed-in text renders below the 11px floor`, asserting the **rendered** size on four signed-in routes whatever produced it. Mutation: the badge back to `text-[0.65rem]` reddens it (6 elements, 3 picks × 2 layouts)
+- [x] P17.T34 — `1276474`. The rule, now D98: **`dim` is for text a reader never needs to read**; `secondary` is real content that is subordinate; the test is whether removing the text would lose information. Nine sites moved (PointsLedger's award name and points, DraftBoard's and StandingsPanel's column headers, the league page's `Group N` and running-order number); `PickCell`'s two stay `dim` with the reason written down. No token value changes and `theme/contrast.test.ts` passes unchanged — it was never a contrast failure (`dim` is 4.69:1 on `surface`). `/leagues/1`: dim 6,119 → 668, secondary 1,314 → 6,765, primary 1,550 unchanged. 🔴 About half of any count on that page sits in the `display:none` phone layout — which is why the review's 6,102 matched and its cross-route ratio did not. `SectionHead`'s right-hand slot is a known survivor, flagged not swept
 - [x] P17.T35 — brass means an **award outcome only**; the review's "320 instances on the draft board" does not reproduce (570 elements, every one of them the word `Won`, from one source site rendered twice per seat). **P18.T6 and T21 unblocked.** Method and numbers in the Phase 17 notes below; 🔴 T26 owes it a D-row in the D85+ block
 - [x] P17.T36 — `/list` has three left edges (445 / 469 / 493). Re-measured at 1440px before touching anything and the review's numbers reproduce exactly: heading 445, search field 469, empty state 493. The middle edge was a `Panel` wrapping the whole page body at the same `surface` tone as `AppShell`'s content panel — invisible, worth only a 24px gutter. Deleted; heading and field now both sit at 445. Audited the other single-column pages at 1440px: `/leagues` h1 445, `/admin` h1 445 / first card 445, `/leagues/new` h1 573 / first field 573, `/members/[uuid]` column 445 — all aligned. 🔴 `/watchlist` measured and left alone (h1 x=381)
 
@@ -1347,17 +1347,37 @@ product and should only inherit tokens from this phase, not be redesigned by it.
   **Gravatar-shaped** avatar on purpose — a member with a null image renders
   initials whatever the page does, so a test against one could not go red.
 
-- [ ] P17.T38 — 🔴 **The member index only works before a draft starts.** Found
-  while shipping T30 (2026-09-12): `leagues/[id]/page.tsx` links each seat to
-  `/members/<uuid>` on the **pending** branch only. Once `draftingStatus` is
-  `active` or `complete` the page renders `DraftBoard`, and `grep members
-  components/DraftBoard.tsx` is empty — so there is no route from a league to a
-  member at all. The restored data is 5 pending / 6 active / 2 complete, so it
-  is broken for most seasons, and the owner's decision that "the league page is
-  the member index" depends on it. Not fixed in T30: `DraftBoard` is a file
-  tranche 4 is sweeping, and adding a link mid-sweep would have muddied its
-  no-visual-diff verification. 🔴 Also note the board renders every seat twice
-  (mobile `<ul>` + desktop `<table>`), so the link lands in two places.
+- [x] P17.T38 — 🔴 **The member index only worked before a draft started.**
+  Found while shipping T30: `leagues/[id]/page.tsx` linked each seat to
+  `/members/<uuid>` on the **pending** branch only. Once `draftingStatus` was
+  `active` or `complete` the page rendered `DraftBoard`, which printed seat
+  names as plain text — so on 8 of the corpus's 13 seasons there was no route
+  from a league to a member at all, and the owner's decision that "the league
+  page is the member index" rested on a door that was shut. Deferred out of T30
+  on purpose: `DraftBoard` was mid-sweep in tranche 4 and a link added then
+  would have muddied its no-visual-diff verification.
+
+  **Done — `b037647`.** 🔴 **No new query and no service change:**
+  `lib/services/draft.ts` already returned `seat.uuid`, `null` exactly when the
+  seat has no user, and the page simply was not threading it into the board's
+  props. So a placeholder seat stays plain text by the same condition that
+  makes a claimed one a link — one guard, both cases. 🔴 The board renders every
+  seat twice (mobile `<ul>` + desktop `<table>`, both in the DOM at every
+  width), so the test asserts **one reachable link and which layout holds it**
+  (`closest('table') != null` iff width ≥ 768) rather than counting anchors,
+  which would pass with the wrong layout linked. Mutations: never link, no uuid
+  guard, phone unlinked, desktop unlinked, wrong href, and the page dropping
+  `uuid` — each reddens its own test. D104.
+
+  🔴 **A real bug found on the way, and it was not this task's:**
+  `signed-in.spec.ts`'s file-level `afterAll` deleted its users **once per
+  worker** under `fullyParallel`, so one worker was deleting `e2e-p17-*`
+  accounts while another was still signed in as them — the page then rendered
+  signed out and a roster test timed out. One such timeout in every run of that
+  file paired with `dashboard.spec.ts` at four workers, on `main` too. Moved to
+  `e2e/global-teardown.ts`, which runs after every browser closes.
+  `e2e/visual.spec.ts` has the same shape with a narrower tag; left alone.
+
 
 ### Recording the decisions
 
@@ -1402,16 +1422,28 @@ product and should only inherit tokens from this phase, not be redesigned by it.
   dimension (R7), not a polish task: who may see it, and what it shows.
 
 
-- [ ] P17.T26 — record **D85–D97** for the thirteen answers above and in P18.T0. 🔴 **Not D84 — that is taken** (`E2E runs in CI, with Clerk absent rather than credentialled`, added by `d96e5ec` alongside D79–D83). The ledger is complete through D84; the earlier claim that it was four entries behind was wrong — P15.T0 had shipped and only its checkbox was stale. Newsreader is a deferral, not a decision: it belongs in `DECISIONS.md` → Still open
+- [x] P17.T26 — recorded **D87–D104**, not the D85–D97 estimated — `d65d9e2` and `153b005`. 🔴 **The numbering moved twice and both assumptions in this line were wrong.** D84 was indeed taken, but so were D85 and D86: Phase 19 had taken them (journey pacing, the draft's end) while this phase was running, and P17.T35 — which its own plan said had written the brass row early so blocked tranches could read it — **wrote no row at all**. So the phase's block starts at D87 and brass is D99. **Eighteen decisions, not thirteen**, because the count is an output: three were never predicted (T27's "`/members` is deliberately not built", T34's `dim`/`secondary` rule, T37's public member pages with initials), and two were written only after their code merged (D103 beam, D104 the seat link) because a ledger row the code contradicts is worse than no row. 🔴 **Realtime moved out of "Still open" into D102** — SSE on Node polling Postgres had been decided and specced, and the file still listed four candidates and said not to decide until Phase 14. Newsreader takes its place there: P17.T19 deferred it until Phase 18 changes the arithmetic, and a deferral is not a decision. Checked contiguous, no duplicates; the file's only gap is D42, which predates this phase
 
 ### Phase 17 notes
 
-- **Where the phase stands (2026-09-12).** Tranche 1 (T0–T7) complete and gated.
-  Tranche 2 (T8–T10) complete. Tranche 3: T11–T15 and T17 complete, T16a/T16b in
-  flight. Tranche 4 (T18–T25) planned, **must run alone** — its 48-screenshot
-  zero-diff is unattributable if anything else is moving. Tranche 5 (T26–T36)
-  planned; T35 running in the `p17-t35` worktree against the 5434 database.
-  Five plan files, one per tranche, all under `docs/superpowers/plans/`.
+- **Phase 17 is complete (2026-09-12), all 39 tasks, CI green on `153b005`.**
+  Five tranches, five plan files under `docs/superpowers/plans/`, run in
+  parallel worktrees against the 5433 and 5434 databases; both worktrees torn
+  down after the merge checks. T37 and T38 were added mid-phase and are not in
+  the original 2026-09-12 list. Decisions recorded as **D87–D104**.
+
+  🔴 **Two boundaries held all the way through and are the reason the parallel
+  run worked.** Tranche 4 ran its token sweeps alone — its 48-screenshot
+  zero-diff is unattributable if anything else is moving — and the draft
+  console and watchlist were never touched beyond inheriting tokens.
+
+  Verified after the final merges against a fresh migrations+seed database:
+  `test:ci` 119 files / 1,294, full e2e 87 passed / 0 failed, no scratch rows
+  left. On CI: 86 passed, 1 flaky-on-retry.
+
+  🔴 **The flaky e2e test is a different one every run** — five distinct tests
+  across four runs, each passing on retry. That pattern is CI load, not a
+  broken assertion, and it is still open.
 
 - 🔴 **The 2026-09-12 review's premises have failed repeatedly, and the pattern
   is the lesson.** Confirmed wrong against the real code: T11's "Phase 11

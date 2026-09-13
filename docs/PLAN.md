@@ -368,6 +368,9 @@ both schemes; `npm run verify` green; the new E2E specs green in CI.
 
 ### Phase 17 — Design review remediation
 
+✅ **Complete 2026-09-12** — all 39 tasks, CI green on `153b005`, decisions
+recorded as D87–D104. Per-task detail in `docs/PROGRESS.md` § Phase 17.
+
 🔴 **Runs where it sits here, before the go-live phases.** The number is 17 because
 phase numbers are referenced from `PROGRESS.md`, `PARITY.md` and a year of
 commit messages; inserting a 15.5 or renumbering would invalidate them. Read
