@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { EmptyState } from '@/components/EmptyState';
+import { LiveAward } from '@/components/LiveAward';
 import { LiveBoard } from '@/components/LiveBoard';
 import { LiveCountdown } from '@/components/LiveCountdown';
 import { Panel } from '@/components/Panel';
@@ -96,7 +97,11 @@ export default async function LivePage({
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-10">
+    // 🔴 No `max-w-*`, and that is the P14 change: this page goes on a
+    // television. `max-w-5xl` centred 1024px of content inside the 1664px the
+    // shell leaves at 1920, so the poster rows T1 adds would have scrolled at
+    // the one width the page exists for. The shell's own `p-6` is the gutter.
+    <div className="flex flex-col gap-10">
       <header className="flex flex-col gap-3">
         {/* 🔴 `Panel`, not `CinemaFrame`, and the plan asked for this to be
             measured rather than assumed. `CinemaFrame` is `aspect-ratio:
@@ -146,24 +151,21 @@ export default async function LivePage({
             Nothing has been entered for this show and season.
           </EmptyState>
         ) : (
-          <ol className="flex flex-col gap-3">
+          <ol className="flex flex-col gap-6">
             {show.categories.map((category) => (
-              <li key={category.awardId} className="flex flex-col gap-2">
-                <SectionHead as="h3" right={`${category.points} pts`} className="pb-0">
-                  {category.name}
-                </SectionHead>
-                {category.winner ? (
-                  // Brass here IS an award, which is its existing meaning —
-                  // the same usage as `PointsLedger.tsx:111`.
-                  <StatusChip tone="brass" className="w-fit">
-                    {category.winner.title}
-                  </StatusChip>
-                ) : (
-                  <StatusChip className="w-fit">
-                    {category.nomineeCount}{' '}
-                    {category.nomineeCount === 1 ? 'nominee' : 'nominees'}
-                  </StatusChip>
-                )}
+              <li key={category.awardId}>
+                {/* 🔴 The chips this replaces are gone on purpose, not
+                    overlooked. A brass chip naming the winner and a neutral one
+                    counting the nominees were the whole category: the posters
+                    now say both — which film took it, from the seal, and how
+                    many are up, by being there. Keeping the chips would be two
+                    marks for one fact, which is the rule `NomineeGrid` records
+                    and the defect the source app shipped. */}
+                <LiveAward
+                  name={category.name}
+                  points={category.points}
+                  nominees={category.nominees}
+                />
               </li>
             ))}
           </ol>

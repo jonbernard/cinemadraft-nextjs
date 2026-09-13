@@ -84,8 +84,60 @@ describe('getLiveShow', () => {
     expect(won.length).toBeGreaterThan(0);
     for (const category of won) {
       expect(category.winner?.title).not.toBe('');
-      expect(category.nomineeCount).toBeGreaterThan(0);
+      expect(category.nominees.length).toBeGreaterThan(0);
+      // The winner is one OF the nominees, not a film assembled beside them —
+      // which is what makes the seal land on a poster that is already on screen.
+      expect(category.nominees.some((nominee) => nominee.isWinner)).toBe(true);
+      expect(category.winner?.movieId).toBe(
+        category.nominees.find((nominee) => nominee.isWinner)?.movieId,
+      );
     }
+  });
+
+  it('carries every nominee and its artwork, not a count (P14.T1)', async () => {
+    // 🔴 The whole of T1 in the service. `getAwardShow` already returned these
+    // and `toCategory` collapsed each category to a number; a page cannot put
+    // posters on a television from a number.
+    const view = await getLiveShow('oscars', 2025, null);
+    const picture = view.categories.find((category) => /best picture/i.test(category.name));
+    expect(picture).toBeDefined();
+
+    // Five to ten films in a Best Picture line-up; never one, and never zero.
+    expect(picture?.nominees.length).toBeGreaterThan(4);
+    for (const nominee of picture?.nominees ?? []) {
+      expect(nominee.title).not.toBe('');
+      expect(nominee.title).not.toBe('Untitled');
+      // 🔴 `w342`, not `getAwardShow`'s `w185`. TMDB is a pass-through host
+      // (`lib/images.ts`), so the bucket in the path is the delivered width and
+      // the one this page renders at is 224px. A w185 URL here is a poster
+      // upscaled on the screen it was widened for.
+      expect(nominee.posterUrl).toMatch(/^https:\/\/image\.tmdb\.org\/t\/p\/w342\//);
+    }
+
+    // Distinct nominations, so the React keys are stable and two nominees of
+    // the same film in a person category do not collapse into one.
+    const ids = picture?.nominees.map((nominee) => nominee.nominationId) ?? [];
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('keeps a category whose films have no artwork, rather than dropping it', async () => {
+    // The page's rule is that such a category must not collapse to an empty
+    // row, and the page can only honour that if the service still hands it the
+    // nominees. Read across the whole season rather than one hand-picked
+    // category: every nominee that has no poster still arrives with a title.
+    const view = await getLiveShow('oscars', 2025, null);
+    const artless = view.categories
+      .flatMap((category) => category.nominees)
+      .filter((nominee) => nominee.posterUrl == null);
+
+    for (const nominee of artless) {
+      expect(nominee.title.length).toBeGreaterThan(0);
+    }
+    // And a category is never silently emptied: the show's own counter says
+    // how many categories there are, and each one carries its own list.
+    expect(view.categories.every((category) => Array.isArray(category.nominees))).toBe(
+      true,
+    );
   });
 
   it('shows a signed-out reader no leagues, where a member sees real ones', async () => {

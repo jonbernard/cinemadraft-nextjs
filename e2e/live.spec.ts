@@ -336,13 +336,30 @@ test.describe('live show', () => {
     await expect(page.getByText('2 of 1')).toHaveCount(0);
   });
 
-  test('names the winning film once a category resolves', async ({ page }) => {
+  test('every category is its nominees’ posters, and only the winner is sealed', async ({
+    page,
+  }) => {
+    // P14.T1. Both categories have both films up, so four frames — a page that
+    // still rendered one chip per category would have two elements here, and a
+    // page that rendered only the decided category's nominees would have two.
     const { abbreviation } = await seedShow();
     await page.goto(`/live/${abbreviation}?year=${YEAR}`);
 
-    // The decided category names its winner; the open one says how many are up.
-    await expect(page.getByText(FILMS[0] as string)).toBeVisible();
-    await expect(page.getByText('2 nominees')).toBeVisible();
+    await expect(page.getByText(FILMS[0] as string)).toHaveCount(2);
+    await expect(page.getByText(FILMS[1] as string)).toHaveCount(2);
+
+    // 🔴 Exactly one seal, and on the right frame. The seed marks Alpha the
+    // winner of Best Picture only: a seal on Best Sound, or on Bravo, is the
+    // page telling sixty people the wrong film won.
+    const seals = page.getByRole('img', { name: 'Winner' });
+    await expect(seals).toHaveCount(1);
+    // The poster's own `<figure>`, not the enclosing `<li>`: the page nests a
+    // list item per category around the list item per nominee, so `li` matches
+    // both and the outer one contains every title in the category.
+    const sealed = page.locator('figure', { has: seals });
+    await expect(sealed).toHaveCount(1);
+    await expect(sealed).toContainText(FILMS[0] as string);
+    await expect(sealed).not.toContainText(FILMS[1] as string);
   });
 
   test('a show that is not broadcasting says nothing about being live', async ({
@@ -377,7 +394,10 @@ test.describe('live show', () => {
     // 21 — and this test failed for the minutes of every hour whose digits
     // happened to line up. It had nothing to do with the roster it is about.
     await expect(page.getByText('21', { exact: true })).toHaveCount(3);
-    await expect(page.getByRole('img', { name: 'Winner' })).toBeVisible();
+    // Two seals now: the nominee's, in the category above (P14.T1), and this
+    // one on the seat's own copy of the same film. Counted rather than
+    // `toBeVisible`, which trips strict mode on the pair.
+    await expect(page.getByRole('img', { name: 'Winner' })).toHaveCount(2);
   });
 
   test('a seat with nothing nominated here says so', async ({ page }) => {

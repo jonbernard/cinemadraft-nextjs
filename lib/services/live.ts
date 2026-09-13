@@ -22,12 +22,47 @@ import { getLeagueBoard } from './draft';
  * on its own.
  */
 
+/**
+ * One nominee, with the artwork that makes the category readable from a sofa
+ * (P14.T1).
+ *
+ * 🔴 `getAwardShow` has already loaded every one of these and `toCategory` used
+ * to collapse them to a count and a single winner. Carrying them costs no
+ * query at all — `scoring.batching.test.ts` pins that as an equality — and
+ * without them the page is a list of category names, which is what Phase 14
+ * exists to stop being on a television.
+ */
+export type LiveNominee = {
+  nominationId: number;
+  movieId: number;
+  title: string;
+  /**
+   * `w342`, not the `w185` `getAwardShow` builds for its own grid. TMDB is on
+   * `PASS_THROUGH_HOSTS`, so the bucket in the path IS the delivered pixel
+   * width — nothing downstream resamples it — and a 160px frame fed w185 is
+   * 1.16x, which is soft on any 2x panel and on the 224px frame this page uses
+   * above 1536px it is 0.83x, i.e. upscaled.
+   */
+  posterUrl: string | null;
+  /**
+   * The person, where the category nominates one. Without it an acting
+   * category is four posters and no names.
+   */
+  detailName: string | null;
+  isWinner: boolean;
+};
+
 export type LiveCategory = {
   awardId: number;
   name: string;
   /** What a nomination here is worth. A win is worth it twice (D41). */
   points: number;
-  nomineeCount: number;
+  /**
+   * Every nominee, in `getAwardShow`'s order. May be empty: a category can be
+   * entered before its nominations are, and the page says so in words rather
+   * than rendering an empty row.
+   */
+  nominees: LiveNominee[];
   /** The winning film, once one is marked. Null while the category is open. */
   winner: { movieId: number; title: string; posterUrl: string | null } | null;
 };
@@ -98,12 +133,20 @@ export type LiveShowView = {
 };
 
 function toCategory(category: Category): LiveCategory {
-  const winner = category.nominees.find((nominee) => nominee.isWinner);
+  const nominees: LiveNominee[] = category.nominees.map((nominee) => ({
+    nominationId: nominee.nominationId,
+    movieId: nominee.movieId,
+    title: nominee.title,
+    posterUrl: posterUrl(nominee.posterPath, 'w342'),
+    detailName: nominee.detailName,
+    isWinner: nominee.isWinner,
+  }));
+  const winner = nominees.find((nominee) => nominee.isWinner);
   return {
     awardId: category.awardId,
     name: category.name,
     points: category.points,
-    nomineeCount: category.nominees.length,
+    nominees,
     winner: winner
       ? { movieId: winner.movieId, title: winner.title, posterUrl: winner.posterUrl }
       : null,
