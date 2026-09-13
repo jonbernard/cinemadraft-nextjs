@@ -19,14 +19,14 @@ import { cn } from '@/lib/utils/cn';
 export function Panel({
   children,
   as: Tag = 'div' as ElementType,
-  tone = 'surface',
+  tone = 'panel',
   className,
   id,
   tabIndex,
 }: {
   children: ReactNode;
   as?: ElementType;
-  tone?: 'surface' | 'raised';
+  tone?: 'panel' | 'surface';
   className?: string;
   /** For the shell's skip-link target; `<main>` is the only caller that needs it. */
   id?: string;
@@ -39,7 +39,7 @@ export function Panel({
       tabIndex={tabIndex}
       className={cn(
         'rounded-sm',
-        tone === 'raised' ? 'bg-bg-raised' : 'bg-bg-surface',
+        tone === 'surface' ? 'bg-bg-surface' : 'bg-bg-panel',
         className,
       )}
     >

@@ -88,7 +88,7 @@ export function CategoryCreate({
           onChange={(event) => setName(event.target.value)}
           aria-labelledby={nameId}
           placeholder="Best Picture"
-          className="border-border-rule bg-bg-raised text-text-primary min-h-11 border px-3 text-sm"
+          className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-3 text-sm"
         />
       </label>
 
@@ -97,7 +97,7 @@ export function CategoryCreate({
         <select
           value={tierId}
           onChange={(event) => setTierId(event.target.value)}
-          className="border-border-rule bg-bg-raised text-text-primary min-h-11 border px-2 text-sm"
+          className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-2 text-sm"
         >
           <option value="">No tier yet</option>
           {tiers.map((tier) => (
@@ -129,7 +129,7 @@ export function CategoryCreate({
       <button
         type="submit"
         disabled={pending}
-        className="border-border-rule text-text-primary hover:bg-bg-raised min-h-11 border px-4 text-sm disabled:opacity-60"
+        className="border-border-rule text-text-primary hover:bg-bg-surface min-h-11 border px-4 text-sm disabled:opacity-60"
       >
         {pending ? 'Adding…' : 'Add category'}
       </button>

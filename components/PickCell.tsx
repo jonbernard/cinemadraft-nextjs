@@ -35,7 +35,7 @@ export function PickCell({
     return (
       <div
         className={cn(
-          'poster-radius bg-bg-base/40 light:border-border-rule flex aspect-[2/3] items-center justify-center light:border light:border-dashed',
+          'poster-radius bg-bg-ground/40 light:border-border-rule flex aspect-[2/3] items-center justify-center light:border light:border-dashed',
           className,
         )}
       >
@@ -49,7 +49,7 @@ export function PickCell({
 
   return (
     <figure className={cn('flex flex-col gap-1', className)}>
-      <div className="poster-radius bg-bg-raised light:border-border-rule relative aspect-[2/3] overflow-hidden light:border">
+      <div className="poster-radius bg-bg-surface light:border-border-rule relative aspect-[2/3] overflow-hidden light:border">
         {film.posterUrl ? (
           <RemoteImage
             src={film.posterUrl}

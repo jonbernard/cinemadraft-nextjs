@@ -62,7 +62,7 @@ export function Pagination({
                   'tabular focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center rounded-sm font-mono text-sm focus-visible:outline-2',
                   target === page
                     ? 'bg-accent-fill font-semibold text-white'
-                    : 'bg-bg-raised text-text-secondary hover:text-text-primary',
+                    : 'bg-bg-surface text-text-secondary hover:text-text-primary',
                 )}
               >
                 {target}
@@ -102,7 +102,7 @@ function Step({ href, direction }: { href: string; direction: 'previous' | 'next
   return (
     <Link
       href={href}
-      className="bg-bg-raised text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center rounded-sm focus-visible:outline-2"
+      className="bg-bg-surface text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center rounded-sm focus-visible:outline-2"
     >
       <svg
         aria-hidden="true"

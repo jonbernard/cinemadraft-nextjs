@@ -222,7 +222,7 @@ function EntryRow({
             className="h-10 w-7 object-cover"
           />
         ) : (
-          <span className="bg-bg-raised text-text-dim grid h-10 w-7 place-items-center font-mono text-xs">
+          <span className="bg-bg-surface text-text-dim grid h-10 w-7 place-items-center font-mono text-xs">
             {entry.title.slice(0, 2).toUpperCase()}
           </span>
         )}
@@ -252,7 +252,7 @@ function EntryRow({
         <select
           value={entry.status}
           onChange={changeStatus}
-          className="border-border-rule bg-bg-raised text-text-secondary focus-visible:outline-accent-fill min-h-11 rounded-sm border px-2 text-xs focus-visible:outline-2"
+          className="border-border-rule bg-bg-surface text-text-secondary focus-visible:outline-accent-fill min-h-11 rounded-sm border px-2 text-xs focus-visible:outline-2"
         >
           {STATUSES.map((status) => (
             <option key={status} value={status}>

@@ -169,7 +169,7 @@ export function FilmSearch({
           onKeyDown={onKeyDown}
           placeholder={placeholder}
           aria-describedby={`${listId}-count`}
-          className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill w-full border px-3 py-2 text-base focus-visible:outline-2"
+          className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill w-full border px-3 py-2 text-base focus-visible:outline-2"
         />
       </label>
 
@@ -228,7 +228,7 @@ function ResultRow({
         onMouseEnter={highlight}
         className={cn(
           'flex w-full items-center gap-3 px-2 py-2 text-left',
-          isHighlighted && 'bg-bg-raised',
+          isHighlighted && 'bg-bg-surface',
           unavailable && 'opacity-50',
         )}
       >
@@ -241,7 +241,7 @@ function ResultRow({
             className="h-12 w-8 object-cover"
           />
         ) : (
-          <span className="bg-bg-raised text-text-dim grid h-12 w-8 place-items-center font-mono text-xs">
+          <span className="bg-bg-surface text-text-dim grid h-12 w-8 place-items-center font-mono text-xs">
             {film.title.slice(0, 2).toUpperCase()}
           </span>
         )}

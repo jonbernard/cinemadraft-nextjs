@@ -53,7 +53,7 @@ export function TrailerReel({ trailers }: { trailers: readonly Trailer[] }) {
       <SectionHead as="h2">Trailers</SectionHead>
 
       {playing ? (
-        <Panel tone="raised" className="aspect-video w-full overflow-hidden">
+        <Panel tone="surface" className="aspect-video w-full overflow-hidden">
           <iframe
             // `key` so switching trailers replaces the frame rather than
             // mutating its src, which leaves the old player running in some
@@ -132,7 +132,7 @@ function TrailerButton({
       type="button"
       onClick={play}
       aria-current={isPlaying ? 'true' : undefined}
-      className="focus-visible:outline-accent-fill hover:bg-bg-raised box-border flex min-h-11 w-full items-center gap-3 px-2 text-left text-sm focus-visible:outline-2"
+      className="focus-visible:outline-accent-fill hover:bg-bg-surface box-border flex min-h-11 w-full items-center gap-3 px-2 text-left text-sm focus-visible:outline-2"
     >
       {/* 🔴 The triangle needs the circle around it. On its own, at 16px and in
           a vertical list, a filled triangle reads as a disclosure caret rather

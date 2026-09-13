@@ -75,7 +75,7 @@ export function BrowseMonth({
                   fill
                   sizes="(min-width: 1024px) 16vw, (min-width: 640px) 25vw, 50vw"
                   loading="lazy"
-                  className="poster-radius bg-bg-raised light:border light:border-border-rule object-cover transition-opacity group-hover:opacity-90"
+                  className="poster-radius bg-bg-surface light:border light:border-border-rule object-cover transition-opacity group-hover:opacity-90"
                 />
               </Link>
 

@@ -127,7 +127,7 @@ export function SearchOverlay({
       // 844px, but a landscape phone or a short window would still push the
       // panel off-screen, and a panel that runs past the viewport is the
       // thing to prevent, not a row count.
-      className="bg-bg-surface text-text-primary mx-auto mt-16 mb-auto max-h-[calc(100dvh-5rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-lg p-0 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
+      className="bg-bg-panel text-text-primary mx-auto mt-16 mb-auto max-h-[calc(100dvh-5rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-lg p-0 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
     >
       <div className="flex flex-col gap-4 p-4">
         <FilmSearch

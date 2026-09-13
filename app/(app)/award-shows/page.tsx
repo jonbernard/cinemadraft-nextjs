@@ -62,7 +62,7 @@ export default async function AwardShowsPage() {
         </SectionHead>
 
         {isAdmin && outstanding.length > 0 ? (
-          <Panel tone="raised" as="section" className="flex flex-col gap-3 p-4">
+          <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
             <SectionHead as="h2" className="pb-0">
               Still to enter
             </SectionHead>
@@ -94,7 +94,7 @@ export default async function AwardShowsPage() {
             <li key={show.eventId}>
               <Link
                 href={`/award-shows/${show.abbreviation}?year=${year}`}
-                className="bg-bg-surface hover:bg-bg-raised focus-visible:outline-accent-fill flex h-full flex-col gap-1 rounded-sm p-4 focus-visible:outline-2"
+                className="bg-bg-panel hover:bg-bg-surface focus-visible:outline-accent-fill flex h-full flex-col gap-1 rounded-sm p-4 focus-visible:outline-2"
               >
                 <ShowLogo imageUrl={show.imageUrl} className="mb-2" />
                 <Eyebrow>{show.abbreviation}</Eyebrow>
@@ -110,7 +110,7 @@ export default async function AwardShowsPage() {
           ))}
         </ul>
 
-        <Panel tone="raised" as="section" className="flex flex-col gap-3 p-4">
+        <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
           <SectionHead as="h2" className="pb-0">
             Subscribe to ceremony dates
           </SectionHead>

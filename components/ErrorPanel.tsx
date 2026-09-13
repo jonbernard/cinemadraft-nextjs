@@ -75,7 +75,7 @@ export function ErrorPanel({
     // landmark list ambiguous for a screen reader. The two callers outside the
     // shell — app/not-found.tsx and app/error.tsx — supply their own.
     //
-    // No `bg-bg-base` either: the ground belongs to whatever is hosting this.
+    // No `bg-bg-ground` either: the ground belongs to whatever is hosting this.
     // Inside the shell the host is a surface panel, and repainting it the
     // colour of the ground punched a hole in it.
     <div

@@ -144,4 +144,32 @@ check "radius comes from the scale" \
      components app .storybook --include='*.tsx' --include='*.mdx' 2>/dev/null \
      | grep -v -e '^components/SearchOverlay\.tsx:' -e '\.test\.tsx\?:' || true)"
 
+# P17.T22. The retired surface names do not come back.
+#
+# 🔴 This is the check D77 said could not exist, and it is the reason the
+# rename is allowed to happen at all. D77 declined this rename in 2026-08
+# because "no test could catch a missed one" — true then, and this grep is the
+# answer. `bg.raised` is now `bg.surface`, `bg.surface` is `bg.panel`, and
+# `bg.base` is `bg.ground`: the names now match how often each renders, and a
+# new file written from an old example fails here rather than shipping a colour
+# nobody chose.
+#
+# 🔴 It is not total, and saying so is part of the check. It catches `base` and
+# `raised` — the two RETIRED spellings — and that is all it can catch, because
+# `surface` is a live name after the rename. A file that writes `bg-panel`
+# where it meant `bg-surface` is a real hole, and it is covered by
+# e2e/visual.spec.ts's 48-screenshot pair, not by this grep.
+#
+# 🔴 Expect a merge from p17-tranche5 carrying `bg-base`/`bg-surface`/
+# `bg-raised` spellings written against the old names on purpose. This check is
+# what catches them; re-run the sweep over the merged result rather than
+# assuming it is complete.
+#
+# No {n,m} interval: see the `set +B` note at the top of this file.
+check "no retired surface token names" \
+  "$(grep -rnE -e "-bg-(base|raised)\b|--color-bg-(base|raised)\b|bg\.(base|raised)\b" \
+     components app lib theme .storybook \
+     --include='*.tsx' --include='*.ts' --include='*.css' --include='*.mdx' 2>/dev/null \
+     || true)"
+
 exit $fail

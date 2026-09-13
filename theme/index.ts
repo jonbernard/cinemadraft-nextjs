@@ -25,7 +25,7 @@ function scheme(name: ColorScheme) {
   const p = palettes[name];
   return {
     palette: {
-      background: { default: p.bg.base, paper: p.bg.surface },
+      background: { default: p.bg.ground, paper: p.bg.panel },
       text: { primary: p.text.primary, secondary: p.text.secondary },
       // Carmine is the system colour — actions, deadlines, live states. Films
       // supply the content colour via clampAccent (§6.6).

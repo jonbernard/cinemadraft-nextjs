@@ -43,7 +43,7 @@ import { availableSeasons, getLeaderboard } from '@/lib/services/leaderboard';
  *
  * 🔴 **No `<main>` here.** `AppShell` renders the one content landmark
  * (`Panel as="main"`), and it owns the page's ground and padding too — a
- * second `<main>`, or a repeat of `bg-bg-base`, would fight the panel it is
+ * second `<main>`, or a repeat of `bg-bg-ground`, would fight the panel it is
  * sitting inside.
  */
 export default async function DashboardPage({ searchParams }: PageProps<'/'>) {

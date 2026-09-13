@@ -29,7 +29,7 @@ export default async function RulesAndScoringPage() {
     <div className="mx-auto flex max-w-3xl flex-col gap-10">
       <SectionHead as="h1">Rules & scoring</SectionHead>
 
-      <Panel tone="raised" as="section" className="flex flex-col gap-4 p-5">
+      <Panel tone="surface" as="section" className="flex flex-col gap-4 p-5">
         <SectionHead as="h2" className="pb-0">
           The rules
         </SectionHead>
@@ -83,7 +83,7 @@ export default async function RulesAndScoringPage() {
         </p>
       </Panel>
 
-      <Panel tone="raised" as="section" className="flex flex-col gap-4 p-5">
+      <Panel tone="surface" as="section" className="flex flex-col gap-4 p-5">
         <SectionHead as="h2" className="pb-0">
           The scoring rulebook
         </SectionHead>

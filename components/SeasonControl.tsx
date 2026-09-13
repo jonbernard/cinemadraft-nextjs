@@ -91,7 +91,7 @@ export function SeasonControl({
           value={choice ?? ''}
           onChange={(event) => setChoice(Number(event.target.value))}
           disabled={pending}
-          className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill tabular min-h-11 w-full max-w-xs border px-3 font-mono text-sm focus-visible:outline-2"
+          className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill tabular min-h-11 w-full max-w-xs border px-3 font-mono text-sm focus-visible:outline-2"
         >
           {seasons.map((season) => (
             <option key={season.year} value={season.year}>

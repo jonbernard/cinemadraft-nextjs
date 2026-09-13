@@ -21,7 +21,7 @@ import { ErrorPanel } from '@/components/ErrorPanel';
  */
 export default function NotFound() {
   return (
-    <main className="bg-bg-base min-h-dvh">
+    <main className="bg-bg-ground min-h-dvh">
       <ErrorPanel kind="not-found" />
     </main>
   );

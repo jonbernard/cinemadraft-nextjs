@@ -221,13 +221,13 @@ function WatchedFilms({
                   alt=""
                   width={44}
                   height={64}
-                  className="poster-radius bg-bg-raised light:border light:border-border-rule h-16 w-11 shrink-0 object-cover"
+                  className="poster-radius bg-bg-surface light:border light:border-border-rule h-16 w-11 shrink-0 object-cover"
                   loading="lazy"
                 />
               ) : (
                 // A src-less <img> draws the browser's broken-image glyph, which
                 // reads as a failure rather than as a film with no artwork.
-                <div className="poster-radius bg-bg-raised h-16 w-11 shrink-0" />
+                <div className="poster-radius bg-bg-surface h-16 w-11 shrink-0" />
               )}
 
               <div className="min-w-0 flex-1">

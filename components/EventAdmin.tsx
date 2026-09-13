@@ -140,7 +140,7 @@ export function EventAdmin({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="border-border-rule bg-bg-raised text-text-primary min-h-11 border px-3 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-3 text-sm"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -149,7 +149,7 @@ export function EventAdmin({
             type="text"
             value={abbreviation}
             onChange={(e) => setAbbreviation(e.target.value)}
-            className="border-border-rule bg-bg-raised text-text-primary min-h-11 border px-3 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-3 text-sm"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -158,7 +158,7 @@ export function EventAdmin({
             type="text"
             value={image}
             onChange={(e) => setImage(e.target.value)}
-            className="border-border-rule bg-bg-raised text-text-primary min-h-11 border px-3 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-3 text-sm"
           />
         </label>
       </div>
@@ -179,7 +179,7 @@ export function EventAdmin({
             type="datetime-local"
             value={nomAt}
             onChange={(e) => setNomAt(e.target.value)}
-            className="border-border-rule bg-bg-raised text-text-primary min-h-11 border px-3 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-3 text-sm"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -189,7 +189,7 @@ export function EventAdmin({
             min={0}
             value={nomMinutes}
             onChange={(e) => setNomMinutes(e.target.value)}
-            className="border-border-rule bg-bg-raised text-text-primary min-h-11 w-24 border px-3 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-24 border px-3 text-sm"
           />
         </label>
       </fieldset>
@@ -210,7 +210,7 @@ export function EventAdmin({
             type="datetime-local"
             value={awardsAt}
             onChange={(e) => setAwardsAt(e.target.value)}
-            className="border-border-rule bg-bg-raised text-text-primary min-h-11 border px-3 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-3 text-sm"
           />
         </label>
         <label className="flex flex-col gap-1">
@@ -220,7 +220,7 @@ export function EventAdmin({
             min={0}
             value={awardsMinutes}
             onChange={(e) => setAwardsMinutes(e.target.value)}
-            className="border-border-rule bg-bg-raised text-text-primary min-h-11 w-24 border px-3 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-24 border px-3 text-sm"
           />
         </label>
         <label className="flex min-h-11 items-center gap-2 text-xs">
@@ -237,7 +237,7 @@ export function EventAdmin({
         <button
           type="submit"
           disabled={pending}
-          className="border-border-rule text-text-primary hover:bg-bg-raised min-h-11 w-fit border px-4 text-sm disabled:opacity-60"
+          className="border-border-rule text-text-primary hover:bg-bg-surface min-h-11 w-fit border px-4 text-sm disabled:opacity-60"
         >
           {pending ? 'Saving…' : 'Save show'}
         </button>

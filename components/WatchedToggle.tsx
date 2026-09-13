@@ -109,8 +109,8 @@ export function WatchedToggle({
           className={cn(
             'flex h-7 w-7 items-center justify-center rounded-full border transition-colors',
             isWatched
-              ? 'border-accent-fill bg-accent-fill text-bg-base'
-              : 'border-border-rule bg-bg-surface/85 text-text-primary',
+              ? 'border-accent-fill bg-accent-fill text-bg-ground'
+              : 'border-border-rule bg-bg-panel/85 text-text-primary',
           )}
         >
           <svg

@@ -60,7 +60,7 @@ export function FeedComposer({
           maxLength={2000}
           disabled={pending}
           placeholder="What are you watching?"
-          className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill font-prose w-full rounded-sm border px-3 py-2 text-base leading-relaxed focus-visible:outline-2"
+          className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill font-prose w-full rounded-sm border px-3 py-2 text-base leading-relaxed focus-visible:outline-2"
         />
       </label>
 

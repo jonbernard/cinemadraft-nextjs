@@ -62,7 +62,7 @@ const preview: Preview = {
         <ThemeProvider theme={theme} forceThemeRerender>
           <CssBaseline />
           <SyncMode mode={mode} />
-          <div className="bg-bg-base text-text-primary p-6">
+          <div className="bg-bg-ground text-text-primary p-6">
             <Story />
           </div>
         </ThemeProvider>

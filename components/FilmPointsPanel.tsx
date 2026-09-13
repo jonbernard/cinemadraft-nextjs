@@ -61,7 +61,7 @@ export function FilmPointsPanel({
           >
             <Link
               href={`/award-shows/${event.abbreviation}?year=${scoring.year}`}
-              className="focus-visible:outline-accent-fill hover:bg-bg-raised flex min-h-11 items-center justify-between gap-4 px-2 text-sm focus-visible:outline-2"
+              className="focus-visible:outline-accent-fill hover:bg-bg-surface flex min-h-11 items-center justify-between gap-4 px-2 text-sm focus-visible:outline-2"
             >
               <span className="text-accent-text">{event.name}</span>
               <span className="text-text-primary tabular font-mono">{event.total}</span>

@@ -123,7 +123,7 @@ export function AppShell({
   }, [pathname]);
 
   return (
-    <div className="bg-bg-base min-h-dvh xl:flex xl:gap-2 xl:p-3">
+    <div className="bg-bg-ground min-h-dvh xl:flex xl:gap-2 xl:p-3">
       {/* 🔴 First focusable element on every page, by DOM order rather than by
           styling — a skip link that is not first is not a skip link. Visible
           only when focused: `sr-only` until `focus:not-sr-only` brings it back.
@@ -134,7 +134,7 @@ export function AppShell({
           strip's contents into the tab bar row, and this survives that. */}
       <a
         href="#content"
-        className="focus:bg-bg-raised focus:text-text-primary focus:outline-accent-fill sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:flex focus:min-h-11 focus:items-center focus:rounded-sm focus:px-4 focus:text-sm focus:outline-2"
+        className="focus:bg-bg-surface focus:text-text-primary focus:outline-accent-fill sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:flex focus:min-h-11 focus:items-center focus:rounded-sm focus:px-4 focus:text-sm focus:outline-2"
       >
         Skip to content
       </a>
@@ -236,7 +236,7 @@ function Strip({
 
       <Link
         href="/leagues/new"
-        className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center gap-2 border px-4 text-sm focus-visible:outline-2"
+        className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill flex min-h-11 items-center gap-2 border px-4 text-sm focus-visible:outline-2"
       >
         <PlusIcon />
         {/* One label for one action (P17.T32). `/leagues` and `/leagues/new`

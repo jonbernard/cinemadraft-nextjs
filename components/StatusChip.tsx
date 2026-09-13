@@ -27,7 +27,7 @@ export function StatusChip({
         'font-sans inline-flex items-center gap-2 rounded-pill px-3 py-1 text-xs font-semibold',
         tone === 'brass' && 'bg-brass-fill text-brass-contrast',
         tone === 'carmine' && 'bg-accent-fill text-white',
-        tone === 'neutral' && 'bg-bg-raised text-text-secondary',
+        tone === 'neutral' && 'bg-bg-surface text-text-secondary',
         className,
       )}
     >

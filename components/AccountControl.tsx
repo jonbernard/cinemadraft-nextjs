@@ -41,7 +41,7 @@ export function AccountControl({
     ? 'flex min-h-11 w-11 shrink-0 items-center justify-center'
     : 'border-border-rule flex min-h-11 items-center border px-4 text-sm';
   const skin =
-    'text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill focus-visible:outline-2';
+    'text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill focus-visible:outline-2';
 
   if (!isSignedIn) {
     return (

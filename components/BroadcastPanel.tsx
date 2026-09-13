@@ -69,7 +69,7 @@ export function BroadcastPanel({ recipientCount }: { recipientCount: number }) {
           onChange={(event) => setMessage(event.target.value)}
           rows={3}
           placeholder="What every member will see"
-          className="border-border-rule bg-bg-raised text-text-primary w-full border p-3 text-sm"
+          className="border-border-rule bg-bg-surface text-text-primary w-full border p-3 text-sm"
         />
       </label>
 
@@ -79,7 +79,7 @@ export function BroadcastPanel({ recipientCount }: { recipientCount: number }) {
           type="text"
           value={icon}
           onChange={(event) => setIcon(event.target.value)}
-          className="border-border-rule bg-bg-raised text-text-primary min-h-11 w-full border px-3 text-sm"
+          className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-full border px-3 text-sm"
         />
       </label>
 
@@ -90,7 +90,7 @@ export function BroadcastPanel({ recipientCount }: { recipientCount: number }) {
           value={link}
           onChange={(event) => setLink(event.target.value)}
           placeholder="/award-shows/asc"
-          className="border-border-rule bg-bg-raised text-text-primary min-h-11 w-full border px-3 text-sm"
+          className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-full border px-3 text-sm"
         />
       </label>
 

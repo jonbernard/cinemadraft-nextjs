@@ -30,7 +30,7 @@ export default async function LeaguesPage() {
           right={
             <Link
               href="/leagues/new"
-              className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 font-sans text-sm focus-visible:outline-2"
+              className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 font-sans text-sm focus-visible:outline-2"
             >
               Start a league
             </Link>
@@ -53,7 +53,7 @@ export default async function LeaguesPage() {
               <li key={league.id}>
                 <Link
                   href={`/leagues/${league.id}`}
-                  className="bg-bg-surface hover:bg-bg-raised focus-visible:outline-accent-fill flex flex-col gap-1 rounded-sm p-4 focus-visible:outline-2"
+                  className="bg-bg-panel hover:bg-bg-surface focus-visible:outline-accent-fill flex flex-col gap-1 rounded-sm p-4 focus-visible:outline-2"
                 >
                   <span className="flex flex-wrap items-baseline gap-x-3">
                     <span className="text-text-primary text-sm">{league.name}</span>

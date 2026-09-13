@@ -102,8 +102,8 @@ function Step({
         // is always present so selecting a step does not shift the row by 1px.
         'border',
         checked
-          ? 'bg-bg-raised text-text-primary border-text-secondary'
-          : 'bg-bg-surface text-text-secondary border-transparent',
+          ? 'bg-bg-surface text-text-primary border-text-secondary'
+          : 'bg-bg-panel text-text-secondary border-transparent',
         unit && 'tabular font-mono',
       )}
     >

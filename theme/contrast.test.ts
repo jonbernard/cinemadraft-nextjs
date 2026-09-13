@@ -49,41 +49,41 @@ describe.each(['dark', 'light'] as const)('%s palette meets WCAG AA', (scheme) =
   const p = palettes[scheme];
 
   it.each([
-    ['primary on base', p.text.primary, p.bg.base, TEXT],
+    ['primary on ground', p.text.primary, p.bg.ground, TEXT],
+    ['primary on panel', p.text.primary, p.bg.panel, TEXT],
     ['primary on surface', p.text.primary, p.bg.surface, TEXT],
-    ['primary on raised', p.text.primary, p.bg.raised, TEXT],
-    ['secondary on base', p.text.secondary, p.bg.base, TEXT],
+    ['secondary on ground', p.text.secondary, p.bg.ground, TEXT],
+    ['secondary on panel', p.text.secondary, p.bg.panel, TEXT],
     ['secondary on surface', p.text.secondary, p.bg.surface, TEXT],
-    ['secondary on raised', p.text.secondary, p.bg.raised, TEXT],
-    // 🔴 `on raised` is the pair that failed on the first pass at 3.87 and is
+    // 🔴 `on surface` is the pair that failed on the first pass at 3.87 and is
     // the reason dim moved to #8C8598. Deleting this row would let it back in.
-    ['dim on base', p.text.dim, p.bg.base, TEXT],
+    ['dim on ground', p.text.dim, p.bg.ground, TEXT],
+    ['dim on panel', p.text.dim, p.bg.panel, TEXT],
     ['dim on surface', p.text.dim, p.bg.surface, TEXT],
-    ['dim on raised', p.text.dim, p.bg.raised, TEXT],
-    ['accent text on base', p.accent.text, p.bg.base, TEXT],
+    ['accent text on ground', p.accent.text, p.bg.ground, TEXT],
+    ['accent text on panel', p.accent.text, p.bg.panel, TEXT],
     ['accent text on surface', p.accent.text, p.bg.surface, TEXT],
-    ['accent text on raised', p.accent.text, p.bg.raised, TEXT],
-    ['brass text on base', p.brass.text, p.bg.base, TEXT],
+    ['brass text on ground', p.brass.text, p.bg.ground, TEXT],
+    ['brass text on panel', p.brass.text, p.bg.panel, TEXT],
     ['brass text on surface', p.brass.text, p.bg.surface, TEXT],
-    ['brass text on raised', p.brass.text, p.bg.raised, TEXT],
-    ['beam on base', p.beam, p.bg.base, TEXT],
-    ['beam on raised', p.beam, p.bg.raised, TEXT],
+    ['beam on ground', p.beam, p.bg.ground, TEXT],
+    ['beam on surface', p.beam, p.bg.surface, TEXT],
     // A hairline divider is not UI a user must perceive to operate the app,
     // so it is held to visibility rather than to the 3:1 non-text threshold.
-    ['rule on base', p.border.rule, p.bg.base, 1.2],
+    ['rule on ground', p.border.rule, p.bg.ground, 1.2],
     // 🔴 The score colours are held to the *text* threshold, not the 3:1
     // non-text one, because the number is printed in them. That is what makes
     // the chip readable in greyscale and to a colour-blind reader — the colour
     // is a second signal, never the only one (§6.7, a11y `color-not-only`).
-    ['score high on base', p.score.high, p.bg.base, TEXT],
-    ['score mid on base', p.score.mid, p.bg.base, TEXT],
-    ['score low on base', p.score.low, p.bg.base, TEXT],
+    ['score high on ground', p.score.high, p.bg.ground, TEXT],
+    ['score mid on ground', p.score.mid, p.bg.ground, TEXT],
+    ['score low on ground', p.score.low, p.bg.ground, TEXT],
+    ['score high on panel', p.score.high, p.bg.panel, TEXT],
+    ['score mid on panel', p.score.mid, p.bg.panel, TEXT],
+    ['score low on panel', p.score.low, p.bg.panel, TEXT],
     ['score high on surface', p.score.high, p.bg.surface, TEXT],
     ['score mid on surface', p.score.mid, p.bg.surface, TEXT],
     ['score low on surface', p.score.low, p.bg.surface, TEXT],
-    ['score high on raised', p.score.high, p.bg.raised, TEXT],
-    ['score mid on raised', p.score.mid, p.bg.raised, TEXT],
-    ['score low on raised', p.score.low, p.bg.raised, TEXT],
     // The one correct use of accent.fill: as a fill, with white on it.
     ['white on accent fill', '#FFFFFF', p.accent.fill, TEXT],
     // 🔴 The whole point of brass.contrast. Dark ink is 7.55 on the dark
@@ -100,14 +100,14 @@ describe('the §6.4 corrections stay corrected', () => {
   it('rejects carmine fill as dark-mode text', () => {
     // 3.79:1. This is the entire reason accent.text exists as a separate
     // token — if this ever passes, someone widened a palette by accident.
-    expect(contrastRatio(palettes.dark.accent.fill, palettes.dark.bg.base)).toBeLessThan(
-      TEXT,
-    );
+    expect(
+      contrastRatio(palettes.dark.accent.fill, palettes.dark.bg.ground),
+    ).toBeLessThan(TEXT);
   });
 
   it.each([
-    ['#7C8089 as light secondary', '#7C8089', palettes.light.bg.base],
-    ['#6E757F as dark mono label', '#6E757F', palettes.dark.bg.base],
+    ['#7C8089 as light secondary', '#7C8089', palettes.light.bg.ground],
+    ['#6E757F as dark mono label', '#6E757F', palettes.dark.bg.ground],
   ])('%s was replaced because it failed', (_label, rejected, bg) => {
     expect(contrastRatio(rejected, bg)).toBeLessThan(TEXT);
   });
@@ -154,19 +154,19 @@ describe.each(['dark', 'light'] as const)(
       ).toBeGreaterThanOrEqual(TEXT);
     });
 
-    // 🔴 Two grounds, not one. The card is bg.surface, but the footer action —
+    // 🔴 Two grounds, not one. The card is bg.panel, but the footer action —
     // "Register" / "Log in" — renders *outside* the card on the auth layout's
-    // bg.base. Measured in the browser: the shipped link was 3.51:1 on the card
+    // bg.ground. Measured in the browser: the shipped link was 3.51:1 on the card
     // and 3.79:1 on the ground. Asserting only the card would miss the worse of
     // the two.
     it.each([
       ['the footer link on the card', 'colorBackground'],
-      ['the footer link on the page ground', 'bg-base'],
+      ['the footer link on the page ground', 'bg-ground'],
     ])('%s', (_label, ground) => {
       const bg =
         ground === 'colorBackground'
           ? resolve(v.colorBackground, scheme)
-          : palettes[scheme].bg.base;
+          : palettes[scheme].bg.ground;
       expect(linkColor).toBeDefined();
       expect(
         contrastRatio(resolve((linkColor as { color: string }).color, scheme), bg),

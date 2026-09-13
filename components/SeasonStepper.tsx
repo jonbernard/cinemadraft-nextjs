@@ -268,7 +268,7 @@ export function SeasonStepper({
                 // moves through, and assistive tech should land on the moment
                 // the league is actually waiting for.
                 aria-current={isNext ? 'step' : undefined}
-                className="bg-bg-raised flex w-40 shrink-0 flex-col gap-2 rounded-sm p-3"
+                className="bg-bg-surface flex w-40 shrink-0 flex-col gap-2 rounded-sm p-3"
               >
                 <StatusChip
                   // 🔴 P17.T20 (a later tranche) spends the `beam` token here
@@ -279,7 +279,7 @@ export function SeasonStepper({
                   // The card is already `raised`, so a neutral chip steps down
                   // rather than up; `self-start` keeps it a badge rather than a
                   // stretched banner in the flex column.
-                  className={cn('self-start', !isNext && 'bg-bg-surface')}
+                  className={cn('self-start', !isNext && 'bg-bg-panel')}
                 >
                   {phase.complete
                     ? 'Complete'
@@ -346,7 +346,7 @@ export function SeasonStepper({
             onClick={() => setRequested(Math.max(0, offset - visible))}
             disabled={offset === 0}
             aria-label="Earlier in the season"
-            className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex h-11 min-w-11 items-center justify-center rounded-sm transition-colors focus-visible:outline-2 disabled:opacity-40"
+            className="bg-bg-surface text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex h-11 min-w-11 items-center justify-center rounded-sm transition-colors focus-visible:outline-2 disabled:opacity-40"
           >
             <span aria-hidden="true">‹</span>
           </button>
@@ -355,7 +355,7 @@ export function SeasonStepper({
             onClick={() => setRequested(Math.min(maxOffset, offset + visible))}
             disabled={offset === maxOffset}
             aria-label="Later in the season"
-            className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex h-11 min-w-11 items-center justify-center rounded-sm transition-colors focus-visible:outline-2 disabled:opacity-40"
+            className="bg-bg-surface text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex h-11 min-w-11 items-center justify-center rounded-sm transition-colors focus-visible:outline-2 disabled:opacity-40"
           >
             <span aria-hidden="true">›</span>
           </button>

@@ -159,7 +159,7 @@ function fitChroma(okL: number, max: number, hue: number): number {
  * invisible UI element is a worse outcome than a loud failure at ingest.
  */
 export function clampAccent(hex: string, scheme: ColorScheme): string {
-  const ground = palettes[scheme].bg.base;
+  const ground = palettes[scheme].bg.ground;
   const [okL, rawChroma, hue] = hexToOklch(hex);
   const chroma = rawChroma < GREY_CHROMA ? 0 : Math.min(rawChroma, MAX_CHROMA);
 

@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 
 export default function TokensPage() {
   return (
-    <main className="bg-bg-base text-text-primary flex min-h-dvh flex-col items-start gap-8 p-8">
+    <main className="bg-bg-ground text-text-primary flex min-h-dvh flex-col items-start gap-8 p-8">
       {/* 🔴 Plain text, deliberately. The smoke run's "the page renders" check
           only needs this word on screen, and the markup this page was rebuilt
           from carried `font-display`, `uppercase` and the Archivo `wdth` axis —

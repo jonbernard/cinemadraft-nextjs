@@ -157,7 +157,7 @@ export function GroupCeremony({
       ref={dialog}
       aria-labelledby={headlineId}
       onCancel={onCancel}
-      className="bg-bg-base text-text-primary m-0 h-full max-h-none w-full max-w-none p-0 backdrop:bg-black/80"
+      className="bg-bg-ground text-text-primary m-0 h-full max-h-none w-full max-w-none p-0 backdrop:bg-black/80"
     >
       <div className="relative flex min-h-full flex-col items-center justify-center gap-8 p-6">
         {isSettled && !still ? (
@@ -215,7 +215,7 @@ export function GroupCeremony({
               <li
                 key={entry.group}
                 className={cn(
-                  'border-border-rule bg-bg-surface rounded-sm border p-4',
+                  'border-border-rule bg-bg-panel rounded-sm border p-4',
                   // The last group to land is the one being looked at.
                   !still && index === landed.length - 1 && 'animate-deal-in',
                 )}
@@ -249,7 +249,7 @@ export function GroupCeremony({
         <button
           type="button"
           onClick={isSettled ? done : skip}
-          className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill min-h-11 border px-6 text-sm focus-visible:outline-2"
+          className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill min-h-11 border px-6 text-sm focus-visible:outline-2"
         >
           {isSettled ? 'Done' : 'Skip'}
         </button>

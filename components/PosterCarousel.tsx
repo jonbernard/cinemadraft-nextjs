@@ -119,7 +119,7 @@ export function PosterCarousel({
                 height={750}
                 // Explicit ratio so the strip does not reflow as images arrive
                 // (Core Web Vitals: CLS). Every TMDB poster is 2:3.
-                className="poster-radius bg-bg-raised light:border light:border-border-rule aspect-[2/3] w-full object-contain"
+                className="poster-radius bg-bg-surface light:border light:border-border-rule aspect-[2/3] w-full object-contain"
                 loading={position === 0 ? 'eager' : 'lazy'}
               />
             </li>
@@ -167,7 +167,7 @@ function StripButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center border disabled:opacity-40 focus-visible:outline-2"
+      className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center border disabled:opacity-40 focus-visible:outline-2"
     >
       <svg
         aria-hidden="true"

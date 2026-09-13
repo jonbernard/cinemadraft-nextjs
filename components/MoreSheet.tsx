@@ -63,7 +63,7 @@ export function MoreSheet({
       id={id}
       ref={ref}
       aria-label="More"
-      className="bg-bg-surface text-text-primary mt-auto mb-0 w-full max-w-none rounded-t-lg rounded-b-none p-0 backdrop:bg-black/60 xl:hidden"
+      className="bg-bg-panel text-text-primary mt-auto mb-0 w-full max-w-none rounded-t-lg rounded-b-none p-0 backdrop:bg-black/60 xl:hidden"
     >
       <div className="flex flex-col gap-4 p-4">
         {/* Above "Yours": the phone has no strip, so this is the only way to
@@ -75,7 +75,7 @@ export function MoreSheet({
               onClick={onSearch}
               aria-haspopup="dialog"
               aria-controls={searchId}
-              className="focus-visible:outline-accent-fill text-text-secondary hover:text-text-primary hover:bg-bg-raised flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-colors focus-visible:outline-2"
+              className="focus-visible:outline-accent-fill text-text-secondary hover:text-text-primary hover:bg-bg-surface flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-colors focus-visible:outline-2"
             >
               <SheetIcon path="M18 18l-3.5-3.5M4 10.5a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0" />
               Search
@@ -99,8 +99,8 @@ export function MoreSheet({
                       className={cn(
                         'focus-visible:outline-accent-fill flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-colors focus-visible:outline-2',
                         current
-                          ? 'bg-bg-raised text-text-primary shadow-[inset_2px_0_0_0_var(--color-accent-fill)]'
-                          : 'text-text-secondary hover:text-text-primary hover:bg-bg-raised',
+                          ? 'bg-bg-surface text-text-primary shadow-[inset_2px_0_0_0_var(--color-accent-fill)]'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-bg-surface',
                       )}
                     >
                       <SheetIcon path={link.path} />
@@ -129,7 +129,7 @@ export function MoreSheet({
           <>
             <Link
               href="/admin"
-              className="focus-visible:outline-accent-fill text-text-secondary hover:text-text-primary hover:bg-bg-raised flex min-h-11 items-center rounded-sm px-2 text-sm focus-visible:outline-2"
+              className="focus-visible:outline-accent-fill text-text-secondary hover:text-text-primary hover:bg-bg-surface flex min-h-11 items-center rounded-sm px-2 text-sm focus-visible:outline-2"
             >
               Admin
             </Link>

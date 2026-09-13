@@ -123,7 +123,10 @@ export function ReorderableList<T>({
                     <li
                       ref={draggable.innerRef}
                       {...draggable.draggableProps}
-                      className={cn(itemClassName, snapshot.isDragging && 'bg-bg-raised')}
+                      className={cn(
+                        itemClassName,
+                        snapshot.isDragging && 'bg-bg-surface',
+                      )}
                     >
                       {children(item, {
                         index,

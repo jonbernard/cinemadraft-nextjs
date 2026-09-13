@@ -68,7 +68,7 @@ describe('oklch conversion', () => {
 describe.each(['dark', 'light'] as const)(
   'clampAccent against the %s ground',
   (scheme: ColorScheme) => {
-    const ground = palettes[scheme].bg.base;
+    const ground = palettes[scheme].bg.ground;
 
     it.each(HOSTILE)('%s clears 4.5:1', (hex) => {
       expect(contrastRatio(clampAccent(hex, scheme), ground)).toBeGreaterThanOrEqual(4.5);

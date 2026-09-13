@@ -65,7 +65,7 @@ export default async function JoinPage({
           </Link>
           <Link
             href={`/auth/login?redirect_url=/join/${uuid}`}
-            className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-4 text-sm transition-colors focus-visible:outline-2"
+            className="bg-bg-surface text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-4 text-sm transition-colors focus-visible:outline-2"
           >
             I already have an account
           </Link>
@@ -87,7 +87,7 @@ export default async function JoinPage({
         </p>
         <Link
           href={`/leagues/${league.id}`}
-          className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 w-fit items-center rounded-sm px-4 text-sm transition-colors focus-visible:outline-2"
+          className="bg-bg-surface text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 w-fit items-center rounded-sm px-4 text-sm transition-colors focus-visible:outline-2"
         >
           Go to the league
         </Link>

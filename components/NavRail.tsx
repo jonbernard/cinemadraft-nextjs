@@ -8,7 +8,7 @@ import { Wordmark } from './Wordmark';
 /**
  * The desktop rail (D67).
  *
- * 208px on `bg.surface` at `--radius-md`, inset from the ground — a floating
+ * 208px on `bg.panel` at `--radius-sm`, inset from the ground — a floating
  * panel, not a bordered sidebar. Measured off Spotify's shell, which is why a
  * dense list UI reads there as a media player rather than an admin console.
  *
@@ -55,7 +55,7 @@ export function NavRail({
       // asks for a floating panel and a panel occupies its column. Nothing is
       // added to fill the space — empty surface is the point, and inventing
       // rail content to justify the height would be the wrong fix.
-      className="bg-bg-surface rounded-sm flex h-full w-[208px] flex-col gap-6 p-3"
+      className="bg-bg-panel rounded-sm flex h-full w-[208px] flex-col gap-6 p-3"
     >
       <Link
         href="/"
@@ -108,8 +108,8 @@ function Group({
                   'focus-visible:outline-accent-fill flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-[color,background-color] focus-visible:outline-2',
                   current
                     ? // Two signals: the surface step and the carmine edge.
-                      'bg-bg-raised text-text-primary shadow-[inset_2px_0_0_0_var(--color-accent-fill)]'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-raised',
+                      'bg-bg-surface text-text-primary shadow-[inset_2px_0_0_0_var(--color-accent-fill)]'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-surface',
                 )}
               >
                 <NavIcon path={link.path} />

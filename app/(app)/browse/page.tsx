@@ -80,7 +80,7 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
 
   return (
     // No ground and no padding of its own: `AppShell`'s content panel owns
-    // both, and repainting `bg-bg-base` here paints its outer ground back over
+    // both, and repainting `bg-bg-ground` here paints its outer ground back over
     // the panel this sits inside.
     <>
       <div className="mx-auto flex max-w-6xl flex-col gap-10">
@@ -103,7 +103,7 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
             {/* The scrim is what makes the heading legible over an unknown
                 image — the backdrop changes daily, so no fixed text colour can
                 be trusted against it. */}
-            <div className="from-bg-surface absolute inset-0 bg-gradient-to-t via-transparent" />
+            <div className="from-bg-panel absolute inset-0 bg-gradient-to-t via-transparent" />
           </div>
         ) : null}
 

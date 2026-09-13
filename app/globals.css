@@ -32,9 +32,9 @@
  * them under MUI's own attribute.
  */
 @theme {
-  --color-bg-base: #0a0910;
-  --color-bg-surface: #16131c;
-  --color-bg-raised: #211c29;
+  --color-bg-ground: #0a0910;
+  --color-bg-panel: #16131c;
+  --color-bg-surface: #211c29;
   --color-border-rule: #302938;
   --color-text-primary: #efece9;
   --color-text-secondary: #a8a1b2;
@@ -185,9 +185,9 @@
 );
 
 [data-mui-color-scheme="light"] {
-  --color-bg-base: #efeae2;
-  --color-bg-surface: #fbf9f6;
-  --color-bg-raised: #e7e1d7;
+  --color-bg-ground: #efeae2;
+  --color-bg-panel: #fbf9f6;
+  --color-bg-surface: #e7e1d7;
   --color-border-rule: #d5cdc0;
   --color-text-primary: #1a151f;
   --color-text-secondary: #5c5566;

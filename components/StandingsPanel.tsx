@@ -92,7 +92,7 @@ export function StandingsPanel({
               // `bg-raised` rather than `bg-surface`: the panel itself sits on
               // a surface, and a tint the same colour as its own ground is no
               // tint at all.
-              row.isViewer && 'bg-bg-raised border-l-accent-fill border-l-2',
+              row.isViewer && 'bg-bg-surface border-l-accent-fill border-l-2',
             )}
           >
             <td className="text-text-secondary tabular py-2 pr-3 text-right font-mono">

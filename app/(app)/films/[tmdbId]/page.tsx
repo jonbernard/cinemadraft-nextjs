@@ -217,7 +217,7 @@ function FilmBanner({
 }) {
   return (
     <header className="relative mb-8">
-      <CinemaFrame className="bg-bg-raised">
+      <CinemaFrame className="bg-bg-surface">
         {film.backdropUrl ? (
           <RemoteImage
             src={film.backdropUrl}
@@ -230,7 +230,7 @@ function FilmBanner({
             className="object-cover"
           />
         ) : null}
-        <div className="from-bg-base absolute inset-0 bg-gradient-to-t via-transparent" />
+        <div className="from-bg-ground absolute inset-0 bg-gradient-to-t via-transparent" />
       </CinemaFrame>
 
       {/* 🔴 `relative` is load-bearing, not decoration. This block is pulled up
@@ -329,7 +329,7 @@ function SimilarFilms({ films }: { films: FilmPage['similar'] }) {
               href={`/films/${film.tmdbId}`}
               className="focus-visible:outline-accent-fill group flex flex-col gap-2 focus-visible:outline-2"
             >
-              <span className="poster-radius bg-bg-raised light:border light:border-border-rule relative block aspect-[2/3] overflow-hidden">
+              <span className="poster-radius bg-bg-surface light:border light:border-border-rule relative block aspect-[2/3] overflow-hidden">
                 {film.posterUrl ? (
                   <RemoteImage
                     src={film.posterUrl}

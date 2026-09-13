@@ -25,8 +25,8 @@ describe('MUI theme is built from the tokens', () => {
     '%s palette matches tokens.ts',
     (name: ColorScheme) => {
       const p = theme.colorSchemes[name]?.palette;
-      expect(p?.background?.default).toBe(palettes[name].bg.base);
-      expect(p?.background?.paper).toBe(palettes[name].bg.surface);
+      expect(p?.background?.default).toBe(palettes[name].bg.ground);
+      expect(p?.background?.paper).toBe(palettes[name].bg.panel);
       expect(p?.text?.primary).toBe(palettes[name].text.primary);
       expect(p?.divider).toBe(palettes[name].border.rule);
     },

@@ -35,13 +35,13 @@ export function InviteLink({ url, className }: { url: string; className?: string
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <div className="flex flex-wrap items-center gap-2">
-        <code className="border-border-rule bg-bg-raised text-text-secondary min-w-0 flex-1 overflow-x-auto border px-3 py-2 font-mono text-xs">
+        <code className="border-border-rule bg-bg-surface text-text-secondary min-w-0 flex-1 overflow-x-auto border px-3 py-2 font-mono text-xs">
           {url}
         </code>
         <button
           type="button"
           onClick={copy}
-          className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
+          className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill flex min-h-11 items-center border px-4 text-sm focus-visible:outline-2"
         >
           Copy
         </button>

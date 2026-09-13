@@ -66,7 +66,7 @@ export function CreateLeagueForm({ className }: { className?: string }) {
           required
           maxLength={120}
           aria-describedby={helpId}
-          className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill w-full border px-3 py-2 text-base focus-visible:outline-2"
+          className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill w-full border px-3 py-2 text-base focus-visible:outline-2"
         />
         <span id={helpId} className="text-text-dim text-xs">
           Whatever everyone already calls it.
@@ -85,8 +85,8 @@ export function CreateLeagueForm({ className }: { className?: string }) {
           <label
             key={option.value}
             className={cn(
-              'bg-bg-surface flex min-h-11 cursor-pointer items-start gap-3 rounded-sm p-3',
-              type === option.value && 'border-l-accent-fill bg-bg-raised border-l-2',
+              'bg-bg-panel flex min-h-11 cursor-pointer items-start gap-3 rounded-sm p-3',
+              type === option.value && 'border-l-accent-fill bg-bg-surface border-l-2',
             )}
           >
             <input

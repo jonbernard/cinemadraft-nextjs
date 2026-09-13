@@ -4,7 +4,7 @@ import { palettes } from '@/theme/tokens';
  * The share-card palette (P15.T6).
  *
  * 🔴 `next/og` renders in an isolated Satori context: no CSS variables, no
- * Tailwind, no cascade — so a card cannot write `var(--color-bg-base)` and has
+ * Tailwind, no cascade — so a card cannot write `var(--color-bg-ground)` and has
  * to hold real values. Reading them out of `theme/tokens.ts` keeps the single
  * source of truth intact, which a hand-copied hex would not.
  *
@@ -14,8 +14,8 @@ import { palettes } from '@/theme/tokens';
 const DARK = palettes.dark;
 
 export const CARD = {
-  bg: DARK.bg.base,
-  surface: DARK.bg.surface,
+  bg: DARK.bg.ground,
+  surface: DARK.bg.panel,
   ink: DARK.text.primary,
   inkSecondary: DARK.text.secondary,
   inkDim: DARK.text.dim,

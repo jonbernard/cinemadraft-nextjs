@@ -108,7 +108,7 @@ function Avatar({ name, image }: { name: string; image: string | null }) {
         alt=""
         width={56}
         height={56}
-        className="bg-bg-raised h-14 w-14 shrink-0 rounded-full object-cover"
+        className="bg-bg-surface h-14 w-14 shrink-0 rounded-full object-cover"
       />
     );
   }
@@ -116,7 +116,7 @@ function Avatar({ name, image }: { name: string; image: string | null }) {
   return (
     <span
       aria-hidden="true"
-      className="bg-bg-raised text-text-secondary flex h-14 w-14 shrink-0 items-center justify-center rounded-full font-mono text-lg"
+      className="bg-bg-surface text-text-secondary flex h-14 w-14 shrink-0 items-center justify-center rounded-full font-mono text-lg"
     >
       {name.slice(0, 1).toUpperCase()}
     </span>

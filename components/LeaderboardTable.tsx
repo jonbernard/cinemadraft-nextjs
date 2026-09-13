@@ -126,7 +126,7 @@ export function LeaderboardTable({
           <thead>
             <tr className="border-border-rule border-b">
               {/* 🔴 The sticky cell paints its own ground or the scrolled
-                columns show through it. `bg-bg-surface` is the tone of the
+                columns show through it. `bg-bg-panel` is the tone of the
                 `Panel as="main"` this table sits directly inside
                 (`components/Panel.tsx` defaults to `surface`) — not a guess,
                 and it must be re-checked if the table is ever moved into a
@@ -135,7 +135,7 @@ export function LeaderboardTable({
                 that is invisibly wrong in light. */}
               <th
                 scope="col"
-                className="text-text-dim bg-bg-surface py-2 pr-3 text-left text-xs font-normal lg:sticky lg:left-0 lg:z-10"
+                className="text-text-dim bg-bg-panel py-2 pr-3 text-left text-xs font-normal lg:sticky lg:left-0 lg:z-10"
               >
                 Film
               </th>
@@ -162,7 +162,7 @@ export function LeaderboardTable({
                 <tr className="border-border-rule border-b">
                   <th
                     scope="row"
-                    className="text-text-primary bg-bg-surface py-2 pr-3 text-left font-normal lg:sticky lg:left-0 lg:z-10"
+                    className="text-text-primary bg-bg-panel py-2 pr-3 text-left font-normal lg:sticky lg:left-0 lg:z-10"
                   >
                     {/* 🔴 Below `lg` the per-show columns are hidden (D79), which
                       left the reader a total with no account of where it came
@@ -261,7 +261,7 @@ export function LeaderboardTable({
         <button
           type="button"
           onClick={() => setShown((current) => current + PAGE)}
-          className="bg-bg-raised text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 items-center justify-center gap-2 self-center rounded-sm px-6 text-sm transition-colors focus-visible:outline-2"
+          className="bg-bg-surface text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 items-center justify-center gap-2 self-center rounded-sm px-6 text-sm transition-colors focus-visible:outline-2"
         >
           Show {Math.min(PAGE, remaining)} more
           <span className="text-text-dim tabular font-mono text-xs">

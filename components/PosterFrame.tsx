@@ -96,7 +96,7 @@ export function PosterFrame({
           cascade to arbitrate. */}
       <div
         className={cn(
-          'poster-radius bg-bg-raised relative aspect-[2/3] overflow-hidden',
+          'poster-radius bg-bg-surface relative aspect-[2/3] overflow-hidden',
           'light:border-x light:border-b light:border-x-border-rule light:border-b-border-rule',
           status === 'nominated'
             ? 'border-t-accent-fill border-t-2'
@@ -152,7 +152,7 @@ export function PosterFrame({
             so the grid holds, and the bar carries the magnitude. Omitted with
             the score, because a bar showing a share of nothing is noise. */}
         {points == null ? null : (
-          <span className="bg-bg-raised block h-0.5 w-full" aria-hidden="true">
+          <span className="bg-bg-surface block h-0.5 w-full" aria-hidden="true">
             <span
               className="block h-full"
               style={{

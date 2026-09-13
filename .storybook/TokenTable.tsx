@@ -8,17 +8,17 @@ import { type ColorScheme, palettes } from '../theme/tokens';
  */
 export function TokenTable({
   scheme,
-  ground = 'raised',
+  ground = 'surface',
 }: {
   scheme: ColorScheme;
-  ground?: 'base' | 'surface' | 'raised';
+  ground?: 'ground' | 'panel' | 'surface';
 }) {
   const p = palettes[scheme];
   const bg = p.bg[ground];
   const rows: [string, string, number | null][] = [
-    ['bg.base', p.bg.base, null],
+    ['bg.ground', p.bg.ground, null],
+    ['bg.panel', p.bg.panel, null],
     ['bg.surface', p.bg.surface, null],
-    ['bg.raised', p.bg.raised, null],
     ['border.rule', p.border.rule, null],
     ['text.primary', p.text.primary, 4.5],
     ['text.secondary', p.text.secondary, 4.5],

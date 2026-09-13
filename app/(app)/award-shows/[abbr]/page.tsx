@@ -160,7 +160,7 @@ export default async function AwardShowPage({
         </header>
 
         {isAdmin && event ? (
-          <Panel tone="raised" as="section" className="flex flex-col gap-4 p-4">
+          <Panel tone="surface" as="section" className="flex flex-col gap-4 p-4">
             <SectionHead as="h2" className="pb-0">
               Edit this show
             </SectionHead>
@@ -230,7 +230,7 @@ export default async function AwardShowPage({
         )}
 
         {isAdmin && event ? (
-          <Panel tone="raised" as="section" className="flex flex-col gap-3 p-4">
+          <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
             <SectionHead as="h2" className="pb-0">
               Add a category
             </SectionHead>

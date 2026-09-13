@@ -35,7 +35,7 @@ export default function AppError({
   // (P17.T27): outside the shell there is nothing else to supply the content
   // landmark.
   return (
-    <main className="bg-bg-base min-h-dvh">
+    <main className="bg-bg-ground min-h-dvh">
       <ErrorPanel kind={kindOf(error)} onRetry={reset} />
     </main>
   );

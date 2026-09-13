@@ -18,7 +18,7 @@ import { type ColorScheme, flatPalette, palettes, radius } from './tokens';
  */
 const css = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8');
 
-/** `--color-bg-base: #0B0D10;` -> Map { 'bg-base' => '#0b0d10' } for one block. */
+/** `--color-bg-ground: #0B0D10;` -> Map { 'bg-base' => '#0b0d10' } for one block. */
 function propsIn(block: string): Map<string, string> {
   const found = new Map<string, string>();
   for (const [, name, value] of block.matchAll(/--color-([a-z-]+):\s*([^;]+);/g)) {

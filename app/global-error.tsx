@@ -12,7 +12,7 @@ import { useEffect } from 'react';
  *
  * The tokens are still named in the styles so it reads as the same app, but
  * they carry literal fallbacks: if `globals.css` never loaded, a bare
- * `var(--color-bg-base)` would resolve to nothing and leave black text on a
+ * `var(--color-bg-ground)` would resolve to nothing and leave black text on a
  * transparent ground.
  */
 export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
@@ -28,7 +28,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
           minHeight: '100dvh',
           display: 'grid',
           placeItems: 'center',
-          background: 'var(--color-bg-base, #0A0910)',
+          background: 'var(--color-bg-ground, #0A0910)',
           color: 'var(--color-text-primary, #EFECE9)',
           fontFamily: 'system-ui, sans-serif',
         }}

@@ -117,20 +117,20 @@ export function RelinkPanel() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="member@example.com"
-            className="border-border-rule bg-bg-raised text-text-primary min-h-11 w-72 border px-3 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-72 border px-3 text-sm"
           />
         </label>
         <button
           type="submit"
           disabled={pending}
-          className="border-border-rule text-text-primary hover:bg-bg-raised min-h-11 border px-4 text-sm disabled:opacity-60"
+          className="border-border-rule text-text-primary hover:bg-bg-surface min-h-11 border px-4 text-sm disabled:opacity-60"
         >
           Find
         </button>
       </form>
 
       {user ? (
-        <div className="bg-bg-raised flex flex-col gap-4 rounded-sm p-4">
+        <div className="bg-bg-surface flex flex-col gap-4 rounded-sm p-4">
           <p className="text-text-primary text-sm">
             <strong>{displayName(user)}</strong> is currently{' '}
             {user.clerkId ? (
@@ -150,7 +150,7 @@ export function RelinkPanel() {
               value={clerkId}
               onChange={(event) => setClerkId(event.target.value)}
               placeholder="user_..."
-              className="border-border-rule bg-bg-raised text-text-primary min-h-11 w-96 border px-3 text-sm"
+              className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-96 border px-3 text-sm"
             />
           </label>
 
@@ -167,7 +167,7 @@ export function RelinkPanel() {
               type="button"
               onClick={unlink}
               disabled={pending || !user.clerkId}
-              className="border-border-rule text-text-primary hover:bg-bg-raised min-h-11 w-fit border px-4 text-sm disabled:opacity-60"
+              className="border-border-rule text-text-primary hover:bg-bg-surface min-h-11 w-fit border px-4 text-sm disabled:opacity-60"
             >
               Unlink
             </button>

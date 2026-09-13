@@ -69,7 +69,7 @@ function Attachment({ attachment }: { attachment: FeedAttachment }) {
             review: attachment.review,
             updatedAt: attachment.updatedAt,
           }}
-          className="bg-bg-raised"
+          className="bg-bg-surface"
         />
       </div>
     );

@@ -86,7 +86,9 @@ export function DraftBoard({
               key={seat.draftId}
               aria-current={isViewer ? true : undefined}
               className={
-                isViewer ? 'border-l-accent-fill bg-bg-raised border-l-2 pl-3' : undefined
+                isViewer
+                  ? 'border-l-accent-fill bg-bg-surface border-l-2 pl-3'
+                  : undefined
               }
             >
               <Shelf
@@ -180,7 +182,7 @@ export function DraftBoard({
                   aria-current={isViewer ? true : undefined}
                   className={cn(
                     'border-border-rule border-b align-top',
-                    isViewer && 'bg-bg-raised border-l-accent-fill border-l-2',
+                    isViewer && 'bg-bg-surface border-l-accent-fill border-l-2',
                   )}
                 >
                   <th scope="row" className="py-3 pr-4 text-left font-normal">

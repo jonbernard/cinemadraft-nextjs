@@ -13,7 +13,7 @@ import type { ReactNode } from 'react';
  */
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="bg-bg-base text-text-primary grid min-h-dvh place-items-center p-6">
+    <main className="bg-bg-ground text-text-primary grid min-h-dvh place-items-center p-6">
       <div className="flex w-full max-w-md flex-col items-center gap-8">
         <span className="font-serif text-text-primary text-xl tracking-[-0.02em]">
           Cinemadraft

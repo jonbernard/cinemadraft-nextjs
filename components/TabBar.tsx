@@ -67,7 +67,7 @@ export function TabBar({
     // the `<nav>`: the bar is the app's chrome as well as its navigation, and
     // the landmark must contain destinations only.
     <div
-      className="bg-bg-surface xl:hidden fixed inset-x-0 bottom-0 z-40 flex items-stretch"
+      className="bg-bg-panel xl:hidden fixed inset-x-0 bottom-0 z-40 flex items-stretch"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {/* Identity. `markOnly`, because the lockup's name would eat two tab

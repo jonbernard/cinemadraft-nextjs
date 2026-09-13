@@ -54,7 +54,7 @@ function SeatButton({
         aria-current={isCurrent ? 'true' : undefined}
         className={cn(
           'border-border-rule flex w-full items-baseline justify-between gap-3 border-b px-2 py-3 text-left',
-          isCurrent && 'border-l-accent-fill bg-bg-raised border-l-2',
+          isCurrent && 'border-l-accent-fill bg-bg-surface border-l-2',
         )}
       >
         <span className="flex min-w-0 flex-wrap items-center gap-2">

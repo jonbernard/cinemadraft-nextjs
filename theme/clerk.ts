@@ -33,7 +33,7 @@ type Appearance = NonNullable<ComponentProps<typeof ClerkProvider>['appearance']
  */
 export const clerkAppearance = {
   variables: {
-    colorBackground: 'var(--color-bg-surface)',
+    colorBackground: 'var(--color-bg-panel)',
     colorPrimary: 'var(--color-accent-fill)',
     // 🔴 White, not text.primary. This slot is a pairing with a fill, and
     // text.primary flips with the scheme — near-white in dark, near-black in
@@ -44,7 +44,7 @@ export const clerkAppearance = {
     colorPrimaryForeground: 'var(--color-accent-contrast)',
     colorForeground: 'var(--color-text-primary)',
     colorMutedForeground: 'var(--color-text-secondary)',
-    colorInput: 'var(--color-bg-raised)',
+    colorInput: 'var(--color-bg-surface)',
     colorInputForeground: 'var(--color-text-primary)',
     colorBorder: 'var(--color-border-rule)',
     colorDanger: 'var(--color-accent-text)',

@@ -1282,7 +1282,7 @@ decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
 - [x] P17.T19 — 🔴 poster captions get **serif at 15px** — `PosterFrame.tsx:120` and `BrowseMonth.tsx:89` set film titles in Archivo, which D70 says are names. Newsreader deferred to after Phase 18
 - [ ] P17.T20 — `beam` **spent on live + the `Next · date TBA` chip**; not done until it renders
 - [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 **Unblocked by P17.T35**: brass means an award outcome only, and the "already means drafted" reading rested on a figure that does not reproduce
-- [ ] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
+- [x] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
 - [x] P17.T23 — **40px section step** (16px within a section, 8px within a group)
 - [x] P17.T24 — **enforce the 4px grid in `scripts/layering.sh`** (43 gaps off it today)
 - [x] P17.T25 — **6px is the default radius; fix the drift** (upholds D73; `md` 58 vs `sm` 36, `lg` unused)
@@ -1905,6 +1905,82 @@ recorded here, so the change is a number rather than an impression._
   against the ground (D67/D72), the nav rail's corner still matches the panels
   beside it, the award-show plates still look like plates, **and no border
   appeared**.
+
+- **P17.T22 — the surfaces are renamed to match how often each one renders.**
+  `base → ground`, `surface → panel`, `raised → surface`. 65 `.tsx`/`.ts`/`.mdx`
+  files swept, plus both palette blocks in `app/globals.css`, `theme/tokens.ts`,
+  `theme/index.ts`, `theme/contrast.test.ts`, `theme/oklch.ts`, `lib/og.ts`,
+  `.storybook/TokenTable.tsx` and `Styleguide.mdx`, and `Panel`'s public `tone`
+  prop with all seven of its call sites.
+
+- P17.T22 **amends D77** (awaiting a number; P17.T26 assigns D85+). D77 declined
+  this rename as "a mechanical diff across ~40 files with no behavioural gain and
+  no test that could catch a missed one". Both halves are now answered:
+  `scripts/layering.sh` → `check "no retired surface token names"` fails the
+  build on any surviving `base`/`raised` spelling, and the 48-screenshot
+  zero-diff pair (6 surfaces × 2 schemes × 4 widths, `maxDiffPixels: 0` **and
+  `threshold: 0`**, including `/leagues/1/draft`) proves no behavioural change.
+  Map: `base → ground`, `surface → panel`, `raised → surface`. D72 is unchanged
+  — no border returns, and none appeared.
+
+  🔴 **The guard is not total and the note says so.** It catches `base` and
+  `raised`, the two retired spellings, and nothing else — `surface` is a live
+  name after the rename, so a file writing `bg-panel` where it meant
+  `bg-surface` is a real hole the grep cannot see. That hole is covered by the
+  screenshot pair, not by the grep.
+
+  **Result: 48 passed, zero diff pixels, first run, no retries.** 🔴 But the
+  number only means something because the harness was made able to fail first:
+  - A **no-change re-run of the plan's version failed 3 of 48** with whole-page
+    diffs — `app/providers.tsx` mounts MUI's `InitColorSchemeScript`, which
+    runs before paint and re-stamps `data-mui-color-scheme` from storage, so
+    setting the attribute between `goto` and hydration is a race the script
+    wins about one time in sixteen. Fixed by putting the scheme in
+    `localStorage` via `addInitScript` before load and asserting it after.
+    Three consecutive no-change runs then gave 48/48, 48/48, 48/48.
+  - 🔴 **`maxDiffPixels: 0` is not "no pixel changed".** It counts pixels
+    differing by more than `threshold`, whose default is 0.2 in YIQ distance.
+    Measured: with the default, changing `--color-bg-raised` from `#211c29` to
+    `#211c2a` — one unit of blue — **passed all 48**. With `threshold: 0` that
+    same one-digit mutation **fails 18 of 48**: every dark surface where the
+    token renders, and no light one, because the light block overrides it.
+    Anyone quoting a Playwright zero-diff figure should check this first.
+
+  **The sed order is load-bearing and it bit twice.**
+  1. `surface → panel` must run before `raised → surface`, or every
+     freshly-created `surface` is re-renamed to `panel`. Ordered correctly and
+     verified between steps.
+  2. 🔴 **BSD `sed` has no `\b`.** The plan's `sed -i '' 's/-bg-surface\b/…/g'`
+     is a silent no-op on macOS — it reported success and changed nothing. The
+     sweep was redone in Python. A `git diff --stat` between steps, which the
+     plan asks for, is what caught it.
+
+  **Typecheck earned its place**, exactly as the plan predicted: it caught five
+  missed object keys the class-level sweep could not see (`lib/og.ts`,
+  `theme/oklch.ts`, `theme/oklch.test.ts`, `theme/index.test.ts`,
+  `components/Panel.stories.tsx`).
+
+  🔴 **One near-miss worth recording.** `Panel.stories.tsx` wrote
+  `tone: 'surface'` in object form, which a `tone="` grep cannot see. Because
+  `surface` is a live name both before and after, that story silently kept
+  compiling while asking for the *wrong* tone — the old default (`panel`)
+  became the new `surface`, so two stories rendered identically. This is the
+  concrete shape of the hole the guard cannot cover, found by reading rather
+  than by grep. Renamed to `Default` (tone `panel`) and `Surface`.
+
+  `theme/contrast.test.ts`: labels and property paths renamed, **no threshold
+  and no colour changed**, and every ratio is numerically identical — the file
+  passes unchanged in the full suite. T34's 4.69:1 `dim on raised` figure is
+  now `dim on surface` and is about the same colour.
+
+  Data discipline: one throwaway account (`e2e-p17-visual-reader@example.test`),
+  deleted in `afterAll` and verified by count — `users` 60, zero rows matching
+  `%example.test%`, `lib/db.test.ts` green.
+
+  🔴 **For whoever merges `p17-tranche5`:** that branch is writing new markup
+  against the OLD token names on purpose, because the rename was this tranche's.
+  The guard grep is what catches them. **Re-run the sweep over the merged
+  result; do not assume it is complete.**
 
 ---
 

@@ -53,7 +53,7 @@ export default async function DraftListPage() {
         ) : null}
 
         {/* 🔴 No `Panel` here (P17.T36). AppShell already renders the page's
-            content in `Panel as="main"` at the same `surface` tone, so a second
+            content in `Panel as="main"` at the same `panel` tone, so a second
             one is invisible and contributes only a 24px gutter — which is what
             put this page's heading, search field and empty state on three
             different left edges (445 / 469 / 493 at 1440px). A Panel around a

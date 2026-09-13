@@ -152,7 +152,7 @@ export function CategoryAdmin({
             value={nomineeName}
             onChange={(event) => setNomineeName(event.target.value)}
             placeholder="Required for this category"
-            className="border-border-rule bg-bg-raised text-text-primary w-full border px-3 py-2 text-sm"
+            className="border-border-rule bg-bg-surface text-text-primary w-full border px-3 py-2 text-sm"
           />
         </label>
       ) : null}

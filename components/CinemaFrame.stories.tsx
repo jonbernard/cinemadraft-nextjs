@@ -11,6 +11,6 @@ export default meta;
 
 export const Default: StoryObj<typeof meta> = {
   args: {
-    children: <div className="bg-bg-raised h-full w-full" />,
+    children: <div className="bg-bg-surface h-full w-full" />,
   },
 };

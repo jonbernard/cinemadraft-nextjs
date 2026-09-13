@@ -184,13 +184,13 @@ export function SeasonSetup({
                 value={dummyName}
                 onChange={onDummyNameChange}
                 placeholder="Their name"
-                className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill min-h-11 border px-3 text-sm focus-visible:outline-2"
+                className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill min-h-11 border px-3 text-sm focus-visible:outline-2"
               />
             </label>
             <button
               type="submit"
               disabled={pending}
-              className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill min-h-11 border px-4 text-sm disabled:opacity-60 focus-visible:outline-2"
+              className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill min-h-11 border px-4 text-sm disabled:opacity-60 focus-visible:outline-2"
             >
               Add seat
             </button>
@@ -211,14 +211,14 @@ export function SeasonSetup({
                 max={20}
                 value={groupCount}
                 onChange={onGroupCountChange}
-                className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill min-h-11 w-24 border px-3 text-sm focus-visible:outline-2"
+                className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill min-h-11 w-24 border px-3 text-sm focus-visible:outline-2"
               />
             </label>
             <button
               type="button"
               disabled={pending}
               onClick={deal}
-              className="border-border-rule text-text-primary hover:bg-bg-raised focus-visible:outline-accent-fill min-h-11 border px-4 text-sm disabled:opacity-60 focus-visible:outline-2"
+              className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill min-h-11 border px-4 text-sm disabled:opacity-60 focus-visible:outline-2"
             >
               Deal at random
             </button>
@@ -339,7 +339,7 @@ function SeatRow({
           value={seat.group ?? ''}
           disabled={disabled || !editable}
           onChange={onChange}
-          className="border-border-rule bg-bg-raised text-text-primary focus-visible:outline-accent-fill min-h-11 border px-2 text-sm focus-visible:outline-2"
+          className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill min-h-11 border px-2 text-sm focus-visible:outline-2"
         >
           <option value="">Unassigned</option>
           {options.map((group) => (

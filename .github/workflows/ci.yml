@@ -357,6 +357,33 @@ jobs:
           fi
           echo "radius comes from the scale"
 
+      - name: No retired surface token names
+        run: |
+          set -uo pipefail
+          # P17.T22. 🔴 This is the check D77 said could not exist, and it is
+          # the reason the rename was allowed to happen at all. D77 declined it
+          # in 2026-08 because "no test could catch a missed one" — true then,
+          # and this grep is the answer. `bg.raised` is now `bg.surface`,
+          # `bg.surface` is `bg.panel`, `bg.base` is `bg.ground`, and a new file
+          # written from an old example fails here rather than shipping a
+          # colour nobody chose.
+          #
+          # 🔴 Not total, and saying so is part of the check: it catches `base`
+          # and `raised`, the two RETIRED spellings, and that is all it can
+          # catch, because `surface` is a live name after the rename. A file
+          # writing `bg-panel` where it meant `bg-surface` is covered by
+          # e2e/visual.spec.ts's 48-screenshot pair, not by this grep.
+          offenders=$(grep -rnE -e "-bg-(base|raised)\b|--color-bg-(base|raised)\b|bg\.(base|raised)\b" \
+            components app lib theme .storybook \
+            --include='*.tsx' --include='*.ts' --include='*.css' --include='*.mdx' 2>/dev/null \
+            || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::retired surface names; base is ground, surface is panel, raised is surface"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "no retired surface token names"
+
   # package-lock.json must be generated on Linux.
   #
   # lightningcss (via Tailwind 4 and Vite) declares optional per-platform

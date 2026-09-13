@@ -12,7 +12,7 @@
  */
 
 export type Palette = {
-  bg: { base: string; surface: string; raised: string };
+  bg: { ground: string; panel: string; surface: string };
   border: { rule: string };
   text: { primary: string; secondary: string; dim: string };
   accent: { fill: string; text: string; contrast: string };
@@ -54,7 +54,7 @@ export const palettes: Record<ColorScheme, Palette> = {
     // Violet-warm, not neutral (D68). The hue shift at matched luminance is
     // the primary anti-"developer tool" signal — measured off Sleeper, whose
     // #05091D ground is what stops a dense stats UI reading as a terminal.
-    bg: { base: '#0A0910', surface: '#16131C', raised: '#211C29' },
+    bg: { ground: '#0A0910', panel: '#16131C', surface: '#211C29' },
     // Dividers and table rules only. Never a card outline (D72).
     border: { rule: '#302938' },
     text: { primary: '#EFECE9', secondary: '#A8A1B2', dim: '#8C8598' },
@@ -72,7 +72,7 @@ export const palettes: Record<ColorScheme, Palette> = {
     score: { high: '#63C08A', mid: '#D6A64A', low: '#E06C74' },
   },
   light: {
-    bg: { base: '#EFEAE2', surface: '#FBF9F6', raised: '#E7E1D7' },
+    bg: { ground: '#EFEAE2', panel: '#FBF9F6', surface: '#E7E1D7' },
     border: { rule: '#D5CDC0' },
     // §3.1 gives light `dim` its own value, distinct from `secondary` — unlike
     // the previous palette, which had no dedicated light `dim` and reused
@@ -100,9 +100,9 @@ export const palettes: Record<ColorScheme, Palette> = {
  */
 export function flatPalette(palette: Palette): Map<string, string> {
   const pairs: [string, string][] = [
-    ['bg-base', palette.bg.base],
+    ['bg-ground', palette.bg.ground],
+    ['bg-panel', palette.bg.panel],
     ['bg-surface', palette.bg.surface],
-    ['bg-raised', palette.bg.raised],
     ['border-rule', palette.border.rule],
     ['text-primary', palette.text.primary],
     ['text-secondary', palette.text.secondary],

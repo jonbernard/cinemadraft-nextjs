@@ -54,7 +54,7 @@ export function SeasonPicker({
       {/* Absolute so the open list does not shove the table down — the control
           lives in a `SectionHead` right slot and the section below it must not
           move under the reader's finger. */}
-      <ul className="bg-bg-raised absolute right-0 z-20 mt-1 flex max-h-64 flex-col overflow-y-auto rounded-sm p-1">
+      <ul className="bg-bg-surface absolute right-0 z-20 mt-1 flex max-h-64 flex-col overflow-y-auto rounded-sm p-1">
         {seasons.map((entry) => (
           <li key={entry}>
             <Link
