@@ -1982,6 +1982,46 @@ recorded here, so the change is a number rather than an impression._
   The guard grep is what catches them. **Re-run the sweep over the merged
   result; do not assume it is complete.**
 
+- **Tranche 4 closed (T18, T19, T24, T23, T25, T22) — the whole-product
+  numbers, before and after, from the same harness.** Measured with
+  `e2e/inventory.spec.ts` across `/`, `/browse`, `/award-shows`,
+  `/films/313369` at 1440px in both schemes, in a **production build**
+  (`next dev` answers 403 for `_next/static` on `127.0.0.1`):
+
+  | | Before (`a623f15`, pre-sweep) | After (T18–T25) |
+  |---|---|---|
+  | Fonts | `Archivo ×1572, IBM Plex Mono ×522, Instrument Serif ×76, Sora ×8, Newsreader ×2` | `Archivo ×1498, IBM Plex Mono ×522, Instrument Serif ×150, Sora ×8, Newsreader ×2` |
+  | Sizes | `14px ×1068, 12px ×920, 16px ×98, 11px ×46, 20px ×32, 28px ×6, 30px ×6, 17px ×2, 48px ×2` | `15px ×1068, 13px ×920, 16px ×98, 11px ×46, 20px ×32, 28px ×6, 30px ×6, 17px ×2, 48px ×2` |
+  | Gaps | `8px ×792, 12px ×280, 4px ×274, 16px ×202, 6px ×104, 2px ×36, 10px ×32, 24px ×20, 32px ×16, 40px ×12` | `8px ×928, 4px ×310, 12px ×268, 16px ×214, 24px ×20, 40px ×16, 32px ×12` |
+  | Radii | `poster-clamp ×216, 6px ×116, 10px ×94, 999px ×56` | `poster-clamp ×216, 6px ×210, 999px ×56` |
+
+  In one line each: body text moved 14/12px → 15/13px with **not one element
+  changing bucket**; 74 captions moved Archivo → Instrument Serif; every
+  off-grid gap (6px, 2px, 10px — 172 of them) went to zero; `10px` radius went
+  to zero and 6px absorbed all 94.
+
+  🔴 **The 2026-09-12 hand baseline is recorded above for history and is not
+  the comparison.** Its method was unrecorded and its element total (1,272)
+  does not reconcile with its own font histogram (1,312). The harness's
+  pre-sweep run does: fonts and sizes both sum to 2,180 before and 2,180 after.
+
+  Gate: `npm run verify` green (lint, typecheck, 11 layering checks, 1,789 unit
+  + 1,285 CI tests, build), and the full Playwright suite 108 passed / 54
+  skipped / 0 failed. Data: `users` 60, zero scratch rows.
+
+  🔴 **Five decision amendments are pending a number for P17.T26, not the
+  PLAN's three:** D71 (T18, body density — the Archivo face reasoning stands),
+  D72 (T22, compatible and explicitly unchanged — no border returns), D77 (T22,
+  the rename D77 itself declined, now guarded and screenshot-proven), D80 (T6,
+  tranche 1), D40 (T16a/T16b, tranche 3). D73 is **upheld, not amended** —
+  T25's `lg` call keeps the scale exactly as locked.
+
+  **T20 and T21 do not close here and were not touched.** T20's affordance
+  (`<StatusChip tone="beam">`) does not exist yet — the tone union is still
+  `brass | carmine | neutral` — and 🔴 the `Next · date TBA` chip on `/` renders
+  **carmine**, not beam, so T3's consumer is still unspent. T21 closes in
+  P18.T6 and is unblocked by T35.
+
 ---
 
 ## Phase 18 — How it works
