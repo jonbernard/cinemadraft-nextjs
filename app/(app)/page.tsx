@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { EmptyState } from '@/components/EmptyState';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { PosterFrame } from '@/components/PosterFrame';
+import { RemoteImage } from '@/components/RemoteImage';
 import { RosterStrip } from '@/components/RosterStrip';
 import { SeasonPicker } from '@/components/SeasonPicker';
 import { SeasonStepper } from '@/components/SeasonStepper';
@@ -15,6 +16,7 @@ import { recentPicks, type ShelfView, topScorers } from '@/lib/dashboard/shelves
 import { type DashboardView, getDashboard } from '@/lib/services/dashboard';
 import { getLandingFacts, type LandingFacts } from '@/lib/services/how-it-works';
 import { availableSeasons, getLeaderboard } from '@/lib/services/leaderboard';
+import { cn } from '@/lib/utils/cn';
 
 /**
  * Posters in the hero's wall, and the number `getLandingFacts` is asked for.
@@ -244,31 +246,76 @@ function SignedOutHero({ facts }: { facts: LandingFacts | null }) {
             on the fold at 1440×900. */
         <div
           data-testid="hero-films"
-          className="flex w-full shrink-0 items-end gap-2 sm:gap-3 lg:w-[26rem]"
+          className="flex w-full shrink-0 items-end gap-2 sm:gap-3 lg:w-[34rem]"
         >
-          {/* A rising staircase: 1, 2, 3, then 4 posters, bottom-aligned, so
-              the wall climbs toward the corner instead of sitting as a block.
-              The columns are slices in that order, so a season with fewer than
-              ten scoring films shortens the stair rather than leaving a hole —
-              `slice` past the end is empty, not undefined. */}
-          {[
-            [0, 1],
-            [1, 3],
-            [3, 6],
-            [6, 10],
-          ].map(([from, to], column) => (
-            <div key={from} className="flex min-w-0 flex-1 flex-col gap-2 sm:gap-3">
+          {/* A cascade: one large poster on the left, then columns that hold
+              more of them and grow narrower to the right, so the wall reads as
+              depth rather than as a grid. The type follows the artwork down —
+              the leading film is named at 20px and the smallest column at
+              13px — because a caption the size of its poster is what makes the
+              nearest film feel nearest.
+
+              🔴 **The narrow columns carry no title, and that is the point of
+              the shape rather than a shortcut.** At 83px and 64px a film name
+              truncates to "The Secret A…" and "Sentimental V…", which is worse
+              than silence: the reader cannot identify the film and the ragged
+              ellipses read as breakage. So the third column keeps only its
+              score — a number always fits — and the fourth is artwork alone.
+              The two wide columns name their films, which is where a reader
+              looks first anyway.
+
+              🔴 Each column is `[from, to, width, titleSize, caption]`, and the
+              slices run 1, 2, 3, 4. `slice` past the end is empty rather than
+              undefined, so a season with fewer than ten scoring films simply
+              shortens the cascade instead of leaving a hole. */}
+          {(
+            [
+              [0, 1, 'flex-[4]', 'text-xl', 'both'],
+              [1, 3, 'flex-[1.7]', 'text-base', 'both'],
+              [3, 6, 'flex-[1.3]', 'text-sm', 'score'],
+              [6, 10, 'flex-[1]', 'text-xs', 'none'],
+            ] as const
+          ).map(([from, to, width, titleSize, caption], column) => (
+            <div key={from} className={cn('flex min-w-0 flex-col gap-2 sm:gap-3', width)}>
               {facts.films.slice(from, to).map((film, index) => (
-                <PosterFrame
-                  key={film.movieId}
-                  title={film.title}
-                  posterUrl={film.posterUrl}
-                  points={film.total}
-                  // One preload, not ten: the tallest column's first poster is
-                  // the largest thing in the first viewport, and the shelf
-                  // below already spends two on frames that sit lower now.
-                  priority={column === 3 && index === 0}
-                />
+                <figure key={film.movieId} className="flex flex-col gap-1">
+                  <div className="poster-radius bg-bg-surface relative aspect-[2/3] overflow-hidden">
+                    {film.posterUrl ? (
+                      <RemoteImage
+                        src={film.posterUrl}
+                        alt=""
+                        fill
+                        sizes="(min-width: 1024px) 22rem, 50vw"
+                        className="object-cover"
+                        // One preload, and it is the big one: the leading
+                        // poster is the largest thing in the first viewport.
+                        priority={column === 0 && index === 0}
+                      />
+                    ) : null}
+                  </div>
+                  {caption === 'none' ? null : (
+                    <figcaption className="flex flex-col">
+                      {caption === 'both' ? (
+                        <span
+                          className={cn(
+                            'text-text-primary font-serif leading-tight',
+                            titleSize,
+                          )}
+                        >
+                          {film.title}
+                        </span>
+                      ) : (
+                        // The name is still announced, just not drawn: a
+                        // screen reader gets the film, a sighted reader gets
+                        // the artwork and the number.
+                        <span className="sr-only">{film.title}</span>
+                      )}
+                      <span className="text-text-dim tabular font-mono text-xs">
+                        {film.total}
+                      </span>
+                    </figcaption>
+                  )}
+                </figure>
               ))}
             </div>
           ))}
