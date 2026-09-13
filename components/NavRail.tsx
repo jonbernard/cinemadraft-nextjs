@@ -88,7 +88,7 @@ function Group({
   return (
     <div>
       {label ? <Eyebrow className="px-2 pb-2">{label}</Eyebrow> : null}
-      <ul className="flex flex-col gap-0.5">
+      <ul className="flex flex-col gap-1">
         {visible.map((link) => {
           const current = isCurrent(link.href, pathname);
           return (

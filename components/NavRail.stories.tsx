@@ -58,7 +58,7 @@ export const InItsColumn: StoryObj<typeof meta> = {
   name: 'Full height, as the shell renders it',
   decorators: [
     (Story) => (
-      <div className="bg-bg-base flex h-[720px] gap-2.5 p-2.5">
+      <div className="bg-bg-base flex h-[720px] gap-2 p-3">
         <Story />
         <div className="bg-bg-surface rounded-md flex-1" />
       </div>

@@ -104,4 +104,25 @@ check "text sizes come from the scale" \
                -e '\.test\.tsx\?:' -e '\.stories\.tsx\?:' \
      || true)"
 
+# P17.T24. Space sits on the 4px grid.
+#
+# Tailwind's integer steps are 0.25rem apart, so every integer is already on
+# the grid — the only ways off it are a `.5` step (gap-1.5 = 6px, px-2.5 = 10px,
+# gap-0.5 = 2px) and an arbitrary value. Both are grepped here.
+#
+# 🔴 Deliberately scoped to gap/padding/margin. `w-*` and `h-*` are excluded
+# because a 2px score bar and a 6px meter track are drawn objects whose size IS
+# the design (PosterFrame, SeenMeter); rounding a hairline to the grid doubles
+# it. A check that demands a wrong edit gets deleted, so it does not ask.
+#
+# 🔴 The leading character class includes `:` as well as a quote and a space,
+# so a variant-prefixed `sm:gap-1.5` is caught. None exists today; the plan's
+# anchor would have let the first one through.
+#
+# No {n,m} interval: see the `set +B` note at the top of this file.
+check "spacing sits on the 4px grid" \
+  "$(grep -rnE "(^|[\"' :])-?(gap|gap-x|gap-y|space-x|space-y|p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml)-([0-9]+\.5|\[[0-9.]+(px|rem|em)\])" \
+     components app .storybook --include='*.tsx' --include='*.mdx' 2>/dev/null \
+     || true)"
+
 exit $fail

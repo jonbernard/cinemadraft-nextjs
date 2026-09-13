@@ -232,7 +232,7 @@ function WatchedFilms({
 
               <div className="min-w-0 flex-1">
                 <FilmTitle film={film} />
-                <p className="text-text-dim mt-0.5 text-xs">
+                <p className="text-text-dim mt-1 text-xs">
                   {formatReleaseDate(film.releaseDate) ?? 'Release date unknown'}
                   {film.markedAt ? ` · marked ${formatReleaseDate(film.markedAt)}` : null}
                 </p>
@@ -289,7 +289,7 @@ function SortLink({
       href={`/watchlist?view=films&sort=${sort}&dir=${next}`}
       aria-current={isCurrent ? 'page' : undefined}
       aria-label={`${label}, ${spoken}`}
-      className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center gap-1.5 rounded-sm px-3 text-sm focus-visible:outline-2 aria-[current]:text-text-primary aria-[current]:font-semibold"
+      className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center gap-2 rounded-sm px-3 text-sm focus-visible:outline-2 aria-[current]:text-text-primary aria-[current]:font-semibold"
     >
       {label}
       {isCurrent ? (
@@ -379,7 +379,7 @@ function MostNominated({
           {progress.films.map((film) => (
             <li
               key={film.movieId}
-              className="border-border-rule flex items-center gap-3 border-b py-2.5 last:border-b-0"
+              className="border-border-rule flex items-center gap-3 border-b py-3 last:border-b-0"
             >
               <span className="tabular text-text-dim w-8 shrink-0 font-mono text-sm">
                 {film.nominations}

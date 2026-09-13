@@ -152,7 +152,7 @@ export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbI
               <Fact label="Box office" value={film.facts?.boxOffice ?? null} />
               {film.productionCompanies.length > 0 ? (
                 <Fact label="Production">
-                  <ul className="flex flex-col gap-0.5">
+                  <ul className="flex flex-col gap-1">
                     {film.productionCompanies.map((company) => (
                       <li key={company}>{company}</li>
                     ))}
@@ -269,7 +269,7 @@ function FilmBanner({
                   but as type in a rule, not one of the source's eleven
                   trademarked rating glyphs (`src/pages/movie/icons`), which
                   would have to be redrawn to no benefit. */}
-              <span className="border-border-rule text-text-secondary border px-2 py-0.5 font-sans text-xs">
+              <span className="border-border-rule text-text-secondary border px-2 py-1 font-sans text-xs">
                 {film.facts.mpaaRating}
               </span>
             </div>

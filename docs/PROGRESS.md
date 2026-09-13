@@ -1284,7 +1284,7 @@ decision (T18 amends D71; T25 upholds D73 against the code, which drifted).
 - [ ] P17.T21 — brass reaches a public page; **closes in P18.T6**, verification only here. 🔴 **Unblocked by P17.T35**: brass means an award outcome only, and the "already means drafted" reading rested on a figure that does not reproduce
 - [ ] P17.T22 — **rename surfaces to match reality**; D72 unchanged, no border returns, expect a zero-pixel visual diff
 - [ ] P17.T23 — **40px section step** (16px within a section, 8px within a group)
-- [ ] P17.T24 — **enforce the 4px grid in `scripts/layering.sh`** (43 gaps off it today)
+- [x] P17.T24 — **enforce the 4px grid in `scripts/layering.sh`** (43 gaps off it today)
 - [ ] P17.T25 — **6px is the default radius; fix the drift** (upholds D73; `md` 58 vs `sm` 36, `lg` unused)
 
 ### Signed-in surfaces
@@ -1753,6 +1753,53 @@ recorded here, so the change is a number rather than an impression._
 
   🔴 Newsreader untouched and still deferred (`--font-prose`, `theme/fonts.ts`),
   to be re-judged after Phase 18, per the task.
+
+- **P17.T24 — the 4px grid, enforced.** `check "spacing sits on the 4px grid"`
+  in `scripts/layering.sh` and `.github/workflows/ci.yml`, landed **before**
+  T23 so the constraint was live while T23 wrote new spacing. Proven to bite:
+  `p-2.5 sm:gap-1.5` added to `components/Panel.tsx` turns it red naming the
+  file and line, green again on restore.
+
+  🔴 **The plan's regex had a hole and closing it cost one character.** Its
+  leading anchor was `(^|["' ])`, which cannot see a variant prefix. Adding
+  `:` to that class surfaced three values nothing else would have found:
+  `components/AppShell.tsx:126` `xl:gap-2.5 xl:p-2.5` and `:146` `xl:gap-2.5`
+  — the floating shell's own 10px inset, on every page above 1280px. 17
+  offenders across 11 files, not the plan's 24 across 11; the tree has moved.
+
+  **Gaps before → after, same harness and routes:**
+  - before: `8px ×792, 12px ×280, 4px ×274, 16px ×202, 6px ×104, 2px ×36, 10px ×32, 24px ×20, 32px ×16, 40px ×12`
+  - after: `8px ×928, 4px ×310, 12px ×280, 16px ×202, 24px ×20, 32px ×16, 40px ×12`
+
+  **Every off-grid bucket is now zero** — 6px ×104 → 0, 2px ×36 → 0,
+  10px ×32 → 0 — and the mass is conserved: 792 + 104 + 32 = 928 and
+  274 + 36 = 310. No element vanished; they moved onto the grid.
+
+  **Browser-only, measured rather than judged:**
+  - `StatusChip` on `/award-shows/oscars` @1440: `{105×26 ×23, 63×26 ×25, 112×26 ×1, 101×26 ×1}`
+    → `{109×26 ×23, 67×26 ×25, 116×26 ×1, 105×26 ×1}`. **Four pixels wider,
+    exactly the `px-2.5 → px-3` step, and not one pixel taller.** The chip is
+    still a chip; where it is interactive its `min-h-11` governs, untouched.
+  - Tab-bar destinations @390px: 49px → **51px** (`gap-0.5 → gap-1`). Still
+    over the 44px floor and still under the 56px ceiling `e2e/nav.spec.ts:242`
+    asserts — that spec and the other 17 in the file pass.
+  - No page overflow and no nav-rail overflow at 1440/1280/1024/390 in both
+    schemes across five routes; all 48 checks green.
+
+  🔴 **Hairlines left alone, as the plan required**, because the number is the
+  drawn object and not the space around it: `PosterFrame`'s `h-0.5` score bar,
+  `SeenMeter`'s `h-1.5` track, `TabBar`'s `before:h-0.5` carmine bar,
+  `NotificationBell`'s `h-1.5 w-1.5` dot, `RatingStars`' `h-3.5`. The grep does
+  not ask about `w-*`/`h-*` at all.
+
+  🔴 **`app/(app)/watchlist/page.tsx` was swept** (three values) even though
+  Phase 17 forbids redesigning it. A spacing step is a token, and "inherit
+  tokens only" is what this is; no structure, copy or behaviour changed there.
+  Same for `AppShell` (tranches 1 and 2), `NavRail`/`TabBar` (tranches 2, 3),
+  `ShowLogo` (tranche 3) and `films/[tmdbId]` (tranches 2, 3) — class only.
+  The shell's content column shifts 2px right at `xl`; `e2e/signed-in.spec.ts`
+  asserts left edges *relatively* (`|heading.x - field.x| < 2`), so T36's
+  alignment finding is unaffected, but its recorded absolute 445px is now 447.
 
 ---
 

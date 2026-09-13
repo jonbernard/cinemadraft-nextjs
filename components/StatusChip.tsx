@@ -24,7 +24,7 @@ export function StatusChip({
   return (
     <span
       className={cn(
-        'font-sans inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-xs font-semibold',
+        'font-sans inline-flex items-center gap-2 rounded-pill px-3 py-1 text-xs font-semibold',
         tone === 'brass' && 'bg-brass-fill text-brass-contrast',
         tone === 'carmine' && 'bg-accent-fill text-white',
         tone === 'neutral' && 'bg-bg-raised text-text-secondary',

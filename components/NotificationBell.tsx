@@ -223,7 +223,7 @@ function NotificationsList({ items }: { items: NotificationItem[] }) {
   }
 
   return (
-    <ul className="flex max-h-80 flex-col gap-0.5 overflow-y-auto">
+    <ul className="flex max-h-80 flex-col gap-1 overflow-y-auto">
       {items.map((item) => (
         <li key={item.id}>
           <NotificationRow item={item} />
@@ -245,7 +245,7 @@ function NotificationRow({ item }: { item: NotificationItem }) {
       <span
         aria-hidden="true"
         className={cn(
-          'mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full',
+          'mt-2 h-1.5 w-1.5 shrink-0 rounded-full',
           isUnread ? 'bg-accent-fill' : 'bg-transparent',
         )}
       />

@@ -26,7 +26,7 @@ export function RatingStars({
 
   return (
     <span className={cn('flex items-center gap-2', className)}>
-      <span aria-hidden="true" className="flex items-center gap-0.5">
+      <span aria-hidden="true" className="flex items-center gap-1">
         {[0, 1, 2, 3, 4].map((index) => (
           <span key={index} className={cn('relative block', box)}>
             <Star className="text-border-rule absolute inset-0" />

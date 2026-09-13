@@ -88,7 +88,7 @@ export function MoreSheet({
         {visible.length > 0 ? (
           <>
             <Eyebrow className="px-2">Yours</Eyebrow>
-            <ul className="flex flex-col gap-0.5">
+            <ul className="flex flex-col gap-1">
               {visible.map((link) => {
                 const current = isCurrent(link.href, pathname);
                 return (

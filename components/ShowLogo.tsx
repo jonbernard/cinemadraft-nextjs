@@ -53,7 +53,7 @@ export function ShowLogo({ imageUrl, size = 'sm', className }: ShowLogoProps) {
         //
         // `object-contain` plus padding: the mark is letterboxed onto the plate
         // with a margin, never cropped to it and never bled to the edge.
-        'bg-white shrink-0 rounded-sm object-contain p-1.5',
+        'bg-white shrink-0 rounded-sm object-contain p-2',
         className,
       )}
       style={{ width: px, height: px }}

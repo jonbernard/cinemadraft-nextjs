@@ -91,7 +91,7 @@ export function TabBar({
               href={link.href}
               aria-current={current ? 'page' : undefined}
               className={cn(
-                'focus-visible:outline-accent-fill relative flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2',
+                'focus-visible:outline-accent-fill relative flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2',
                 current
                   ? // Two signals beyond aria-current: full-strength text and
                     // the carmine bar along the top edge.
@@ -109,7 +109,7 @@ export function TabBar({
           onClick={onMore}
           aria-expanded={isMoreOpen}
           aria-controls={moreId}
-          className="focus-visible:outline-accent-fill text-text-secondary hover:text-text-primary flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 py-1 text-[11px] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
+          className="focus-visible:outline-accent-fill text-text-secondary hover:text-text-primary flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-1 text-[11px] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2"
         >
           <MoreIcon />
           More

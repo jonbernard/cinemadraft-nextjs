@@ -123,7 +123,7 @@ export function AppShell({
   }, [pathname]);
 
   return (
-    <div className="bg-bg-base min-h-dvh xl:flex xl:gap-2.5 xl:p-2.5">
+    <div className="bg-bg-base min-h-dvh xl:flex xl:gap-2 xl:p-3">
       {/* 🔴 First focusable element on every page, by DOM order rather than by
           styling — a skip link that is not first is not a skip link. Visible
           only when focused: `sr-only` until `focus:not-sr-only` brings it back.
@@ -143,7 +143,7 @@ export function AppShell({
         <NavRail pathname={pathname} />
       </div>
 
-      <div className="min-w-0 flex-1 xl:flex xl:flex-col xl:gap-2.5">
+      <div className="min-w-0 flex-1 xl:flex xl:flex-col xl:gap-2">
         <Strip
           isSignedIn={isSignedIn}
           isAdmin={isAdmin}

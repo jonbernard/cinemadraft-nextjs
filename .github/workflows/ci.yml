@@ -306,6 +306,32 @@ jobs:
           fi
           echo "text sizes come from the scale"
 
+      - name: Spacing sits on the 4px grid
+        run: |
+          set -uo pipefail
+          # P17.T24. Tailwind's integer steps are 0.25rem apart, so every
+          # integer is already on the grid — the only ways off it are a `.5`
+          # step (gap-1.5 = 6px, px-2.5 = 10px, gap-0.5 = 2px) and an arbitrary
+          # value.
+          #
+          # 🔴 Deliberately scoped to gap/padding/margin. `w-*` and `h-*` are
+          # excluded because PosterFrame's 2px score bar and SeenMeter's 6px
+          # meter track are drawn objects whose size IS the design; rounding a
+          # hairline to the grid doubles it, and a check that demands a wrong
+          # edit gets deleted.
+          #
+          # The leading class includes `:` so a variant-prefixed `sm:gap-1.5`
+          # is caught — that is how AppShell's `xl:gap-2.5 xl:p-2.5` was found.
+          offenders=$(grep -rnE "(^|[\"' :])-?(gap|gap-x|gap-y|space-x|space-y|p|px|py|pt|pr|pb|pl|m|mx|my|mt|mr|mb|ml)-([0-9]+\.5|\[[0-9.]+(px|rem|em)\])" \
+            components app .storybook --include='*.tsx' --include='*.mdx' 2>/dev/null \
+            || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::spacing off the 4px grid; use an integer Tailwind step"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "spacing sits on the 4px grid"
+
   # package-lock.json must be generated on Linux.
   #
   # lightningcss (via Tailwind 4 and Vite) declares optional per-platform
