@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { RemoteImage } from '@/components/RemoteImage';
 import { ScoringTable } from '@/components/ScoringTable';
 import { SectionHead } from '@/components/SectionHead';
 import { WorkedExample } from '@/components/WorkedExample';
@@ -64,10 +63,7 @@ export default async function HowItWorksPage() {
     getWorkedExample(),
     getShowGroups(),
     getSeasonPhases(),
-    // 🔴 17, not a round number: the first poster spans 2×2, so it eats four
-    // cells of a four-column grid and the wall only comes out square at
-    // 4 + (n − 1) ≡ 0 (mod 4). 18 left one poster alone on a final row.
-    getLandingFacts(17),
+    getLandingFacts(10),
   ]);
   const levels = groupPointsByLevel(points);
   // The rulebook carries each level's marks beside its figures; `getShowGroups`
@@ -157,51 +153,30 @@ export default async function HowItWorksPage() {
           </div>
         </div>
 
-        {facts && facts.films.length > 0 ? (
-          /* A wall of the season's real posters, not an illustration. The
-              films are the highest scorers of the season being shown, in
-              order, so the mosaic is a picture of the game actually being
-              played — and every title in it is one somebody drafted.
-
-              Deliberately unlabelled: the captions and the point totals sat
-              under three posters in the first build and competed with the
-              headline. What each one scored is a click away on its own page;
-              here they are artwork. The bottom fades so the wall reads as
-              continuing past the fold rather than stopping in a straight cut. */
+        {/* 🔴 The hero's visual is the **ledger**, not the season's poster
+            wall. The wall showed this season's leaders, which is evidence
+            about the season rather than about the game — the owner's read, and
+            the right one: it belongs on the signed-out home (P18.T10), where
+            "here is what is happening now" is the job. This page explains a
+            mechanic, so it opens by showing the mechanic working, on a real
+            film, adding up. */}
+        {example ? (
           <div
-            data-testid="hero-films"
-            // 🔴 Decorative, and that is a decision rather than laziness. As
-            // links these eighteen posters put eighteen tab stops between the
-            // headline and "Start a league" — the action the page exists for —
-            // and a screen reader would read eighteen film titles before
-            // reaching the sentence that explains what the product is. The
-            // same films are reachable, titled and linked, from the season
-            // page this hero links to. So: `aria-hidden`, no tab stops, no
-            // accessible names, and every `alt` empty.
-            aria-hidden="true"
-            className="grid w-full shrink-0 grid-cols-4 gap-2 [mask-image:linear-gradient(to_bottom,black_72%,transparent)] sm:grid-cols-6 lg:w-[30rem] lg:grid-cols-4"
+            data-testid="hero-ledger"
+            className="bg-bg-surface min-w-0 flex-1 rounded-sm p-4 sm:p-5 lg:max-w-[34rem]"
           >
-            {facts.films.map((film, index) => (
-              <div
-                key={film.movieId}
-                className={
-                  index === 0
-                    ? 'poster-radius bg-bg-surface relative col-span-2 row-span-2 aspect-[2/3] overflow-hidden'
-                    : 'poster-radius bg-bg-surface relative aspect-[2/3] overflow-hidden'
-                }
-              >
-                {film.posterUrl ? (
-                  <RemoteImage
-                    src={film.posterUrl}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1024px) 8rem, 25vw"
-                    className="object-cover"
-                    priority={index === 0}
-                  />
-                ) : null}
-              </div>
-            ))}
+            <WorkedExample
+              title={example.best.title}
+              posterUrl={example.best.posterUrl}
+              total={example.best.total}
+              lines={example.best.lines}
+              limit={4}
+            />
+            <p className="text-text-dim mt-4 text-xs">
+              {example.best.title} &mdash;{' '}
+              {example.isActiveSeason ? 'this season' : example.year}, as scored by the
+              app.
+            </p>
           </div>
         ) : null}
       </section>
@@ -237,29 +212,6 @@ export default async function HowItWorksPage() {
           </div>
         </div>
       </section>
-
-      {/* The proof. One ledger, real, and it adds up. */}
-      {example ? (
-        <section className={`${BAND} flex flex-col gap-6 py-12`}>
-          <SectionHead
-            as="h2"
-            right={
-              <span className="text-text-dim font-sans text-xs">
-                {example.isActiveSeason ? 'This season' : example.year}
-              </span>
-            }
-          >
-            The best team in the game picked this
-          </SectionHead>
-          <WorkedExample
-            title={example.best.title}
-            posterUrl={example.best.posterUrl}
-            total={example.best.total}
-            lines={example.best.lines}
-            limit={4}
-          />
-        </section>
-      ) : null}
 
       {/* The cost. 🔴 A full ledger, not a headline number: the owner asked
           for the film examples back, and the casualty is the funnier of the

@@ -167,7 +167,6 @@ describe('HowItWorksPage', () => {
       .map((heading) => heading.textContent);
     expect(headings).toEqual([
       'How the scoring works',
-      'The best team in the game picked this',
       'And somebody drafted this',
       'Twelve shows, and what each pays',
       'Start a league',
@@ -204,6 +203,7 @@ describe('HowItWorksPage', () => {
 
     render(await HowItWorksPage());
 
+    // The winner in the hero, the casualty below it — both from the service.
     const totals = screen.getAllByTestId('worked-example-total');
     expect(totals.map((cell) => cell.textContent)).toEqual(['620', '-185']);
   });
@@ -286,10 +286,10 @@ describe('HowItWorksPage', () => {
     // order, so the headline and the action are what a screen reader and a
     // keyboard reach first. Counted through the DOM because that is what
     // `aria-hidden` makes correct.
-    const films = screen.getByTestId('hero-films');
-    expect(films).toHaveAttribute('aria-hidden', 'true');
-    expect(films.querySelectorAll('img')).toHaveLength(0);
-    expect(films.children).toHaveLength(3);
+    // The hero shows the mechanic working on a real film, not the season's
+    // leaders — that wall is the signed-out home's job (P18.T10).
+    const ledger = screen.getByTestId('hero-ledger');
+    expect(within(ledger).getByTestId('worked-example-total')).toHaveTextContent('620');
 
     // 🔴 Counted, never claimed. A figure here that nothing counts is the one
     // kind of lie this page cannot afford.
@@ -308,7 +308,7 @@ describe('HowItWorksPage', () => {
 
     render(await HowItWorksPage());
 
-    expect(screen.queryByTestId('hero-films')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('hero-ledger')).not.toBeInTheDocument();
     expect(screen.queryByTestId('landing-facts')).not.toBeInTheDocument();
     // The claim itself survives: it is the one thing on the page that needs
     // no data.

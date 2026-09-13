@@ -27,7 +27,7 @@ vi.mock('@/lib/repositories/awards', () => ({
   awardRepository: { findAll: awardsFindAll },
 }));
 
-const { getWorkedExample, getShowGroups } = await import('./how-it-works');
+const { getWorkedExample, getShowGroups, getLandingFacts } = await import('./how-it-works');
 
 /** A board row as `getLeaderboard` shapes one. */
 function row(movieId: number, title: string, total: number) {
@@ -321,5 +321,60 @@ describe('getShowGroups', () => {
     expect(
       groups.find((group) => group.level === 'Razzies')?.shows[0]?.imageUrl,
     ).toBeNull();
+  });
+});
+
+describe('getLandingFacts', () => {
+  const events = [
+    { id: 10, name: 'Academy Awards', abbreviation: 'oscars', image: null },
+    { id: 11, name: 'Razzies', abbreviation: 'raz', image: null },
+  ];
+
+  beforeEach(() => {
+    eventsFindAll.mockResolvedValue(events);
+    getActiveYear.mockResolvedValue(2026);
+    availableSeasons.mockResolvedValue([2026, 2025]);
+    findManyByIds.mockResolvedValue([{ id: 1, title: 'A Film', poster: '/a.jpg' }]);
+  });
+
+  it('falls back to the last season with leaders when the new one is empty', async () => {
+    // 🔴 The ordinary state for months of every year: the season has opened,
+    // nominations have not landed, and the active board is empty. The hero
+    // must still have a wall.
+    getLeaderboard.mockImplementation(async (year: number) =>
+      year === 2026
+        ? { year, events: [], rows: [] }
+        : { year, events: [], rows: [row(1, 'A Film', 620)] },
+    );
+
+    const facts = await getLandingFacts();
+
+    expect(facts?.year).toBe(2025);
+    expect(facts?.isActiveSeason).toBe(false);
+    expect(facts?.films).toHaveLength(1);
+  });
+
+  it('still reports what it can count when no season has a board at all', async () => {
+    getLeaderboard.mockResolvedValue({ year: 2026, events: [], rows: [] });
+
+    const facts = await getLandingFacts();
+
+    // The shows and the seasons are countable without a single nomination;
+    // the wall is empty rather than invented.
+    expect(facts).toMatchObject({ shows: 2, seasons: 2, filmsScored: 0, films: [] });
+  });
+
+  it('never shows a season the app has not reached yet', async () => {
+    availableSeasons.mockResolvedValue([2027, 2026, 2025]);
+    getLeaderboard.mockImplementation(async (year: number) => ({
+      year,
+      events: [],
+      rows: year === 2027 ? [row(9, 'Unreleased', 999)] : [row(1, 'A Film', 620)],
+    }));
+
+    const facts = await getLandingFacts();
+
+    expect(facts?.year).toBe(2026);
+    expect(facts?.films.map((film) => film.title)).not.toContain('Unreleased');
   });
 });

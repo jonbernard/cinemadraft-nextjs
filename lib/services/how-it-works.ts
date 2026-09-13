@@ -221,8 +221,11 @@ export type LandingFilm = {
  * season being shown. There is no user count, no "trusted by", and no growth
  * figure, because none of those exist to count.
  *
- * The films are the season's highest scorers, in order, for the poster strip —
- * real artwork for real teams' picks rather than stock photography.
+ * The films are the highest scorers of the most recent season that **has**
+ * any, in order, for the poster wall — real artwork for real teams' picks
+ * rather than stock photography. `isActiveSeason` says whether that is the
+ * season the app is currently showing, because for the first months of a new
+ * one it will not be.
  */
 export type LandingFacts = {
   year: number;
@@ -233,39 +236,58 @@ export type LandingFacts = {
   films: LandingFilm[];
 };
 
-export async function getLandingFacts(limit = 5): Promise<LandingFacts | null> {
+export async function getLandingFacts(limit = 10): Promise<LandingFacts | null> {
   const seasons = await availableSeasons();
   if (seasons.length === 0) return null;
 
   const activeYear = await getActiveYear().catch(() => null);
-  const year =
-    activeYear != null && seasons.includes(activeYear)
-      ? activeYear
-      : (seasons[0] ?? null);
-  if (year == null) return null;
+  const events = await eventRepository.findAll();
 
-  const [board, events] = await Promise.all([
-    getLeaderboard(year),
-    eventRepository.findAll(),
-  ]);
+  // 🔴 Walk back to a season that actually has leaders. A new season opens
+  // with nominations months away, so the active year's board is **empty** for
+  // the first stretch of every year — and a hero that renders its poster wall
+  // from the active season alone would be blank exactly when somebody is most
+  // likely to be sent this link. The walk is the same one `getWorkedExample`
+  // does, for the same reason.
+  const candidates = seasons
+    .filter((year) => activeYear == null || year <= activeYear)
+    .sort((a, b) => b - a);
 
-  const top = board.rows.slice(0, limit);
-  const posters = await movieRepository.findManyByIds(top.map((row) => row.movieId));
-  const posterById = new Map(
-    posters.map((movie) => [movie.id, posterUrl(movie.poster, 'w342')]),
-  );
+  for (const year of candidates) {
+    const board = await getLeaderboard(year);
+    if (board.rows.length === 0) continue;
 
-  return {
-    year,
-    isActiveSeason: year === activeYear,
-    shows: events.length,
-    seasons: seasons.length,
-    filmsScored: board.rows.length,
-    films: top.map((row) => ({
-      movieId: row.movieId,
-      title: row.title,
-      posterUrl: posterById.get(row.movieId) ?? null,
-      total: row.total,
-    })),
-  };
+    const top = board.rows.slice(0, limit);
+    const posters = await movieRepository.findManyByIds(top.map((row) => row.movieId));
+    const posterById = new Map(
+      posters.map((movie) => [movie.id, posterUrl(movie.poster, 'w342')]),
+    );
+
+    return {
+      year,
+      isActiveSeason: year === activeYear,
+      shows: events.length,
+      seasons: seasons.length,
+      filmsScored: board.rows.length,
+      films: top.map((row) => ({
+        movieId: row.movieId,
+        title: row.title,
+        posterUrl: posterById.get(row.movieId) ?? null,
+        total: row.total,
+      })),
+    };
+  }
+
+  // Every season empty: the counted facts that do not depend on a board still
+  // stand, and the hero drops its wall rather than inventing one.
+  return activeYear == null
+    ? null
+    : {
+        year: activeYear,
+        isActiveSeason: true,
+        shows: events.length,
+        seasons: seasons.length,
+        filmsScored: 0,
+        films: [],
+      };
 }
