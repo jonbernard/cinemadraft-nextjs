@@ -64,6 +64,18 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
 
 - **Measure in a production build, not `next dev`.** A design review run against a dev server produced five findings that were artefacts: a "detached avatar" that was Next's dev-tools indicator, a 1024px table overflow that does not exist in production, a film-page width taken from a different film, award marks described as dark-on-transparent that are opaque JPEGs, and a dead column off by 700px. 🔴 `next dev` also answers **403 for every `_next/static` chunk on `127.0.0.1`** while `localhost` serves fine — so a dev measurement on that host is of an unstyled page. `npm run start` is unaffected by both problems.
 
+- 🔴 **`npm run test:ci` passing locally does not mean CI passes.** It runs against *your* database, which holds the restored production copy — so a test that reads real rows passes locally and fails on CI, where the database is migrations plus a minimal seed. This has broken `main` twice. To actually reproduce CI, point it at an empty one:
+
+  ```bash
+  docker run --rm -d --name ci-verify-pg -e POSTGRES_USER=cinemadraft \
+    -e POSTGRES_PASSWORD=local -e POSTGRES_DB=cinemadraft -p 5435:5432 postgres:17
+  export DATABASE_URL=postgresql://cinemadraft:local@localhost:5435/cinemadraft
+  npx prisma migrate deploy && node scripts/seed-e2e.mjs && npm run test:ci
+  docker rm -f ci-verify-pg
+  ```
+
+  Note 5434 is **not** this check — it is a clone of the restored copy, so it holds the same data and hides the same failure. A test that needs restored rows belongs in `vitest.ci.config.mts`'s exclusion list, **excluded rather than weakened into something that would pass anywhere**; that file's header explains the rule and every entry says which real rows it reads.
+
 - **The unit suite runs as two Vitest projects** (`vitest.config.mts`). The `parallel` project holds every test the config can *prove* never reaches `lib/db.ts`, by walking the import graph; the `db` project is everything else and keeps `fileParallelism: false`, because `available_years_one_active` is a global partial unique index with no per-worker copy. 🔴 **Serial is the default and parallel is opt-in by proof** — a new DB-backed test falls through to serial with nobody remembering anything. The parallel project runs with `DATABASE_URL` pointed at a dead port on purpose, so a misclassified test fails on connect every run instead of racing the invariant once in three. Do not "fix" that URL.
 
 - **To watch the e2e suite rather than read it**, run it with a temporary config that extends `playwright.config.mts` with `use: { video: 'on' }`, `workers: 1` and an `outputDir` outside the repo, then open the HTML report. One worker matters: parallel workers interleave recordings from different tests. Phase 19 makes this a first-class script with paced, captioned journeys.

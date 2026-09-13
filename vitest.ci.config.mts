@@ -52,6 +52,14 @@ export default config([
   // their own rows and need no restored data.
   'lib/services/draft.test.ts',
   'lib/services/draft-console.test.ts',
+  // The live page, read against the real Oscars row and its 2025 season —
+  // it asserts the show resolved and that its category count is over
+  // twenty, which is what a restored season looks like and what an empty
+  // schema cannot be. Its own docstring says "against the real restored
+  // data"; excluded rather than weakened, like the rest of this list. The
+  // composition it pins has no scoring of its own (D19/D41), and the rule
+  // underneath runs here in `scoring.test.ts` on every push.
+  'lib/services/live.test.ts',
   // Local film search, against the restored 1,355 titles. The ranking rule
   // it rests on — every context, the dedupe, the stability guarantee — is
   // `search-ranking.test.ts`, which needs no database and runs here.
