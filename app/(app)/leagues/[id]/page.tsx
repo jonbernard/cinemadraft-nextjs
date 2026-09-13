@@ -16,9 +16,8 @@ import { NotFoundError } from '@/lib/errors';
 import { NOINDEX } from '@/lib/seo';
 import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
 import { canManageLeague } from '@/lib/services/league-access';
+import { getLeagueBoardView } from '@/lib/services/league-view';
 import { getActiveYear } from '@/lib/services/season';
-import { posterUrl } from '@/lib/utils/poster';
-import { denseRank } from '@/lib/utils/rank';
 
 /**
  * The origin an invite link should carry.
@@ -127,88 +126,34 @@ export default async function LeaguePage({
   const season =
     Number.isSafeInteger(requested) && requested > 0 ? requested : await getActiveYear();
 
-  let board: Awaited<ReturnType<typeof getLeagueBoard>>;
+  const [seasons, user] = await Promise.all([
+    getLeagueSeasons(leagueId),
+    getCurrentUser(),
+  ]);
+
+  // 🔴 One definition of what this page shows (P14.T9). The seat, the
+  // roster, the standings and the status flags used to be derived here and
+  // would have had to be derived a second time by
+  // `/api/leagues/[id]/board/stream` — two doors disagreeing about arithmetic
+  // a member reads as truth.
+  let view: Awaited<ReturnType<typeof getLeagueBoardView>>;
   try {
-    board = await getLeagueBoard(leagueId, season);
+    view = await getLeagueBoardView(leagueId, season, user?.id ?? null);
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
     throw error;
   }
 
-  const [seasons, user] = await Promise.all([
-    getLeagueSeasons(leagueId),
-    getCurrentUser(),
-  ]);
-  const canManage = canManageLeague(board, user?.id);
-
-  // The viewer's own seat, if they hold one this season. Null for a visitor,
-  // which is the ordinary case on a shared link.
-  const viewerSeatId =
-    user == null
-      ? null
-      : (board.groups
-          .flatMap((group) => group.seats)
-          .find((seat) => seat.userId === user.id)?.draftId ?? null);
-
-  const isPending = board.status === 'pending';
-
-  // 🔴 `complete` is a real value of `LeagueDraftingStatus` (pending | active |
-  // complete) and two production leagues carry it, so the plan's "if the schema
-  // has no complete value, fall back to every-seat-claimed" branch is not the
-  // one taken — the direct signal exists and is used. A finished season has
-  // nobody left to invite, and a standing join credential on screen is then a
-  // liability rather than an affordance.
-  const isComplete = board.status === 'complete';
+  const canManage = canManageLeague(view, user?.id);
+  const viewerSeatId = view.viewerSeatId;
+  const isPending = view.isPending;
 
   // Hoisted out of the JSX: `inviteBase()` used to be awaited inside a
   // conditional JSX expression, which is now inside two conditionals.
   const inviteUrl =
-    canManage && board.uuid && !isComplete
-      ? `${await inviteBase()}/join/${board.uuid}`
+    canManage && view.uuid && !view.isComplete
+      ? `${await inviteBase()}/join/${view.uuid}`
       : null;
-
-  // 🔴 P17.T31: the viewer's own picks, from the seat already resolved above.
-  // `share` is this film's slice of the seat's total — the contribution bar's
-  // input — derived here rather than added to `getLeagueBoard`, because both
-  // numbers it needs are already on the seat and `lib/services/dashboard.ts`
-  // derives it the same way. A zero total means nothing has scored, and a bar
-  // showing a share of nothing is noise, so it is zero rather than a division
-  // by zero.
-  const viewerSeat =
-    viewerSeatId == null
-      ? null
-      : (board.groups
-          .flatMap((group) => group.seats)
-          .find((seat) => seat.draftId === viewerSeatId) ?? null);
-
-  const viewerRoster =
-    viewerSeat == null
-      ? []
-      : viewerSeat.picks.map((pick) => ({
-          id: pick.pickId,
-          title: pick.movie.title ?? 'Untitled',
-          posterUrl: posterUrl(pick.movie.poster, 'w185'),
-          round: pick.round,
-          points: pick.points,
-          share: viewerSeat.total > 0 ? pick.points / viewerSeat.total : 0,
-        }));
-
-  // P10.T10: the same seats and totals `getLeagueBoard` already loaded, ranked
-  // rather than reused as a second query. `StandingsRow.userId` doubles as the
-  // React key and the `isViewer` comparison, so a dummy seat — which has no
-  // `userId` — gets a negative sentinel built from its `draftId`, which real
-  // user ids (positive DB ids) can never collide with.
-  const standingsRows = [...board.groups.flatMap((group) => group.seats)].sort(
-    (a, b) => b.total - a.total,
-  );
-  const standingsPositions = denseRank(standingsRows);
-  const standings = standingsRows.map((seat, index) => ({
-    userId: seat.userId ?? -seat.draftId,
-    name: seat.name,
-    total: seat.total,
-    position: standingsPositions[index] as number,
-    isViewer: user != null && seat.userId === user.id,
-  }));
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-10">
@@ -216,9 +161,9 @@ export default async function LeaguePage({
         <SectionHead
           as="h1"
           name
-          eyebrow={board.status ? `${board.year} · ${board.status}` : String(board.year)}
+          eyebrow={view.status ? `${view.year} · ${view.status}` : String(view.year)}
         >
-          {board.leagueName ?? 'League'}
+          {view.leagueName ?? 'League'}
         </SectionHead>
 
         {/* 🔴 Controls, not metadata (P17.T30). These were `text-accent-text
@@ -233,28 +178,24 @@ export default async function LeaguePage({
               the board, and both step back. */}
         {canManage ? (
           <div className="flex flex-wrap items-center gap-3">
-            {board.groups.length === 0 ? (
+            {view.groups.length === 0 ? (
               <>
-                <PrimaryAction
-                  href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
-                >
+                <PrimaryAction href={`/leagues/${view.leagueId}/setup?year=${view.year}`}>
                   Set up the season
                 </PrimaryAction>
                 <SecondaryAction
-                  href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
+                  href={`/leagues/${view.leagueId}/draft?year=${view.year}`}
                 >
                   Run the draft
                 </SecondaryAction>
               </>
             ) : isPending ? (
               <>
-                <PrimaryAction
-                  href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
-                >
+                <PrimaryAction href={`/leagues/${view.leagueId}/draft?year=${view.year}`}>
                   Run the draft
                 </PrimaryAction>
                 <SecondaryAction
-                  href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
+                  href={`/leagues/${view.leagueId}/setup?year=${view.year}`}
                 >
                   Set up the season
                 </SecondaryAction>
@@ -262,12 +203,12 @@ export default async function LeaguePage({
             ) : (
               <>
                 <SecondaryAction
-                  href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
+                  href={`/leagues/${view.leagueId}/draft?year=${view.year}`}
                 >
                   Run the draft
                 </SecondaryAction>
                 <SecondaryAction
-                  href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
+                  href={`/leagues/${view.leagueId}/setup?year=${view.year}`}
                 >
                   Set up the season
                 </SecondaryAction>
@@ -291,10 +232,10 @@ export default async function LeaguePage({
             {seasons.map((entry) => (
               <Link
                 key={entry}
-                href={`/leagues/${board.leagueId}?year=${entry}`}
-                aria-current={entry === board.year ? 'page' : undefined}
+                href={`/leagues/${view.leagueId}?year=${entry}`}
+                aria-current={entry === view.year ? 'page' : undefined}
                 className={
-                  entry === board.year
+                  entry === view.year
                     ? 'text-accent-text tabular font-mono'
                     : 'text-text-secondary tabular font-mono underline'
                 }
@@ -325,15 +266,15 @@ export default async function LeaguePage({
             slot has nothing of the reader's to show. It is then a deliberate
             statement of what the slot is for — the link, and what signing in
             adds — rather than a hole the standings float beside. */}
-      {standings.length > 0 ? (
+      {view.standings.length > 0 ? (
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
           <section className="flex min-w-0 flex-1 flex-col gap-3">
             <SectionHead as="h2" eyebrow="Yours">
               Your roster
             </SectionHead>
-            {viewerRoster.length > 0 ? (
-              <RosterStrip films={viewerRoster} />
-            ) : viewerSeat != null ? (
+            {view.viewerRoster.length > 0 ? (
+              <RosterStrip films={view.viewerRoster} />
+            ) : view.viewerSeated ? (
               // 🔴 A seat with no picks is still a seat. This branch used to
               // test `viewerRoster.length` and fall through to "you do not
               // hold a seat this season" — told to a member whose name was
@@ -363,17 +304,17 @@ export default async function LeaguePage({
 
           <section className="flex w-full flex-col gap-3 lg:max-w-sm">
             <SectionHead as="h2">Standings</SectionHead>
-            <StandingsPanel rows={standings} />
+            <StandingsPanel rows={view.standings} />
           </section>
         </div>
       ) : null}
 
-      {board.groups.length === 0 ? (
+      {view.groups.length === 0 ? (
         <p className="text-text-secondary text-sm">
-          No seats in this league for {board.year}.
+          No seats in this league for {view.year}.
         </p>
       ) : (
-        board.groups.map((group) => (
+        view.groups.map((group) => (
           <section key={group.group} className="flex flex-col gap-4">
             {/* A heading and a running-order position are content, so
                   `secondary`, not `dim` (P17.T34). */}
@@ -423,22 +364,7 @@ export default async function LeaguePage({
               <DraftBoard
                 rounds={group.rounds}
                 viewerSeatId={viewerSeatId}
-                seats={group.seats.map((seat) => ({
-                  draftId: seat.draftId,
-                  name: seat.name,
-                  isDummy: seat.isDummy,
-                  uuid: seat.uuid,
-                  total: seat.total,
-                  order: seat.order,
-                  picks: seat.picks.map((pick) => ({
-                    pickId: pick.pickId,
-                    round: pick.round,
-                    title: pick.movie.title ?? 'Untitled',
-                    posterUrl: posterUrl(pick.movie.poster, 'w185'),
-                    points: pick.points,
-                    ledger: pick.ledger,
-                  })),
-                }))}
+                seats={group.seats}
               />
             )}
           </section>
