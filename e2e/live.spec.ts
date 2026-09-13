@@ -372,16 +372,22 @@ test.describe('live show', () => {
     await expect(page.getByText(FILMS[0] as string)).toHaveCount(2);
     await expect(page.getByText(FILMS[1] as string)).toHaveCount(2);
 
-    // 🔴 Exactly one seal, and on the right frame. The seed marks Alpha the
-    // winner of Best Picture only: a seal on Best Sound, or on Bravo, is the
-    // page telling sixty people the wrong film won.
-    const seals = page.getByRole('img', { name: 'Winner' });
+    // 🔴 Exactly one winner marked, and on the right film. The seed marks
+    // Alpha the winner of Best Picture only: a mark on Best Sound, or on
+    // Bravo, is the page telling sixty people the wrong film won.
+    //
+    // Asserted on the WORD rather than on the mark. The mark is a brass star
+    // seal and it is `aria-hidden` — the word beside it is what a screen
+    // reader hears and what survives a monochrome projector, so it is also
+    // what this test should fail on.
+    const seals = page.getByText('Winner', { exact: true });
     await expect(seals).toHaveCount(1);
-    // The poster's own `<figure>`, not the enclosing `<li>`: the page nests a
-    // list item per category around the list item per nominee, so `li` matches
-    // both and the outer one contains every title in the category.
-    const sealed = page.locator('figure', { has: seals });
-    await expect(sealed).toHaveCount(1);
+    // 🔴 The winner's own item, by testid. `locator('li', { has: … })` matches
+    // the category's list item too — the page nests an item per nominee inside
+    // an item per category — and that outer one contains every title in the
+    // category, so the "not the other film" assertion below passes or fails on
+    // which element the locator happened to pick.
+    const sealed = page.getByTestId('live-winner');
     await expect(sealed).toContainText(FILMS[0] as string);
     await expect(sealed).not.toContainText(FILMS[1] as string);
   });
@@ -425,7 +431,13 @@ test.describe('live show', () => {
     // Two seals now: the nominee's, in the category above (P14.T1), and this
     // one on the seat's own copy of the same film. Counted rather than
     // `toBeVisible`, which trips strict mode on the pair.
-    await expect(page.getByRole('img', { name: 'Winner' })).toHaveCount(2);
+    // Two winner marks: one on the award row's nominee, one on the same film
+    // in the seat's roster. 🔴 `PosterFrame`'s carries the accessible name and
+    // the live row's is decorative beside its "Winner" word, so this counts
+    // the named one and the word separately rather than assuming both marks
+    // announce themselves.
+    await expect(page.getByRole('img', { name: 'Winner' })).toHaveCount(1);
+    await expect(page.getByText('Winner', { exact: true })).toHaveCount(1);
 
     // P14.T2: with no `?league=` a signed-in reader gets their own league's
     // standings, and their row is marked.

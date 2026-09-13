@@ -84,10 +84,11 @@ describe('LiveAward', () => {
     expect(screen.getByText('20 pts')).toBeInTheDocument();
   });
 
-  it('states a decided category four ways, only one of them colour', () => {
-    // 🔴 The seal alone is a 24px corner triangle — right on a roster read
-    // from a desk, invisible on a television across a room, which is what the
-    // owner saw. At 3m it subtends under 0.3°.
+  it('states a decided category three ways, only one of them colour', () => {
+    // 🔴 One mark is not enough on a television across a room, so a decided
+    // category says so three ways: the word, the mark, and every other
+    // nominee receding — the last being the one that changes the whole row
+    // rather than one corner of one poster.
     render(<LiveAward name="Best Picture" points={20} nominees={nominees} />);
 
     const won = screen.getByTestId('live-winner');
@@ -96,11 +97,11 @@ describe('LiveAward', () => {
     expect(within(won).getByText('Winner')).toBeVisible();
     // 2. the mark: a brass star seal, drawn, decorative beside the word
     expect(won.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
-    // 3. the heading names the film instead of its point value
-    const slot = document.querySelector('.text-brass-text');
-    expect(slot?.textContent).toBe('Sinners');
-    expect(screen.queryByText('20 pts')).toBeNull();
-    // 4. every other nominee recedes — the signal that changes the whole row
+    // 3. the poster is the only one left at full strength — and the heading
+    // keeps its point value, which an earlier version swapped for the film's
+    // name until e2e caught that the figure is load-bearing (D41).
+    expect(screen.getByText('20 pts')).toBeVisible();
+    // and every other nominee recedes
     const others = screen.getAllByRole('listitem').filter((item) => item !== won);
     expect(others).toHaveLength(2);
     for (const item of others) {

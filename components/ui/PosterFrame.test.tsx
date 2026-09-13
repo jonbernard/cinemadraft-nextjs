@@ -31,13 +31,20 @@ describe('PosterFrame', () => {
     // seat, and a victory. Carmine here goes red now.
     render(<PosterFrame {...base} status="won" />);
 
-    expect(screen.getByLabelText('Winner')).toHaveClass('bg-brass-fill');
-    expect(screen.getByLabelText('Winner')).not.toHaveClass('bg-accent-fill');
+    // 🔴 The mark is `WinnerSeal` now — a brass disc with a star — shared with
+    // the live page, so a reader who learns it on a roster recognises it on
+    // the television. The wrapper carries the accessible name; the seal draws
+    // the brass.
+    const seal = screen.getByLabelText('Winner').querySelector('svg');
+    expect(seal?.getAttribute('class')).toContain('text-brass-fill');
+    expect(seal?.getAttribute('class')).not.toContain('accent-fill');
   });
 
   it('stamps the seal rather than having it simply be there', () => {
     render(<PosterFrame {...base} status="won" />);
-    expect(screen.getByLabelText('Winner')).toHaveClass('animate-stamp');
+    expect(
+      screen.getByLabelText('Winner').querySelector('svg')?.getAttribute('class'),
+    ).toContain('animate-stamp');
   });
 
   it('delivers the seal instantly when motion is reduced', () => {
@@ -51,7 +58,9 @@ describe('PosterFrame', () => {
     render(<PosterFrame {...base} status="won" />);
     const seal = screen.getByLabelText('Winner');
     expect(seal).toBeInTheDocument();
-    expect(seal).toHaveClass('motion-reduce:animate-none');
+    expect(seal.querySelector('svg')?.getAttribute('class')).toContain(
+      'motion-reduce:animate-none',
+    );
   });
 
   it('does not mark an unwon film as a winner', () => {

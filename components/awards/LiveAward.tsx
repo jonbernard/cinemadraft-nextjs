@@ -80,19 +80,20 @@ export function LiveAward({
    */
   reveal?: boolean;
 }) {
-  const winner = nominees.find((nominee) => nominee.isWinner) ?? null;
+  const decided = nominees.some((nominee) => nominee.isWinner);
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <SectionHead
         as="h3"
-        right={
-          winner ? (
-            <span className="text-brass-text font-sans text-sm">{winner.title}</span>
-          ) : (
-            `${points} pts`
-          )
-        }
+        // 🔴 The point value stays once a category is decided. An earlier
+        // version swapped it for the winner's name, which read well and cost
+        // the page its only statement of what the category is worth — and
+        // `e2e/live.spec.ts` caught it, because that figure is the resolved
+        // value rather than the `awards.points` foreign key (D41) and this is
+        // one of two surfaces that could print the key and be believed. The
+        // winner is named under its own poster instead.
+        right={`${points} pts`}
         className="pb-0"
       >
         {name}
@@ -108,7 +109,7 @@ export function LiveAward({
               data-testid={nominee.isWinner ? 'live-winner' : undefined}
               className={cn(
                 'flex w-40 flex-col gap-1 2xl:w-56',
-                winner &&
+                decided &&
                   !nominee.isWinner &&
                   (reveal
                     ? 'animate-reveal-recede motion-reduce:animate-none motion-reduce:opacity-45'
