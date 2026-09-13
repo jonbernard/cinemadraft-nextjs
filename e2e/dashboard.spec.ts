@@ -103,6 +103,18 @@ async function signInAsMember(page: Page): Promise<void> {
   await signInAs(page, { email });
 }
 
+/**
+ * A second season for the picker to offer. `SeasonPicker` renders nothing for a
+ * single season, and CI's database holds exactly one — so the 44px test passed
+ * there only when another spec's scratch season happened to exist at that
+ * moment. Inactive, so `available_years_one_active` is untouched.
+ *
+ * 🔴 Removed by the test's own `finally`, not by `afterAll`: with
+ * `fullyParallel` every worker runs the describe's `afterAll`, and one of them
+ * could delete the row while another worker's copy of this test still needs it.
+ */
+const SCRATCH_YEAR = 2991;
+
 test.describe('dashboard', () => {
   test.afterAll(async () => {
     await withDb(async (query) => {
@@ -199,25 +211,44 @@ test.describe('dashboard', () => {
   });
 
   test('🔴 every season target clears 44px', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await withDb((query) =>
+      query(
+        `insert into available_years (year, is_active, created_at, updated_at)
+           values ($1, false, now(), now()) on conflict (year) do nothing`,
+        [SCRATCH_YEAR],
+      ),
+    );
+    try {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/');
 
-    // The defect: ten year links at 33.6 × 20px. Rendered geometry is the only
-    // place that number was ever real, which is why no test caught it.
-    const picker = page.getByRole('group', { name: 'Season' });
-    const summary = await picker.locator('summary').boundingBox();
-    expect(summary?.height ?? 0).toBeGreaterThanOrEqual(44);
+      // The defect: ten year links at 33.6 × 20px. Rendered geometry is the only
+      // place that number was ever real, which is why no test caught it.
+      const picker = page.getByRole('group', { name: 'Season' });
+      const summary = await picker.locator('summary').boundingBox();
+      expect(summary?.height ?? 0).toBeGreaterThanOrEqual(44);
 
-    await picker.locator('summary').click();
-    for (const link of await picker.getByRole('link').all()) {
-      const box = await link.boundingBox();
-      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+      await picker.locator('summary').click();
+      for (const link of await picker.getByRole('link').all()) {
+        const box = await link.boundingBox();
+        expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+      }
+    } finally {
+      await withDb((query) =>
+        query('delete from available_years where year = $1 and not is_active', [
+          SCRATCH_YEAR,
+        ]),
+      );
     }
   });
 
   test('🔴 the table owns its overflow, and the film column pins (1024px)', async ({
     page,
   }) => {
+    // 🔴 Reads the active season's real leaderboard. CI's seeded database has
+    // none, and this passed there only when a concurrent spec's scratch league
+    // happened to be on the board — a race, not coverage.
+    await skipWithoutRestoredCorpus();
     await page.setViewportSize({ width: 1024, height: 800 });
     await page.goto('/');
 
@@ -291,6 +322,10 @@ test.describe('dashboard', () => {
   });
 
   test('🔴 a phone can see where a total came from', async ({ page }) => {
+    // 🔴 Reads the active season's real leaderboard. CI's seeded database has
+    // none, and this passed there only when a concurrent spec's scratch league
+    // happened to be on the board — a race, not coverage.
+    await skipWithoutRestoredCorpus();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
