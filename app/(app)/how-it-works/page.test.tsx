@@ -9,7 +9,12 @@ const getSeasonPhases = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/repositories/points', () => ({
   pointRepository: { findAll },
 }));
-vi.mock('@/lib/services/how-it-works', () => ({ getWorkedExample, getShowGroups }));
+const getLandingFacts = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/services/how-it-works', () => ({
+  getWorkedExample,
+  getShowGroups,
+  getLandingFacts,
+}));
 vi.mock('@/lib/services/season', () => ({ getSeasonPhases }));
 
 import type { Point } from '@/lib/repositories/points';
@@ -135,6 +140,18 @@ describe('HowItWorksPage', () => {
       },
     ]);
     getSeasonPhases.mockResolvedValue(phases);
+    getLandingFacts.mockResolvedValue({
+      year: 2026,
+      isActiveSeason: true,
+      shows: 12,
+      seasons: 10,
+      filmsScored: 129,
+      films: [
+        { movieId: 7, title: 'A Real Film', posterUrl: null, total: 620 },
+        { movieId: 8, title: 'Another Film', posterUrl: null, total: 470 },
+        { movieId: 9, title: 'A Third Film', posterUrl: null, total: 320 },
+      ],
+    });
   }
 
   it('makes the argument in season order, and ends with the way in', async () => {
@@ -149,6 +166,7 @@ describe('HowItWorksPage', () => {
       .getAllByRole('heading', { level: 2 })
       .map((heading) => heading.textContent);
     expect(headings).toEqual([
+      'How the scoring works',
       'The best team in the game picked this',
       'And somebody drafted this',
       'Twelve shows, and what each pays',
@@ -177,7 +195,7 @@ describe('HowItWorksPage', () => {
 
     // docs/PLAN.md § Phase 18: the twist being the eighth paragraph is why
     // this phase exists. The beat is fourth; the lede carries it first.
-    const lede = screen.getByText(/Pick a team before awards season starts/);
+    const lede = screen.getByText(/Pick before the nominations land/);
     expect(lede).toHaveTextContent(/Razzie takes points back/);
   });
 
@@ -240,16 +258,62 @@ describe('HowItWorksPage', () => {
     getWorkedExample.mockResolvedValue(null);
     getShowGroups.mockResolvedValue([]);
     getSeasonPhases.mockResolvedValue([]);
+    getLandingFacts.mockResolvedValue(null);
 
     render(await HowItWorksPage());
 
     // The rules and the way in survive; the two ledgers and the rulebook are
     // absent rather than rendering empty shells.
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(1);
-    expect(screen.getByRole('heading', { name: 'Start a league' })).toBeVisible();
+    // The rules and the way in survive an empty database; the ledgers and the
+    // rulebook are absent rather than rendering empty shells.
+    expect(
+      screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
+    ).toEqual(['How the scoring works', 'Start a league']);
     expect(screen.queryAllByTestId('worked-example-total')).toHaveLength(0);
     // The rules still read, with em dashes where the figures would be, rather
     // than "undefined" or a typed fallback number.
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("opens with the season's own artwork and three counted figures", async () => {
+    withData();
+
+    render(await HowItWorksPage());
+
+    // Real posters for real teams' picks, where a landing page would put a
+    // stock photograph.
+    // Decorative by design: hidden from assistive tech and out of the tab
+    // order, so the headline and the action are what a screen reader and a
+    // keyboard reach first. Counted through the DOM because that is what
+    // `aria-hidden` makes correct.
+    const films = screen.getByTestId('hero-films');
+    expect(films).toHaveAttribute('aria-hidden', 'true');
+    expect(films.querySelectorAll('img')).toHaveLength(0);
+    expect(films.children).toHaveLength(3);
+
+    // 🔴 Counted, never claimed. A figure here that nothing counts is the one
+    // kind of lie this page cannot afford.
+    const band = screen.getByTestId('landing-facts');
+    expect(within(band).getByText('12')).toBeInTheDocument();
+    expect(within(band).getByText('129')).toBeInTheDocument();
+    expect(within(band).getByText('10')).toBeInTheDocument();
+  });
+
+  it('drops the hero artwork and the figures when there is nothing to count', async () => {
+    findAll.mockResolvedValue([]);
+    getWorkedExample.mockResolvedValue(null);
+    getShowGroups.mockResolvedValue([]);
+    getSeasonPhases.mockResolvedValue([]);
+    getLandingFacts.mockResolvedValue(null);
+
+    render(await HowItWorksPage());
+
+    expect(screen.queryByTestId('hero-films')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('landing-facts')).not.toBeInTheDocument();
+    // The claim itself survives: it is the one thing on the page that needs
+    // no data.
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /Draft a team of films/,
+    );
   });
 });

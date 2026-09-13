@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-
+import { RemoteImage } from '@/components/RemoteImage';
 import { ScoringTable } from '@/components/ScoringTable';
 import { SectionHead } from '@/components/SectionHead';
 import { WorkedExample } from '@/components/WorkedExample';
 import { pointRepository } from '@/lib/repositories/points';
-import { getShowGroups, getWorkedExample } from '@/lib/services/how-it-works';
+import {
+  getLandingFacts,
+  getShowGroups,
+  getWorkedExample,
+} from '@/lib/services/how-it-works';
 import { groupPointsByLevel } from '@/lib/services/scoring-table';
 import { getSeasonPhases } from '@/lib/services/season';
 
@@ -55,11 +59,15 @@ const BAND = '-mx-4 px-4 xl:-mx-6 xl:px-6';
  * rule, delete it.
  */
 export default async function HowItWorksPage() {
-  const [points, example, groups, phases] = await Promise.all([
+  const [points, example, groups, phases, facts] = await Promise.all([
     pointRepository.findAll(),
     getWorkedExample(),
     getShowGroups(),
     getSeasonPhases(),
+    // 🔴 17, not a round number: the first poster spans 2×2, so it eats four
+    // cells of a four-column grid and the wall only comes out square at
+    // 4 + (n − 1) ≡ 0 (mod 4). 18 left one poster alone on a final row.
+    getLandingFacts(17),
   ]);
   const levels = groupPointsByLevel(points);
   // The rulebook carries each level's marks beside its figures; `getShowGroups`
@@ -95,57 +103,138 @@ export default async function HowItWorksPage() {
 
   return (
     <div className="flex flex-col">
-      {/* The hero. Nothing above it, nothing beside it. */}
-      <section className={`${BAND} flex flex-col gap-6 pb-12 pt-4 sm:pb-16`}>
-        <h1 className="text-text-primary max-w-[14ch] font-sans text-display font-semibold">
-          Draft films. Score the season.
-        </h1>
-        <p className="text-text-secondary max-w-prose text-sm leading-relaxed sm:text-base">
-          Pick a team before awards season starts. Every nomination pays. Every win pays
-          twice. Every Razzie takes points back.
-        </p>
-        <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href="/auth/register"
-            className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-          >
-            Start a league
-          </Link>
-          <Link
-            href="/"
-            className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center px-1 text-sm underline underline-offset-4 focus-visible:outline-2"
-          >
-            See this season
-          </Link>
+      {/* The hero: the claim on the left, the season's real artwork on the
+          right. 🔴 The posters are the highest-scoring films of the season
+          being shown, with what they have actually scored — the product's own
+          evidence, where a SaaS page would put a product screenshot and a
+          stock photograph. */}
+      <section
+        className={`${BAND} flex flex-col gap-10 pb-12 pt-4 lg:flex-row lg:items-center lg:gap-12 lg:pb-16`}
+      >
+        <div className="flex min-w-0 flex-1 flex-col gap-6">
+          <h1 className="text-text-primary max-w-[16ch] font-sans text-display font-semibold">
+            Draft a team of films. Let the awards keep score.
+          </h1>
+          <p className="text-text-secondary max-w-prose text-sm leading-relaxed sm:text-base">
+            Pick before the nominations land &mdash; then every nomination pays, every win
+            pays twice, and every Razzie takes points back.
+          </p>
+          {facts ? (
+            <dl
+              data-testid="landing-facts"
+              className="border-border-rule flex flex-wrap gap-x-10 gap-y-4 border-t pt-6"
+            >
+              {[
+                [facts.shows, 'award shows score'],
+                [
+                  facts.filmsScored,
+                  `films scoring ${facts.isActiveSeason ? 'this season' : `in ${facts.year}`}`,
+                ],
+                [facts.seasons, 'seasons played'],
+              ].map(([value, label]) => (
+                <div key={String(label)} className="flex flex-col gap-1">
+                  <dt className="sr-only">{label}</dt>
+                  <dd className="text-text-primary font-mono text-2xl">{value}</dd>
+                  <p className="text-text-dim text-xs">{label}</p>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/auth/register"
+              className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Start a league
+            </Link>
+            <Link
+              href="/"
+              className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center px-1 text-sm underline underline-offset-4 focus-visible:outline-2"
+            >
+              See this season
+            </Link>
+          </div>
         </div>
+
+        {facts && facts.films.length > 0 ? (
+          /* A wall of the season's real posters, not an illustration. The
+              films are the highest scorers of the season being shown, in
+              order, so the mosaic is a picture of the game actually being
+              played — and every title in it is one somebody drafted.
+
+              Deliberately unlabelled: the captions and the point totals sat
+              under three posters in the first build and competed with the
+              headline. What each one scored is a click away on its own page;
+              here they are artwork. The bottom fades so the wall reads as
+              continuing past the fold rather than stopping in a straight cut. */
+          <div
+            data-testid="hero-films"
+            // 🔴 Decorative, and that is a decision rather than laziness. As
+            // links these eighteen posters put eighteen tab stops between the
+            // headline and "Start a league" — the action the page exists for —
+            // and a screen reader would read eighteen film titles before
+            // reaching the sentence that explains what the product is. The
+            // same films are reachable, titled and linked, from the season
+            // page this hero links to. So: `aria-hidden`, no tab stops, no
+            // accessible names, and every `alt` empty.
+            aria-hidden="true"
+            className="grid w-full shrink-0 grid-cols-4 gap-2 [mask-image:linear-gradient(to_bottom,black_72%,transparent)] sm:grid-cols-6 lg:w-[30rem] lg:grid-cols-4"
+          >
+            {facts.films.map((film, index) => (
+              <div
+                key={film.movieId}
+                className={
+                  index === 0
+                    ? 'poster-radius bg-bg-surface relative col-span-2 row-span-2 aspect-[2/3] overflow-hidden'
+                    : 'poster-radius bg-bg-surface relative aspect-[2/3] overflow-hidden'
+                }
+              >
+                {film.posterUrl ? (
+                  <RemoteImage
+                    src={film.posterUrl}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 8rem, 25vw"
+                    className="object-cover"
+                    priority={index === 0}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {/* The rules, as three statements with a real number each. */}
       <section
         data-testid="scoring-rules"
-        className={`${BAND} bg-bg-surface grid gap-6 py-10 sm:grid-cols-3 sm:gap-8 sm:py-12`}
+        className={`${BAND} bg-bg-surface flex flex-col gap-8 py-12`}
       >
-        <div className="flex flex-col gap-2">
-          <p className="text-text-primary font-mono text-2xl">{nomination ?? '—'}</p>
-          <p className="text-text-secondary text-sm leading-relaxed">
-            A nomination pays its category.{' '}
-            {headline ? `${headline.level}, top tier.` : null}
-          </p>
-        </div>
-        <div className="flex flex-col gap-2">
-          <p className="text-brass-text font-mono text-2xl">
-            {nomination == null ? '—' : nomination * 2}
-          </p>
-          <p className="text-text-secondary text-sm leading-relaxed">
-            A win pays it again. The same category, a second time.
-          </p>
-        </div>
-        <div className="flex flex-col gap-2">
-          <p className="text-accent-text font-mono text-2xl">{cost ?? '—'}</p>
-          <p className="text-text-secondary text-sm leading-relaxed">
-            A Razzie nomination takes points off you.{' '}
-            {negative ? `${negative.level}.` : null}
-          </p>
+        <SectionHead as="h2">How the scoring works</SectionHead>
+        <div className="grid gap-8 sm:grid-cols-3">
+          <div className="flex flex-col gap-2">
+            <p className="text-text-primary font-mono text-2xl">{nomination ?? '—'}</p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              A nomination pays its category.{' '}
+              {headline ? `${headline.level}, top tier.` : null}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-brass-text font-mono text-2xl">
+              {nomination == null ? '—' : nomination * 2}
+            </p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              A win pays it again. The same category, a second time.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-accent-text font-mono text-2xl">{cost ?? '—'}</p>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              A Razzie nomination takes points off you.{' '}
+              {negative ? `${negative.level}.` : null}
+            </p>
+          </div>
         </div>
       </section>
 

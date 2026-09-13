@@ -202,3 +202,70 @@ export async function getShowGroups(): Promise<ShowGroup[]> {
       })),
   }));
 }
+
+/** A film the hero shows, with its poster and what it has scored so far. */
+export type LandingFilm = {
+  movieId: number;
+  title: string;
+  posterUrl: string | null;
+  total: number;
+};
+
+/**
+ * The figures and the artwork the front door opens with.
+ *
+ * 🔴 **Every one of these is counted, not claimed** (PRODUCT.md § Evidence on
+ * Hand forbids inventing a metric, and this is the page a stranger judges the
+ * product by). `shows` is the events table; `seasons` is how many seasons have
+ * actually been played; `filmsScored` is how many films have scored in the
+ * season being shown. There is no user count, no "trusted by", and no growth
+ * figure, because none of those exist to count.
+ *
+ * The films are the season's highest scorers, in order, for the poster strip —
+ * real artwork for real teams' picks rather than stock photography.
+ */
+export type LandingFacts = {
+  year: number;
+  isActiveSeason: boolean;
+  shows: number;
+  seasons: number;
+  filmsScored: number;
+  films: LandingFilm[];
+};
+
+export async function getLandingFacts(limit = 5): Promise<LandingFacts | null> {
+  const seasons = await availableSeasons();
+  if (seasons.length === 0) return null;
+
+  const activeYear = await getActiveYear().catch(() => null);
+  const year =
+    activeYear != null && seasons.includes(activeYear)
+      ? activeYear
+      : (seasons[0] ?? null);
+  if (year == null) return null;
+
+  const [board, events] = await Promise.all([
+    getLeaderboard(year),
+    eventRepository.findAll(),
+  ]);
+
+  const top = board.rows.slice(0, limit);
+  const posters = await movieRepository.findManyByIds(top.map((row) => row.movieId));
+  const posterById = new Map(
+    posters.map((movie) => [movie.id, posterUrl(movie.poster, 'w342')]),
+  );
+
+  return {
+    year,
+    isActiveSeason: year === activeYear,
+    shows: events.length,
+    seasons: seasons.length,
+    filmsScored: board.rows.length,
+    films: top.map((row) => ({
+      movieId: row.movieId,
+      title: row.title,
+      posterUrl: posterById.get(row.movieId) ?? null,
+      total: row.total,
+    })),
+  };
+}
