@@ -84,8 +84,13 @@ test.describe('leagues', () => {
     // 🔴 The creator is seated, or the league is half-created.
     expect(await seats()).toHaveLength(1);
 
-    // The invite is on the page, for the owner.
+    // The invite is on the page, for the owner — behind the Invite disclosure
+    // since P17.T30, because the join credential used to be the second element
+    // on the page and two mono lines wide on a phone. Still one click away, and
+    // that click is the thing this assertion now also proves.
     const invite = page.locator('code', { hasText: '/join/' });
+    await expect(invite).not.toBeVisible();
+    await page.getByText('Invite').click();
     await expect(invite).toBeVisible();
     const url = (await invite.innerText()).trim();
     expect(url).toMatch(/\/join\/[0-9a-f-]{36}$/i);
