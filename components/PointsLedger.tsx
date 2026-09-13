@@ -82,6 +82,8 @@ export function PointsLedger({
       <summary className="text-text-secondary tabular hover:text-text-primary cursor-pointer list-none font-mono text-xs">
         {total}
         <span className="sr-only"> points for {label}. Show the breakdown.</span>
+        {/* Decoration, `aria-hidden`, and correctly `dim`: the rule is that
+            `dim` is for text a reader never needs to read (P17.T34). */}
         <span aria-hidden="true" className="text-text-dim ml-1 group-open:hidden">
           ▸
         </span>
@@ -101,16 +103,19 @@ export function PointsLedger({
             </div>
 
             <ul className="flex flex-col">
+              {/* 🔴 `secondary`, not `dim` (P17.T34). The award's name and the
+                  points it earned are the ledger's entire subject — this is the
+                  panel a reader opens *to read them*. */}
               {event.lines.map((line) => (
                 <li
                   key={line.nominationId}
                   className="flex items-baseline justify-between gap-2"
                 >
-                  <span className="text-text-dim flex flex-wrap items-center gap-2 text-xs leading-tight">
+                  <span className="text-text-secondary flex flex-wrap items-center gap-2 text-xs leading-tight">
                     {line.awardName}
                     {line.won ? <StatusChip tone="brass">Won</StatusChip> : null}
                   </span>
-                  <span className="text-text-dim tabular font-mono text-xs">
+                  <span className="text-text-secondary tabular font-mono text-xs">
                     {line.earned}
                   </span>
                 </li>

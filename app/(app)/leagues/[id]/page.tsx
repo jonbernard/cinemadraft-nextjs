@@ -367,7 +367,11 @@ export default async function LeaguePage({
         ) : (
           board.groups.map((group) => (
             <section key={group.group} className="flex flex-col gap-4">
-              <h2 className="text-text-dim text-xs font-normal">Group {group.group}</h2>
+              {/* A heading and a running-order position are content, so
+                  `secondary`, not `dim` (P17.T34). */}
+              <h2 className="text-text-secondary text-xs font-normal">
+                Group {group.group}
+              </h2>
 
               {isPending ? (
                 /* Before a draft starts there is nothing to put on a board, and
@@ -381,7 +385,7 @@ export default async function LeaguePage({
                       aria-current={seat.draftId === viewerSeatId ? true : undefined}
                       className="border-border-rule flex items-baseline gap-3 border-b px-2 py-2"
                     >
-                      <span className="text-text-dim tabular w-6 font-mono text-xs">
+                      <span className="text-text-secondary tabular w-6 font-mono text-xs">
                         {String(seat.order).padStart(2, '0')}
                       </span>
                       <span className="flex flex-wrap items-center gap-2">

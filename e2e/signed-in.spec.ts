@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { skipWithoutRestoredCorpus } from './support/corpus';
 import { signInAs } from './support/session';
 
 const TAG = 'e2e-p17';
@@ -11,6 +12,8 @@ const TAG = 'e2e-p17';
  * alone; the users are cleaned once, at the end, by the file-level hook.
  */
 const LEAGUE_TAG = 'e2e-p17-league';
+/** The one category the ledger fixture nominates for (P17.T34). */
+const AWARD = `${LEAGUE_TAG} Best Picture`;
 
 /**
  * The signed-in surfaces (P17.T27–T36).
@@ -73,6 +76,8 @@ async function scratchLeague(
     status: 'pending' | 'active' | 'complete';
     seats?: boolean;
     picks?: number;
+    /** Nominate every pick once for {@link AWARD}, so each carries a ledger line. */
+    ledger?: boolean;
   },
 ): Promise<number> {
   const year = await activeYear();
@@ -98,6 +103,29 @@ async function scratchLeague(
       );
       const mine = drafts.find((draft) => draft.order === 1);
 
+      // A show, a points tier and one category of their own (P17.T34), the
+      // shape `awards-lifecycle.spec.ts` seeds: `awards.points` is a foreign
+      // key into `points` (D41), not a value.
+      let awardId: number | undefined;
+      if (options.ledger) {
+        const { rows: events } = await query<{ id: number }>(
+          `insert into events (name, abbreviation, created_at, updated_at)
+             values ($1, $1, now(), now()) returning id`,
+          [`${LEAGUE_TAG}-${options.name}`],
+        );
+        const { rows: points } = await query<{ id: number }>(
+          `insert into points (level, tier, points, created_at, updated_at)
+             values ($1, 3, 7, now(), now()) returning id`,
+          [`${LEAGUE_TAG}-${options.name}`],
+        );
+        const { rows: awards } = await query<{ id: number }>(
+          `insert into awards (name, event_id, points, created_at, updated_at)
+             values ($1, $2, $3, now(), now()) returning id`,
+          [AWARD, events[0]?.id, points[0]?.id],
+        );
+        awardId = awards[0]?.id;
+      }
+
       for (let index = 0; index < (options.picks ?? 0); index += 1) {
         const { rows: movies } = await query<{ id: number }>(
           `insert into movies (title, sort_title, created_at, updated_at)
@@ -109,6 +137,13 @@ async function scratchLeague(
              values ($1, $2, $3, now(), now())`,
           [mine?.id, movies[0]?.id, index + 1],
         );
+        if (awardId != null) {
+          await query(
+            `insert into nominations (movie_id, award_id, year, created_at, updated_at)
+               values ($1, $2, $3, now(), now())`,
+            [movies[0]?.id, awardId, year],
+          );
+        }
       }
     }
 
@@ -124,6 +159,13 @@ async function scratchLeague(
  */
 async function cleanupLeagues() {
   await withDb(async (query) => {
+    // The ledger fixture's show, category and nominations (P17.T34) first.
+    const show = `(select a.id from awards a join events e on e.id = a.event_id
+                    where e.abbreviation like $1)`;
+    await query(`delete from nominations where award_id in ${show}`, [`${LEAGUE_TAG}%`]);
+    await query(`delete from awards where id in ${show}`, [`${LEAGUE_TAG}%`]);
+    await query('delete from events where abbreviation like $1', [`${LEAGUE_TAG}%`]);
+    await query('delete from points where level like $1', [`${LEAGUE_TAG}%`]);
     await query(
       `delete from draft_picks where draft_id in
          (select d.id from drafts d join leagues l on l.id = d.league_id
@@ -209,6 +251,31 @@ test.describe('signed-in surfaces', () => {
       return rows[0]?.year ?? null;
     });
     expect(after).toBe(before);
+  });
+
+  test('🔴 on the real board, the de-emphasis token does not outnumber the subject', async ({
+    page,
+  }) => {
+    // P17.T34, the aggregate. Read-only on league 1, because the multiplier
+    // only exists at real size: two `dim` spans per ledger line, per pick, per
+    // layout, over a sixteen-seat board. Measured on the 5434 clone the way
+    // the plan's step 1 counts (elements carrying the class, both layouts):
+    // dim 6,119 / secondary 1,314 / primary 1,550 before, 668 / 6,765 / 1,550
+    // after. 🔴 A scratch league cannot hold this: at three picks dim was
+    // already under primary before the change (62 against 68), so the same
+    // assertion there passed against the defect.
+    await skipWithoutRestoredCorpus();
+    await signInAs(page, { email: `${TAG}-dimcount@example.test` });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/leagues/1');
+    await expect(page.getByRole('table', { name: /Draft board/ }).first()).toBeVisible();
+
+    const counts = await page.evaluate(() => ({
+      dim: document.querySelectorAll('[class*="text-text-dim"]').length,
+      primary: document.querySelectorAll('[class*="text-text-primary"]').length,
+    }));
+
+    expect(counts.dim).toBeLessThanOrEqual(counts.primary);
   });
 
   test('🔴 a single-column page has one left edge, not three', async ({ page }) => {
@@ -488,6 +555,81 @@ test.describe('the league page', () => {
 
       expect(tooSmall, `${url} renders text below 11px`).toEqual([]);
     }
+  });
+
+  test('🔴 content on the league page is `secondary`, not `dim`', async ({ page }) => {
+    // P17.T34's rule: `dim` is for text a reader never needs to read —
+    // decoration, disclosure marks, placeholders. Column headers, a group's
+    // heading, a running-order position and a ledger line are how the page is
+    // read, so they are `secondary`. One assertion per site, so a regression
+    // names the site rather than nudging a total.
+    const userId = await signInAs(page, {
+      email: `${TAG}-dim@example.test`,
+      firstName: 'Dim',
+    });
+    const active = await scratchLeague(userId, {
+      name: 'dim',
+      status: 'active',
+      picks: 3,
+      ledger: true,
+    });
+    const pending = await scratchLeague(userId, {
+      name: 'dimpending',
+      status: 'pending',
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/leagues/${active}`);
+
+    // 🔴 The token resolved the way the page resolves it. `globals.css` holds a
+    // hex and `getComputedStyle` answers `rgb()`, so comparing against the
+    // custom property's text could never be equal — and could never fail.
+    const token = (name: string) =>
+      page.evaluate((key) => {
+        const probe = document.createElement('span');
+        probe.style.color = `var(--color-text-${key})`;
+        document.body.append(probe);
+        const value = getComputedStyle(probe).color;
+        probe.remove();
+        return value;
+      }, name);
+    const secondary = await token('secondary');
+    // The two must be tellable apart at all, or every line below is vacuous.
+    expect(secondary).not.toBe(await token('dim'));
+
+    const standings = page.getByRole('table', { name: /League standings/ });
+    const board = page.getByRole('table', { name: /Draft board/ });
+    await board.locator('summary').first().click();
+    const line = board
+      .locator('li li', { hasText: AWARD })
+      .first()
+      .locator(':scope > span');
+    await expect(line.first()).toBeVisible();
+
+    const sites = {
+      'standings Pos': standings.getByRole('columnheader', { name: 'Pos' }),
+      'standings Member': standings.getByRole('columnheader', { name: 'Member' }),
+      'standings Points': standings.getByRole('columnheader', { name: 'Points' }),
+      'board Seat': board.getByRole('columnheader', { name: 'Seat' }),
+      'board round': board.getByRole('columnheader', { name: '01' }),
+      'group heading': page.getByRole('heading', { name: 'Group 1' }),
+      'ledger award name': line.nth(0),
+      'ledger points earned': line.nth(1),
+    };
+    const found: Record<string, string> = {};
+    for (const [site, locator] of Object.entries(sites)) {
+      found[site] = await locator.evaluate((node) => getComputedStyle(node).color);
+    }
+
+    // The running order, which only a pending league renders.
+    await page.goto(`/leagues/${pending}`);
+    found['seat order'] = await page
+      .locator('main ol')
+      .getByText('01', { exact: true })
+      .evaluate((node) => getComputedStyle(node).color);
+
+    expect(found).toEqual(
+      Object.fromEntries(Object.keys(found).map((key) => [key, secondary])),
+    );
   });
 
   test('🔴 a stranger gets a stated empty state in that column, not a hole', async ({

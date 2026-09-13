@@ -151,11 +151,14 @@ export function DraftBoard({
           <caption className="sr-only">
             Draft board: one row per seat, one column per round
           </caption>
+          {/* A table's column headers are how its cells are read, so they are
+              content and `secondary` (P17.T34). Loop-multiplied: one class
+              here is `rounds + 1` elements per group. */}
           <thead>
             <tr className="border-border-rule border-b">
               <th
                 scope="col"
-                className="text-text-dim w-40 py-2 pr-4 text-left text-xs font-normal"
+                className="text-text-secondary w-40 py-2 pr-4 text-left text-xs font-normal"
               >
                 Seat
               </th>
@@ -163,7 +166,7 @@ export function DraftBoard({
                 <th
                   key={round}
                   scope="col"
-                  className="text-text-dim tabular w-24 px-1 py-2 text-left font-mono text-xs font-normal"
+                  className="text-text-secondary tabular w-24 px-1 py-2 text-left font-mono text-xs font-normal"
                 >
                   {String(round).padStart(2, '0')}
                 </th>

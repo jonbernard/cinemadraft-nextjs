@@ -21,6 +21,14 @@ export type PickCellFilm = {
  * An empty cell is rendered explicitly rather than omitted. A seat with fewer
  * picks than the longest in its group is normal (D34), and a missing cell
  * would collapse the grid and misalign every round after it.
+ *
+ * 🔴 The empty cell's round number and the initials placeholder stay `dim`
+ * (P17.T34). Both are text a reader never needs to read: one says "nothing here
+ * yet" without looking like a failed image, the other stands in for artwork that
+ * has not arrived. That is what `dim` is for. The round badge over a real
+ * poster is also still `dim`, and by the same rule it is information — the
+ * round this pick was taken in. Moving it was outside T34's named sites; it is
+ * flagged, not decided.
  */
 export function PickCell({
   film,
