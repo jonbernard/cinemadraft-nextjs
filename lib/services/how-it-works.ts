@@ -1,7 +1,11 @@
+import { awardRepository } from '@/lib/repositories/awards';
+import { eventRepository } from '@/lib/repositories/events';
 import { movieRepository } from '@/lib/repositories/movies';
+import { pointRepository } from '@/lib/repositories/points';
 import { posterUrl } from '@/lib/utils/poster';
 import { availableSeasons, getLeaderboard } from './leaderboard';
 import { ledgerForMovies, type MovieLedger } from './scoring';
+import { groupPointsByLevel } from './scoring-table';
 import { getActiveYear } from './season';
 
 export type ExampleLine = {
@@ -129,4 +133,72 @@ function toExample(
       earned: line.earned,
     })),
   };
+}
+
+/** A show, as `ShowsWall` renders it. */
+export type ShowGroupShow = {
+  eventId: number;
+  name: string | null;
+  abbreviation: string | null;
+  imageUrl: string | null;
+};
+
+/** One scoring level with the shows that pay at it. */
+export type ShowGroup = {
+  level: string;
+  tiers: { tier: number; points: number }[];
+  shows: ShowGroupShow[];
+};
+
+/**
+ * The twelve shows, grouped by what they pay (P18.T4).
+ *
+ * 🔴 **The join is awards, not events.** An event carries no level of its own:
+ * `awards.points` is a foreign key into `points.id` (D41, and the reason the
+ * repository renames it `pointsId`), and `points.level` is the group's name. So
+ * a show's level is the level of the point rows its own categories reference —
+ * which is why this is a service and not a repository method, and why the
+ * plan's "events → points.level" phrasing was under-specified enough that
+ * `ShowsWall` refused to guess it.
+ *
+ * A show whose awards reference several levels is counted under each — that
+ * does not happen in the restored data and it is not this function's business
+ * to declare it impossible.
+ *
+ * Groups come back in `groupPointsByLevel`'s order, which is most valuable
+ * first, so the Razzies land last — where the page wants them.
+ */
+export async function getShowGroups(): Promise<ShowGroup[]> {
+  const [points, events, awards] = await Promise.all([
+    pointRepository.findAll(),
+    eventRepository.findAll(),
+    awardRepository.findAll(),
+  ]);
+
+  const levelByPointId = new Map<number, string>();
+  for (const point of points) {
+    if (point.level != null) levelByPointId.set(point.id, point.level);
+  }
+
+  const levelsByEventId = new Map<number, Set<string>>();
+  for (const award of awards) {
+    const level = award.pointsId == null ? undefined : levelByPointId.get(award.pointsId);
+    if (level == null) continue;
+    const levels = levelsByEventId.get(award.eventId);
+    if (levels) levels.add(level);
+    else levelsByEventId.set(award.eventId, new Set([level]));
+  }
+
+  return groupPointsByLevel(points).map((group) => ({
+    level: group.level,
+    tiers: group.tiers,
+    shows: events
+      .filter((event) => levelsByEventId.get(event.id)?.has(group.level))
+      .map((event) => ({
+        eventId: event.id,
+        name: event.name,
+        abbreviation: event.abbreviation,
+        imageUrl: event.image,
+      })),
+  }));
 }

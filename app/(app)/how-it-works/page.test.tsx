@@ -2,9 +2,15 @@ import { render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const findAll = vi.hoisted(() => vi.fn());
+const getWorkedExample = vi.hoisted(() => vi.fn());
+const getShowGroups = vi.hoisted(() => vi.fn());
+const getSeasonPhases = vi.hoisted(() => vi.fn());
+
 vi.mock('@/lib/repositories/points', () => ({
   pointRepository: { findAll },
 }));
+vi.mock('@/lib/services/how-it-works', () => ({ getWorkedExample, getShowGroups }));
+vi.mock('@/lib/services/season', () => ({ getSeasonPhases }));
 
 import type { Point } from '@/lib/repositories/points';
 import HowItWorksPage from './page';
@@ -34,36 +40,216 @@ const points: Point[] = [
   point({ id: 4, level: 'Alphabet', tier: 1, points: 5 }),
   point({ id: 5, level: 'Alphabet', tier: 2, points: 5 }),
   point({ id: 6, level: 'Alphabet', tier: 3, points: 5 }),
+  // 🔴 The negative level is part of the fixture, not an edge case: the page's
+  // third rule reads its top tier, and a fixture without one let the rule
+  // render an em dash while the test still passed.
+  point({ id: 7, level: 'Razzies', tier: 1, points: -20 }),
+  point({ id: 8, level: 'Razzies', tier: 2, points: -15 }),
 ];
+
+const JAN_2026 = Date.UTC(2026, 0, 12);
+const MAR_2026 = Date.UTC(2026, 2, 15);
+
+const phases = [
+  {
+    key: '1-nominations',
+    eventId: 1,
+    phase: 'nominations' as const,
+    name: 'Academy Awards',
+    abbreviation: 'oscars',
+    date: JAN_2026,
+    complete: false,
+  },
+  {
+    key: '2-ceremony',
+    eventId: 2,
+    phase: 'ceremony' as const,
+    name: 'Razzies',
+    abbreviation: 'raz',
+    date: MAR_2026 - 86_400_000,
+    complete: false,
+  },
+  {
+    key: '1-ceremony',
+    eventId: 1,
+    phase: 'ceremony' as const,
+    name: 'Academy Awards',
+    abbreviation: 'oscars',
+    date: MAR_2026,
+    complete: false,
+  },
+];
+
+const example = {
+  year: 2026,
+  isActiveSeason: true,
+  best: {
+    movieId: 7,
+    title: 'A Real Film',
+    posterUrl: null,
+    total: 620,
+    lines: [
+      {
+        nominationId: 1,
+        awardName: 'Best Picture',
+        eventName: 'Academy Awards',
+        points: 20,
+        won: true,
+        earned: 40,
+      },
+    ],
+  },
+  worst: {
+    movieId: 8,
+    title: 'A Bad Film',
+    posterUrl: null,
+    total: -185,
+    lines: [
+      {
+        nominationId: 2,
+        awardName: 'Worst Picture',
+        eventName: 'Razzies',
+        points: -20,
+        won: false,
+        earned: -20,
+      },
+    ],
+  },
+};
 
 describe('HowItWorksPage', () => {
   afterEach(() => {
     vi.resetAllMocks();
   });
 
-  it('renders the rulebook table with each level as its own row, ordered by value', async () => {
+  function withData() {
     findAll.mockResolvedValue(points);
+    getWorkedExample.mockResolvedValue(example);
+    getShowGroups.mockResolvedValue([
+      {
+        level: 'Oscars',
+        tiers: [{ tier: 1, points: 20 }],
+        shows: [
+          { eventId: 1, name: 'Academy Awards', abbreviation: 'oscars', imageUrl: null },
+        ],
+      },
+    ]);
+    getSeasonPhases.mockResolvedValue(phases);
+  }
+
+  it('makes the argument in season order, and ends with the way in', async () => {
+    withData();
 
     render(await HowItWorksPage());
 
-    const rows = screen.getAllByRole('row');
-    // Header row plus one row per level.
-    expect(rows).toHaveLength(3);
-
-    const oscarsRow = screen.getByRole('row', { name: /Oscars/ });
-    const cells = within(oscarsRow).getAllByRole('cell');
-    expect(cells.map((c) => c.textContent)).toEqual(['20', '15', '10']);
-
-    const alphabetRow = screen.getByRole('row', { name: /Alphabet/ });
-    const alphabetCells = within(alphabetRow).getAllByRole('cell');
-    expect(alphabetCells.map((c) => c.textContent)).toEqual(['5', '5', '5']);
+    // The order is the argument: the proof, then what it cost somebody, then
+    // the reference, then the action. A page that opened with the rulebook
+    // would be a reference page with a pitch attached.
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(headings).toEqual([
+      'The best team in the game picked this',
+      'And somebody drafted this',
+      'Twelve shows, and what each pays',
+      'Start a league',
+    ]);
   });
 
-  it('states the win rule in prose, matching lib/services/scoring.ts (a win is 2P)', async () => {
-    findAll.mockResolvedValue(points);
+  it('states the three rules with figures from the points table', async () => {
+    withData();
 
     render(await HowItWorksPage());
 
-    expect(screen.getByText(/A win earns it a second time/)).toBeInTheDocument();
+    // 20 nomination / 40 win / -20 Razzie, none of them typed: the first two
+    // are the top tier of the most valuable level and its double, the third
+    // is the top tier of the negative level.
+    const rules = screen.getByTestId('scoring-rules');
+    expect(within(rules).getByText('20')).toBeInTheDocument();
+    expect(within(rules).getByText('40')).toBeInTheDocument();
+    expect(within(rules).getByText('-20')).toBeInTheDocument();
+  });
+
+  it('puts the Razzie inversion in the lede, above the fold', async () => {
+    withData();
+
+    render(await HowItWorksPage());
+
+    // docs/PLAN.md § Phase 18: the twist being the eighth paragraph is why
+    // this phase exists. The beat is fourth; the lede carries it first.
+    const lede = screen.getByText(/Pick a team before awards season starts/);
+    expect(lede).toHaveTextContent(/Razzie takes points back/);
+  });
+
+  it('renders both ledgers from the service, and nothing it worked out itself', async () => {
+    withData();
+
+    render(await HowItWorksPage());
+
+    const totals = screen.getAllByTestId('worked-example-total');
+    expect(totals.map((cell) => cell.textContent)).toEqual(['620', '-185']);
+  });
+
+  it('states the season length from the calendar, not from a typed claim', async () => {
+    withData();
+
+    render(await HowItWorksPage());
+
+    // The phases span 12 Jan to 15 Mar, so the page says three months. An
+    // earlier draft typed "September to March" beside a derived sentence that
+    // said three, and the two contradicted each other on the page.
+    // 12 Jan to 15 Mar is two months, and the page says what the dates say.
+    expect(screen.getByText(/about 2 months/)).toBeInTheDocument();
+  });
+
+  it('feeds the rulebook the levels the points table holds', async () => {
+    withData();
+
+    render(await HowItWorksPage());
+
+    // The table's own shape is `ScoringTable`'s to test. What matters here is
+    // that the page hands it the real levels and does not print a number of
+    // its own beside them.
+    expect(screen.getByRole('heading', { name: 'Oscars' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Alphabet' })).toBeVisible();
+    // The marks ride beside their own figures rather than in a wall of their
+    // own: the Oscars group carries a link to its show page.
+    expect(screen.getByRole('link', { name: 'Academy Awards' })).toHaveAttribute(
+      'href',
+      '/award-shows/oscars',
+    );
+  });
+
+  it('doubles the win figure rather than typing it', async () => {
+    withData();
+
+    render(await HowItWorksPage());
+
+    // 40 is 20 doubled, and 20 came from the points table. Neither figure is
+    // written in the page.
+    const rules = screen.getByTestId('scoring-rules');
+    expect(within(rules).getByText('40')).toBeInTheDocument();
+    expect(within(rules).getByText(/A win pays it again/)).toBeInTheDocument();
+  });
+
+  it('still teaches the game on an empty database', async () => {
+    // 🔴 The state a signed-out stranger hits on a fresh deployment: no
+    // season, no nominations, no shows. The page must still explain the game
+    // rather than rendering a spine of blank nodes or throwing.
+    findAll.mockResolvedValue([]);
+    getWorkedExample.mockResolvedValue(null);
+    getShowGroups.mockResolvedValue([]);
+    getSeasonPhases.mockResolvedValue([]);
+
+    render(await HowItWorksPage());
+
+    // The rules and the way in survive; the two ledgers and the rulebook are
+    // absent rather than rendering empty shells.
+    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Start a league' })).toBeVisible();
+    expect(screen.queryAllByTestId('worked-example-total')).toHaveLength(0);
+    // The rules still read, with em dashes where the figures would be, rather
+    // than "undefined" or a typed fallback number.
+    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(3);
   });
 });

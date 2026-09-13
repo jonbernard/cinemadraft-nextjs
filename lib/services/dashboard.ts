@@ -8,7 +8,7 @@ import { userRepository } from '@/lib/repositories/users';
 import { posterUrl } from '@/lib/utils/poster';
 import { denseRank } from '@/lib/utils/rank';
 import { ledgerForMovies, sumTotals } from './scoring';
-import { getActiveYear } from './season';
+import { getActiveYear, type SeasonPhase, toSeasonPhases } from './season';
 
 /** One drafted film on the viewer's own strip. */
 export type RosterEntry = {
@@ -83,23 +83,13 @@ export type LeagueView = {
   position: number | null;
 };
 
-export type SeasonPhase = {
-  /** `${eventId}-nominations` / `${eventId}-ceremony` — unique per box, stable across renders. */
-  key: string;
-  eventId: number;
-  phase: 'nominations' | 'ceremony';
-  name: string | null;
-  abbreviation: string | null;
-  /**
-   * Epoch milliseconds, not a Date. The events repository normalizes six
-   * bigint schedule columns this way — the underlying columns store
-   * milliseconds, and a bigint DTO would throw on JSON.stringify the first
-   * time it crossed the RSC boundary. `null` means the phase is not
-   * scheduled yet.
-   */
-  date: number | null;
-  complete: boolean;
-};
+/**
+ * 🔴 Re-exported, not re-declared. `lib/services/season.ts` owns the shape and
+ * the rule that builds it (P18.T5) — `/how-it-works` renders the same season
+ * calendar for a signed-out stranger, and two copies of "one box per scoring
+ * moment" would drift the first time either page learned something.
+ */
+export type { SeasonPhase } from './season';
 
 /** One film in cinemas now, for the "In cinemas now" shelf (P10.T2). */
 export type NowPlayingFilm = {
@@ -174,46 +164,7 @@ export async function getDashboard(userId: number | null): Promise<DashboardView
     // A league the viewer has no seat in this season still belongs on the
     // page — they may be mid-draft, or the season may not have started.
     leagues: leagues.filter((league) => league !== null),
-    events: events
-      .flatMap((event) => {
-        // One box per scoring moment, not one per show. `nom_date` and
-        // `awards_date` are separate columns; emitting only the second is why
-        // the dashboard never showed a nominations date, though nominations
-        // are half of what scores.
-        //
-        // `complete` is a date comparison, per phase. `nomActive` /
-        // `awardsActive` mark the live broadcast window, not whether the
-        // moment has passed, and using them here would light up "complete" for
-        // a ceremony that is on air right now.
-        const now = Date.now();
-        const shared = {
-          eventId: event.id,
-          name: event.name,
-          abbreviation: event.abbreviation,
-        };
-        return [
-          {
-            ...shared,
-            key: `${event.id}-nominations`,
-            phase: 'nominations' as const,
-            date: event.nomDate,
-            complete: event.nomDate != null && event.nomDate < now,
-          },
-          {
-            ...shared,
-            key: `${event.id}-ceremony`,
-            phase: 'ceremony' as const,
-            date: event.awardsDate,
-            complete: event.awardsDate != null && event.awardsDate < now,
-          },
-        ];
-      })
-      // Undated phases sort last rather than to 1970: a missing date means the
-      // moment is not scheduled yet, which is the far future, not the past.
-      .sort(
-        (a, b) =>
-          (a.date ?? Number.POSITIVE_INFINITY) - (b.date ?? Number.POSITIVE_INFINITY),
-      ),
+    events: toSeasonPhases(events),
     nowPlaying: nowPlaying.map((film) => ({
       tmdbId: film.tmdbId,
       title: film.title,

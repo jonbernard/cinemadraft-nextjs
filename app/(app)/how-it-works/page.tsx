@@ -1,9 +1,13 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
-import { Panel } from '@/components/Panel';
+import { ScoringTable } from '@/components/ScoringTable';
 import { SectionHead } from '@/components/SectionHead';
+import { WorkedExample } from '@/components/WorkedExample';
 import { pointRepository } from '@/lib/repositories/points';
+import { getShowGroups, getWorkedExample } from '@/lib/services/how-it-works';
 import { groupPointsByLevel } from '@/lib/services/scoring-table';
+import { getSeasonPhases } from '@/lib/services/season';
 
 export const metadata: Metadata = {
   title: 'How it works',
@@ -12,176 +16,223 @@ export const metadata: Metadata = {
 };
 
 /**
+ * Breaks a band out of `AppShell`'s content padding and puts it back inside.
+ *
+ * 🔴 A banded section paints `bg-bg-surface`, never `bg-bg-panel`. The shell's
+ * `<main>` **is** a panel, so a panel-toned band is invisible — the first build
+ * of this page alternated grounds that rendered as one flat colour, which is
+ * exactly the "no sections, just scroll" complaint it was meant to answer.
+ * Surface is the step above panel (D90), so a band reads as raised out of the
+ * page rather than cut into it.
+ */
+const BAND = '-mx-4 px-4 xl:-mx-6 xl:px-6';
+
+/**
  * How the game works — the product's front door (Phase 18).
  *
  * Replaces `/rules-and-scoring`, which was two panels of grey prose behind a
  * login wall. Public: `proxy.ts` lists the route, and `next.config.ts`
  * redirects the old URL here permanently (P18.T0, D101).
  *
- * 🔴 **Every number on this page is computed, never typed.** The point values
- * come from the `points` table through `groupPointsByLevel`; the worked
- * example comes from `lib/services/scoring.ts`, which is the single definition
- * of the scoring rule (D19, D41). A hand-written figure here drifts the first
- * time the points table changes, and this is the page where being wrong is
- * most embarrassing — so there are none, and `e2e/how-it-works.spec.ts` holds
- * that line.
+ * 🔴 **Every number on this page is computed, never typed.** Point values come
+ * from the `points` table through `groupPointsByLevel`; the worked example
+ * comes from `lib/services/scoring.ts`, the single definition of the scoring
+ * rule (D19, D41); dates come from the events table. No testimonials, no
+ * metrics, no invented claims (docs/PLAN.md § Phase 18).
  *
- * No testimonials, no logos-of-companies-using-us, no invented metrics
- * (docs/PLAN.md § Phase 18). If a figure cannot be sourced it is not here.
+ * ## Shape
  *
- * 🔴 P18.T1 is a **move, not a rewrite**: every word below came over from the
- * old route unchanged, so the product was never worse than what it replaced at
- * any commit. T2–T7 rewrite the content section by section.
+ * Season order — draft, nominations, wins, the Razzie cost — in **bands**
+ * rather than one column, per the owner's call on the first build: it read as
+ * documentation because every section had the same rhythm and the same
+ * density. What changed is register, not direction: the argument still runs on
+ * the season's own order, and the dates are still real.
+ *
+ * 🔴 **The copy is deliberately thin.** The first version explained each rule
+ * in two paragraphs; a reader deciding whether to play does not read two
+ * paragraphs. Each rule is one sentence and one real number, and the ledger
+ * does the convincing. If a sentence here can be deleted without losing a
+ * rule, delete it.
  */
 export default async function HowItWorksPage() {
-  const points = await pointRepository.findAll();
+  const [points, example, groups, phases] = await Promise.all([
+    pointRepository.findAll(),
+    getWorkedExample(),
+    getShowGroups(),
+    getSeasonPhases(),
+  ]);
   const levels = groupPointsByLevel(points);
+  // The rulebook carries each level's marks beside its figures; `getShowGroups`
+  // already did the awards → points.level join, so this is a lookup, not a
+  // second join with its own opinion.
+  const showsByLevel = new Map(groups.map((group) => [group.level, group.shows]));
+  const withShows = levels.map((level) => ({
+    ...level,
+    shows: showsByLevel.get(level.level),
+  }));
+
+  // 🔴 The three figures the rules are stated with, read out of the points
+  // table rather than typed: the top tier of the most valuable level, and the
+  // top tier of the negative one. A season that re-prices its categories
+  // re-prices this page in the same edit.
+  const headline = levels[0];
+  const nomination = headline?.tiers[0]?.points ?? null;
+  const negative = levels.find((level) => level.tiers.some((tier) => tier.points < 0));
+  const cost = negative?.tiers[0]?.points ?? null;
+
+  const firstNominations = phases.find((phase) => phase.phase === 'nominations') ?? null;
+  const lastCeremony =
+    [...phases]
+      .reverse()
+      .find((phase) => phase.phase === 'ceremony' && phase.date != null) ?? null;
+  const months =
+    firstNominations?.date != null && lastCeremony?.date != null
+      ? Math.max(
+          1,
+          Math.round((lastCeremony.date - firstNominations.date) / 2_629_800_000),
+        )
+      : null;
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-10">
-      <section className="flex flex-col gap-4">
-        <SectionHead as="h1">How it works</SectionHead>
-        {/* 🔴 The Razzie clause is here on purpose, and it is the one deviation
-            from the spine in docs/PLAN.md § Phase 18. The PLAN says the twist
-            being the eighth paragraph is why this phase exists, and the spine
-            then puts its section sixth of seven — so the lede carries it above
-            the fold at 390px while the section stays where the spine puts it. */}
-        <p className="text-text-secondary max-w-prose text-sm leading-relaxed">
-          Draft a team of films before awards season, then score every nomination and win
-          they pick up &mdash; and lose points when one of them takes a Razzie nomination.
+    <div className="flex flex-col">
+      {/* The hero. Nothing above it, nothing beside it. */}
+      <section className={`${BAND} flex flex-col gap-6 pb-12 pt-4 sm:pb-16`}>
+        <h1 className="text-text-primary max-w-[14ch] font-sans text-display font-semibold">
+          Draft films. Score the season.
+        </h1>
+        <p className="text-text-secondary max-w-prose text-sm leading-relaxed sm:text-base">
+          Pick a team before awards season starts. Every nomination pays. Every win pays
+          twice. Every Razzie takes points back.
         </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/auth/register"
+            className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            Start a league
+          </Link>
+          <Link
+            href="/"
+            className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center px-1 text-sm underline underline-offset-4 focus-visible:outline-2"
+          >
+            See this season
+          </Link>
+        </div>
       </section>
 
-      {/* biome-ignore lint/correctness/useUniqueElementIds: these are shareable fragments — `/how-it-works#points` is a link somebody sends — so they have to be stable and readable, and `useId()` emits React 19's «r0» form. The rule guards a component rendered twice; a page renders once, the same invariant `AppShell` cites for the skip link. */}
-      <section id="what-it-is" className="flex flex-col gap-4">
-        <SectionHead as="h2">What the game is</SectionHead>
-        <p className="text-text-secondary text-sm">The award shows we include:</p>
-        <ul className="text-text-secondary list-disc pl-5 text-sm">
-          <li>
-            Alphabet Awards — the Writers Guild, Directors Guild, Producers Guild, Screen
-            Actors&rsquo; Guild, Art Directors Guild, American Society of
-            Cinematographers, BAFTA, American Cinema Editors, and the American Film
-            Institute
-          </li>
-          <li>Golden Globes</li>
-          <li>Academy Awards</li>
-          <li>Razzies</li>
-        </ul>
-
-        <p className="text-text-secondary text-sm">
-          For the Golden Globes, Academy Awards and the Razzies, categories are split into
-          tiers, and a more important category is worth more. The tiers are:
-        </p>
-        <ul className="text-text-secondary list-disc pl-5 text-sm">
-          <li>Tier 1: Best Picture</li>
-          <li>Tier 2: Acting, writing and directing</li>
-          <li>Tier 3: Every other category given out during the televised event</li>
-        </ul>
-        <p className="text-text-secondary text-sm">
-          Alphabet Awards categories are not tiered — every category is worth the same.
-        </p>
-
-        <p className="text-text-secondary text-sm">
-          You can pick any movie you want. There is no authoritative list you have to pick
-          from — you are free to pick something that came out five years ago, but the
-          league will mock you for it.
-        </p>
-
-        <p className="text-text-secondary text-sm">
-          Be careful: the Razzies are worth negative points, so if one of your movies
-          picks up a Razzie nomination, it costs you.
-        </p>
-
-        <p className="text-text-secondary text-sm">
-          {/* 🔴 Deliberately different from the source app's copy, which said a
-              nomination and a win were worth "the same value" — that was never
-              what the scoring code did (see lib/services/scoring.ts): a win was
-              already worth double, because a winner was necessarily also a
-              nominee. This page states the rule the app actually runs. */}
-          A nomination earns a category&rsquo;s points. A win earns it a second time —
-          twice a nomination&rsquo;s value in total — because winning a category means you
-          were nominated for it too.
-        </p>
-      </section>
-
-      {/* biome-ignore lint/correctness/useUniqueElementIds: these are shareable fragments — `/how-it-works#points` is a link somebody sends — so they have to be stable and readable, and `useId()` emits React 19's «r0» form. The rule guards a component rendered twice; a page renders once, the same invariant `AppShell` cites for the skip link. */}
-      <section id="season" className="flex flex-col gap-4">
-        <SectionHead as="h2">How a season runs</SectionHead>
-        {/* P18.T5 fills this. */}
-      </section>
-
-      {/* biome-ignore lint/correctness/useUniqueElementIds: these are shareable fragments — `/how-it-works#points` is a link somebody sends — so they have to be stable and readable, and `useId()` emits React 19's «r0» form. The rule guards a component rendered twice; a page renders once, the same invariant `AppShell` cites for the skip link. */}
-      <section id="points" className="flex flex-col gap-4">
-        <SectionHead as="h2">How points work</SectionHead>
-        {/* P18.T2 inserts the worked example here, ABOVE the table (P18.T0). */}
-        <Panel tone="surface" as="div" className="flex flex-col gap-4 p-5">
-          <p className="text-text-secondary text-sm">
-            What a nomination is worth, by award show and tier. A win is worth this twice.
+      {/* The rules, as three statements with a real number each. */}
+      <section
+        data-testid="scoring-rules"
+        className={`${BAND} bg-bg-surface grid gap-6 py-10 sm:grid-cols-3 sm:gap-8 sm:py-12`}
+      >
+        <div className="flex flex-col gap-2">
+          <p className="text-text-primary font-mono text-2xl">{nomination ?? '—'}</p>
+          <p className="text-text-secondary text-sm leading-relaxed">
+            A nomination pays its category.{' '}
+            {headline ? `${headline.level}, top tier.` : null}
           </p>
-
-          <div className="overflow-x-auto">
-            <table className="tabular w-full text-left text-sm">
-              <thead>
-                <tr className="text-text-dim font-sans text-xs uppercase tracking-[0.06em]">
-                  <th scope="col" className="py-2 pr-4 font-semibold">
-                    Award show
-                  </th>
-                  <th scope="col" className="py-2 pr-4 text-right font-semibold">
-                    Tier 1
-                  </th>
-                  <th scope="col" className="py-2 pr-4 text-right font-semibold">
-                    Tier 2
-                  </th>
-                  <th scope="col" className="py-2 text-right font-semibold">
-                    Tier 3
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {levels.map((row) => (
-                  <tr key={row.level} className="border-border-rule border-t">
-                    <th scope="row" className="text-text-primary py-2 pr-4 font-normal">
-                      {row.level}
-                    </th>
-                    {[1, 2, 3].map((tier) => {
-                      const cell = row.tiers.find((t) => t.tier === tier);
-                      return (
-                        <td
-                          key={tier}
-                          className={
-                            tier === 3
-                              ? 'text-text-secondary py-2 text-right'
-                              : 'text-text-secondary py-2 pr-4 text-right'
-                          }
-                        >
-                          {cell ? cell.points : '—'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
+        </div>
+        <div className="flex flex-col gap-2">
+          <p className="text-brass-text font-mono text-2xl">
+            {nomination == null ? '—' : nomination * 2}
+          </p>
+          <p className="text-text-secondary text-sm leading-relaxed">
+            A win pays it again. The same category, a second time.
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <p className="text-accent-text font-mono text-2xl">{cost ?? '—'}</p>
+          <p className="text-text-secondary text-sm leading-relaxed">
+            A Razzie nomination takes points off you.{' '}
+            {negative ? `${negative.level}.` : null}
+          </p>
+        </div>
       </section>
 
-      {/* biome-ignore lint/correctness/useUniqueElementIds: these are shareable fragments — `/how-it-works#points` is a link somebody sends — so they have to be stable and readable, and `useId()` emits React 19's «r0» form. The rule guards a component rendered twice; a page renders once, the same invariant `AppShell` cites for the skip link. */}
-      <section id="shows" className="flex flex-col gap-4">
-        <SectionHead as="h2">The shows</SectionHead>
-        {/* P18.T4 fills this. */}
-      </section>
+      {/* The proof. One ledger, real, and it adds up. */}
+      {example ? (
+        <section className={`${BAND} flex flex-col gap-6 py-12`}>
+          <SectionHead
+            as="h2"
+            right={
+              <span className="text-text-dim font-sans text-xs">
+                {example.isActiveSeason ? 'This season' : example.year}
+              </span>
+            }
+          >
+            The best team in the game picked this
+          </SectionHead>
+          <WorkedExample
+            title={example.best.title}
+            posterUrl={example.best.posterUrl}
+            total={example.best.total}
+            lines={example.best.lines}
+            limit={4}
+          />
+        </section>
+      ) : null}
 
-      {/* biome-ignore lint/correctness/useUniqueElementIds: these are shareable fragments — `/how-it-works#points` is a link somebody sends — so they have to be stable and readable, and `useId()` emits React 19's «r0» form. The rule guards a component rendered twice; a page renders once, the same invariant `AppShell` cites for the skip link. */}
-      <section id="razzies" className="flex flex-col gap-4">
-        <SectionHead as="h2">What it costs you</SectionHead>
-        {/* P18.T2 fills this with the season's real casualty. */}
-      </section>
+      {/* The cost. 🔴 A full ledger, not a headline number: the owner asked
+          for the film examples back, and the casualty is the funnier of the
+          two — the same table shape as the winner above, which is the point.
+          Reading them one after another is what makes the inversion land. */}
+      {example?.worst ? (
+        <section className={`${BAND} bg-bg-surface flex flex-col gap-6 py-12`}>
+          <SectionHead
+            as="h2"
+            right={
+              <span className="text-accent-text font-mono text-sm">
+                {example.worst.total}
+              </span>
+            }
+          >
+            And somebody drafted this
+          </SectionHead>
+          <WorkedExample
+            title={example.worst.title}
+            posterUrl={example.worst.posterUrl}
+            total={example.worst.total}
+            lines={example.worst.lines}
+            limit={4}
+          />
+        </section>
+      ) : null}
 
-      {/* biome-ignore lint/correctness/useUniqueElementIds: these are shareable fragments — `/how-it-works#points` is a link somebody sends — so they have to be stable and readable, and `useId()` emits React 19's «r0» form. The rule guards a component rendered twice; a page renders once, the same invariant `AppShell` cites for the skip link. */}
-      <section id="start" className="flex flex-col gap-4">
-        <SectionHead as="h2">Start</SectionHead>
-        {/* P18.T7 fills this. */}
+      {/* The shows and their values, in one pass. 🔴 These were two sections
+          — a wall of twelve marks, then the same four groups again as figures.
+          One idea, read twice. The marks now sit beside their own numbers. */}
+      {/* 🔴 The whole band is conditional, heading included. `ScoringTable`
+          returns null for no levels, which on a fresh database left the
+          heading "Twelve shows, and what each pays" sitting above nothing. */}
+      {withShows.length > 0 ? (
+        <section className={`${BAND} bg-bg-surface flex flex-col gap-6 py-12`}>
+          <SectionHead
+            as="h2"
+            right={
+              months == null ? undefined : (
+                <span className="text-text-dim font-sans text-xs">
+                  about {months} months, start to finish
+                </span>
+              )
+            }
+          >
+            Twelve shows, and what each pays
+          </SectionHead>
+          <ScoringTable levels={withShows} />
+        </section>
+      ) : null}
+
+      <section className={`${BAND} flex flex-col items-start gap-4 py-12`}>
+        <SectionHead as="h2">Start a league</SectionHead>
+        <p className="text-text-secondary max-w-prose text-sm leading-relaxed">
+          Private, invite-only, one season at a time.
+        </p>
+        <Link
+          href="/auth/register"
+          className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          Start a league
+        </Link>
       </section>
     </div>
   );

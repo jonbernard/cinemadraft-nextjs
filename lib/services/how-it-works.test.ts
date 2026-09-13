@@ -7,6 +7,9 @@ const ledgerForMovies = vi.fn();
 const getActiveYear = vi.fn();
 const availableSeasons = vi.fn();
 const findManyByIds = vi.fn();
+const pointsFindAll = vi.fn();
+const eventsFindAll = vi.fn();
+const awardsFindAll = vi.fn();
 
 vi.mock('@/lib/services/leaderboard', () => ({ getLeaderboard, availableSeasons }));
 vi.mock('@/lib/services/scoring', () => ({ ledgerForMovies }));
@@ -14,8 +17,17 @@ vi.mock('@/lib/services/season', () => ({ getActiveYear }));
 vi.mock('@/lib/repositories/movies', () => ({
   movieRepository: { findManyByIds },
 }));
+vi.mock('@/lib/repositories/points', () => ({
+  pointRepository: { findAll: pointsFindAll },
+}));
+vi.mock('@/lib/repositories/events', () => ({
+  eventRepository: { findAll: eventsFindAll },
+}));
+vi.mock('@/lib/repositories/awards', () => ({
+  awardRepository: { findAll: awardsFindAll },
+}));
 
-const { getWorkedExample } = await import('./how-it-works');
+const { getWorkedExample, getShowGroups } = await import('./how-it-works');
 
 /** A board row as `getLeaderboard` shapes one. */
 function row(movieId: number, title: string, total: number) {
@@ -237,5 +249,77 @@ describe('the rule the page states in words', () => {
 
     expect(nominated.get(1)).toBe(7);
     expect(won.get(1)).toBe(14);
+  });
+});
+
+describe('getShowGroups', () => {
+  // The shape the restored data has: a show carries no level of its own, and
+  // its group is whatever level its own categories' point rows name.
+  const points = [
+    { id: 1, level: 'Oscars', tier: 1, points: 20 },
+    { id: 2, level: 'Oscars', tier: 2, points: 15 },
+    { id: 3, level: 'Alphabet', tier: 1, points: 5 },
+    { id: 4, level: 'Razzies', tier: 1, points: -20 },
+  ];
+  const events = [
+    { id: 10, name: 'Academy Awards', abbreviation: 'oscars', image: 'oscars.png' },
+    { id: 11, name: 'Directors Guild', abbreviation: 'dga', image: null },
+    { id: 12, name: 'Razzies', abbreviation: 'raz', image: null },
+    {
+      id: 13,
+      name: 'A show with no scoring categories',
+      abbreviation: 'none',
+      image: null,
+    },
+  ];
+  const awards = [
+    { id: 100, eventId: 10, pointsId: 1 },
+    { id: 101, eventId: 10, pointsId: 2 },
+    { id: 102, eventId: 11, pointsId: 3 },
+    { id: 103, eventId: 12, pointsId: 4 },
+    // 🔴 A category that references no point row at all. The restored data
+    // holds these, and reading `award.points` as a value rather than as a
+    // foreign key is the trap D41 exists for.
+    { id: 104, eventId: 13, pointsId: null },
+  ];
+
+  beforeEach(() => {
+    pointsFindAll.mockResolvedValue(points);
+    eventsFindAll.mockResolvedValue(events);
+    awardsFindAll.mockResolvedValue(awards);
+  });
+
+  it('groups a show by the level its own categories pay at', async () => {
+    const groups = await getShowGroups();
+
+    const oscars = groups.find((group) => group.level === 'Oscars');
+    expect(oscars?.shows.map((show) => show.abbreviation)).toEqual(['oscars']);
+    expect(groups.find((group) => group.level === 'Alphabet')?.shows).toHaveLength(1);
+    // The show whose only category references no point row belongs to no
+    // group, rather than defaulting into one.
+    expect(
+      groups.flatMap((group) => group.shows).map((show) => show.abbreviation),
+    ).not.toContain('none');
+  });
+
+  it('orders the groups by what they pay, so the negative one lands last', async () => {
+    const groups = await getShowGroups();
+
+    expect(groups.map((group) => group.level)).toEqual(['Oscars', 'Alphabet', 'Razzies']);
+    expect(groups.at(-1)?.tiers.every((tier) => tier.points < 0)).toBe(true);
+  });
+
+  it('carries each show its mark, or null when it has none', async () => {
+    const groups = await getShowGroups();
+
+    const oscars = groups.find((group) => group.level === 'Oscars')?.shows[0];
+    expect(oscars).toMatchObject({
+      eventId: 10,
+      name: 'Academy Awards',
+      imageUrl: 'oscars.png',
+    });
+    expect(
+      groups.find((group) => group.level === 'Razzies')?.shows[0]?.imageUrl,
+    ).toBeNull();
   });
 });

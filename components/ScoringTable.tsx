@@ -1,5 +1,8 @@
+import Link from 'next/link';
+
 import { cn } from '@/lib/utils/cn';
 import { SectionHead } from './SectionHead';
+import { ShowLogo } from './ShowLogo';
 
 /**
  * Structurally `ScoringLevel` from `lib/services/scoring-table.ts`,
@@ -9,6 +12,21 @@ export type ScoringGroup = {
   level: string;
   /** Ascending by tier, as the service sorts them. */
   tiers: readonly { tier: number; points: number }[];
+  /**
+   * The shows that pay at this level, if the caller has them.
+   *
+   * 🔴 The marks live here rather than in a section of their own, which is
+   * where they started. A wall of twelve logos teaches the vocabulary and
+   * then the values repeated the same four groups immediately below it — two
+   * passes over one idea. Beside its own figures, a mark answers the question
+   * a reader actually has: *that show, this much.*
+   */
+  shows?: readonly {
+    eventId: number;
+    name: string | null;
+    abbreviation: string | null;
+    imageUrl: string | null;
+  }[];
 };
 
 /**
@@ -24,6 +42,22 @@ const TIER_MEANING: Record<number, string> = {
   1: 'Best Picture',
   2: 'Acting, writing and directing',
   3: 'Every other televised category',
+};
+
+/**
+ * 🔴 The same tiers, named for a show that hands out the opposite prize.
+ * Rendered against the restored data the generic labels printed **"Best
+ * Picture — −20"** under the Razzies, which is not a category anybody is
+ * nominated for and reads as a scoring error rather than as a joke.
+ *
+ * Keyed off the values, never off the level's name: a level whose tiers are
+ * negative is a penalty level whatever it is called, and matching on the
+ * string "Razzies" would break the day somebody adds a second one.
+ */
+const PENALTY_TIER_MEANING: Record<number, string> = {
+  1: 'Worst Picture',
+  2: 'Worst acting, writing and directing',
+  3: 'Every other Razzie category',
 };
 
 /**
@@ -61,32 +95,57 @@ export function ScoringTable({
 
   return (
     <div className={cn('flex flex-col gap-6', className)}>
-      {levels.map((group) => (
-        <div
-          key={group.level}
-          data-testid={`scoring-group-${group.level}`}
-          className="flex flex-col gap-1"
-        >
-          <SectionHead as="h4" className="pb-1">
-            {group.level}
-          </SectionHead>
-          <dl className="flex flex-col">
-            {group.tiers.map((tier) => (
-              <div
-                key={tier.tier}
-                className="border-border-rule flex items-baseline justify-between gap-4 border-t py-2"
-              >
-                <dt className="text-text-secondary text-sm">
-                  {TIER_MEANING[tier.tier] ?? `Tier ${tier.tier}`}
-                </dt>
-                <dd className="text-text-primary tabular shrink-0 font-mono text-sm">
-                  {tier.points}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      ))}
+      {levels.map((group) => {
+        const penalty = group.tiers.every((tier) => tier.points < 0);
+        const meaning = penalty ? PENALTY_TIER_MEANING : TIER_MEANING;
+        return (
+          <div
+            key={group.level}
+            data-testid={`scoring-group-${group.level}`}
+            className="flex flex-col gap-1"
+          >
+            <SectionHead as="h4" className="pb-1">
+              {group.level}
+            </SectionHead>
+
+            {group.shows && group.shows.length > 0 ? (
+              <ul className="flex flex-wrap items-center gap-2 pb-2">
+                {group.shows.map((show) => (
+                  <li key={show.eventId}>
+                    {show.abbreviation ? (
+                      <Link
+                        href={`/award-shows/${show.abbreviation}`}
+                        title={show.name ?? show.abbreviation}
+                        className="focus-visible:outline-accent-fill block rounded-sm focus-visible:outline-2"
+                      >
+                        <ShowLogo imageUrl={show.imageUrl} />
+                        <span className="sr-only">{show.name ?? show.abbreviation}</span>
+                      </Link>
+                    ) : (
+                      <ShowLogo imageUrl={show.imageUrl} />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <dl className="flex flex-col">
+              {group.tiers.map((tier) => (
+                <div
+                  key={tier.tier}
+                  className="border-border-rule flex items-baseline justify-between gap-4 border-t py-2"
+                >
+                  <dt className="text-text-secondary text-sm">
+                    {meaning[tier.tier] ?? `Tier ${tier.tier}`}
+                  </dt>
+                  <dd className="text-text-primary tabular shrink-0 font-mono text-sm">
+                    {tier.points}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -98,6 +98,15 @@
    * Line heights are ratios rather than lengths so the pairing survives if a
    * size is ever nudged again. theme/tokens.test.ts pins all four values.
    */
+  /* 🔴 Public surfaces only — the front door and the signed-out home (P18,
+     D105). The app's ramp stays 28 / 20 / 17 (P17.T1): a dashboard heading
+     competes with the data under it, and a landing page has nothing to compete
+     with. Fluid rather than a step, because the hero is the one place where a
+     390px phone and a 1440px desktop genuinely want different sizes. */
+  --text-display: clamp(40px, 6vw, 64px);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.03em;
+
   --text-sm: 15px;
   --text-sm--line-height: calc(21 / 15);
   --text-xs: 13px;

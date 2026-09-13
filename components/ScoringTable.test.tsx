@@ -70,4 +70,45 @@ describe('ScoringTable', () => {
     const { container } = render(<ScoringTable levels={[]} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('names a penalty level for the prize it actually hands out', () => {
+    // Rendered against the real points table the generic labels printed
+    // "Best Picture  −20" under the Razzies — a category nobody is nominated
+    // for, reading as a scoring bug rather than as the joke.
+    render(
+      <ScoringTable
+        levels={[
+          {
+            level: 'Razzies',
+            tiers: [
+              { tier: 1, points: -20 },
+              { tier: 2, points: -15 },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Worst Picture')).toBeInTheDocument();
+    expect(screen.queryByText('Best Picture')).not.toBeInTheDocument();
+  });
+
+  it('keys the penalty labels off the values, not off the level name', () => {
+    // A level called "Razzies" that pays positively is not a penalty level,
+    // and a second penalty level under any other name still is.
+    render(
+      <ScoringTable
+        levels={[
+          { level: 'Razzies', tiers: [{ tier: 1, points: 20 }] },
+          { level: 'Some Future Penalty', tiers: [{ tier: 1, points: -5 }] },
+        ]}
+      />,
+    );
+
+    const razzies = screen.getByTestId('scoring-group-Razzies');
+    expect(within(razzies).getByText('Best Picture')).toBeInTheDocument();
+
+    const future = screen.getByTestId('scoring-group-Some Future Penalty');
+    expect(within(future).getByText('Worst Picture')).toBeInTheDocument();
+  });
 });
