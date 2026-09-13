@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { EmptyState } from '@/components/EmptyState';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { PosterFrame } from '@/components/PosterFrame';
-import { RemoteImage } from '@/components/RemoteImage';
 import { RosterStrip } from '@/components/RosterStrip';
 import { SeasonPicker } from '@/components/SeasonPicker';
 import { SeasonStepper } from '@/components/SeasonStepper';
@@ -20,10 +19,11 @@ import { availableSeasons, getLeaderboard } from '@/lib/services/leaderboard';
 /**
  * Posters in the hero's wall, and the number `getLandingFacts` is asked for.
  *
- * Eight fills a four-column grid exactly twice over. A ragged final row is the
- * only thing this number can get wrong, so it is a multiple of four.
+ * Ten, because the wall is a 1|2|3|4 staircase — one poster in the first
+ * column, four in the last. A season with fewer scoring films shortens the
+ * stair; it never leaves a hole.
  */
-const WALL = 8;
+const WALL = 10;
 
 /**
  * The dashboard, with a public variant (D44).
@@ -229,38 +229,47 @@ function SignedOutHero({ facts }: { facts: LandingFacts | null }) {
 
             🔴 Decorative, and that is a decision rather than laziness. As links
             these are eight tab stops between the headline and "Start a league"
-            — the action this page exists for — and a screen reader would read
-            eight film titles before the sentence explaining what the product
-            is. The same films are reachable, titled and linked, from the
-            season leaderboard directly below. So: `aria-hidden`, no tab stops,
-            no accessible names, every `alt` empty.
+            — the action this page exists for.
 
-            Eight in a four-column grid, so the wall is a full rectangle at
-            every width rather than a ragged final row — and short enough that
-            the season rail is still on the fold at 1440×900. */
+            🔴 It is no longer `aria-hidden`: the owner asked for the names and
+            the scores back, and a caption that says "One Battle After Another,
+            620" is **content**, not decoration. Hiding content from assistive
+            technology to keep a tab order tidy is the wrong trade — so the
+            posters carry their titles and totals, and there are still no
+            links in here, which is what kept the tab stops out in the first
+            place.
+
+            Ten posters as a 1|2|3|4 staircase, bottom-aligned: the shape the
+            owner asked for, and it stays short enough that the season rail is
+            on the fold at 1440×900. */
         <div
           data-testid="hero-films"
-          aria-hidden="true"
-          className="grid w-full shrink-0 grid-cols-4 gap-2 lg:w-[26rem]"
+          className="flex w-full shrink-0 items-end gap-2 sm:gap-3 lg:w-[26rem]"
         >
-          {facts.films.map((film, index) => (
-            <div
-              key={film.movieId}
-              className="poster-radius bg-bg-surface relative aspect-[2/3] overflow-hidden"
-            >
-              {film.posterUrl ? (
-                <RemoteImage
-                  src={film.posterUrl}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 7rem, 25vw"
-                  className="object-cover"
-                  // One preload, not eight: the wall is the largest thing in
-                  // the first viewport, and `NowPlayingShelf` below already
-                  // spends two on frames that now sit lower down the page.
-                  priority={index === 0}
+          {/* A rising staircase: 1, 2, 3, then 4 posters, bottom-aligned, so
+              the wall climbs toward the corner instead of sitting as a block.
+              The columns are slices in that order, so a season with fewer than
+              ten scoring films shortens the stair rather than leaving a hole —
+              `slice` past the end is empty, not undefined. */}
+          {[
+            [0, 1],
+            [1, 3],
+            [3, 6],
+            [6, 10],
+          ].map(([from, to], column) => (
+            <div key={from} className="flex min-w-0 flex-1 flex-col gap-2 sm:gap-3">
+              {facts.films.slice(from, to).map((film, index) => (
+                <PosterFrame
+                  key={film.movieId}
+                  title={film.title}
+                  posterUrl={film.posterUrl}
+                  points={film.total}
+                  // One preload, not ten: the tallest column's first poster is
+                  // the largest thing in the first viewport, and the shelf
+                  // below already spends two on frames that sit lower now.
+                  priority={column === 3 && index === 0}
                 />
-              ) : null}
+              ))}
             </div>
           ))}
         </div>

@@ -155,7 +155,15 @@ export function AppShell({
         {/* Bottom padding below `xl` reserves room for the fixed tab bar
             (44px targets plus the safe-area inset), or the last row of every
             page would sit underneath it. At `xl` the tab bar is hidden, so
-            the padding drops back to match the top/side padding. */}
+            the padding drops back to match the sides.
+            🔴 The inset grows with the window rather than staying at one
+            value: 16px on a phone, 24px from `sm`, 32px from `xl`. At 1440 the
+            content box is 1200px wide, and 24px around a box that size reads
+            as content pressed against the chrome. The top gets 40px there —
+            one section step (D91) — because the first heading sits directly
+            under the utility strip and needs to clear it, not just miss it.
+            🔴 `/how-it-works`'s full-bleed bands invert exactly these values
+            (`BAND` in that file). Change one and the other stops lining up. */}
         {/* biome-ignore lint/correctness/useUniqueElementIds: the skip link's target has to be a stable, well-known fragment, and `useId()` emits React 19's «r0» form — not something to put in a URL fragment or a CSS selector. The rule guards against a component rendered twice; this shell renders exactly once per page, which is the same invariant that makes `<main>` unique. */}
         <Panel
           as="main"
@@ -165,7 +173,7 @@ export function AppShell({
           // itself — which means a screen reader keeps reading from the chrome.
           // -1 keeps it out of Tab; only the skip link ever lands here.
           tabIndex={-1}
-          className="min-w-0 flex-1 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] xl:p-6"
+          className="min-w-0 flex-1 p-4 pb-[calc(4rem+env(safe-area-inset-bottom))] sm:p-6 xl:px-8 xl:pb-8 xl:pt-10"
         >
           {children}
         </Panel>

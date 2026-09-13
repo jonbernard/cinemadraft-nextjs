@@ -107,7 +107,12 @@ export function ScoringTable({
           <div
             key={group.level}
             data-testid={`scoring-group-${group.level}`}
-            className={cn('flex flex-col gap-4', ['Oscars', 'Golden Globes'].includes(group.level) ? 'col-span-1' : 'col-span-2')}
+            className={cn(
+              'flex flex-col gap-4',
+              ['Oscars', 'Golden Globes'].includes(group.level)
+                ? 'col-span-1'
+                : 'col-span-2',
+            )}
           >
             <SectionHead as="h4" className="pb-1">
               {group.level}

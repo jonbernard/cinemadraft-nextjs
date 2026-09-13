@@ -50,7 +50,7 @@ export const metadata: Metadata = {
  * Surface is the step above panel (D90), so a band reads as raised out of the
  * page rather than cut into it.
  */
-const BAND = '-mx-4 px-4 xl:-mx-6 xl:px-6';
+const BAND = '-mx-4 px-4 sm:-mx-6 sm:px-6 xl:-mx-8 xl:px-8';
 
 /**
  * How the game works — the product's front door (Phase 18).

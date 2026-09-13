@@ -23,7 +23,9 @@ function props() {
   } as Parameters<typeof DashboardPage>[0];
 }
 
-const films = Array.from({ length: 8 }, (_, index) => ({
+// Ten, the number the page asks `getLandingFacts` for: the wall is a
+// 1|2|3|4 staircase and the last column holds four.
+const films = Array.from({ length: 10 }, (_, index) => ({
   movieId: index + 1,
   title: `Film ${index + 1}`,
   posterUrl: `https://image.tmdb.org/t/p/w342/${index + 1}.jpg`,
@@ -110,21 +112,29 @@ describe('the signed-out dashboard', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
-  it('renders the season’s own posters as artwork, out of reach', async () => {
+  it('renders the season’s own films with their names and scores', async () => {
     render(await DashboardPage(props()));
 
     const wall = screen.getByTestId('hero-films');
-    expect(wall).toHaveAttribute('aria-hidden', 'true');
-    // 🔴 The decision from the other surface, kept: as links this is eight tab
-    // stops and eight read-aloud titles between the headline and the action.
+
+    // 🔴 Not `aria-hidden`, and that changed deliberately. The wall started as
+    // decoration — posters only — and the owner asked for the names and the
+    // totals back. A caption reading "One Battle After Another, 620" is
+    // content, and hiding content from assistive technology to keep a tab
+    // order tidy is the wrong trade. What kept the tab stops out was the
+    // absence of links, and that still holds.
+    expect(wall).not.toHaveAttribute('aria-hidden');
     expect(within(wall).queryAllByRole('link')).toHaveLength(0);
     expect(wall.querySelectorAll('a, button, [tabindex]')).toHaveLength(0);
 
-    const images = [...wall.querySelectorAll('img')];
-    expect(images).toHaveLength(films.length);
-    expect(images.every((image) => image.getAttribute('alt') === '')).toBe(true);
-    // The service's films, in the service's order — the wall does not pick.
-    expect(images[0]?.getAttribute('src')).toMatch(/(\/|%2F)1\.jpg/);
+    expect(within(wall).getByText(films[0].title)).toBeInTheDocument();
+    expect(within(wall).getByText(String(films[0].total))).toBeInTheDocument();
+
+    // Four columns holding 1, 2, 3 and 4 — the staircase, not a block.
+    expect(wall.children).toHaveLength(4);
+    expect([...wall.children].map((column) => column.childElementCount)).toEqual([
+      1, 2, 3, 4,
+    ]);
   });
 
   it('still makes the argument when no season has a board', async () => {
