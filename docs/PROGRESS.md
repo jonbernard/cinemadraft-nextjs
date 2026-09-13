@@ -2149,7 +2149,7 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-18-how-it-works.md`
 
 🔴 **Runs here, before the go-live phases.** The e2e suite is 85 tests that each
 prove one thing; none of them walks the product the way a member does. These
-five journeys are the confidence layer, recorded and paced so a person can
+six journeys are the confidence layer, recorded and paced so a person can
 watch them. The slice specs stay as the diagnostic layer.
 Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
@@ -2158,9 +2158,10 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 - [x] P19.T2 — Journey 1, a season from nothing to a finished draft — `179c032`. Owner signs in, league created, the invite `<code>` appears only once the disclosure is opened, a second browser context joins, eleven placeholders seat, thirteen seats deal 4/3/3/3, four picks hit four distinct seats, **round 2 starts on the seat round 1 ended on** and runs back down it, the public board carries all seven group-1 films, `draft_picks` agrees (`1,1,1,1,2,2,2`), and Finish the draft leaves the header reading `2026 · complete` with the invite gone. 🔴 Mutation: forcing `draft-order.ts`'s `forward` to `true` reddens the snake turn. Folds in the old `league-lifecycle.spec.ts`. **No app change was needed**
 - [x] P19.T3 — Journey 2, the league read back — `9571747`. `/leagues` shows it with "You run this one"; the board carries all three teams; the reader's row is named `· You` and carries `aria-current`; **a pick's ledger opens and its lines sum to the number above them**; the roster, the standings and the season leaderboard all report that same figure; then a win is written and all four move to exactly twice, with the ledger saying "Won" rather than only doubling. 🔴 Mutation: `earned: won ? points * 2 : points` → `points` reddens this and journey 3
 - [x] P19.T4 — Journey 3, a ceremony night — `cd408aa`. Admin finds the show, moves to the scratch season, renames it and sets its date (survives a reload), **adds a category through `CategoryCreate`** with a tier from the points table, nominates both contenders by typing a fragment, and crowns one — board, leaderboard and film page all double together, and the board's ledger names the win. Then the **winner is corrected**: the second replaces the first rather than joining it, and the points follow. 🔴 The plan's "no UI for adding a category" is out of date; only show *creation* is still missing. J3 seeds its own points tier, or against CI's empty `points` table every assertion would be `0 === 0 * 2`
-- [ ] P19.T5 — Journey 4: browse → film detail → the search panel, as a reader
-- [ ] P19.T6 — Journey 5: the watchlist and the draft list
-- [ ] P19.T7 — the five run as one ordered film; the recording is the artefact
+- [x] P19.T5 — Journey 4, a reader browses — `e728b36`. No account, writing nothing: the release calendar, a film opened from its poster, another found by name in the search panel, the panel put away. 🔴 Two departures from the plan, both because the plan's beat could not fail honestly — the credits disclosure runs on a named film rather than whichever the shelf opened, since not every film has more cast than it shows
+- [x] P19.T6 — Journey 5, the member's own lists — `cdf2973`. **First browser coverage of either page**; before this, `e2e/` mentioned `/list` and `/watchlist` only in `nav.spec.ts`. Eleven beats: the empty list, four films added by typing, the stored order, a real pointer drag that comes back from the server, a film marked gone, one removed, then the watchlist's empty state, badge, three progress views, and an undo that survives a reload
+- [x] P19.T8 — Journey 6, a ceremony as it happens — `74dea67`. `/live/[abbr]` read by a stranger, then the same URL with `?league=<id>` (how the link is actually shared), then an admin marking the winner and the ceremony page carrying it. The seed gives the mark visible consequences — two points tiers, so the seat holding the headline winner **overtakes** the one that led on nominations, asserted as a relationship rather than a figure
+- [x] P19.T7 — the journeys run as one film — `b7bdbc7`. `npm run e2e:film` stitches the takes: file names carry the running order, Playwright sorts by path and one worker executes in that order, so `find | sort` is the running order and needs no list to maintain. 106 seconds. Output lands in gitignored `.local/` — a recording is an artefact of a run, not a file in the repository
 
 ### Phase 19 notes
 
@@ -2206,7 +2207,7 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 - ✅ **T0 is answered (2026-09-12): SSE, the server polling Postgres, no broker
   and no vendor.** Spec: `docs/superpowers/specs/2026-09-12-realtime-transport.md`.
-  Accepted by the owner. 🔴 Awaiting a D-number from P17.T26 — do not assign one.
+  Accepted by the owner, and recorded as **D102** (P17.T26).
 
 - **Why polling, when D13 called polling the interim.** Recorded plainly because
   it reads like a retreat and is not. Vercel kills every connection at the 300s
@@ -2231,7 +2232,15 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
   televised broadcast lags the room by more than this does.
 
 
-- [ ] P14 not started
+Plan: `docs/superpowers/plans/2026-09-13-phase-14-the-live-room.md`
+
+- [x] P14.T1 — every award is its nominees' posters — `3c130da`. The poster is the content and the words are not readable from the sofa: at 1920 on a 55" panel three metres away a 224px frame is 2.7° × 4.1° of arc, above the ~1° at which a poster is recognised, while the 15px title under it is 11 arcmin against the ~20 that makes text comfortable. Two empty states, and neither is a blank row
+- [x] P14.T2 — one league's standings, down the right — `3cdc496`. `?league=<id>` pins it for whoever opens the link; with no parameter it is the reader's own; null for a stranger handed the bare URL. Same `StandingsPanel` fed the same numbers as `/leagues/[id]`, so there is no second arithmetic and no second definition of a tie
+- [x] P14.T5 — the winner lands — `04d880b`, `cf6aab3`. A brass star seal rises over the poster under a brass wash, the losers recede to 45% (legible: they are still the nominees), and the win is stated in words as well as colour. 🔴 The seal replaced a clipped corner triangle, which had nothing to grow into at 3.6×, and `PosterFrame` now draws the same mark, so a reader who learns it on a roster recognises it on the television
+- [ ] P14.T3 — the stream: `/api/live/[abbr]/stream`, Node runtime, SSE, full state every frame
+- [ ] P14.T4 — the client, its reconnect, and its stop conditions
+- [ ] P14.T6 — TV mode is chrome only
+- [ ] P14.T7 — the gate: two clients, an admin marks a winner, the viewer receives it
 
 ## Phase 16 — New features
 
