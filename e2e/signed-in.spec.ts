@@ -391,4 +391,107 @@ test.describe('the league page', () => {
     const width = await page.evaluate(() => document.documentElement.scrollWidth);
     expect(width).toBeLessThanOrEqual(390);
   });
+
+  test("🔴 the reader's own roster sits beside the standings, not 5,000px below", async ({
+    page,
+  }) => {
+    const userId = await signInAs(page, {
+      email: `${TAG}-seat@example.test`,
+      firstName: 'Seat',
+    });
+    const leagueId = await scratchLeague(userId, {
+      name: 'roster',
+      status: 'active',
+      picks: 3,
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/leagues/${leagueId}`);
+
+    const standings = await page.getByRole('table').first().boundingBox();
+    const roster = await page
+      .getByRole('list', { name: 'Drafted films, in draft order' })
+      .first()
+      .boundingBox();
+    const main = await page.locator('main').boundingBox();
+    if (!standings || !roster || !main) throw new Error('no layout');
+
+    // Beside, not below: their vertical ranges overlap.
+    expect(roster.y).toBeLessThan(standings.y + standings.height);
+    // And the pair fills the column rather than leaving 55% of it empty.
+    const used =
+      Math.max(roster.x + roster.width, standings.x + standings.width) -
+      Math.min(roster.x, standings.x);
+    expect(used).toBeGreaterThan(main.width * 0.7);
+  });
+
+  test('on a phone the roster comes first and the standings follow', async ({ page }) => {
+    const userId = await signInAs(page, {
+      email: `${TAG}-seat-phone@example.test`,
+      firstName: 'Seat',
+    });
+    const leagueId = await scratchLeague(userId, {
+      name: 'rosterphone',
+      status: 'active',
+      picks: 3,
+    });
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/leagues/${leagueId}`);
+
+    const roster = await page
+      .getByRole('list', { name: 'Drafted films, in draft order' })
+      .first()
+      .boundingBox();
+    const standings = await page.getByRole('table').first().boundingBox();
+    if (!roster || !standings) throw new Error('no layout');
+
+    expect(roster.y).toBeLessThan(standings.y);
+  });
+
+  test('🔴 a stranger gets a stated empty state in that column, not a hole', async ({
+    page,
+  }) => {
+    // The ordinary case on a shared link (D44/D45): there is no "own roster"
+    // for somebody with no session, so the slot has to say what it is for
+    // rather than leaving the standings floating beside nothing.
+    const userId = await signInAs(page, {
+      email: `${TAG}-owner-public@example.test`,
+      firstName: 'Owner',
+    });
+    // 🔴 `pending`, not `active`, and that is a finding rather than a
+    // convenience: the seat names link to `/members/<uuid>` **only** on the
+    // pending branch (the running-order list). Once a draft is under way the
+    // page renders `DraftBoard`, which prints seat names as plain text with no
+    // link at all — so the "league page is the member index" decision is only
+    // half-built, and this test pins the half that exists.
+    const leagueId = await scratchLeague(userId, {
+      name: 'public',
+      status: 'pending',
+      picks: 3,
+    });
+
+    // A context with no cookie at all — this is the stranger's view.
+    const anonymous = await page.context().browser()?.newContext();
+    if (!anonymous) throw new Error('no browser');
+    const stranger = await anonymous.newPage();
+    try {
+      await stranger.setViewportSize({ width: 1440, height: 900 });
+      await stranger.goto(`/leagues/${leagueId}`);
+
+      await expect(stranger.getByRole('heading', { name: 'Your roster' })).toBeVisible();
+      await expect(stranger.getByRole('link', { name: 'Sign in' }).first()).toBeVisible();
+      // No roster, and nothing an owner gets.
+      await expect(
+        stranger.getByRole('list', { name: 'Drafted films, in draft order' }),
+      ).toHaveCount(0);
+      await expect(stranger.getByText('Invite')).toHaveCount(0);
+      // 🔴 And the seats still link to member pages — P17.T37 made those
+      // public, which is what supersedes the earlier "render the name as plain
+      // text when signed out" note.
+      await expect(stranger.locator('a[href^="/members/"]').first()).toBeVisible();
+    } finally {
+      await anonymous.close();
+    }
+  });
 });

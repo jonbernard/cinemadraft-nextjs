@@ -4,11 +4,14 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { DraftBoard } from '@/components/DraftBoard';
+import { EmptyState } from '@/components/EmptyState';
 import { InviteAction } from '@/components/InviteAction';
+import { RosterStrip } from '@/components/RosterStrip';
 import { SectionHead } from '@/components/SectionHead';
 import { StandingsPanel } from '@/components/StandingsPanel';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
+import { SIGN_IN_URL } from '@/lib/auth-routes';
 import { NotFoundError } from '@/lib/errors';
 import { NOINDEX } from '@/lib/seo';
 import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
@@ -164,6 +167,32 @@ export default async function LeaguePage({
       ? `${await inviteBase()}/join/${board.uuid}`
       : null;
 
+  // 🔴 P17.T31: the viewer's own picks, from the seat already resolved above.
+  // `share` is this film's slice of the seat's total — the contribution bar's
+  // input — derived here rather than added to `getLeagueBoard`, because both
+  // numbers it needs are already on the seat and `lib/services/dashboard.ts`
+  // derives it the same way. A zero total means nothing has scored, and a bar
+  // showing a share of nothing is noise, so it is zero rather than a division
+  // by zero.
+  const viewerSeat =
+    viewerSeatId == null
+      ? null
+      : (board.groups
+          .flatMap((group) => group.seats)
+          .find((seat) => seat.draftId === viewerSeatId) ?? null);
+
+  const viewerRoster =
+    viewerSeat == null
+      ? []
+      : viewerSeat.picks.map((pick) => ({
+          id: pick.pickId,
+          title: pick.movie.title ?? 'Untitled',
+          posterUrl: posterUrl(pick.movie.poster, 'w185'),
+          round: pick.round,
+          points: pick.points,
+          share: viewerSeat.total > 0 ? pick.points / viewerSeat.total : 0,
+        }));
+
   // P10.T10: the same seats and totals `getLeagueBoard` already loaded, ranked
   // rather than reused as a second query. `StandingsRow.userId` doubles as the
   // React key and the `isViewer` comparison, so a dummy seat — which has no
@@ -285,12 +314,50 @@ export default async function LeaguePage({
             the dashboard, to a signed-in member. One view, not a total/event
             toggle: the source's own `:type` segment was ignored by both routes
             it named (PARITY.md source bug 9), so a distinction it never
-            actually made is not one to port. */}
+            actually made is not one to port.
+
+            🔴 The reader's own roster sits beside it (P17.T31). The standings
+            table is `max-w-sm`, so at 1440px it used about 45% of the content
+            column and left the rest empty — while the reader's own picks were
+            inside the board, thousands of pixels down the page. Nothing new is
+            queried. Roster first in DOM order, so a phone reads the reader's
+            own team before the table.
+
+            🔴 There is no "own roster" for a stranger, and the league page is
+            public (D44/D45), so the ordinary case on a shared link is that this
+            slot has nothing of the reader's to show. It is then a deliberate
+            statement of what the slot is for — the link, and what signing in
+            adds — rather than a hole the standings float beside. */}
         {standings.length > 0 ? (
-          <section className="flex max-w-sm flex-col gap-3">
-            <SectionHead as="h2">Standings</SectionHead>
-            <StandingsPanel rows={standings} />
-          </section>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
+            <section className="flex min-w-0 flex-1 flex-col gap-3">
+              <SectionHead as="h2" eyebrow="Yours">
+                Your roster
+              </SectionHead>
+              {viewerRoster.length > 0 ? (
+                <RosterStrip films={viewerRoster} />
+              ) : user == null ? (
+                <EmptyState
+                  title="Sign in to see your own roster here"
+                  action={{ label: 'Sign in', href: SIGN_IN_URL }}
+                >
+                  The board and the standings below are the whole season, and they are
+                  open to whoever has this link. Your own picks and what each one has
+                  scored sit here once you are in.
+                </EmptyState>
+              ) : (
+                <EmptyState title="You do not hold a seat this season">
+                  This is somebody else's league, or a season you sat out — the standings
+                  and the board are still the whole story.
+                </EmptyState>
+              )}
+            </section>
+
+            <section className="flex w-full flex-col gap-3 lg:max-w-sm">
+              <SectionHead as="h2">Standings</SectionHead>
+              <StandingsPanel rows={standings} />
+            </section>
+          </div>
         ) : null}
 
         {board.groups.length === 0 ? (
