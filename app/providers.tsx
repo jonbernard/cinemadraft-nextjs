@@ -7,7 +7,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import type { ReactNode } from 'react';
 
-import { SIGN_IN_URL, SIGN_UP_URL } from '@/lib/auth-routes';
+import { SIGN_IN_URL } from '@/lib/auth-routes';
 import { theme } from '@/theme';
 import { clerkAppearance } from '@/theme/clerk';
 
@@ -42,10 +42,33 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <ClerkProvider
-      // The same two routes the proxy redirects to, from one source, so the
-      // server's answer and the client's cannot drift. See lib/auth-routes.ts.
+      // The route the proxy redirects to, from one source, so the server's
+      // answer and the client's cannot drift. See lib/auth-routes.ts.
       signInUrl={SIGN_IN_URL}
-      signUpUrl={SIGN_UP_URL}
+      // 🔴 **`signUpUrl` is deliberately absent, and that is what turns the
+      // combined sign-in-or-up flow back on.** Clerk 7 makes `<SignIn>` handle
+      // registration inline by default; defining a sign-up URL is the
+      // documented way to opt *out* of it
+      // (clerk.com/changelog/2025-01-16-sign-in-or-up). We were opting out, so
+      // every one of the 51 pre-migration members typing their usual address
+      // on /auth/login got "Couldn't find your account" and a footer link as
+      // the only way forward — the exact failure D25 and `syncClerkIdentity`
+      // were built to avoid, reported by the owner with a screenshot.
+      //
+      // 🔴 This does NOT reintroduce the `*.accounts.dev` CORS breakage
+      // lib/auth-routes.ts records. That was about the *redirect target*, and
+      // `clerkMiddleware` in proxy.ts still passes `signUpUrl` — so a
+      // server-side redirect still lands on our origin. The client never
+      // navigates to a sign-up URL at all now: the card registers in place.
+      // /auth/register stays, and stays linked from `/`, `/how-it-works`,
+      // `/join/[uuid]` and the shell, as a direct door for someone who knows
+      // they are new.
+      //
+      // 🔴 No test in this repository can catch a regression here. The e2e
+      // suite runs under E2E_TEST_AUTH with no Clerk at all (D82/D84), and a
+      // unit test cannot reach a hosted flow. It is verified by hand against
+      // the live instance, the same class of gap as D115's maxDuration —
+      // see docs/reference/clerk-instance-settings.md's verification log.
       // 🔴 Clerk's components say "Sign in" and "Sign out" out of the box; the
       // app says "log in" and "log out" (D61). Its component *names* stay as
       // they are — `SignIn`, `UserButton` — because those are its API, not our

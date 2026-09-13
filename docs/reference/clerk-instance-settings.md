@@ -12,23 +12,70 @@ the Production instance can be brought up to match instead of rediscovered.
 
 ## The combined sign-in-or-up flow (P15.T4)
 
-**Where:** Clerk dashboard → **Configure** → **Sign-up and sign-in** → the
-**Sign-in** section → turn on the combined **sign-in or sign-up** flow (Clerk
-labels it "Sign-in or sign-up flow" / `<SignIn>` handles both).
+🔴 **Corrected 2026-09-13. This section was wrong, and the wrongness cost the
+owner a trip through the Clerk dashboard looking for a toggle that does not
+exist.** It said the combined flow was a dashboard setting under *Configure →
+Sign-up and sign-in*. It is not a dashboard setting at all.
 
-**Why.** Every member of this league is unknown to Clerk until their first
-login — the accounts came from the Heroku app, and `users.clerk_id` is null for
-all of them. With the plain sign-in flow, a returning member types their usual
-address on `/auth/login` and gets **"Couldn't find your account"**, with no way
-forward except noticing Clerk's own Register link in the card footer. With the
-combined flow, `<SignIn>` continues into registration for an address it does not
-recognise, so the same form covers both cases.
+**Where it actually is: `app/providers.tsx`.** In Clerk 7 the combined flow is
+the **default** for `<SignIn>` — it registers an unrecognised address in place.
+Defining a sign-up URL is the documented way to opt *out*
+(<https://clerk.com/changelog/2025-01-16-sign-in-or-up>), and
+`<ClerkProvider signUpUrl={SIGN_UP_URL}>` did exactly that. So the flow was off,
+in code, on every environment, from the day P15.T4 believed it had turned it on.
 
-**What it does not change.** The relink is not Clerk's doing and does not depend
-on this setting: `syncClerkIdentity` in `lib/auth.ts` attaches a new Clerk
+**What that looked like.** A returning member types their usual address on
+`/auth/login` and gets **"Couldn't find your account."** — reported by the owner
+with a screenshot on 2026-09-13. Every member of this league is in that
+position: the accounts came from the Heroku app and `users.clerk_id` is null for
+all 51 of them (D25 — there is no bulk import). The only way forward was to
+notice Clerk's footer "Register" link.
+
+**The fix** is the absence of one prop. `app/providers.tsx` passes `signInUrl`
+and **not** `signUpUrl`; the reasoning is written at the call site and must not
+be undone without reading it.
+
+🔴 **`proxy.ts` keeps its `signUpUrl` and must.** `lib/auth-routes.ts` records
+why these constants exist at all: unset, Clerk falls back to its hosted portal
+on `*.accounts.dev`, a different origin, and every RSC prefetch of a protected
+route died in CORS on a site whose auth looked fine locally. That was about the
+**redirect target**, which `clerkMiddleware` still supplies. The client never
+navigates to a sign-up URL now — the card registers in place — so the fallback
+is unreachable from the component.
+
+**`/auth/register` stays.** Clerk's own guidance is to delete the `<SignUp>`
+page, but it is linked from `/`, `/how-it-works`, `/join/[uuid]` and the shell's
+"Start a league", and asserted by eight tests. It is a fine direct door for
+somebody who knows they are new. Only the *advertisement* of it to `<SignIn>`
+was the problem.
+
+**What none of this changes.** The relink is not Clerk's doing:
+`syncClerkIdentity` in `lib/services/clerk-identity.ts` attaches a new Clerk
 identity to the existing `users` row by **verified email**, so a member who
 registers with the address they always used keeps their leagues, drafts and
-points. That code is untouched by this task.
+points. That code was always correct and is untouched.
+
+🔴 **Nothing in this repository can test it.** The e2e suite runs under
+`E2E_TEST_AUTH` with no Clerk at all (D82/D84) and a unit test cannot reach a
+hosted flow. This is the same class of gap as D115's `maxDuration`: it failed
+against the live instance having passed everything else. The verification log
+below is the only check there is — run it.
+
+## Email verification: code, not link (D26)
+
+🔴 **Found wrong on the Development instance, 2026-09-13.** Under *User &
+authentication → Email → Verify at sign-up → Verification methods*, **Email
+verification code was unchecked** and only **Email verification link** was
+ticked (Clerk flags it with a warning). D26 is email code + Google, and both
+auth pages tell a member in so many words that "we send a code" — so sign-up was
+emailing a link the copy does not mention.
+
+**Set:** Email verification code **on**, Email verification link **off**.
+
+🔴 **Also found off: "Require email address".** Every relink in
+`syncClerkIdentity` matches on a verified email address. A Clerk user with no
+email has nothing to match against, and that member silently gets a fresh empty
+account instead of their history. **Turn it on.**
 
 ## Email code is the only factor (D26)
 
@@ -49,7 +96,10 @@ it is expected until cutover.
 
 The Production instance is a separate instance, not a promoted copy:
 
-- **The combined sign-in-or-up flow** — off by default; turn it on again.
+- ~~The combined sign-in-or-up flow~~ — **not a dashboard setting**; it lives
+  in `app/providers.tsx` and travels with the code. Nothing to redo.
+- **Email verification code on, verification link off, and "Require email
+  address" on** (see above) — these ARE per-instance and must be set again.
 - **Passwordless configuration (D26)** — email code + Google, no password.
 - **The webhook endpoint and its signing secret.** Both are per-instance. The
   Development endpoint points at `next.cinemadraft.com`; Production points at
@@ -61,7 +111,9 @@ The Production instance is a separate instance, not a promoted copy:
 
 ## Verification log
 
-Run in a private window against `npm run dev`, with the combined flow enabled.
+Run in a private window against `npm run dev` (real Clerk keys, so NOT the
+e2e server). 🔴 Still `_pending owner_` as of 2026-09-13 — it has never been run,
+which is why the flow being off went unnoticed for a whole phase.
 Case 2 is the one that matters: it proves the relink, and a failure there is a
 cutover blocker in `syncClerkIdentity`, not a copy defect.
 

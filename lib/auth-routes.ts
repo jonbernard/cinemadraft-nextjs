@@ -20,10 +20,17 @@
  * missing where the test does not run; removing the value's ability to differ
  * is what catches it.
  *
- * Both consumers need them: `clerkMiddleware` in `proxy.ts` issues the
- * server-side redirect (it reads `signInUrl` from its options, falling back to
- * the env var), and `ClerkProvider` in `app/providers.tsx` gives the client
- * components the same answer.
+ * `clerkMiddleware` in `proxy.ts` needs both: it issues the server-side
+ * redirect (reading `signInUrl` from its options, falling back to the env var)
+ * and that redirect has to land on our origin, which is the whole point above.
+ *
+ * 🔴 `ClerkProvider` in `app/providers.tsx` is passed `signInUrl` only, and
+ * **deliberately not `signUpUrl`** — defining that one is Clerk's documented
+ * opt-out of the combined sign-in-or-up flow, which is what left returning
+ * members staring at "Couldn't find your account". The reasoning is written
+ * out at the call site. `SIGN_UP_URL` is still exported and still used by
+ * `proxy.ts`; do not delete it, and do not "restore" it to the provider
+ * without reading that comment first.
  */
 export const SIGN_IN_URL = '/auth/login';
 export const SIGN_UP_URL = '/auth/register';

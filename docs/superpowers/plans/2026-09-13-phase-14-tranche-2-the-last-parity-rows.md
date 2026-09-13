@@ -47,6 +47,7 @@ Every task's requirements implicitly include all of this.
 | P14.T14 | P10.T31 (bookkeeping) | The gate, and a parity matrix with zero open rows |
 | P14.T15 | — | The invite goes in a dialog (owner-reported layout defect) |
 | P14.T16 | — | A top bar on a phone, carrying the wordmark (owner's call) |
+| P14.T17 | — | The auth form's focus ring is clipped (owner-reported) |
 
 T15 and T16 are the owner's two requests of 2026-09-13 and are independent of the parity work; T15 is ordered after T11 because both edit `app/(app)/leagues/[id]/page.tsx`.
 
@@ -1900,6 +1901,126 @@ git commit
 ```
 
 Message starts `P14.T16: a top bar on a phone, carrying the wordmark`. Record the measured heights and `position` from step 8, that the TV-mode count guard went red before it was updated, the honest limit of the sticky class-name assertion, and that search and the account control were deliberately left where D75 put them.
+
+---
+
+### Task P14.T17: the focus ring on the auth form is clipped
+
+**Not a parity row — the owner reported it with two screenshots**: the carmine focus ring on the email field of `/auth/login` is cut off on the top, bottom and both sides. In the second screenshot it is flush against an invisible edge on every side at once, which is the signature of an `overflow` clip rather than a colour or offset problem.
+
+**The cause, from reading `theme/clerk.ts`:** `FOCUS_RING` (`:27-32`) is `outline: 2px` at `outlineOffset: 2px`, so it paints **4px outside the input's border box**. `card` is set to `padding: 0` (`:147`) so the form fields span the card edge to edge, and `cardBox` carries a `borderRadius` (`:145`). Clerk's own stylesheet puts `overflow: hidden` on that rounded box — which is what a rounded card normally does — so a ring painted outside the field is painted outside the card and clipped away.
+
+🔴 **The ring is not the thing to change.** 2px carmine at a 2px offset is what every other control in the app draws, and `FOCUS_RING`'s docstring records it being set deliberately after measuring Clerk's own `colorRing` treatment and Chrome's default blue fallback. Shrinking the offset to make it fit would make this one form's focus indicator different from the rest of the product, which is worse than the clipping.
+
+**Files:**
+- Modify: `theme/clerk.ts`
+- Test: `e2e/auth.spec.ts` (a case; read the file first to see what it already covers)
+
+- [ ] **Step 1: Confirm the cause in a browser before changing anything**
+
+🔴 The diagnosis above is from reading, not from measuring — do not trust it. 🔴 And measure in a **production build**, never `next dev`: a dev server answers 403 for every `_next/static` chunk on `127.0.0.1`, so a dev measurement is of an unstyled page.
+
+```bash
+npm run build && npm run start
+```
+
+On `/auth/login`, focus the email field and read:
+
+```js
+const input = document.querySelector('input[name="identifier"]');
+const box = input.closest('[class*="cardBox"]') ?? input.closest('div');
+getComputedStyle(box).overflow;           // 'hidden' confirms the diagnosis
+input.getBoundingClientRect();            // and the card's, to see the 4px overhang
+```
+
+If `overflow` is **not** hidden anywhere up the chain, the diagnosis is wrong: find the real cause and rewrite this task before implementing it. Say so in your report either way.
+
+- [ ] **Step 2: Write the failing browser assertion**
+
+In `e2e/auth.spec.ts`, a case that focuses the email field and asserts the ring is not clipped — by geometry, not by a screenshot:
+
+```ts
+test('the focus ring on the email field is not clipped', async ({ page }) => {
+  await page.goto('/auth/login');
+  const input = page.locator('input[name="identifier"]');
+  await input.focus();
+
+  // 🔴 The assertion is that the ring's 4px overhang is INSIDE whatever box
+  // could clip it. A screenshot comparison would go red for any restyle of
+  // this card and tells you nothing about why; this names the defect.
+  const clipped = await input.evaluate((el) => {
+    const ring = 4; // 2px outline at a 2px offset
+    const field = el.getBoundingClientRect();
+    for (let node = el.parentElement; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.overflow === 'visible') continue;
+      const box = node.getBoundingClientRect();
+      if (
+        field.top - ring < box.top || field.bottom + ring > box.bottom ||
+        field.left - ring < box.left || field.right + ring > box.right
+      ) return true;
+    }
+    return false;
+  });
+
+  expect(clipped).toBe(false);
+});
+```
+
+- [ ] **Step 3: Run it and watch it fail**
+
+```bash
+npm run test:e2e -- e2e/auth.spec.ts
+```
+
+Expected: the new case FAILS with `clipped` true. 🔴 If it passes before the fix, it is not testing the defect the owner photographed — fix the test before touching `theme/clerk.ts`.
+
+- [ ] **Step 4: The fix**
+
+In `theme/clerk.ts`, on the `elements` block:
+
+```ts
+    // 🔴 `overflow: visible` because the focus ring paints OUTSIDE the field.
+    // `FOCUS_RING` is a 2px outline at a 2px offset — 4px beyond the border box
+    // — and `card` has `padding: 0`, so a field spans the card edge to edge and
+    // its ring lands outside the rounded box Clerk clips. The ring is not the
+    // thing to change: 2px carmine at 2px is what every other control in the
+    // app draws, and making this one form's focus indicator smaller to fit
+    // would be worse than the clipping it fixes. Reported by the owner with
+    // screenshots showing it cut on all four sides at once, which is what an
+    // overflow clip looks like and a wrong offset does not.
+    cardBox: { width: '100%', boxShadow: 'none', borderRadius: 'var(--radius-sm)', overflow: 'visible' },
+    card: { /* …existing… */ overflow: 'visible' },
+```
+
+Keep every existing property; add `overflow` to the two. If step 1 found the clipping box to be something else, put it there instead and say which.
+
+- [ ] **Step 5: Run it and watch it pass**
+
+```bash
+npm run build && npm run test:e2e -- e2e/auth.spec.ts
+```
+
+Expected: PASS, and no other case in that file regresses.
+
+- [ ] **Step 6: Mutate, and watch it go red**
+
+Remove `overflow: 'visible'` from `cardBox`. Expected: the new case FAILS. Restore.
+
+Then check the other direction: nothing that used to be clipped *should* be visible now. Look at the card at 390px and at 1440px in the running build and confirm no content escapes the rounded corner — `overflow: visible` is exactly the kind of fix that trades one visual defect for another. Record what you saw.
+
+- [ ] **Step 7: Full verification and commit**
+
+```bash
+npm run lint && npm run typecheck && npx vitest run && npm run test:e2e
+```
+
+```bash
+git add theme/clerk.ts e2e/auth.spec.ts
+git commit
+```
+
+Message starts `P14.T17: the focus ring on the auth form is clipped`. Record the `getComputedStyle` reading from step 1, the mutation result, and what step 6's second check showed.
 
 ---
 
