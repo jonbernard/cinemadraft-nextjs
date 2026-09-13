@@ -236,7 +236,7 @@ describe('the components round trip', () => {
 });
 
 describe('loadMemberProfile', () => {
-  it('🔴 returns only the feed of the member in the URL', async () => {
+  it('returns only the feed of the member in the URL', async () => {
     const profile = await loadMemberProfile(fixture.alpha.uuid as string);
 
     expect(profile?.feed.map((item) => item.message)).toEqual([
@@ -269,7 +269,7 @@ describe('loadMemberProfile', () => {
     expect(await loadMemberProfile(randomUUID())).toBeNull();
   });
 
-  it('🔴 is null for a value Postgres cannot parse as a uuid', async () => {
+  it('is null for a value Postgres cannot parse as a uuid', async () => {
     // `users.uuid` is `@db.Uuid`; without the guard this raises out of the
     // driver and the route renders an error instead of a 404.
     expect(await loadMemberProfile('not-a-uuid')).toBeNull();
@@ -328,7 +328,7 @@ describe('loadMemberProfile', () => {
     expect(attachment.rating).toBe(4.5);
   });
 
-  it('🔴 refuses to render another member’s draft under this member’s name', async () => {
+  it('refuses to render another member’s draft under this member’s name', async () => {
     const row = await profileFeedRepository.create({
       userUuid: fixture.alpha.uuid as string,
       message: 'alpha drafted these',
@@ -342,7 +342,7 @@ describe('loadMemberProfile', () => {
     expect(JSON.stringify(profile)).not.toContain(`${TAG} Beta Only`);
   });
 
-  it('🔴 refuses to render another member’s review under this member’s name', async () => {
+  it('refuses to render another member’s review under this member’s name', async () => {
     const row = await profileFeedRepository.create({
       userUuid: fixture.alpha.uuid as string,
       message: 'alpha posted a review',

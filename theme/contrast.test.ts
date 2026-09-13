@@ -176,7 +176,7 @@ describe.each(['dark', 'light'] as const)(
 );
 
 describe('the P17.T9 corrections stay corrected', () => {
-  it('🔴 rejects text.primary as a foreground on accent.fill', () => {
+  it('rejects text.primary as a foreground on accent.fill', () => {
     // 2.45:1 light, 4.44:1 dark — what shipped. If either of these ever passes,
     // somebody has changed a palette and this pair needs re-measuring, not
     // deleting.

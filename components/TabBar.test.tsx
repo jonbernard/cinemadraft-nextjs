@@ -46,7 +46,7 @@ describe('TabBar', () => {
     expect(within(tabs()).getAllByRole('button')).toHaveLength(1);
   });
 
-  it('🔴 the chrome sits outside the landmark, so it is not a sixth tab', () => {
+  it('the chrome sits outside the landmark, so it is not a sixth tab', () => {
     renderBar();
 
     // Present on the bar...
@@ -60,7 +60,7 @@ describe('TabBar', () => {
     expect(within(tabs()).queryByRole('link', { name: 'Log in' })).toBeNull();
   });
 
-  it('🔴 no chrome control ever claims to be the current page', () => {
+  it('no chrome control ever claims to be the current page', () => {
     renderBar({ pathname: '/' });
     for (const name of ['Cinemadraft, home', 'Log in']) {
       expect(screen.getByRole('link', { name })).not.toHaveAttribute('aria-current');
@@ -80,7 +80,7 @@ describe('TabBar', () => {
   // search and the account control stay in the More sheet where D75 put them.
   // The class is the only part of that a jsdom test can see; `e2e/nav.spec.ts`
   // measures the geometry.
-  it('🔴 keeps the chrome off the bar below sm, where it does not fit', () => {
+  it('keeps the chrome off the bar below sm, where it does not fit', () => {
     renderBar();
     for (const element of [
       screen.getByRole('link', { name: 'Cinemadraft, home' }),

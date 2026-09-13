@@ -26,7 +26,7 @@ describe('Shelf', () => {
     );
   });
 
-  it('🔴 heads its section at h2, so a page of shelves has an outline', () => {
+  it('heads its section at h2, so a page of shelves has an outline', () => {
     // The defect: `/` ran h1 → h3 → h2, a skipped level and then a step back
     // up. Invisible while every heading rendered at 17px; a visible mess the
     // moment P17.T1 gave them sizes.

@@ -96,7 +96,7 @@ describe('GET /api/ical', () => {
     expect(response.status).toBe(404);
   });
 
-  it('🔴 never emits a member name, league name, email or uuid — even where a wrong join could reach one', async () => {
+  it('never emits a member name, league name, email or uuid — even where a wrong join could reach one', async () => {
     // Real, joinable rows: a league whose name is a secret, and a user whose
     // email and uuid are secrets. Nothing in this route queries either table,
     // but the property under test is the *output*, not the absence of a call

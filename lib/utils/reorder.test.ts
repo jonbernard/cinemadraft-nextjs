@@ -21,7 +21,7 @@ describe('reorder', () => {
     expect(reorder(list, 2, 2)).toEqual(list);
   });
 
-  it('🔴 leaves the list alone for a drop outside it', () => {
+  it('leaves the list alone for a drop outside it', () => {
     // A cancelled drag reports no destination. Treating that as "move to the
     // end" would reorder a seat every time the owner thought better of it.
     expect(reorder(list, 1, -1)).toEqual(list);

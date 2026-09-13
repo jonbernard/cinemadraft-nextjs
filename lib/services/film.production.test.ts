@@ -117,7 +117,7 @@ describe('scoring', () => {
     expect(byEvent.get('ace')).toBe(5);
   });
 
-  it('🔴 sums byEvent to exactly the ledger total', async () => {
+  it('sums byEvent to exactly the ledger total', async () => {
     // The same guarantee `MovieLedger.total` makes, for the same reason: two
     // numbers on one page that disagree make the app look like it is guessing.
     // byEvent is a regrouping of `ledger.lines`, never a second query.
@@ -144,7 +144,7 @@ describe('scoring', () => {
     expect((await loadFilmPage(LA_LA_LAND))?.scoring?.averageDraftPosition).toBe(1);
   });
 
-  it('🔴 leaves the average null, not zero, when nobody drafted it', async () => {
+  it('leaves the average null, not zero, when nobody drafted it', async () => {
     // The source's `average([])` returned 0, and "average draft position: 0"
     // reads as *first overall in every league* — the exact opposite of never
     // picked. *The Salesman* (tmdb 375315, local id 63) is nominated twice and
@@ -159,7 +159,7 @@ describe('scoring', () => {
     expect(scoring?.averageDraftPosition).toBeNull();
   });
 
-  it('🔴 scores the later season for a film nominated in two', async () => {
+  it('scores the later season for a film nominated in two', async () => {
     // *The Salesman* was nominated in 2017 and 2018. The source read the year
     // off whichever nomination row the database returned first, so a film like
     // this scored for an arbitrary season and its total could move between

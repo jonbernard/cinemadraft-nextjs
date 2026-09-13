@@ -160,7 +160,7 @@ async function fillList(userId: number) {
 }
 
 describe('refusals', () => {
-  it('🔴 refuses an anonymous caller on every write, and stores nothing', async () => {
+  it('refuses an anonymous caller on every write, and stores nothing', async () => {
     // Aimed at a real member's real rows, so a missing `requireUser()` would
     // reach the repository and succeed. Ids that match nothing would be refused
     // as NOT_FOUND with or without the session check.
@@ -263,7 +263,7 @@ describe('adding a film', () => {
     expect(entries.map((entry) => entry.order)).toEqual([1, 2, 3]);
   });
 
-  it('🔴 refuses the same film twice — a list with a duplicate cannot be ranked', async () => {
+  it('refuses the same film twice — a list with a duplicate cannot be ranked', async () => {
     const first = fixture.films[0];
     if (!first) throw new Error('no seeded films');
     await addFilmToList({ year: YEAR, movieId: first.id });
@@ -303,7 +303,7 @@ describe('reordering', () => {
     expect((await listFor(fixture.member.id)).map((entry) => entry.id)).toEqual(reversed);
   });
 
-  it('🔴 refuses a partial list rather than renumbering half of it', async () => {
+  it('refuses a partial list rather than renumbering half of it', async () => {
     // Renumbering some rows and leaving the rest would leave two entries
     // sharing a position, which no single sequence can render.
     const entries = await fillList(fixture.member.id);
@@ -335,7 +335,7 @@ describe('reordering', () => {
     ]);
   });
 
-  it('🔴 refuses a list containing somebody else’s entry', async () => {
+  it('refuses a list containing somebody else’s entry', async () => {
     const mine = await fillList(fixture.member.id);
     signInAs(fixture.other);
     const theirs = await fillList(fixture.other.id);
@@ -371,7 +371,7 @@ describe('marking an entry', () => {
     expect((await listFor(fixture.member.id))[1]?.status).toBe('none');
   });
 
-  it('🔴 cannot mark somebody else’s entry', async () => {
+  it('cannot mark somebody else’s entry', async () => {
     signInAs(fixture.other);
     const theirs = await fillList(fixture.other.id);
     signInAs(fixture.member);
@@ -398,7 +398,7 @@ describe('removing an entry', () => {
     expect(await listFor(fixture.member.id)).toHaveLength(2);
   });
 
-  it('🔴 cannot remove somebody else’s entry', async () => {
+  it('cannot remove somebody else’s entry', async () => {
     // The source deleted by the id in the URL with no owner clause at all
     // (`Lists.deleteById`), so anyone signed in could delete any row on the
     // table. Here the caller's id is part of the WHERE clause.

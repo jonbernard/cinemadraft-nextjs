@@ -253,7 +253,7 @@ test.describe('live show', () => {
   // failed `lib/db.test.ts`, which counts the restored 60.
   test.afterAll(cleanup);
 
-  test('🔴 the route exists, and a stranger can reach it', async ({ page }) => {
+  test('the route exists, and a stranger can reach it', async ({ page }) => {
     // Two failures in one assertion. It used to be an empty .gitkeep, so anyone
     // opening it during a ceremony got a 404 — and, because not-found renders
     // outside the shell (P17.T27), got dropped out of the application with one
@@ -286,7 +286,7 @@ test.describe('live show', () => {
     await expect(page.getByText('Live', { exact: true })).toBeVisible();
   });
 
-  test('🔴 shows the resolved point value, not the raw foreign key', async ({ page }) => {
+  test('shows the resolved point value, not the raw foreign key', async ({ page }) => {
     // The scratch category points at a tier worth 7 (D41). Same trap as the
     // award-show page, and this is the other surface that could print the
     // column and be believed.
@@ -301,7 +301,7 @@ test.describe('live show', () => {
     await expect(page.getByText('1 pts')).toHaveCount(0);
   });
 
-  test('🔴 a stranger is invited in, not shown an empty league box', async ({ page }) => {
+  test('a stranger is invited in, not shown an empty league box', async ({ page }) => {
     // The public surface's own empty state. `/leagues` is protected, so offering
     // "Find a league" to someone with no account is a link to a login page —
     // the exact defect the public-by-default reasoning exists to avoid.
@@ -313,7 +313,7 @@ test.describe('live show', () => {
     await expect(page.getByRole('link', { name: 'Find a league' })).toHaveCount(0);
   });
 
-  test('🔴 a signed-in member with no league is offered one', async ({ page }) => {
+  test('a signed-in member with no league is offered one', async ({ page }) => {
     // The other half of the branch. Without this the signed-out assertion above
     // would pass just as well against a page that only ever rendered one empty
     // state — which is precisely the defect it is guarding.
@@ -325,7 +325,7 @@ test.describe('live show', () => {
     await expect(page.getByRole('link', { name: 'Register' })).toHaveCount(0);
   });
 
-  test('🔴 counts the resolved categories, in that order', async ({ page }) => {
+  test('counts the resolved categories, in that order', async ({ page }) => {
     // The seed marks one winner across two categories, so the page must read
     // "1 of 2". Printed the other way round it reads "2 of 1", which is the
     // kind of thing no other assertion in this file would notice.
@@ -345,7 +345,7 @@ test.describe('live show', () => {
     await expect(page.getByText('2 nominees')).toBeVisible();
   });
 
-  test('🔴 a show that is not broadcasting says nothing about being live', async ({
+  test('a show that is not broadcasting says nothing about being live', async ({
     page,
   }) => {
     // The other half of the chip and the link. Seeded on air everywhere else,
@@ -361,7 +361,7 @@ test.describe('live show', () => {
     await expect(page.getByRole('link', { name: /Follow live/ })).toHaveCount(0);
   });
 
-  test('🔴 a seat’s roster carries what it earned at THIS show', async ({ page }) => {
+  test('a seat’s roster carries what it earned at THIS show', async ({ page }) => {
     const { abbreviation } = await seedShowWithLeague(page);
     await page.goto(`/live/${abbreviation}?year=${YEAR}`);
 
@@ -384,7 +384,7 @@ test.describe('live show', () => {
     await expect(page.getByText(/nothing in play/i)).toBeVisible();
   });
 
-  test('🔴 a stranger sees the show and no seat of anybody’s', async ({ page }) => {
+  test('a stranger sees the show and no seat of anybody’s', async ({ page }) => {
     // The public surface's load-bearing guarantee. The league exists and has
     // real rosters; an anonymous reader must see the ceremony and none of them.
     // Not a permission check bolted on top — getLiveShow(abbr, year, null) never

@@ -83,7 +83,7 @@ afterEach(() => {
 });
 
 describe('no key configured', () => {
-  it('🔴 returns null, not an empty film', async () => {
+  it('returns null, not an empty film', async () => {
     // Search returns [] because "no remote results" is a complete answer beside
     // the local ones. A film page has no local half to fall back to, so an
     // empty object here would render a page about nothing.
@@ -161,7 +161,7 @@ describe('the captured La La Land response', () => {
     expect(film?.posterPaths).toHaveLength(68);
   });
 
-  it('🔴 keeps only YouTube trailers, official ones first', async () => {
+  it('keeps only YouTube trailers, official ones first', async () => {
     // 32 videos came back. Anything that is not a YouTube key cannot be
     // embedded by the player this app uses, so it would render a dead frame.
     const film = await fetchTmdbFilmPage('313369');
@@ -177,7 +177,7 @@ describe('the captured La La Land response', () => {
     expect(film?.similar.at(0)).toMatchObject({ title: 'Open' });
   });
 
-  it('🔴 groups crew by department and keeps each exact job', async () => {
+  it('groups crew by department and keeps each exact job', async () => {
     // "Second Unit Director" and "Script Supervisor" are what the screenshot
     // shows beside the names. Flattening to a department name loses the reason
     // the panel is worth reading.
@@ -211,7 +211,7 @@ describe('the captured La La Land response', () => {
     });
   });
 
-  it('🔴 asks for every section in one request', async () => {
+  it('asks for every section in one request', async () => {
     // Six separate calls per page view against a rate-limited third party is the
     // difference between a page and an outage.
     const fetchMock = mockTmdb(asTmdbWouldRespond());
@@ -233,12 +233,12 @@ describe('the captured La La Land response', () => {
   });
 });
 
-describe('🔴 absences that would otherwise render as facts', () => {
+describe('absences that would otherwise render as facts', () => {
   beforeEach(() => {
     process.env.TMDB_API_KEY = KEY;
   });
 
-  it('🔴 drops posters in other languages, and untagged ones', async () => {
+  it('drops posters in other languages, and untagged ones', async () => {
     // What the fixture could not show, because the old server had already
     // filtered it. TMDB returns every localised one-sheet it holds; a carousel
     // that mixes alphabets is a gallery of TMDB's contributors, not of the
@@ -259,7 +259,7 @@ describe('🔴 absences that would otherwise render as facts', () => {
     expect((await fetchTmdbFilmPage('1'))?.posterPaths).toEqual(['/en.jpg']);
   });
 
-  it('🔴 prefers recommendations over similar, which is close to useless', async () => {
+  it('prefers recommendations over similar, which is close to useless', async () => {
     // Measured against the live API on 2026-08-17: for La La Land, `/similar`
     // returns The Tigger Movie, Mommie Dearest, Xanadu and A Goofy Movie, while
     // `/recommendations` returns Pretty Woman, Burlesque and (500) Days of
@@ -289,7 +289,7 @@ describe('🔴 absences that would otherwise render as facts', () => {
     expect((await fetchTmdbFilmPage('1'))?.similar.at(0)?.title).toBe('Keyword Match');
   });
 
-  it('🔴 drops videos that are not on YouTube', async () => {
+  it('drops videos that are not on YouTube', async () => {
     // The embed this app renders is a YouTube frame. A Vimeo key in the
     // carousel is a dead panel the reader has to page past.
     mockTmdb({
@@ -358,7 +358,7 @@ describe('🔴 absences that would otherwise render as facts', () => {
   });
 });
 
-describe('🔴 failure never reaches the caller', () => {
+describe('failure never reaches the caller', () => {
   beforeEach(() => {
     process.env.TMDB_API_KEY = KEY;
   });

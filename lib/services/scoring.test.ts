@@ -36,7 +36,7 @@ describe('scoreMovies', () => {
     expect(totals.get(100)).toBe(20);
   });
 
-  it('🔴 a win is worth 2P, not P', () => {
+  it('a win is worth 2P, not P', () => {
     // The single most consequential line in the rule. A winner was
     // necessarily also nominated, so the win adds P on top of the nomination.
     const totals = scoreMovies({
@@ -61,7 +61,7 @@ describe('scoreMovies', () => {
     expect(totals.get(100)).toBe(20 + 5 + 5);
   });
 
-  it('🔴 credits a win only to the movie that won', () => {
+  it('credits a win only to the movie that won', () => {
     // Both films were nominated; one won. Crediting the win to the category
     // rather than the film would hand every nominee the winner's points.
     const totals = scoreMovies({

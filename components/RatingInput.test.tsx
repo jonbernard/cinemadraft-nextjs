@@ -37,7 +37,7 @@ describe('RatingInput', () => {
     ]);
   });
 
-  it('🔴 reports a half step as the number, not the index of the radio', async () => {
+  it('reports a half step as the number, not the index of the radio', async () => {
     const onChange = renderInput();
 
     await userEvent.click(screen.getByRole('radio', { name: '3.5 stars' }));
@@ -78,14 +78,14 @@ describe('RatingInput', () => {
     expect(within(screen.getByRole('status')).getByText('No rating')).toBeInTheDocument();
   });
 
-  it('🔴 announces the figure as a rating, not as a bare number', () => {
+  it('announces the figure as a rating, not as a bare number', () => {
     renderInput();
 
     // "4.5, radio button" says nothing about what 4.5 counts.
     expect(screen.getByRole('radio', { name: '4.5 stars' })).toBeInTheDocument();
   });
 
-  it('🔴 selects the nearest step for a value the ten cannot represent', () => {
+  it('selects the nearest step for a value the ten cannot represent', () => {
     // The column is unconstrained `numeric`, so 4.37 is a storable value; with
     // nothing checked the group would offer no way back to a legal rating.
     renderInput(4.37);

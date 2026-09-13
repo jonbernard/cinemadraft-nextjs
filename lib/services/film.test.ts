@@ -83,7 +83,7 @@ afterEach(() => {
 });
 
 describe('a film the app has never ingested', () => {
-  it('🔴 renders, and writes nothing', async () => {
+  it('renders, and writes nothing', async () => {
     // The whole reason the route is keyed by TMDB id (D63). The straight port of
     // `server/routes/movie/movie.js:38` calls `Movies.update` on a GET, and
     // reaching for `ensureFilm` would create a row — on a public page, that is
@@ -102,14 +102,14 @@ describe('a film the app has never ingested', () => {
 });
 
 describe('OMDb', () => {
-  it('🔴 omits the ratings panel entirely when there is no key', async () => {
+  it('omits the ratings panel entirely when there is no key', async () => {
     delete process.env.OMDB_API_KEY;
     mockRemotes();
 
     expect((await loadFilmPage(LA_LA_LAND))?.facts).toBeNull();
   });
 
-  it('🔴 renders the page when OMDb refuses', async () => {
+  it('renders the page when OMDb refuses', async () => {
     // OMDb's free tier is 1,000 requests a day against one person's key, so
     // running out is a normal Tuesday, not an outage. The rest of the page must
     // not depend on it.
@@ -138,7 +138,7 @@ describe('OMDb', () => {
     });
   });
 
-  it('🔴 does not ask OMDb at all for a film with no imdb id', async () => {
+  it('does not ask OMDb at all for a film with no imdb id', async () => {
     // OMDb is keyed on the imdb id. Asking without one is a guaranteed miss and
     // a wasted request against a 1,000-a-day quota.
     const fetchMock = mockRemotes({ tmdb: { ...tmdbBody(), imdb_id: null } });
@@ -151,7 +151,7 @@ describe('OMDb', () => {
 });
 
 describe('TMDB', () => {
-  it('🔴 returns null for an id TMDB does not know, so the route can 404', async () => {
+  it('returns null for an id TMDB does not know, so the route can 404', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({ ok: false, json: async () => ({}) }) as Response),

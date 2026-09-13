@@ -40,7 +40,7 @@ describe('nextSeatId', () => {
     expect(nextSeatId(group([1, 1, 0, 0]))).toBe(102);
   });
 
-  it('🔴 turns back at the end of the round', () => {
+  it('turns back at the end of the round', () => {
     // The snake. Measured across the three seasons drafted under the current
     // live-call workflow: 308 of 309 picks follow it.
     expect(nextSeatId(group([1, 1, 1, 1]))).toBe(103);
@@ -51,7 +51,7 @@ describe('nextSeatId', () => {
     expect(nextSeatId(group([2, 2, 2, 2]))).toBe(100);
   });
 
-  it('🔴 comes back for a seat that missed its turn', () => {
+  it('comes back for a seat that missed its turn', () => {
     // The 2026 exception, and the reason the owner can override at all:
     // someone was away from the call and the draft carried on without them.
     // Seat 2 is a round behind, so it is the only candidate.

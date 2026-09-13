@@ -13,7 +13,7 @@ describe('denseRank', () => {
     expect(denseRank(rows)).toEqual([1, 2, 3]);
   });
 
-  it('🔴 a tie shares a position and the next distinct total skips (1, 1, 3)', () => {
+  it('a tie shares a position and the next distinct total skips (1, 1, 3)', () => {
     // The case a naive `index + 1` cannot distinguish itself from: two tied
     // rows, then a third, strictly lower, row. `index + 1` would print 1, 2, 3;
     // dense ranking prints 1, 1, 3.
@@ -21,7 +21,7 @@ describe('denseRank', () => {
     expect(denseRank(rows)).toEqual([1, 1, 3]);
   });
 
-  it('🔴 the common case: everyone tied at zero before anything is awarded', () => {
+  it('the common case: everyone tied at zero before anything is awarded', () => {
     const rows = [{ total: 0 }, { total: 0 }, { total: 0 }];
     expect(denseRank(rows)).toEqual([1, 1, 1]);
   });

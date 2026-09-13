@@ -44,7 +44,7 @@ const admin2026: SearchContext = { kind: 'award-admin', year: 2026 };
 const titles = (candidates: readonly Candidate[]) => candidates.map((c) => c.title);
 
 describe('rankCandidates — relevance', () => {
-  it('🔴 ranks an exact title above a prefix match', () => {
+  it('ranks an exact title above a prefix match', () => {
     // Someone who typed a whole title has told you exactly what they want.
     const ranked = rankCandidates('dune', [film('Dune: Part Two'), film('Dune')], browse);
 
@@ -61,7 +61,7 @@ describe('rankCandidates — relevance', () => {
     expect(titles(ranked)[0]).toBe('Battleship Potemkin');
   });
 
-  it('🔴 finds a film by a word that is not its first', () => {
+  it('finds a film by a word that is not its first', () => {
     // The owner is repeating a title they heard out loud, and people rarely
     // start at the first word.
     const ranked = rankCandidates(
@@ -81,7 +81,7 @@ describe('rankCandidates — relevance', () => {
 });
 
 describe('rankCandidates — local rows win', () => {
-  it('🔴 ranks a film already in the database above a TMDB-only result', () => {
+  it('ranks a film already in the database above a TMDB-only result', () => {
     // The local row is the one that can be drafted, nominated and scored. A
     // TMDB duplicate above it would offer the copy that does nothing.
     const ranked = rankCandidates('dune', [remote('Dune'), film('Dune')], browse);
@@ -122,7 +122,7 @@ describe('rankCandidates — the award year', () => {
     expect(titles(ranked)[0]).toBe('The One');
   });
 
-  it('🔴 boosts a film released the year before, which is what a season honours', () => {
+  it('boosts a film released the year before, which is what a season honours', () => {
     // Measured across every nomination with a known release date: 96.5% sit
     // exactly one year before their season. A rule that only knew about the
     // award year would sink almost every film being nominated.
@@ -135,7 +135,7 @@ describe('rankCandidates — the award year', () => {
     expect(titles(ranked)[0]).toBe('The One');
   });
 
-  it('🔴 still boosts a short or foreign film years behind its season', () => {
+  it('still boosts a short or foreign film years behind its season', () => {
     // The long tail is real and has a cause: shorts and foreign-language films
     // carry a festival or home-country date. *This Is Endometriosis* is a 2022
     // film nominated for Best Short Film in 2026.
@@ -151,7 +151,7 @@ describe('rankCandidates — the award year', () => {
     expect(titles(ranked)[0]).toBe('The Short');
   });
 
-  it('🔴 ranks the year a season honours above its tail', () => {
+  it('ranks the year a season honours above its tail', () => {
     // The window is graded, not flat. A flat ±5 would rank a 2021 film level
     // with a 2025 one and discard the signal that is right 96.5% of the time.
     const ranked = rankCandidates(
@@ -221,7 +221,7 @@ describe('rankCandidates — a draft in progress', () => {
     takenMovieIds: taken,
   });
 
-  it('🔴 sinks a film already taken in the league', () => {
+  it('sinks a film already taken in the league', () => {
     const gone = film('Dune', { id: 7 });
     const available = film('Dune: Part Two', { id: 8 });
 
@@ -230,7 +230,7 @@ describe('rankCandidates — a draft in progress', () => {
     expect(titles(ranked)[0]).toBe('Dune: Part Two');
   });
 
-  it('🔴 never removes it', () => {
+  it('never removes it', () => {
     // Ranking orders, it does not filter. A film that vanished would read as
     // "not in the system" and send the owner hunting for it mid-call — the UI
     // marks it Taken instead, and cannot do that with a film it never sees.
@@ -241,7 +241,7 @@ describe('rankCandidates — a draft in progress', () => {
     expect(titles(ranked)).toEqual(['Dune']);
   });
 
-  it('🔴 keeps a taken film above an irrelevant available one', () => {
+  it('keeps a taken film above an irrelevant available one', () => {
     // The rule is "below an equally relevant available film", not "below
     // everything". The owner typed a title because someone said it out loud:
     // if that film is gone, the most useful answer on screen is that film,
@@ -264,7 +264,7 @@ describe('rankCandidates — a draft in progress', () => {
 });
 
 describe('rankCandidates — stability', () => {
-  it('🔴 is stable for equally-scored candidates', () => {
+  it('is stable for equally-scored candidates', () => {
     // The owner is aiming at a row. Two equally-scored films that swapped
     // places between keystrokes would move the target under the cursor.
     const twice = () =>
@@ -288,7 +288,7 @@ describe('rankCandidates — stability', () => {
 });
 
 describe('mergeCandidates', () => {
-  it('🔴 never lets a film appear twice', () => {
+  it('never lets a film appear twice', () => {
     const local = [film('Dune', { tmdbId: '438631' })];
     const fromTmdb = [remote('Dune', { tmdbId: '438631' })];
 

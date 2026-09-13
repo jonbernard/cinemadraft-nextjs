@@ -25,7 +25,7 @@ describe('the three bands, ported from the source exactly', () => {
   });
 });
 
-describe('🔴 colour is never the only signal', () => {
+describe('colour is never the only signal', () => {
   it('prints the number inside the chip', () => {
     // So it reads in greyscale, in print, and to a colour-blind reader (§6.7,
     // a11y `color-not-only`). The source rendered a bare coloured square.

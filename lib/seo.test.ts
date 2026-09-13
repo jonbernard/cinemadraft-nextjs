@@ -56,14 +56,14 @@ describe('movieJsonLd', () => {
     });
   });
 
-  it('🔴 credits only the director, not everyone in the Directing department', () => {
+  it('credits only the director, not everyone in the Directing department', () => {
     // TMDB files script supervisors and assistant directors there too.
     expect(movieJsonLd(FULL).director).toEqual([
       { '@type': 'Person', name: 'David Fincher' },
     ]);
   });
 
-  it('🔴 omits every field it does not have rather than guessing one', () => {
+  it('omits every field it does not have rather than guessing one', () => {
     // Structured data is machine-read, so a wrong field is asserted as
     // confidently as a right one and no reader is there to discount it.
     const bare = movieJsonLd({
@@ -87,7 +87,7 @@ describe('movieJsonLd', () => {
     expect(film.description).toBe('Mischief. Mayhem. Soap.');
   });
 
-  it('🔴 dates the release in UTC', () => {
+  it('dates the release in UTC', () => {
     // A film released on the 1st must not publish on the 31st for a crawler
     // reaching a machine west of UTC — the browse grouping's bug, here too.
     const film = movieJsonLd({

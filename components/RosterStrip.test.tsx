@@ -29,7 +29,7 @@ describe('RosterStrip', () => {
     expect(screen.getByText(`Film ${count}`)).toBeInTheDocument();
   });
 
-  it('🔴 renders a 30-film roster without dropping the last one', () => {
+  it('renders a 30-film roster without dropping the last one', () => {
     render(<RosterStrip films={films(30)} />);
     const items = screen.getAllByRole('listitem');
 
@@ -97,7 +97,7 @@ describe('RosterStrip', () => {
     expect(thirty.querySelector('ul')?.className).toBe(eightClass);
   });
 
-  it('🔴 sizes columns by a minimum readable width, not a column count', () => {
+  it('sizes columns by a minimum readable width, not a column count', () => {
     // The fix for the 1440px clipping the E2E caught: eight fixed columns left
     // each frame too narrow for a two-line title. A width floor lets the count
     // fall out of the available space instead.

@@ -94,7 +94,7 @@ describe('the DTO matches the captured contract', () => {
     expect(nomination.createdAt?.toISOString()).toBe(firstNomination.createdAt);
   });
 
-  it('🔴 returns year as a number, like every other year in the schema', async () => {
+  it('returns year as a number, like every other year in the schema', async () => {
     // It was `text` — the only year column that was — and the DTO exposed a
     // string to match. That inconsistency produced silent wrong answers three
     // separate times during the port: a comparison that forgets to convert
@@ -310,7 +310,7 @@ describe('nominationRepository.findYearsByMovieId', () => {
     expect(await nominationRepository.findYearsByMovieId(3)).toEqual([2017]);
   });
 
-  it('🔴 returns every season, most recent first, for a film nominated twice', async () => {
+  it('returns every season, most recent first, for a film nominated twice', async () => {
     // *Elle* (id 29) was nominated in both 2017 and 2018 — a foreign-language
     // film picked up by different bodies a year apart, which is exactly the
     // shape D58 describes. The source read `data[0].year` off whichever row the

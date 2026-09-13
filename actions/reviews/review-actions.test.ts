@@ -133,7 +133,7 @@ afterAll(async () => {
 });
 
 describe('refusals', () => {
-  it('🔴 refuses an anonymous caller and writes nothing', async () => {
+  it('refuses an anonymous caller and writes nothing', async () => {
     signInAs(null);
 
     const result = await saveReview({
@@ -232,7 +232,7 @@ describe('one review per member per film (R13)', () => {
     signInAs(fixture.author);
   });
 
-  it('🔴 the second save edits the first in place rather than adding a row', async () => {
+  it('the second save edits the first in place rather than adding a row', async () => {
     const tmdbId = fixture.film.tmdbId as string;
 
     await saveReview({ tmdbId, rating: 2, review: 'A first impression.' });
@@ -277,7 +277,7 @@ describe('the same member’s review of a second film', () => {
     await saveReview({ tmdbId: fixture.film.tmdbId as string, ...FIRST });
   });
 
-  it('🔴 saving a review of one film leaves the member’s review of another untouched', async () => {
+  it('saving a review of one film leaves the member’s review of another untouched', async () => {
     // Without the `movieId` clause on the upsert's lookup, this second save
     // would find the first film's row and overwrite it: one row, the second
     // film's rating and words filed under the first film.
@@ -293,7 +293,7 @@ describe('the same member’s review of a second film', () => {
     expect(second[0].id).not.toBe(first[0].id);
   });
 
-  it('🔴 removing one film’s review leaves the member’s other review standing', async () => {
+  it('removing one film’s review leaves the member’s other review standing', async () => {
     // Without the `movieId` clause on the delete, this takes every review the
     // member has ever written — caller-visible data loss reported as success.
     await saveReview({ tmdbId: fixture.otherFilm.tmdbId as string, ...SECOND });
@@ -317,7 +317,7 @@ describe('another member’s review', () => {
     await saveReview({ tmdbId: fixture.film.tmdbId as string, ...AUTHOR });
   });
 
-  it('🔴 a second member writing about the same film gets their own row', async () => {
+  it('a second member writing about the same film gets their own row', async () => {
     // Without the `userId` clause on the upsert's lookup, the stranger's save
     // would find the author's row and overwrite it: one row, rating 1, the
     // stranger's words under the author's name.
@@ -333,7 +333,7 @@ describe('another member’s review', () => {
     );
   });
 
-  it('🔴 cannot be deleted by anyone else', async () => {
+  it('cannot be deleted by anyone else', async () => {
     // The stranger has no review of this film at all, so a delete that filtered
     // on the film alone would take the author's — and report success.
     signInAs(fixture.stranger);
@@ -383,7 +383,7 @@ describe('deleting', () => {
 });
 
 describe('a film the app has never cached', () => {
-  it('🔴 ingests it, because this is a member deliberately acting', async () => {
+  it('ingests it, because this is a member deliberately acting', async () => {
     signInAs(fixture.author);
     const tmdbId = '999000222';
     vi.stubGlobal(

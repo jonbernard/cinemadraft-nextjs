@@ -79,7 +79,7 @@ describe('clerk webhook', () => {
 
   afterEach(cleanup);
 
-  it('🔴 rejects an unsigned request and writes nothing', async () => {
+  it('rejects an unsigned request and writes nothing', async () => {
     // The takeover attempt: POST a chosen email and clerk id, inherit the
     // account. The signature is what stops it.
     const before = await db.user.count();
@@ -90,7 +90,7 @@ describe('clerk webhook', () => {
     expect(await db.user.count()).toBe(before);
   });
 
-  it('🔴 rejects a request signed with the wrong secret', async () => {
+  it('rejects a request signed with the wrong secret', async () => {
     process.env.CLERK_WEBHOOK_SIGNING_SECRET =
       'whsec_bm90dGhlcmlnaHRzZWNyZXRhdGFsbGhlcmU=';
     const before = await db.user.count();
@@ -101,7 +101,7 @@ describe('clerk webhook', () => {
     expect(await db.user.count()).toBe(before);
   });
 
-  it('🔴 rejects a tampered body whose signature no longer matches', async () => {
+  it('rejects a tampered body whose signature no longer matches', async () => {
     // Replay a valid signature against different content — the attack the
     // timestamped signature exists to prevent.
     const original = request(userCreated());
@@ -114,7 +114,7 @@ describe('clerk webhook', () => {
     expect((await POST(tampered)).status).toBe(400);
   });
 
-  it('🔴 rejects a stale timestamp, so a captured request cannot be replayed', async () => {
+  it('rejects a stale timestamp, so a captured request cannot be replayed', async () => {
     const response = await POST(request(userCreated(), { skewSeconds: -60 * 60 }));
     expect(response.status).toBe(400);
   });
@@ -147,7 +147,7 @@ describe('clerk webhook', () => {
     expect(row?.clerkId).toBe('user_hooked');
   });
 
-  it('🔴 does not claim on an unverified address, even when correctly signed', async () => {
+  it('does not claim on an unverified address, even when correctly signed', async () => {
     // A valid signature proves the message came from Clerk. It says nothing
     // about whether the address belongs to the sender.
     await db.user.create({

@@ -40,7 +40,7 @@ describe('what it renders', () => {
     expect(screen.getByText('1/3')).toBeTruthy();
   });
 
-  it('🔴 reserves each poster’s aspect ratio, so the strip does not reflow', () => {
+  it('reserves each poster’s aspect ratio, so the strip does not reflow', () => {
     // Core Web Vitals: CLS. Without it the row jumps as each image arrives.
     renderCarousel();
 
@@ -61,7 +61,7 @@ describe('what it renders', () => {
   });
 });
 
-describe('🔴 the keyboard path', () => {
+describe('the keyboard path', () => {
   it('makes the scroll container focusable and named', () => {
     // WCAG 2.1.1: a scrollable region has to be reachable by keyboard, and only a
     // focusable element can be scrolled with the arrow keys. Biome's rule wanted
@@ -119,7 +119,7 @@ describe('the buttons', () => {
 });
 
 describe('the counter follows the scroll position, not the button presses', () => {
-  it('🔴 updates from a scroll the buttons did not cause', () => {
+  it('updates from a scroll the buttons did not cause', () => {
     // The strip can also be moved by swipe, trackpad and arrow keys. A counter
     // that only knew about button presses would drift out of step with what the
     // reader is looking at, which is worse than no counter.

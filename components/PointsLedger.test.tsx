@@ -56,7 +56,7 @@ describe('PointsLedger', () => {
     expect(screen.getByRole('group')).not.toHaveAttribute('open');
   });
 
-  it('🔴 reveals lines that add up to the total', async () => {
+  it('reveals lines that add up to the total', async () => {
     const user = userEvent.setup();
     render(<PointsLedger total={TOTAL} lines={LINES} label="Dune" />);
 
@@ -87,7 +87,7 @@ describe('PointsLedger', () => {
     expect(groups[1]?.textContent).toContain('British Academy');
   });
 
-  it('🔴 states a win rather than colouring it', async () => {
+  it('states a win rather than colouring it', async () => {
     // Colour alone is invisible to a colour-blind reader and in print, and
     // green in an interface reads as "valid" — which would make every losing
     // nomination look like an error.
@@ -104,7 +104,7 @@ describe('PointsLedger', () => {
     expect(winner?.textContent).toContain('40');
   });
 
-  it('🔴 is reachable by keyboard', async () => {
+  it('is reachable by keyboard', async () => {
     // Checked here, *toggled* in the E2E suite. jsdom focuses a <summary>
     // correctly but does not implement Enter-to-toggle on <details> — verified
     // against a bare <details> before writing this, so asserting the toggle
@@ -183,14 +183,14 @@ describe('two nominations in one category', () => {
     },
   ];
 
-  it('🔴 renders both lines', async () => {
+  it('renders both lines', async () => {
     render(<PointsLedger total={15} lines={SAME_AWARD} label="La La Land" />);
     await userEvent.click(screen.getByRole('group').querySelector('summary') as Element);
 
     expect(screen.getAllByText(/Music - Original Song/)).toHaveLength(2);
   });
 
-  it('🔴 the rendered lines still add up to the total', async () => {
+  it('the rendered lines still add up to the total', async () => {
     render(<PointsLedger total={15} lines={SAME_AWARD} label="La La Land" />);
     await userEvent.click(screen.getByRole('group').querySelector('summary') as Element);
 

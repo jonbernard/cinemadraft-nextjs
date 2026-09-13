@@ -24,12 +24,12 @@ describe('PosterFrame', () => {
     expect(screen.getByLabelText('Winner')).toBeInTheDocument();
   });
 
-  it('🔴 stamps the seal rather than having it simply be there', () => {
+  it('stamps the seal rather than having it simply be there', () => {
     render(<PosterFrame {...base} status="won" />);
     expect(screen.getByLabelText('Winner')).toHaveClass('animate-stamp');
   });
 
-  it('🔴 delivers the seal instantly when motion is reduced', () => {
+  it('delivers the seal instantly when motion is reduced', () => {
     // The GroupCeremony contract: same information, no animation. The seal is
     // present in its final state, not delayed and not omitted.
     //
@@ -99,7 +99,7 @@ describe('PosterFrame', () => {
     expect(document.head.querySelector('link[rel="preload"][as="image"]')).toBeNull();
   });
 
-  it('🔴 preloads the poster when the page says it is the LCP', () => {
+  it('preloads the poster when the page says it is the LCP', () => {
     render(
       <PosterFrame
         {...base}

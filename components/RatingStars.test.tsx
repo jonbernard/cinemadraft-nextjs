@@ -21,7 +21,7 @@ describe('RatingStars', () => {
     expect(screen.getByText(/out of 5/)).toBeInTheDocument();
   });
 
-  it('🔴 clips the fourth star to half for 3.5', () => {
+  it('clips the fourth star to half for 3.5', () => {
     // The case 0.5 precision exists for. Rounding it to a whole star, or
     // spreading the value across all five, both still draw five stars.
     const { container } = render(<RatingStars rating={3.5} />);

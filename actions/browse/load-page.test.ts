@@ -26,7 +26,7 @@ describe('loadBrowsePage', () => {
     expect(result.ok && result.data.pageCount).toBe(9);
   });
 
-  it('🔴 resolves the reader itself rather than taking a user id', async () => {
+  it('resolves the reader itself rather than taking a user id', async () => {
     // A userId parameter would let any caller ask for another reader's watched
     // marks. The action reads the session and nothing else.
     getCurrentUser.mockResolvedValue({ id: 42 });

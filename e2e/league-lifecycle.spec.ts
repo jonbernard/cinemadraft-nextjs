@@ -132,7 +132,7 @@ test.describe('the league lifecycle', () => {
 
   test.afterAll(cleanup);
 
-  test('🔴 an owner takes a league from empty to a drafted board', async ({ page }) => {
+  test('an owner takes a league from empty to a drafted board', async ({ page }) => {
     await signInAs(page, {
       email: `${TAG}-owner@example.test`,
       firstName: 'Owner',

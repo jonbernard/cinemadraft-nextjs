@@ -41,7 +41,7 @@ describe('LiveCountdown', () => {
     expect(screen.getByText(/1d 03:30:00/)).toBeInTheDocument();
   });
 
-  it('🔴 says the show is under way rather than counting backwards', () => {
+  it('says the show is under way rather than counting backwards', () => {
     // "in -12 minutes" is the kind of defect that makes a whole page look
     // untrustworthy, and a live page is the worst place to do it.
     vi.useFakeTimers();
@@ -61,7 +61,7 @@ describe('LiveCountdown', () => {
     expect(screen.getByText(/date to be announced/i)).toBeInTheDocument();
   });
 
-  it('🔴 ticks: the same render shows a different remainder a second later', () => {
+  it('ticks: the same render shows a different remainder a second later', () => {
     // The plan's three cases above all measure a single frozen frame, and a
     // component that rendered once and never started its interval would pass
     // every one of them. This is the assertion that fails if the interval is
@@ -80,7 +80,7 @@ describe('LiveCountdown', () => {
     expect(screen.getByText(/1d 03:29:59/)).toBeInTheDocument();
   });
 
-  it('🔴 prints the ceremony day, not the UTC day its instant falls on', () => {
+  it('prints the ceremony day, not the UTC day its instant falls on', () => {
     // `events.awards_time` is milliseconds past `awards_date`'s midnight and it
     // runs to 25.5 hours for the Oscars, because the ceremony is a Sunday
     // evening in America. Formatting the instant in UTC prints the Monday —
@@ -97,7 +97,7 @@ describe('LiveCountdown', () => {
     );
   });
 
-  it('🔴 the server render and the first client render are the same HTML', () => {
+  it('the server render and the first client render are the same HTML', () => {
     // The whole reason `now` starts null. Reading the `datetime` attribute
     // cannot pin this: RTL flushes effects inside `act`, so by the time an
     // assertion runs the client has already ticked. Mutate the component to

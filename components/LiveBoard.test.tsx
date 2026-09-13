@@ -76,7 +76,7 @@ describe('LiveBoard', () => {
     expect(seats.map((seat) => seat.textContent)).toEqual(['Zoe', 'Ada', 'Bo']);
   });
 
-  it('🔴 shows the points earned at THIS show, not the season total', () => {
+  it('shows the points earned at THIS show, not the season total', () => {
     // The whole point of the page. A seat's season total is on the dashboard;
     // what it took tonight is the thing nobody can otherwise see. Each of these
     // is one element: 19 the league's take, 14 and 5 the seats', 10/4/3/2 the
@@ -100,7 +100,7 @@ describe('LiveBoard', () => {
     expect(screen.getByText(/nothing in play/i)).toBeInTheDocument();
   });
 
-  it('🔴 stamps the seal on a film that has won here', () => {
+  it('stamps the seal on a film that has won here', () => {
     // `status` is what T15 wired into PosterFrame, and passing it through is
     // the only reason a win is visible on this page at all. Exactly one of the
     // four films won.

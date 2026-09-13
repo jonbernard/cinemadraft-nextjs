@@ -14,7 +14,7 @@ const URL = 'https://cinemadraft.test/join/2f1c6d4e-0000-4000-8000-000000000000'
  * both the loudest thing there and a two-line mono wrap on a phone.
  */
 describe('InviteAction', () => {
-  it('🔴 does not print the join credential until it is asked for', () => {
+  it('does not print the join credential until it is asked for', () => {
     render(<InviteAction url={URL} />);
 
     // `toBeVisible`, not `queryByText(...).toBeNull()`: a closed `<details>`

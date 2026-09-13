@@ -9,7 +9,7 @@ import { formatMoney, formatReleaseDate, formatRuntime } from './format';
  */
 
 describe('formatRuntime', () => {
-  it('🔴 formats the real runtime', () => {
+  it('formats the real runtime', () => {
     // 129 is La La Land's actual runtime. The source printed 1 hour 41 minutes
     // for every film in the catalogue — `moment.duration(101, 'minutes')` was a
     // literal and `movie.runtime` was never read (PARITY bug 12).
@@ -40,14 +40,14 @@ describe('formatMoney', () => {
     expect(formatMoney(30_000_000)).toBe('$30,000,000');
   });
 
-  it('🔴 returns null for 0, which TMDB uses to mean unknown', () => {
+  it('returns null for 0, which TMDB uses to mean unknown', () => {
     // The source formatted it, so an announced-but-unmade film's page claimed a
     // budget of $0.
     expect(formatMoney(0)).toBeNull();
     expect(formatMoney(null)).toBeNull();
   });
 
-  it('🔴 always formats as US dollars, whatever the reader’s locale', () => {
+  it('always formats as US dollars, whatever the reader’s locale', () => {
     // The figures arrive from TMDB in USD, so the currency is a property of the
     // data. A German reader must not be shown "30.000.000 $" as though the
     // number had been converted.
@@ -60,7 +60,7 @@ describe('formatReleaseDate', () => {
     expect(formatReleaseDate(new Date('2016-12-09T00:00:00Z'))).toBe('December 9, 2016');
   });
 
-  it('🔴 reads the date in UTC, not the machine’s zone', () => {
+  it('reads the date in UTC, not the machine’s zone', () => {
     // Without an explicit time zone a film released on the 1st renders as the
     // previous month for every reader west of UTC — and the browse page's month
     // grouping would then disagree with the film page's own date.

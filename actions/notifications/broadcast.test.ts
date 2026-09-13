@@ -89,7 +89,7 @@ afterAll(async () => {
 });
 
 describe('broadcastNotification', () => {
-  it('🔴 writes one row per user, in one statement, to every account in the table', async () => {
+  it('writes one row per user, in one statement, to every account in the table', async () => {
     const admin = await createUser('admin');
     await createUser('user');
     await createUser('user');
@@ -105,7 +105,7 @@ describe('broadcastNotification', () => {
     expect(await db.notification.count({ where: { message } })).toBe(totalUsers);
   });
 
-  it('🔴 refuses a signed-in non-admin and writes nothing', async () => {
+  it('refuses a signed-in non-admin and writes nothing', async () => {
     const member = await createUser('user');
     signInAs(member);
     const message = `${TAG} an attacker's message`;
@@ -117,7 +117,7 @@ describe('broadcastNotification', () => {
     expect(await db.notification.count({ where: { message } })).toBe(0);
   });
 
-  it('🔴 refuses a signed-out caller and writes nothing', async () => {
+  it('refuses a signed-out caller and writes nothing', async () => {
     signInAs(null);
     const message = `${TAG} anonymous`;
 

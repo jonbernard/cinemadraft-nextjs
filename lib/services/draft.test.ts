@@ -33,7 +33,7 @@ describe('getLeagueBoard', () => {
     expect(board.status).toBeTruthy();
   });
 
-  it('🔴 keeps dummy seats — they are real seats in a real league', async () => {
+  it('keeps dummy seats — they are real seats in a real league', async () => {
     // 3 of league 1's 16 seats for 2026 are dummies. Dropping them would
     // silently remove members from the board and the standings.
     const board = await getLeagueBoard(1, 2026);
@@ -64,7 +64,7 @@ describe('getLeagueBoard', () => {
     }
   });
 
-  it('🔴 pads each group to its longest seat, never to a constant (D34)', async () => {
+  it('pads each group to its longest seat, never to a constant (D34)', async () => {
     const board = await getLeagueBoard(1, 2026);
 
     for (const group of board.groups) {
@@ -110,7 +110,7 @@ describe('getLeagueBoard', () => {
     expect(board.leagueName).toBe('Racso award');
   });
 
-  it('🔴 throws for a league that does not exist rather than faking an empty one', async () => {
+  it('throws for a league that does not exist rather than faking an empty one', async () => {
     // The page turns this into a 404. Returning an empty board would render
     // as a real league nobody has drafted in yet — a state that genuinely
     // occurs (see the 1999 case above), so the two must not look alike.

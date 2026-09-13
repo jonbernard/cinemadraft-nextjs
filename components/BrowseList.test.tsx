@@ -118,7 +118,7 @@ describe('BrowseList', () => {
     await waitFor(() => expect(loadBrowsePage).toHaveBeenCalledTimes(1));
   });
 
-  it('🔴 folds a repeated month into the one already shown', async () => {
+  it('folds a repeated month into the one already shown', async () => {
     // Two pages routinely carry films from the same month. Pushing a second
     // "October 2026" section is the visible bug this shape invites.
     loadBrowsePage.mockResolvedValue({
@@ -198,7 +198,7 @@ describe('BrowseList', () => {
     expect(loadBrowsePage).toHaveBeenCalledTimes(1);
   });
 
-  it('🔴 stops when a page comes back with no films, whatever the page count says', async () => {
+  it('stops when a page comes back with no films, whatever the page count says', async () => {
     // The future side reports 71 pages and holds films for about three of them
     // (P15.T9). Trusting the count alone would fire a request on every scroll
     // for the other sixty-eight.
@@ -281,7 +281,7 @@ describe('BrowseList', () => {
     );
   });
 
-  it('🔴 writes the cursor into the URL as pages append (amends D80)', async () => {
+  it('writes the cursor into the URL as pages append (amends D80)', async () => {
     loadBrowsePage.mockResolvedValue({
       ok: true,
       data: {
@@ -312,7 +312,7 @@ describe('BrowseList', () => {
     await waitFor(() => expect(window.location.search).toBe('?when=past&page=2'));
   });
 
-  it('🔴 keeps the side in the URL, so a shared cursor lands on the right catalogue', async () => {
+  it('keeps the side in the URL, so a shared cursor lands on the right catalogue', async () => {
     loadBrowsePage.mockResolvedValue({
       ok: true,
       data: {
@@ -341,7 +341,7 @@ describe('BrowseList', () => {
     await waitFor(() => expect(window.location.search).toBe('?when=future&page=2'));
   });
 
-  it('🔴 adds no history entry — Back must still leave the page in one press', async () => {
+  it('adds no history entry — Back must still leave the page in one press', async () => {
     const push = vi.spyOn(window.history, 'pushState');
     loadBrowsePage.mockResolvedValue({
       ok: true,

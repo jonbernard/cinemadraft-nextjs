@@ -60,7 +60,7 @@ describe('SearchOverlay', () => {
     );
   });
 
-  it('🔴 closes on the first Escape, not the second', async () => {
+  it('closes on the first Escape, not the second', async () => {
     // The field is `<input type="search">`, and the browser spends the first
     // Escape clearing its value rather than letting the dialog's own cancel
     // through — so for anyone who had typed something, which is everyone,
@@ -80,7 +80,7 @@ describe('SearchOverlay', () => {
     expect(screen.getByRole('dialog', { hidden: true })).not.toHaveAttribute('open');
   });
 
-  it('🔴 shows the top nine, not everything the search returned', async () => {
+  it('shows the top nine, not everything the search returned', async () => {
     // Twenty rows hung the panel off the bottom of a 900px screen. Ranking
     // already put the answer first; the rest is noise the reader scrolls past.
     findFilmsAction.mockResolvedValue({

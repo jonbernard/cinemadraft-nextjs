@@ -177,7 +177,7 @@ describe('findNomineeProgressByUser', () => {
     expect(rows[0]?.watched).toBe(true);
   });
 
-  it('🔴 shows another reader the same nominee unwatched', async () => {
+  it('shows another reader the same nominee unwatched', async () => {
     const rows = await watchlistRepository.findNomineeProgressByUser(stranger, SEASON);
 
     expect(rows).toHaveLength(1);
@@ -187,7 +187,7 @@ describe('findNomineeProgressByUser', () => {
 });
 
 describe('findNominatedFilmProgressByUser', () => {
-  it('🔴 does not leak the owner’s mark to another reader', async () => {
+  it('does not leak the owner’s mark to another reader', async () => {
     const mine = await watchlistRepository.findNominatedFilmProgressByUser(owner, SEASON);
     const theirs = await watchlistRepository.findNominatedFilmProgressByUser(
       stranger,
@@ -209,7 +209,7 @@ describe('findDraftedFilmProgressByUser', () => {
     expect(rows[0]?.watched).toBe(true);
   });
 
-  it('🔴 returns nothing to someone who holds no seat', async () => {
+  it('returns nothing to someone who holds no seat', async () => {
     expect(
       await watchlistRepository.findDraftedFilmProgressByUser(stranger, SEASON),
     ).toEqual([]);

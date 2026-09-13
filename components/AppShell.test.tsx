@@ -78,7 +78,7 @@ describe('AppShell', () => {
     ).toBeInTheDocument();
   });
 
-  it('🔴 links only to pages that exist', () => {
+  it('links only to pages that exist', () => {
     // A nav entry pointing at a 404 is worse than a missing one.
     usePathname.mockReturnValue('/');
     render(<AppShell isSignedIn={false}>content</AppShell>);
@@ -91,7 +91,7 @@ describe('AppShell', () => {
     expect(labels).toEqual(READY_LINKS);
   });
 
-  it('🔴 the More trigger reports whether the sheet is open', async () => {
+  it('the More trigger reports whether the sheet is open', async () => {
     usePathname.mockReturnValue('/');
     render(<AppShell isSignedIn={false}>content</AppShell>);
     const trigger = screen.getByRole('button', { name: 'More' });
@@ -118,14 +118,14 @@ describe('AppShell', () => {
     expect(sheet()).not.toHaveAttribute('open');
   });
 
-  it('🔴 the phone sheet is a native dialog, so Escape and focus are the platform’s job', () => {
+  it('the phone sheet is a native dialog, so Escape and focus are the platform’s job', () => {
     usePathname.mockReturnValue('/');
     render(<AppShell isSignedIn={false}>content</AppShell>);
 
     expect(sheet().tagName).toBe('DIALOG');
   });
 
-  it('🔴 marks the current page for assistive technology, not by colour alone', () => {
+  it('marks the current page for assistive technology, not by colour alone', () => {
     usePathname.mockReturnValue('/leagues/1');
     render(<AppShell isSignedIn>content</AppShell>);
 
@@ -149,7 +149,7 @@ describe('AppShell', () => {
     expect(current?.textContent).toContain('Leagues');
   });
 
-  it('🔴 every target clears the 44px minimum', async () => {
+  it('every target clears the 44px minimum', async () => {
     // Tailwind's min-h-11 is 2.75rem = 44px. Asserted on the class because
     // jsdom computes no layout — the point is that the rule is present and
     // cannot be dropped silently.
@@ -180,7 +180,7 @@ describe('AppShell', () => {
     }
   });
 
-  it('🔴 search opens the panel rather than linking to the release calendar', () => {
+  it('search opens the panel rather than linking to the release calendar', () => {
     // `/browse` is ordered by date and cannot answer "where is *Sinners*",
     // which is the one question the icon promises (P15.T3).
     usePathname.mockReturnValue('/');
@@ -200,7 +200,7 @@ describe('AppShell', () => {
     expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
   });
 
-  it('🔴 offers a plain log-out control when Clerk is not configured', () => {
+  it('offers a plain log-out control when Clerk is not configured', () => {
     // What makes the e2e run boot at all (D84): `UserButton` throws outside a
     // `<ClerkProvider>`, and under the test session there is none to mount.
     vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '');
@@ -211,7 +211,7 @@ describe('AppShell', () => {
     expect(screen.queryByRole('button', { name: 'Account' })).toBeNull();
   });
 
-  it('🔴 shows a logged-out visitor the whole nav, plus a way in', () => {
+  it('shows a logged-out visitor the whole nav, plus a way in', () => {
     // The dashboard and league boards are public (D44) — a visitor on a
     // shared link must be able to move around, not be stranded on one page.
     usePathname.mockReturnValue('/');
@@ -221,7 +221,7 @@ describe('AppShell', () => {
     expect(within(rail()).getAllByRole('link').length).toBeGreaterThan(1);
   });
 
-  it('🔴 the skip link is the first focusable element, and it points at <main>', () => {
+  it('the skip link is the first focusable element, and it points at <main>', () => {
     // Structural, not positional: whatever P17.T2 does to the shell's layout,
     // this link has to stay first in DOM order and `<main>` has to stay its
     // target. If this goes red in someone else's task, that is this test
@@ -246,7 +246,7 @@ describe('AppShell', () => {
     expect(main).toHaveAttribute('tabindex', '-1');
   });
 
-  it('🔴 names the create action the same as every other place it appears', () => {
+  it('names the create action the same as every other place it appears', () => {
     // "Create league" in the strip and "Start a league" on /leagues are the
     // same action, ~700px apart at 1440px. One label (P17.T32).
     render(<AppShell isSignedIn>content</AppShell>);

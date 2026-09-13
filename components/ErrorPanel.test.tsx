@@ -12,7 +12,7 @@ import { ErrorPanel } from '@/components/ErrorPanel';
  * browser on every error path.
  */
 describe('ErrorPanel', () => {
-  it('🔴 says something different for each kind, not "something went wrong"', () => {
+  it('says something different for each kind, not "something went wrong"', () => {
     const titles = new Set<string>();
     for (const kind of ['not-found', 'forbidden', 'conflict', 'unknown'] as const) {
       const { unmount } = render(<ErrorPanel kind={kind} />);
@@ -23,7 +23,7 @@ describe('ErrorPanel', () => {
     expect(titles.size).toBe(4);
   });
 
-  it('🔴 offers a way out of a forbidden page', () => {
+  it('offers a way out of a forbidden page', () => {
     // "You cannot see this" without "log in" is a dead end, and being logged
     // out is the most likely reason for it.
     render(<ErrorPanel kind="forbidden" />);
@@ -53,7 +53,7 @@ describe('ErrorPanel', () => {
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
-  it('🔴 renders no landmark of its own', () => {
+  it('renders no landmark of its own', () => {
     // AppShell supplies the app's one <main> (`Panel as="main"`). A second one
     // nested inside it is what this component used to produce on every 404 and
     // every caught error inside the shell — and the `getByRole('main')` reads
@@ -64,7 +64,7 @@ describe('ErrorPanel', () => {
     expect(container.querySelector('main')).toBeNull();
   });
 
-  it('🔴 never renders a raw error message', () => {
+  it('never renders a raw error message', () => {
     // The component takes a *kind*, not a message — the leak is impossible by
     // construction rather than by remembering to sanitise. This asserts the
     // shape stays that way.

@@ -94,7 +94,7 @@ describe('the writes', () => {
       expect(after.map((entry) => entry.order)).toEqual([1, 2, 3]);
     });
 
-    it('🔴 will not renumber another member’s row, even given its id', async () => {
+    it('will not renumber another member’s row, even given its id', async () => {
       // The service refuses this before it gets here, but the scope is
       // structural rather than dependent on that check: `userId` is in every
       // WHERE clause.
@@ -115,7 +115,7 @@ describe('the writes', () => {
       expect(await orderOf(idAt(mine, 0))).toBe(2);
     });
 
-    it('🔴 will not renumber the same member’s other season', async () => {
+    it('will not renumber the same member’s other season', async () => {
       const other = await seedList(WRITER, OTHER_YEAR, [11, 12]);
 
       // Index 0 of the reorder, so `year` dropping out of the WHERE clause
@@ -144,7 +144,7 @@ describe('the writes', () => {
       }
     });
 
-    it('🔴 throws for another member’s row, and leaves it alone', async () => {
+    it('throws for another member’s row, and leaves it alone', async () => {
       const theirs = await seedList(STRANGER, WRITE_YEAR, [11]);
       const id = idAt(theirs, 0);
 
@@ -164,7 +164,7 @@ describe('the writes', () => {
       expect(await listRepository.findByUserAndYear(WRITER, WRITE_YEAR)).toHaveLength(1);
     });
 
-    it('🔴 throws for another member’s row, and leaves it in place', async () => {
+    it('throws for another member’s row, and leaves it in place', async () => {
       const theirs = await seedList(STRANGER, WRITE_YEAR, [11]);
       const id = idAt(theirs, 0);
 

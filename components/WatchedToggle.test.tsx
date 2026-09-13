@@ -42,13 +42,13 @@ function renderToggle(
 }
 
 describe('what a screen reader hears', () => {
-  it('🔴 names the film, so twenty badges on a grid are distinguishable', () => {
+  it('names the film, so twenty badges on a grid are distinguishable', () => {
     renderToggle({ title: 'Sinners' });
 
     expect(screen.getByRole('button', { name: /Mark Sinners as watched/i })).toBeTruthy();
   });
 
-  it('🔴 announces the state through aria-pressed, not the icon', () => {
+  it('announces the state through aria-pressed, not the icon', () => {
     const { button } = renderToggle({ watched: true });
 
     // The source carried this in a plus-versus-check swap, so a screen reader
@@ -65,7 +65,7 @@ describe('what a screen reader hears', () => {
 });
 
 describe('the target', () => {
-  it('🔴 is at least 44px, because it sits inside a poster that is also a link', () => {
+  it('is at least 44px, because it sits inside a poster that is also a link', () => {
     // A target covering only the glyph is a mis-tap that navigates away instead
     // of marking the film.
     const { button } = renderToggle();
@@ -130,7 +130,7 @@ describe('pressing it', () => {
   });
 });
 
-describe('🔴 when the write fails', () => {
+describe('when the write fails', () => {
   it('reverts, rather than showing a check for a row that does not exist', async () => {
     const onChange = vi.fn(async () => ({
       ok: false as const,

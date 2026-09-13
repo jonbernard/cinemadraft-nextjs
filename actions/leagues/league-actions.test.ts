@@ -127,7 +127,7 @@ afterAll(async () => {
 });
 
 describe('createLeague', () => {
-  it('🔴 refuses a logged-out caller and writes nothing', async () => {
+  it('refuses a logged-out caller and writes nothing', async () => {
     signInAs(null);
 
     const result = await createLeague({ name: `${TAG} nope`, type: 'snake' });
@@ -145,7 +145,7 @@ describe('createLeague', () => {
     });
   });
 
-  it('🔴 writes an owner column that parses back to the creator (D47)', async () => {
+  it('writes an owner column that parses back to the creator (D47)', async () => {
     // `leagues.owner` is TEXT holding a JSON array. A write in any other shape
     // parses to an empty list, and the creator is locked out of their own
     // league — the exact failure D47 exists to prevent, arrived at from the
@@ -166,7 +166,7 @@ describe('createLeague', () => {
     expect(JSON.parse(raw?.owner as string)).toEqual([fixture.creator.id]);
   });
 
-  it('🔴 seats the creator, or the league is half-created', async () => {
+  it('seats the creator, or the league is half-created', async () => {
     // Membership is the existence of a drafts row. Without a seat the creator
     // does not appear on their own board or in their own league list.
     signInAs(fixture.creator);
@@ -179,7 +179,7 @@ describe('createLeague', () => {
     expect(seats[0]?.userId).toBe(fixture.creator.id);
   });
 
-  it('🔴 generates an invite uuid, which has no database default', async () => {
+  it('generates an invite uuid, which has no database default', async () => {
     // The source got one from Sequelize's defaultValue: UUIDV4 — ORM
     // behaviour the schema never carried. Without it the league would have no
     // shareable link at all.
@@ -218,7 +218,7 @@ describe('joinLeague', () => {
     return { leagueId, uuid: league.uuid as string };
   }
 
-  it('🔴 refuses a logged-out caller', async () => {
+  it('refuses a logged-out caller', async () => {
     const { leagueId, uuid } = await makeLeague();
     signInAs(null);
 
@@ -241,7 +241,7 @@ describe('joinLeague', () => {
     );
   });
 
-  it('🔴 joining twice does not create a second seat', async () => {
+  it('joining twice does not create a second seat', async () => {
     // Two seats means appearing twice on the board, drafting twice and
     // scoring twice.
     const { leagueId, uuid } = await makeLeague();
@@ -254,7 +254,7 @@ describe('joinLeague', () => {
     expect(await db.draft.findMany({ where: { leagueId } })).toHaveLength(2);
   });
 
-  it('🔴 the creator following their own link stays at one seat', async () => {
+  it('the creator following their own link stays at one seat', async () => {
     const { leagueId, uuid } = await makeLeague();
     signInAs(fixture.creator);
 

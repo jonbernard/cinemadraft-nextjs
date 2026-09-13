@@ -20,7 +20,7 @@ describe('Wordmark', () => {
     expect(screen.queryByText('Cinemadraft')).toBeNull();
   });
 
-  it('🔴 sets the name in the wordmark face, never the serif (D83)', () => {
+  it('sets the name in the wordmark face, never the serif (D83)', () => {
     // D70 gives the serif to things that have names; D83 makes the product's
     // own name the one exception, and it is asserted rather than reviewed.
     render(<Wordmark />);

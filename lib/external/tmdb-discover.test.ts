@@ -47,7 +47,7 @@ describe('the past side', () => {
     expect(query.get('release_date.lte')).toBe(new Date().toISOString().slice(0, 10));
   });
 
-  it('🔴 keeps the source’s vote floors', async () => {
+  it('keeps the source’s vote floors', async () => {
     // Without them "recent releases" is a wall of unrated obscurities, because
     // TMDB's catalogue is mostly long tail.
     const fetchMock = mockDiscover(EMPTY);
@@ -74,7 +74,7 @@ describe('the past side', () => {
 });
 
 describe('the future side', () => {
-  it('🔴 asks TMDB for primary release dates, not any release date', async () => {
+  it('asks TMDB for primary release dates, not any release date', async () => {
     // With `with_release_type` set, `release_date.gte` matches *any* theatrical
     // release — including a re-release. A 2006 film with a 2026 re-issue
     // therefore landed on "The future" while its card rendered 2006, which is
@@ -91,7 +91,7 @@ describe('the future side', () => {
     expect(query.has('release_date.gte')).toBe(false);
   });
 
-  it('🔴 asks for the most notable upcoming films, not the soonest', async () => {
+  it('asks for the most notable upcoming films, not the soonest', async () => {
     // Measured against the live API on 2026-09-12: sorted by date, pages 1 and
     // 3 held twenty films apiece of which none cleared any usable quality floor
     // — on any given day the obscure releases outnumber the ones anybody will
@@ -104,7 +104,7 @@ describe('the future side', () => {
     expect(lastQuery(fetchMock).get('sort_by')).toBe('popularity.desc');
   });
 
-  it('🔴 drops a film whose primary release is in the past, whatever TMDB says', async () => {
+  it('drops a film whose primary release is in the past, whatever TMDB says', async () => {
     // Defensive, and cheap. TMDB's date semantics have moved before, and a film
     // dated in the past has no business on a page titled "The future".
     mockDiscover({
@@ -133,7 +133,7 @@ describe('the future side', () => {
     expect(page.films.map((film) => film.releaseDate?.getUTCFullYear())).toEqual([2027]);
   });
 
-  it('🔴 holds unreleased films to a LOWER popularity floor than released ones', async () => {
+  it('holds unreleased films to a LOWER popularity floor than released ones', async () => {
     // Backwards-looking at first glance, and measured rather than guessed.
     // TMDB's popularity numbers for unreleased films are an order of magnitude
     // below released ones — on 2026-09-12 the entire upcoming slate ran 236,
@@ -163,7 +163,7 @@ describe('the future side', () => {
     expect((await discoverFilms({ when: 'past', page: 1 })).films).toHaveLength(0);
   });
 
-  it('🔴 sends no vote floor at all', async () => {
+  it('sends no vote floor at all', async () => {
     // An unreleased film has no votes, so carrying the past side's floors here
     // returns an empty page — which is exactly what "just flip the sort" would
     // have shipped, and it would have read as a broken feature rather than a
@@ -213,7 +213,7 @@ describe('both sides', () => {
   );
 });
 
-describe('🔴 what gets dropped, and where', () => {
+describe('what gets dropped, and where', () => {
   it('drops posterless and unpopular films before the caller sees them', async () => {
     // The source filtered popularity on the server and posters in the browser,
     // so its page counter counted rows the reader never saw — and a "load more"
@@ -282,7 +282,7 @@ describe('paging', () => {
     expect(result).toMatchObject({ page: 3, pageCount: 21 });
   });
 
-  it('🔴 clamps the page to TMDB’s own limit of 500', async () => {
+  it('clamps the page to TMDB’s own limit of 500', async () => {
     // Above it TMDB answers with an error rather than an empty page, so an
     // unclamped `?page=99999` would turn a silly URL into a broken one.
     const fetchMock = mockDiscover(EMPTY);
@@ -311,7 +311,7 @@ describe('caching', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('🔴 caches the two sides separately', async () => {
+  it('caches the two sides separately', async () => {
     // They are different queries against the same endpoint, so a key that
     // omitted the side would serve past results on the future page.
     const fetchMock = mockDiscover(EMPTY);
@@ -323,7 +323,7 @@ describe('caching', () => {
   });
 });
 
-describe('🔴 failure leaves the page usable', () => {
+describe('failure leaves the page usable', () => {
   it('returns an empty page rather than throwing when TMDB refuses', async () => {
     // Browse has no local fallback, so a reader arriving while TMDB is
     // unreachable should get an empty shelf with the controls still working, not

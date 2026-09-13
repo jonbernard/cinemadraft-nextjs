@@ -157,7 +157,7 @@ describe('getLeaderboard', () => {
     expect(findManyByIds).not.toHaveBeenCalled();
   });
 
-  it('🔴 zero-fills a show the film earned nothing at, rather than leaving it absent', async () => {
+  it('zero-fills a show the film earned nothing at, rather than leaving it absent', async () => {
     // Anora earned only at the Oscars; a blank Golden Globes cell would read
     // as "unknown" where 0 means "nominated elsewhere, not here".
     threeFilmsTwoShows();
@@ -169,7 +169,7 @@ describe('getLeaderboard', () => {
     expect(anora?.events.oscars).toBe(15);
   });
 
-  it('🔴 sorts by total, disagreeing with both title and id order', async () => {
+  it('sorts by total, disagreeing with both title and id order', async () => {
     threeFilmsTwoShows();
 
     const board = await getLeaderboard(2025);
@@ -181,7 +181,7 @@ describe('getLeaderboard', () => {
     ]);
   });
 
-  it('🔴 orders columns by the show’s awards date, not by abbreviation', async () => {
+  it('orders columns by the show’s awards date, not by abbreviation', async () => {
     // "bafta" sorts alphabetically before "sag", but its awards date is
     // later — so a comparator that forgot the date and fell back to
     // `localeCompare` would print this same order and pass unnoticed.
@@ -208,7 +208,7 @@ describe('getLeaderboard', () => {
     expect(board.events.map((event) => event.abbreviation)).toEqual(['sag', 'bafta']);
   });
 
-  it('🔴 sorts an undated show last rather than to the epoch', async () => {
+  it('sorts an undated show last rather than to the epoch', async () => {
     // "bafta" sorts alphabetically before "sag" too, so an undated "bafta"
     // landing anywhere but last would be caught by the same disagreement.
     findAllEvents.mockResolvedValue([
@@ -258,7 +258,7 @@ describe('getLeaderboard', () => {
     expect(board.rows).toEqual([]);
   });
 
-  it('🔴 a film with no ledger at all still gets a row, scored zero', async () => {
+  it('a film with no ledger at all still gets a row, scored zero', async () => {
     // `loadScoringInputs` returns nothing resolvable for a movie whose every
     // nomination's points are unconfigured — the row must still exist with
     // every column zero, not disappear from the grid.

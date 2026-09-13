@@ -67,7 +67,7 @@ test.describe('a member page', () => {
   test.beforeAll(cleanup);
   test.afterAll(cleanup);
 
-  test('🔴 opens for a stranger without publishing a hash of the email', async ({
+  test('opens for a stranger without publishing a hash of the email', async ({
     page,
   }) => {
     const uuid = await seedMember('subject');

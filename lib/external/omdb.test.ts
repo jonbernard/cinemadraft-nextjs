@@ -46,11 +46,11 @@ afterEach(() => {
 });
 
 describe('no key configured', () => {
-  it('🔴 returns null rather than throwing', async () => {
+  it('returns null rather than throwing', async () => {
     expect(await fetchOmdb('tt3783958')).toBeNull();
   });
 
-  it('🔴 makes no request at all', async () => {
+  it('makes no request at all', async () => {
     const fetchMock = mockOmdb({});
 
     await fetchOmdb('tt3783958');
@@ -100,7 +100,7 @@ describe('with a key', () => {
     });
   });
 
-  it('🔴 treats the literal string "N/A" as absent', async () => {
+  it('treats the literal string "N/A" as absent', async () => {
     // OMDb answers 200 with "N/A" rather than omitting a field. A port that
     // only checks for undefined renders "Rated: N/A" and "Box office: N/A" on
     // every older film — which reads as a bug in this app, not a gap in theirs.
@@ -123,7 +123,7 @@ describe('with a key', () => {
     expect(await fetchOmdb('tt1')).toMatchObject({ metacritic: 61 });
   });
 
-  it('🔴 prefers the Ratings array over Metascore when they disagree', async () => {
+  it('prefers the Ratings array over Metascore when they disagree', async () => {
     // Ratings is the field OMDb documents; Metascore is a convenience copy.
     // Picking one and saying which beats reading whichever happens to parse.
     mockOmdb({
@@ -150,7 +150,7 @@ describe('with a key', () => {
     });
   });
 
-  it('🔴 asks OMDb once per film', async () => {
+  it('asks OMDb once per film', async () => {
     const fetchMock = mockOmdb({ Response: 'True', Rated: 'R' });
 
     await fetchOmdb('tt3783958');
@@ -180,7 +180,7 @@ describe('with a key', () => {
   });
 });
 
-describe('🔴 failure never reaches the caller', () => {
+describe('failure never reaches the caller', () => {
   beforeEach(() => {
     process.env.OMDB_API_KEY = KEY;
   });

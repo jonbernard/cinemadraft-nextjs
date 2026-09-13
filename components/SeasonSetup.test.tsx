@@ -86,7 +86,7 @@ describe('SeasonSetup', () => {
     expect(screen.getByText(/Guest/)).toHaveTextContent('placeholder');
   });
 
-  it('🔴 assigns a group with a select, so it works without a mouse', async () => {
+  it('assigns a group with a select, so it works without a mouse', async () => {
     // The source dragged, which is unusable by keyboard (a11y
     // gesture-alternative). A select is operable by keyboard, screen reader
     // and touch with no library.
@@ -128,7 +128,7 @@ describe('SeasonSetup', () => {
     expect(options).toContain('3');
   });
 
-  it('🔴 does not offer to remove a seat that has picks', async () => {
+  it('does not offer to remove a seat that has picks', async () => {
     // Removing it would orphan them — `draft_picks` has no foreign key. A
     // button that always refuses reads as a broken app.
     setup();
@@ -138,7 +138,7 @@ describe('SeasonSetup', () => {
     expect(row.textContent).toContain('has picks');
   });
 
-  it('🔴 confirms before removing someone', async () => {
+  it('confirms before removing someone', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const user = setup();
 
@@ -192,7 +192,7 @@ describe('SeasonSetup', () => {
     );
   });
 
-  it('🔴 celebrates the groups the server returned, not a second shuffle', async () => {
+  it('celebrates the groups the server returned, not a second shuffle', async () => {
     /**
      * The load-bearing assertion of the whole ceremony. The action has already
      * written these rows; the takeover animates them. If the client rolled its
@@ -232,7 +232,7 @@ describe('SeasonSetup', () => {
     );
   });
 
-  it('🔴 confirms before starting the draft', async () => {
+  it('confirms before starting the draft', async () => {
     // Groups are fixed from that moment.
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const user = setup();
@@ -244,7 +244,7 @@ describe('SeasonSetup', () => {
     confirm.mockRestore();
   });
 
-  it('🔴 hides every arrangement control once the draft is open', async () => {
+  it('hides every arrangement control once the draft is open', async () => {
     // Reshuffling mid-draft would move people away from picks they have made,
     // and the action refuses — so the console must not offer it.
     setup({ status: 'active' });
@@ -263,7 +263,7 @@ describe('SeasonSetup', () => {
     expect(screen.getByText(/This draft is complete/)).toBeInTheDocument();
   });
 
-  it('🔴 offers a way to end the draft once it is running', async () => {
+  it('offers a way to end the draft once it is running', async () => {
     // The defect this closes: `completeDraft` has existed since P10.T17 and
     // nothing called it, so an owner on the one page that manages the season
     // had no way to say the draft was over. A draft with no end state is why
@@ -280,7 +280,7 @@ describe('SeasonSetup', () => {
     confirm.mockRestore();
   });
 
-  it('🔴 confirms before finishing, and a refusal writes nothing', async () => {
+  it('confirms before finishing, and a refusal writes nothing', async () => {
     // Same reasoning as starting: the league is told the draft is over, and
     // people stop watching. A mis-click must not be the thing that says so.
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);

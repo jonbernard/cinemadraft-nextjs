@@ -38,7 +38,7 @@ describe('getAwardShow', () => {
     expect(show.categories.some((category) => category.nominees.length > 0)).toBe(true);
   });
 
-  it('🔴 resolves the point value through pointsId, never the raw column', async () => {
+  it('resolves the point value through pointsId, never the raw column', async () => {
     // `awards.points` is a foreign key into `points.id` (D41). Measured in the
     // real data: "Best Picture" stores 9 and is worth 20; the acting
     // categories store 8 and are worth 15. A page printing the column would
@@ -50,7 +50,7 @@ describe('getAwardShow', () => {
     expect(bestPicture?.points).toBe(20);
   });
 
-  it('🔴 agrees with what scoring awards for the same category', async () => {
+  it('agrees with what scoring awards for the same category', async () => {
     // The page and the standings must not be able to disagree. If this ever
     // fails, one of them is lying to the league.
     const show = await getAwardShow('oscars', 2025);
@@ -119,7 +119,7 @@ describe('getAwardShow', () => {
     );
   });
 
-  it('🔴 throws for a show that does not exist rather than rendering an empty one', async () => {
+  it('throws for a show that does not exist rather than rendering an empty one', async () => {
     // The page turns this into a 404. An empty show would look like a real one
     // nobody has entered yet — a state that genuinely occurs, per the test
     // above, so the two must not look alike.

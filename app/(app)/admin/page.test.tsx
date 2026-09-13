@@ -17,7 +17,7 @@ describe('AdminPage', () => {
     vi.resetAllMocks();
   });
 
-  it('🔴 refuses to render for a non-admin', async () => {
+  it('refuses to render for a non-admin', async () => {
     requireAdmin.mockRejectedValue(new ForbiddenError('admin only'));
 
     await expect(AdminPage()).rejects.toThrow('admin only');
@@ -30,7 +30,7 @@ describe('AdminPage', () => {
     expect(element).toBeTruthy();
   });
 
-  it('🔴 marks the entries that change the product for everyone', async () => {
+  it('marks the entries that change the product for everyone', async () => {
     // Three identical cards, two of which are irreversible for every member,
     // reads as a settings list — and the first of them re-scopes every page in
     // the product. The reach is named in words, never by colour alone.
@@ -48,7 +48,7 @@ describe('AdminPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('🔴 leaves the single-account entry unmarked, so the mark means something', async () => {
+  it('leaves the single-account entry unmarked, so the mark means something', async () => {
     // A badge on every row is a decoration. Relinking touches one account and
     // must not carry the chip that says it reaches everybody.
     requireAdmin.mockResolvedValue({ id: 1, role: 'admin' });

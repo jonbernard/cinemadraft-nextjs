@@ -29,7 +29,7 @@ function renderSection(review: MyReview | null) {
 }
 
 describe('YourReview', () => {
-  it('🔴 reads nothing back when nothing is written', () => {
+  it('reads nothing back when nothing is written', () => {
     // The card is the read-back half (T39); with no review it would otherwise be
     // an empty panel above the form.
     renderSection(null);

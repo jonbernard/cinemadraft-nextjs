@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 describe('proxy', () => {
-  it('🔴 protects routes with the real Clerk middleware when the test flag is unset', async () => {
+  it('protects routes with the real Clerk middleware when the test flag is unset', async () => {
     const proxy = await import('./proxy');
 
     // Identity against the sentinel rather than `typeof === 'function'`: the
@@ -39,7 +39,7 @@ describe('proxy', () => {
     expect(clerkMiddleware).toHaveBeenCalledOnce();
   });
 
-  it('🔴 matches every route except Next internals and static files', async () => {
+  it('matches every route except Next internals and static files', async () => {
     // Pinned verbatim because the matcher is shared by both branches: narrow it
     // and the proxy simply stops seeing a path, which shows up as a protected
     // page rendering perfectly to a stranger.
@@ -51,7 +51,7 @@ describe('proxy', () => {
     ]);
   });
 
-  it('🔴 lists every route a stranger may reach, and no more', async () => {
+  it('lists every route a stranger may reach, and no more', async () => {
     // Pinned as a whole list rather than `arrayContaining`. This is the file
     // where "public" is decided; a test that only checks for presence would
     // stay green while somebody added a route that should not be here, which

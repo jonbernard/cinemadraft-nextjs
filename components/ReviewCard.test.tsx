@@ -6,7 +6,7 @@ import { ReviewCard } from '@/components/ReviewCard';
 const SAVED = new Date('2026-08-14T00:00:00Z');
 
 describe('ReviewCard', () => {
-  it('🔴 keeps the writer’s paragraphs apart', () => {
+  it('keeps the writer’s paragraphs apart', () => {
     // The source rendered one <Typography> per line for the same reason.
     // Joining them would still show every word, so this counts the elements.
     render(
@@ -32,7 +32,7 @@ describe('ReviewCard', () => {
     expect(screen.getByText(/out of 5/)).toBeInTheDocument();
   });
 
-  it('🔴 shows no rating at all when there is none, rather than zero stars', () => {
+  it('shows no rating at all when there is none, rather than zero stars', () => {
     render(
       <ReviewCard review={{ rating: null, review: 'Words only.', updatedAt: SAVED }} />,
     );

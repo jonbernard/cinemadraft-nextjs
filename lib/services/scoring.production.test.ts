@@ -21,7 +21,7 @@ afterAll(async () => {
  * that evidence only exists where the data does.
  */
 describe('pointsForMovieIds', () => {
-  it('🔴 reproduces the source API totals for draft 124', async () => {
+  it('reproduces the source API totals for draft 124', async () => {
     // `fixtures/points-by-draft.json` is the old app's own answer for this
     // draft, captured from production. Matching it is the evidence that the
     // rule was ported rather than reinvented — and it is what would catch the
@@ -41,7 +41,7 @@ describe('pointsForMovieIds', () => {
     }
   });
 
-  it('🔴 reproduces the source API totals for an entire season', async () => {
+  it('reproduces the source API totals for an entire season', async () => {
     // `fixtures/points-by-year.json` is the old app's answer for every film
     // nominated in 2025 — 123 independently captured totals. One draft can
     // agree by luck; a whole season agreeing is the port being right.
@@ -71,7 +71,7 @@ describe('pointsForMovieIds', () => {
     ).toEqual([]);
   });
 
-  it('🔴 reproduces the source API team totals for a whole league', async () => {
+  it('reproduces the source API team totals for a whole league', async () => {
     // `fixtures/points-league-total.json` is league 1's 2025 standings as the
     // old app computed them. This checks the *roll-up*: every per-film total
     // can be right while the sum onto a seat is wrong, and that is the number
@@ -115,7 +115,7 @@ describe('pointsForMovieIds', () => {
  * checks the grouping the UI is about to render, before any of it is built.
  */
 describe('ledgerForMovies', () => {
-  it('🔴 reproduces the source API per-event breakdown', async () => {
+  it('reproduces the source API per-event breakdown', async () => {
     const fixture = loadFixture<{
       // 🔴 A **string**. `nominations.year` is TEXT — the one year column in
       // the schema that is — and the source API passed it through untouched.
@@ -157,7 +157,7 @@ describe('ledgerForMovies', () => {
     expect(ledger?.total).toBe(fixture.total);
   });
 
-  it('🔴 always adds up to the total the rest of the app shows', async () => {
+  it('always adds up to the total the rest of the app shows', async () => {
     // The property that makes a ledger trustworthy. Checked across a whole
     // season rather than one film: if the lines and the total could ever
     // disagree, the app would look like it was guessing.

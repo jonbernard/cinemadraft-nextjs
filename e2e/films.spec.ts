@@ -25,7 +25,7 @@ const hasTmdb = Boolean(process.env.TMDB_API_KEY);
 test.describe('a film page', () => {
   test.skip(!hasTmdb, 'TMDB_API_KEY not configured');
 
-  test('🔴 the title is visible over the backdrop', async ({ page }) => {
+  test('the title is visible over the backdrop', async ({ page }) => {
     // The bug this exists for: the title block is pulled up over the banner with
     // a negative margin, and the banner is positioned — so within one stacking
     // context it painted *above* the static title regardless of source order, and
@@ -47,7 +47,7 @@ test.describe('a film page', () => {
     expect(topmost).toContain('La La Land');
   });
 
-  test('🔴 the year is part of the title, inside the scrim', async ({ page }) => {
+  test('the year is part of the title, inside the scrim', async ({ page }) => {
     // A film is identified by name AND year. The year used to sit below the
     // banner in 14px dim mono, cut from the name by the image's hard edge.
     await page.goto(`/films/${LA_LA_LAND}`);
@@ -107,7 +107,7 @@ test.describe('a film page', () => {
     await expect(oscars).toHaveAttribute('href', '/award-shows/oscars?year=2017');
   });
 
-  test('🔴 a credits disclosure opens from the keyboard', async ({ page }) => {
+  test('a credits disclosure opens from the keyboard', async ({ page }) => {
     // jsdom does not toggle `<details>` at all, so the component test asserts
     // only that the hidden names are in the DOM. This is where the interaction is
     // proven.
@@ -125,7 +125,7 @@ test.describe('a film page', () => {
     await expect(details).toHaveAttribute('open', '');
   });
 
-  test('🔴 the poster strip scrolls, and the counter follows', async ({ page }) => {
+  test('the poster strip scrolls, and the counter follows', async ({ page }) => {
     await page.goto(`/films/${LA_LA_LAND}`);
 
     const counter = page.getByText(/^1\/\d+$/);
@@ -139,7 +139,7 @@ test.describe('a film page', () => {
     await expect(page.getByText(/^2\/\d+$/)).toBeVisible();
   });
 
-  test('🔴 mounts no YouTube iframe until a trailer is pressed', async ({ page }) => {
+  test('mounts no YouTube iframe until a trailer is pressed', async ({ page }) => {
     // The source mounted 32 at once. This is the assertion that keeps it at one.
     await page.goto(`/films/${LA_LA_LAND}`);
 
@@ -184,7 +184,7 @@ test.describe('a film page', () => {
    * Both schemes, because the failure is worse in light and a dark-only
    * assertion would have called it fixed.
    */
-  test('🔴 fits a 390px phone in both schemes', async ({ page }) => {
+  test('fits a 390px phone in both schemes', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
     const widths: Record<string, { doc: number; columns: number[] }> = {};
@@ -232,7 +232,7 @@ test.describe('a film page', () => {
    * computes `box-sizing: content-box` — so the padding landed outside the 100%
    * and every row rendered 342px inside a 326px list item. Scheme-independent.
    */
-  test('🔴 a trailer row fits its list item', async ({ page }) => {
+  test('a trailer row fits its list item', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/films/${PARASITE}`);
 
@@ -248,13 +248,13 @@ test.describe('a film page', () => {
 });
 
 test.describe('a film that does not exist', () => {
-  test('🔴 answers 404 rather than 500', async ({ page }) => {
+  test('answers 404 rather than 500', async ({ page }) => {
     const response = await page.goto(`/films/${UNKNOWN}`);
 
     expect(response?.status()).toBe(404);
   });
 
-  test('🔴 a non-numeric id answers 404 without asking TMDB', async ({ request }) => {
+  test('a non-numeric id answers 404 without asking TMDB', async ({ request }) => {
     // Validating the id's shape first means a crawler walking nonsense URLs
     // cannot burn the TMDB rate limit.
     //

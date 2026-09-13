@@ -7,13 +7,13 @@ import { canManageLeague } from './league-access';
  * rejects the right one. Both directions are pinned.
  */
 describe('canManageLeague', () => {
-  it('🔴 rejects a user whose id is a substring of the owner id', () => {
+  it('rejects a user whose id is a substring of the owner id', () => {
     // The source check was `"[31]".includes(3)`, which is true — user 3 could
     // add, reorder and delete picks in a league owned by user 31.
     expect(canManageLeague({ ownerIds: [31] }, 3)).toBe(false);
   });
 
-  it('🔴 admits the real owner whose id is not a substring of the text', () => {
+  it('admits the real owner whose id is not a substring of the text', () => {
     // The mirror image: `"[13]".includes(3)` is false, so the actual owner of
     // league 13 was locked out of their own draft.
     expect(canManageLeague({ ownerIds: [13] }, 13)).toBe(true);
@@ -39,7 +39,7 @@ describe('canManageLeague', () => {
   });
 });
 
-describe('🔴 the production data this protects', () => {
+describe('the production data this protects', () => {
   it('rejects the exact pairs the source check wrongly admits', () => {
     // Not hypothetical. Measured against the restored production data: 29
     // (league, stranger) pairs across 11 of the 13 leagues pass

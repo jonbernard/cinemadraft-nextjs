@@ -173,7 +173,7 @@ afterAll(async () => {
 });
 
 describe('addPick — refusals', () => {
-  it('🔴 refuses a signed-out caller and writes nothing', async () => {
+  it('refuses a signed-out caller and writes nothing', async () => {
     signInAs(null);
 
     const result = await addPick({
@@ -185,7 +185,7 @@ describe('addPick — refusals', () => {
     expect(await picksOf(fixture.seatA.id)).toEqual([]);
   });
 
-  it('🔴 refuses a league member who is not the owner', async () => {
+  it('refuses a league member who is not the owner', async () => {
     // Members do not enter their own picks — the owner does, on the call
     // (D46). A member holding a seat is the most plausible attacker.
     signInAs(fixture.member);
@@ -199,7 +199,7 @@ describe('addPick — refusals', () => {
     expect(await picksOf(fixture.seatA.id)).toEqual([]);
   });
 
-  it('🔴 refuses a stranger whose id is a substring of the owner’s (D47)', async () => {
+  it('refuses a stranger whose id is a substring of the owner’s (D47)', async () => {
     // The exact source bug: `"[31]".includes(3)`. Seeded ids are whatever the
     // sequence gives, so the substring relationship is constructed rather than
     // hoped for — the league is owned by an id that *contains* the attacker's
@@ -275,7 +275,7 @@ describe('addPick', () => {
     expect(pick?.userId).toBeNull();
   });
 
-  it('🔴 refuses a film already taken in the same group', async () => {
+  it('refuses a film already taken in the same group', async () => {
     signInAs(fixture.owner);
     const film = fixture.films[0]?.id as number;
     await addPick({ draftId: fixture.seatA.id, movieId: film });
@@ -286,7 +286,7 @@ describe('addPick', () => {
     expect(await picksOf(fixture.seatB.id)).toEqual([]);
   });
 
-  it('🔴 allows the same film in a different group of the same league', async () => {
+  it('allows the same film in a different group of the same league', async () => {
     // Measured, not assumed: across all 1025 production picks no film repeats
     // within a group, while 25 films in league 1's 2017 season were each taken
     // five times across its groups. Each group is its own draft.
@@ -324,7 +324,7 @@ describe('removePick', () => {
     return picksOf(fixture.seatA.id);
   }
 
-  it('🔴 refuses a non-owner and leaves the pick in place', async () => {
+  it('refuses a non-owner and leaves the pick in place', async () => {
     const [pick] = await threePicks();
     signInAs(fixture.member);
 
@@ -334,7 +334,7 @@ describe('removePick', () => {
     expect(await picksOf(fixture.seatA.id)).toHaveLength(3);
   });
 
-  it('🔴 refuses a signed-out caller', async () => {
+  it('refuses a signed-out caller', async () => {
     const [pick] = await threePicks();
     signInAs(null);
 
@@ -375,7 +375,7 @@ describe('reorderPicks', () => {
     return picksOf(fixture.seatA.id);
   }
 
-  it('🔴 refuses a non-owner and leaves the ordering untouched', async () => {
+  it('refuses a non-owner and leaves the ordering untouched', async () => {
     const before = await threePicks();
     signInAs(fixture.stranger);
 
@@ -388,7 +388,7 @@ describe('reorderPicks', () => {
     expect(await picksOf(fixture.seatA.id)).toEqual(before);
   });
 
-  it('🔴 refuses a signed-out caller', async () => {
+  it('refuses a signed-out caller', async () => {
     const before = await threePicks();
     signInAs(null);
 
@@ -419,7 +419,7 @@ describe('reorderPicks', () => {
     ]);
   });
 
-  it('🔴 refuses a partial ordering rather than half-applying it', async () => {
+  it('refuses a partial ordering rather than half-applying it', async () => {
     // The state this prevents: some picks renumbered, the rest left where they
     // were, two films sharing a round and the board unable to say which is
     // which.
@@ -435,7 +435,7 @@ describe('reorderPicks', () => {
     expect(await picksOf(fixture.seatA.id)).toEqual(before);
   });
 
-  it('🔴 refuses a list naming another seat’s pick', async () => {
+  it('refuses a list naming another seat’s pick', async () => {
     const before = await threePicks();
     signInAs(fixture.owner);
     await addPick({ draftId: fixture.seatB.id, movieId: fixture.films[3]?.id as number });

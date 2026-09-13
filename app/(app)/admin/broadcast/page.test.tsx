@@ -23,7 +23,7 @@ describe('AdminBroadcastPage', () => {
     vi.resetAllMocks();
   });
 
-  it('🔴 refuses to render for a non-admin', async () => {
+  it('refuses to render for a non-admin', async () => {
     requireAdmin.mockRejectedValue(new ForbiddenError('admin only'));
 
     await expect(AdminBroadcastPage()).rejects.toThrow('admin only');

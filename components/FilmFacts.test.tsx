@@ -12,7 +12,7 @@ import { Fact, FilmFacts } from '@/components/FilmFacts';
  * load rather than a film nobody recorded the numbers for.
  */
 describe('a row with nothing to say', () => {
-  it('🔴 does not render its label', () => {
+  it('does not render its label', () => {
     render(
       <FilmFacts>
         <Fact label="Budget" value={null} />
@@ -48,7 +48,7 @@ describe('a row with nothing to say', () => {
 });
 
 describe('the pairing a screen reader needs', () => {
-  it('🔴 uses a definition list, so label and value are associated', () => {
+  it('uses a definition list, so label and value are associated', () => {
     // A pair of `<div>`s would read as two loose strings. `<dl>` makes it
     // "Runtime, 2 hours 9 minutes".
     const { container } = render(

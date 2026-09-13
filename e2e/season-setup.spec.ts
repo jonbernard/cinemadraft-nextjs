@@ -90,7 +90,7 @@ test.describe('season setup', () => {
 
   test.afterAll(cleanup);
 
-  test('🔴 the owner seats a placeholder, deals groups and opens the draft', async ({
+  test('the owner seats a placeholder, deals groups and opens the draft', async ({
     page,
   }) => {
     await register(page);
@@ -136,7 +136,7 @@ test.describe('season setup', () => {
     await expect(page.getByRole('button', { name: 'Start the draft' })).toHaveCount(0);
   });
 
-  test('🔴 a member cannot reach the setup page for a league they do not own', async ({
+  test('a member cannot reach the setup page for a league they do not own', async ({
     page,
     browser,
   }) => {

@@ -82,7 +82,7 @@ describe('syncClerkIdentity', () => {
     expect(result.user?.id).toBe(legacyId);
   });
 
-  it('🔴 NEVER claims on an unverified email', async () => {
+  it('NEVER claims on an unverified email', async () => {
     // The account-takeover case: sign up with someone else's address, inherit
     // their leagues. Clerk's enabled methods are verified by construction
     // (D26), so this is defence in depth — enabling one more connection must
@@ -98,7 +98,7 @@ describe('syncClerkIdentity', () => {
     expect(row?.clerkId).toBeNull();
   });
 
-  it('🔴 NEVER reassigns a row already claimed by a different identity', async () => {
+  it('NEVER reassigns a row already claimed by a different identity', async () => {
     await syncClerkIdentity(identity({ clerkId: 'user_first' }));
 
     const result = await syncClerkIdentity(identity({ clerkId: 'user_second' }));
@@ -110,7 +110,7 @@ describe('syncClerkIdentity', () => {
     expect(row?.clerkId).toBe('user_first');
   });
 
-  it('🔴 does not create a second account when a claim collides', async () => {
+  it('does not create a second account when a claim collides', async () => {
     // The subtle failure: refusing the claim but then falling through to the
     // create path would hand the intruder a fresh account on an address that
     // is not theirs, and `email` is unique so it would fail confusingly — or,

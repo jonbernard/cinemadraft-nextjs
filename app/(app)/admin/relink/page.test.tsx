@@ -19,7 +19,7 @@ describe('AdminRelinkPage', () => {
     vi.resetAllMocks();
   });
 
-  it('🔴 refuses to render for a non-admin', async () => {
+  it('refuses to render for a non-admin', async () => {
     requireAdmin.mockRejectedValue(new ForbiddenError('admin only'));
 
     await expect(AdminRelinkPage()).rejects.toThrow('admin only');

@@ -27,9 +27,7 @@ const YEAR = 2025;
 test.describe('points ledger', () => {
   test.beforeEach(skipWithoutRestoredCorpus);
 
-  test('🔴 a pick’s points explain themselves, and the lines add up', async ({
-    page,
-  }) => {
+  test('a pick’s points explain themselves, and the lines add up', async ({ page }) => {
     await page.goto(`/leagues/${LEAGUE}?year=${YEAR}`);
 
     // League 1's 2025 season drafts in four groups, so the page renders four
@@ -65,7 +63,7 @@ test.describe('points ledger', () => {
     expect(values.reduce((sum, value) => sum + value, 0)).toBe(total);
   });
 
-  test('🔴 opens from the keyboard', async ({ page }) => {
+  test('opens from the keyboard', async ({ page }) => {
     // jsdom cannot toggle a <details> with Enter, so this is the only place
     // the keyboard path is actually proven.
     await page.goto(`/leagues/${LEAGUE}?year=${YEAR}`);

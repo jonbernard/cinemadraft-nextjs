@@ -145,7 +145,7 @@ test.describe('navigation', () => {
     await expect(page.getByRole('button', { name: 'More', exact: true })).toBeHidden();
   });
 
-  test('🔴 1280px is the rail edge — the rail appears at 208px and the bar goes', async ({
+  test('1280px is the rail edge — the rail appears at 208px and the bar goes', async ({
     page,
   }) => {
     // The width the rail's own number was measured at: 208px, not the spec's
@@ -160,9 +160,7 @@ test.describe('navigation', () => {
     await expect(page.getByRole('navigation', { name: 'Primary, mobile' })).toBeHidden();
   });
 
-  test('🔴 the rail reaches the bottom of its column at desktop width', async ({
-    page,
-  }) => {
+  test('the rail reaches the bottom of its column at desktop width', async ({ page }) => {
     // Geometry, not a class name. Three defects in this codebase shipped with
     // green tests over them because nothing measured a box.
     await page.setViewportSize(DESKTOP);
@@ -187,7 +185,7 @@ test.describe('navigation', () => {
     expect(scrolls).toBe(false);
   });
 
-  test('🔴 1024px is not a phone — the bar carries identity, search and the way in', async ({
+  test('1024px is not a phone — the bar carries identity, search and the way in', async ({
     page,
   }) => {
     await page.setViewportSize(DEAD_ZONE);
@@ -213,7 +211,7 @@ test.describe('navigation', () => {
     ).toBeLessThanOrEqual(1024);
   });
 
-  test('🔴 every destination still clears 44px at 390px, and the bar stays one row', async ({
+  test('every destination still clears 44px at 390px, and the bar stays one row', async ({
     page,
   }) => {
     await page.setViewportSize(PHONE);
@@ -242,7 +240,7 @@ test.describe('navigation', () => {
     expect(height).toBeLessThanOrEqual(56);
   });
 
-  test('🔴 the chrome is not a sixth tab, and is absent where it would not fit', async ({
+  test('the chrome is not a sixth tab, and is absent where it would not fit', async ({
     page,
   }) => {
     await page.setViewportSize(PHONE);
@@ -306,7 +304,7 @@ test.describe('navigation', () => {
     await expect(tabs.locator('[aria-current="page"]')).toHaveText(/Award shows/);
   });
 
-  test('🔴 the More sheet opens, and Escape closes it', async ({ page }) => {
+  test('the More sheet opens, and Escape closes it', async ({ page }) => {
     await page.setViewportSize(PHONE);
     await page.goto('/');
 
@@ -326,7 +324,7 @@ test.describe('navigation', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
-  test('🔴 the More sheet traps focus while it is open', async ({ page }) => {
+  test('the More sheet traps focus while it is open', async ({ page }) => {
     await page.setViewportSize(PHONE);
     await page.goto('/');
     await page.getByRole('button', { name: 'More', exact: true }).click();
@@ -342,7 +340,7 @@ test.describe('navigation', () => {
     expect(insideSheet).toBe(true);
   });
 
-  test('🔴 the background is inert while the More sheet is open', async ({ page }) => {
+  test('the background is inert while the More sheet is open', async ({ page }) => {
     await page.setViewportSize(PHONE);
     await page.goto('/');
     await page.getByRole('button', { name: 'More', exact: true }).click();
@@ -411,7 +409,7 @@ test.describe('navigation', () => {
    * `SearchOverlay.test.tsx` can only prove the handler runs; the behaviour is
    * here.
    */
-  test('🔴 one Escape closes the search panel, and the trigger gets focus back', async ({
+  test('one Escape closes the search panel, and the trigger gets focus back', async ({
     page,
   }) => {
     await page.setViewportSize(DESKTOP);
@@ -433,7 +431,7 @@ test.describe('navigation', () => {
     await expect(trigger).toBeFocused();
   });
 
-  test('🔴 the panel opens from the More sheet, and one Escape closes it there too', async ({
+  test('the panel opens from the More sheet, and one Escape closes it there too', async ({
     page,
   }) => {
     await page.setViewportSize(PHONE);
@@ -457,7 +455,7 @@ test.describe('navigation', () => {
     await expect(page.getByRole('button', { name: 'More', exact: true })).toBeFocused();
   });
 
-  test('🔴 the search panel is centred, guttered and inside the viewport', async ({
+  test('the search panel is centred, guttered and inside the viewport', async ({
     page,
   }) => {
     for (const size of [DESKTOP, PHONE]) {
@@ -488,7 +486,7 @@ test.describe('navigation', () => {
     }
   });
 
-  test('🔴 the tab bar does not cover the bottom of the page', async ({ page }) => {
+  test('the tab bar does not cover the bottom of the page', async ({ page }) => {
     await page.setViewportSize(PHONE);
     // Not `/`: the signed-out dashboard is shorter than a phone viewport, so
     // it never scrolls and the assertion below would be true by accident.
@@ -560,7 +558,7 @@ test.describe('navigation', () => {
    * style in the same frame as `focus()` reports the transition's start value —
    * which is how the ring was first misdiagnosed as a broken token.
    */
-  test('🔴 every focus ring is the product\u2019s own', async ({ page }) => {
+  test('every focus ring is the product\u2019s own', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/browse');
 

@@ -32,7 +32,7 @@ describe('AdminSeasonPage', () => {
     vi.resetAllMocks();
   });
 
-  it('🔴 refuses to render for a non-admin', async () => {
+  it('refuses to render for a non-admin', async () => {
     requireAdmin.mockRejectedValue(new ForbiddenError('admin only'));
 
     await expect(AdminSeasonPage()).rejects.toThrow('admin only');
@@ -52,7 +52,7 @@ describe('AdminSeasonPage', () => {
     expect(element).toBeTruthy();
   });
 
-  it('🔴 hands the control a member count read on the server', async () => {
+  it('hands the control a member count read on the server', async () => {
     // The confirmation has to name a real number, not one the client invented
     // — the same reason `/admin/broadcast` reads its recipient count here
     // (P17.T28). Asserted on the prop rather than on rendered text, because the

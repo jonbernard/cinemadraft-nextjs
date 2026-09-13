@@ -25,7 +25,7 @@ describe('SeasonControl', () => {
     setActiveYear.mockResolvedValue({ ok: true, data: { year: 2025 } });
   });
 
-  it('🔴 does nothing when the confirmation is declined', async () => {
+  it('does nothing when the confirmation is declined', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<SeasonControl seasons={SEASONS} memberCount={60} />);
 
@@ -36,7 +36,7 @@ describe('SeasonControl', () => {
     expect(setActiveYear).not.toHaveBeenCalled();
   });
 
-  it('🔴 names the year and the number of people in the confirmation', async () => {
+  it('names the year and the number of people in the confirmation', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<SeasonControl seasons={SEASONS} memberCount={60} />);
 
@@ -62,7 +62,7 @@ describe('SeasonControl', () => {
     expect(setActiveYear).toHaveBeenCalledWith(2025);
   });
 
-  it('🔴 a second click while the first is in flight does not send a second write', async () => {
+  it('a second click while the first is in flight does not send a second write', async () => {
     // `disabled` is what a pointer meets between a double-click and two
     // re-scopes, and `useTransition`'s pending flag is what sets it. (There is
     // no Enter path to guard: the control is a div, not a form.)
@@ -88,7 +88,7 @@ describe('SeasonControl', () => {
     });
   });
 
-  it('🔴 says which season is active somewhere a screen reader will reach', async () => {
+  it('says which season is active somewhere a screen reader will reach', async () => {
     // The ten-button version said "Active" in a plain span beside the year.
     // An <option> suffix and a *disabled* button's accessible name are both
     // weaker: a disabled control is out of the tab order and skipped in forms
@@ -109,7 +109,7 @@ describe('SeasonControl', () => {
     expect(screen.getByText(/No season is active today/)).toBeInTheDocument();
   });
 
-  it('🔴 offers one control, not one button per season', () => {
+  it('offers one control, not one button per season', () => {
     render(<SeasonControl seasons={SEASONS} memberCount={60} />);
 
     // Ten adjacent triggers that each re-scope the product is the defect.

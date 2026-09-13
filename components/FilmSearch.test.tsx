@@ -53,7 +53,7 @@ describe('FilmSearch', () => {
     expect(onSelect).toHaveBeenCalledWith(FILMS[1]);
   });
 
-  it('🔴 selects from the keyboard alone', async () => {
+  it('selects from the keyboard alone', async () => {
     const { onSelect, user } = setup();
 
     await user.type(screen.getByRole('searchbox'), 'battle');
@@ -63,7 +63,7 @@ describe('FilmSearch', () => {
     expect(onSelect).toHaveBeenCalledWith(FILMS[1]);
   });
 
-  it('🔴 refuses an unavailable film by click and by Enter alike', async () => {
+  it('refuses an unavailable film by click and by Enter alike', async () => {
     const { onSelect, user } = setup({
       isUnavailable: (film) => film.id === 1,
       unavailableLabel: 'Taken',
@@ -79,7 +79,7 @@ describe('FilmSearch', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 
-  it('🔴 ignores a stale response that lands after a newer one', async () => {
+  it('ignores a stale response that lands after a newer one', async () => {
     // Someone typing "oppenheimer" fires a request per keystroke. Without
     // cancellation the answer to "opp" can arrive after the answer to
     // "oppenheim" and replace it, so the list flickers backwards while they
@@ -114,7 +114,7 @@ describe('FilmSearch', () => {
     expect(screen.getByText('One Battle After Another')).toBeInTheDocument();
   });
 
-  it('🔴 passes an abort signal, so a real request can be cancelled', async () => {
+  it('passes an abort signal, so a real request can be cancelled', async () => {
     // The stale-response test proves the result is discarded. This proves the
     // in-flight request is actually cancelled rather than merely ignored —
     // otherwise every keystroke leaves a request running to completion.

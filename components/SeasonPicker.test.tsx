@@ -12,7 +12,7 @@ describe('SeasonPicker', () => {
     expect(screen.getByRole('group')).toHaveTextContent('2026');
   });
 
-  it('🔴 every year is a real link, so Back and open-in-new-tab keep working', () => {
+  it('every year is a real link, so Back and open-in-new-tab keep working', () => {
     render(<SeasonPicker year={2026} seasons={[2026, 2025, 2024]} />);
 
     for (const year of [2026, 2025, 2024]) {

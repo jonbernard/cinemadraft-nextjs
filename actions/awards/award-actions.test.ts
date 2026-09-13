@@ -177,7 +177,7 @@ afterAll(async () => {
 });
 
 describe('attachNominee — refusals', () => {
-  it('🔴 refuses a signed-out caller and writes nothing', async () => {
+  it('refuses a signed-out caller and writes nothing', async () => {
     // The exact hole in the source app: no session, and a nomination lands.
     signInAs(null);
 
@@ -191,7 +191,7 @@ describe('attachNominee — refusals', () => {
     expect(await nominationsFor(fixture.category.id)).toEqual([]);
   });
 
-  it('🔴 refuses a signed-in non-admin', async () => {
+  it('refuses a signed-in non-admin', async () => {
     // A league member is not an awards administrator. Every member of every
     // league would otherwise be able to move everyone's standings.
     signInAs(fixture.member);
@@ -250,7 +250,7 @@ describe('attachNominee', () => {
     ]);
   });
 
-  it('🔴 refuses a duplicate rather than doubling the film’s points', async () => {
+  it('refuses a duplicate rather than doubling the film’s points', async () => {
     // A double-click during a live announcement. Two nominations means the
     // film scores this category twice.
     signInAs(fixture.admin);
@@ -282,7 +282,7 @@ describe('attachNominee', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('🔴 refuses to leave a person-nominating category anonymous', async () => {
+  it('refuses to leave a person-nominating category anonymous', async () => {
     // Acting and craft categories nominate a *person*. A null there renders as
     // four identical posters of the same film with a blank beneath one.
     signInAs(fixture.admin);
@@ -325,7 +325,7 @@ describe('removeNominee', () => {
     return nomination as { id: number; movieId: number };
   }
 
-  it('🔴 refuses a non-admin and leaves the nomination in place', async () => {
+  it('refuses a non-admin and leaves the nomination in place', async () => {
     const nomination = await nominate();
     signInAs(fixture.member);
 
@@ -335,7 +335,7 @@ describe('removeNominee', () => {
     expect(await nominationsFor(fixture.category.id)).toHaveLength(1);
   });
 
-  it('🔴 refuses a signed-out caller', async () => {
+  it('refuses a signed-out caller', async () => {
     const nomination = await nominate();
     signInAs(null);
 
@@ -353,7 +353,7 @@ describe('removeNominee', () => {
     expect(await nominationsFor(fixture.category.id)).toEqual([]);
   });
 
-  it('🔴 takes the win with it when the removed film had won', async () => {
+  it('takes the win with it when the removed film had won', async () => {
     // Otherwise the category is won by a film it does not list, and — because
     // a win pays the award's points a second time — that film keeps scoring
     // for a nomination the app no longer believes in.
@@ -380,7 +380,7 @@ describe('setWinner — refusals', () => {
     }
   }
 
-  it('🔴 refuses a signed-out caller and records no winner', async () => {
+  it('refuses a signed-out caller and records no winner', async () => {
     // In the source app this endpoint decided who won Best Picture, with no
     // session required.
     await nominateAll();
@@ -396,7 +396,7 @@ describe('setWinner — refusals', () => {
     expect(await winnersFor(fixture.category.id)).toEqual([]);
   });
 
-  it('🔴 refuses a signed-in non-admin', async () => {
+  it('refuses a signed-in non-admin', async () => {
     await nominateAll();
     signInAs(fixture.member);
 
@@ -410,7 +410,7 @@ describe('setWinner — refusals', () => {
     expect(await winnersFor(fixture.category.id)).toEqual([]);
   });
 
-  it('🔴 refuses a film that is not nominated in the category', async () => {
+  it('refuses a film that is not nominated in the category', async () => {
     // A win pays the award's points on top of the nomination's, so a winner
     // that was never nominated would hold points no page could explain.
     await nominateAll();
@@ -450,7 +450,7 @@ describe('setWinner', () => {
     ]);
   });
 
-  it('🔴 correcting replaces, it does not add a second winner', async () => {
+  it('correcting replaces, it does not add a second winner', async () => {
     // Winners are entered live from a stage announcement, so a correction is
     // ordinary (§12). Two rows would mean two winning films — and a win pays
     // the award's points again, so it would pay them twice.
@@ -507,7 +507,7 @@ describe('setWinner', () => {
   });
 });
 
-describe('🔴 the phase gate — a correction leaves no stale points', () => {
+describe('the phase gate — a correction leaves no stale points', () => {
   it('moves the points from the old winner to the new one', async () => {
     // Scoring is computed on read today (D41), so this passes by construction
     // — and that is precisely why it is written now. Phase 9 materializes

@@ -28,7 +28,7 @@ describe('NavRail', () => {
     expect(screen.getByText('Yours')).toBeInTheDocument();
   });
 
-  it('🔴 runs the full height of its column', () => {
+  it('runs the full height of its column', () => {
     // D67 specifies a floating panel. `height: auto` made the card stop after
     // the seventh link with ~1200px of ground below it at 1440x900, which reads
     // as a list that ran out rather than as a surface. A pin, not a proof —

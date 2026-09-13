@@ -40,7 +40,7 @@ describe('DraftBoard', () => {
     expect(screen.getAllByRole('columnheader')).toHaveLength(4);
   });
 
-  it('🔴 pads a short seat with empty cells so the columns stay aligned', () => {
+  it('pads a short seat with empty cells so the columns stay aligned', () => {
     // Without explicit empties, round 3 for one seat would sit under round 2
     // for another, and the board would misreport who picked when.
     render(
@@ -60,7 +60,7 @@ describe('DraftBoard', () => {
     }
   });
 
-  it('🔴 takes its column count from the caller, never a constant (D34)', () => {
+  it('takes its column count from the caller, never a constant (D34)', () => {
     render(<DraftBoard rounds={12} seats={[seat({ draftId: 1 })]} />);
     expect(screen.getAllByRole('columnheader')).toHaveLength(13);
   });
@@ -104,7 +104,7 @@ describe('DraftBoard', () => {
     expect(desktop().getByText('10')).toBeInTheDocument();
   });
 
-  it('🔴 shows every pick on a phone too, where members actually watch (D49)', () => {
+  it('shows every pick on a phone too, where members actually watch (D49)', () => {
     render(
       <DraftBoard
         rounds={3}
@@ -128,7 +128,7 @@ describe('DraftBoard', () => {
     expect(screen.getByText(/no seats in this group/i)).toBeInTheDocument();
   });
 
-  it('🔴 labels a phone seat with its position, exactly "Seat NN · Rounds 1–N"', () => {
+  it('labels a phone seat with its position, exactly "Seat NN · Rounds 1–N"', () => {
     // The one string the brief names verbatim. Zero-padded to two digits
     // regardless of how many seats are in the group (D34: no roster size).
     render(

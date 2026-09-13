@@ -141,7 +141,7 @@ afterAll(async () => {
 });
 
 describe('createCategory — refusals', () => {
-  it('🔴 refuses a signed-out caller and creates nothing', async () => {
+  it('refuses a signed-out caller and creates nothing', async () => {
     const event = await makeEvent();
     signInAs(null);
 
@@ -157,7 +157,7 @@ describe('createCategory — refusals', () => {
     expect(await db.award.count({ where: { eventId: event.id } })).toBe(0);
   });
 
-  it('🔴 refuses a signed-in non-admin', async () => {
+  it('refuses a signed-in non-admin', async () => {
     const event = await makeEvent();
     const member = await makeUser('user');
     signInAs(member);
@@ -196,7 +196,7 @@ describe('createCategory — refusals', () => {
 });
 
 describe('createCategory', () => {
-  it('🔴 stores the tier id, never the point value it resolves to', async () => {
+  it('stores the tier id, never the point value it resolves to', async () => {
     const event = await makeEvent();
     const tier = await makeTier(20);
     const admin = await makeUser('admin');
@@ -238,7 +238,7 @@ describe('createCategory', () => {
 });
 
 describe('deleteCategory — refusals', () => {
-  it('🔴 refuses a signed-out caller', async () => {
+  it('refuses a signed-out caller', async () => {
     const event = await makeEvent();
     const award = await makeAward(event.id, null);
     signInAs(null);
@@ -249,7 +249,7 @@ describe('deleteCategory — refusals', () => {
     expect(await db.award.findUnique({ where: { id: award.id } })).not.toBeNull();
   });
 
-  it('🔴 refuses a signed-in non-admin', async () => {
+  it('refuses a signed-in non-admin', async () => {
     const event = await makeEvent();
     const award = await makeAward(event.id, null);
     const member = await makeUser('user');
@@ -261,7 +261,7 @@ describe('deleteCategory — refusals', () => {
     expect(await db.award.findUnique({ where: { id: award.id } })).not.toBeNull();
   });
 
-  it('🔴 refuses to delete a category with nominations, naming the count', async () => {
+  it('refuses to delete a category with nominations, naming the count', async () => {
     // Fixture adequacy: this category has nominations, the sibling test below
     // has one with none — without both, "refuses correctly" is
     // indistinguishable from "refuses always".
@@ -287,7 +287,7 @@ describe('deleteCategory — refusals', () => {
     expect(await db.award.findUnique({ where: { id: award.id } })).not.toBeNull();
   });
 
-  it('🔴 refuses to delete a category with a winner but no nomination', async () => {
+  it('refuses to delete a category with a winner but no nomination', async () => {
     // F7: `Winner.awardId` is its own unenforced reference, and a win pays
     // the category's points a second time (D41) — the same class of silent
     // score rewrite an orphaned nomination is. This is unreachable through

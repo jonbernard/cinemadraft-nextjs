@@ -98,7 +98,7 @@ describe('getDraftList', () => {
     expect((await getDraftList(USER, YEAR))[0]?.releaseYear).toBe(2025);
   });
 
-  it('🔴 keeps a row whose film has left the catalogue, with a placeholder', async () => {
+  it('keeps a row whose film has left the catalogue, with a placeholder', async () => {
     // `lists.movie_id` has no foreign key, so this is reachable — and a row that
     // does not render is a row nobody can remove.
     const kept = await seedFilm('Paterson', '/paterson.jpg', new Date('2016-12-28'));

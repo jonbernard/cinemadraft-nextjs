@@ -38,7 +38,7 @@ describe('AppLayout', () => {
     vi.resetAllMocks();
   });
 
-  it('🔴 renders the shell signed-out for a collided account, rather than throwing', async () => {
+  it('renders the shell signed-out for a collided account, rather than throwing', async () => {
     getCurrentUser.mockRejectedValue(new AccountLinkError('clerk_collided'));
 
     const element = await AppLayout({ children: 'child' } as never);

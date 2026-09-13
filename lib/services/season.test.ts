@@ -88,7 +88,7 @@ describe('setActiveYear', () => {
     });
   });
 
-  it('🔴 refuses a non-admin — the season scopes every page in the app', async () => {
+  it('refuses a non-admin — the season scopes every page in the app', async () => {
     vi.resetModules();
     vi.doMock('@/lib/auth', () => ({
       requireAdmin: () => Promise.reject(new Error('admin only')),

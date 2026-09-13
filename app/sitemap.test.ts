@@ -24,7 +24,7 @@ describe('sitemap', () => {
     expect(paths).not.toContain('/watchlist');
   });
 
-  it('🔴 lists no league, member or auth page at all', async () => {
+  it('lists no league, member or auth page at all', async () => {
     // The sitemap is the one file that can publish a private URL by accident,
     // so the guard is a prefix scan rather than three named paths.
     const entries = await sitemap();

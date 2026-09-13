@@ -42,14 +42,14 @@ describe('isTestAuthEnabled', () => {
     expect(isTestAuthEnabled()).toBe(true);
   });
 
-  it('🔴 throws at import if the flag is ever set on Vercel', async () => {
+  it('throws at import if the flag is ever set on Vercel', async () => {
     process.env.E2E_TEST_AUTH = '1';
     process.env.E2E_TEST_AUTH_SECRET = 'x'.repeat(32);
     process.env.VERCEL_ENV = 'preview';
     await expect(import('./test-auth')).rejects.toThrow(/never be enabled on Vercel/i);
   });
 
-  it('🔴 throws if the flag is set without a long enough secret', async () => {
+  it('throws if the flag is set without a long enough secret', async () => {
     process.env.E2E_TEST_AUTH = '1';
     process.env.E2E_TEST_AUTH_SECRET = 'short';
     await expect(import('./test-auth')).rejects.toThrow(/secret/i);
@@ -77,7 +77,7 @@ describe('testSessionUserId', () => {
     await expect(module.testSessionUserId()).resolves.toBeNull();
   });
 
-  it('🔴 rejects a forged cookie', async () => {
+  it('rejects a forged cookie', async () => {
     // 🔴 `Date.now()`, not a fixed timestamp. With an old one this passes even
     // against a build that never checks the signature at all — the lifetime
     // check downstream rejects it instead, and the test reports green while
@@ -87,7 +87,7 @@ describe('testSessionUserId', () => {
     await expect(module.testSessionUserId()).resolves.toBeNull();
   });
 
-  it('🔴 rejects a signature of the right length that is simply wrong', async () => {
+  it('rejects a signature of the right length that is simply wrong', async () => {
     // `deadbeef` above is four bytes, so the length check alone rejects it.
     // This one is a full 32, which is what makes the comparison itself the
     // only thing standing in the way.
@@ -95,7 +95,7 @@ describe('testSessionUserId', () => {
     await expect(module.testSessionUserId()).resolves.toBeNull();
   });
 
-  it('🔴 rejects a cookie whose payload was edited under a stolen signature', async () => {
+  it('rejects a cookie whose payload was edited under a stolen signature', async () => {
     const module = await withCookie(undefined);
     const signed = module.signTestSession(42);
     const tampered = signed.replace(/^42\./, '43.');
@@ -103,14 +103,14 @@ describe('testSessionUserId', () => {
     await expect(again.testSessionUserId()).resolves.toBeNull();
   });
 
-  it('🔴 rejects a cookie older than its lifetime', async () => {
+  it('rejects a cookie older than its lifetime', async () => {
     const module = await withCookie(undefined);
     const stale = module.signTestSession(42, Date.now() - 25 * 60 * 60 * 1000);
     const again = await withCookie(stale);
     await expect(again.testSessionUserId()).resolves.toBeNull();
   });
 
-  it('🔴 rejects a cookie dated into the future, which would otherwise never expire', async () => {
+  it('rejects a cookie dated into the future, which would otherwise never expire', async () => {
     // The upper bound alone leaves `Date.now() - issuedAt` negative forever for
     // a forward-dated cookie, so it would be honoured until the clock caught
     // up. Anyone who can set the cookie chooses that date.
@@ -120,7 +120,7 @@ describe('testSessionUserId', () => {
     await expect(again.testSessionUserId()).resolves.toBeNull();
   });
 
-  it('🔴 refuses a validly signed cookie that names a non-positive user id', async () => {
+  it('refuses a validly signed cookie that names a non-positive user id', async () => {
     // Holding the secret means choosing the payload, so the signature says
     // nothing about the id being an id. `0` and `-1` are what a row lookup
     // must never be handed.
@@ -153,7 +153,7 @@ describe('testSessionUserId', () => {
     await expect(again.testSessionUserId()).resolves.toBe(expected);
   });
 
-  it('🔴 is null when the flag is unset, whatever the cookie says', async () => {
+  it('is null when the flag is unset, whatever the cookie says', async () => {
     process.env.E2E_TEST_AUTH = undefined;
     cookies.mockResolvedValue({ get: () => ({ value: 'anything' }) });
     const { testSessionUserId } = await import('./test-auth');
@@ -165,7 +165,7 @@ describe('testSessionUserId', () => {
 });
 
 describe('signTestSession', () => {
-  it('🔴 refuses to sign without a secret of the required length', async () => {
+  it('refuses to sign without a secret of the required length', async () => {
     // The import-time floor only fires under E2E_TEST_AUTH=1, and the process
     // that calls this — Playwright's — never sets that flag. Before this guard
     // an empty secret produced a well-formed cookie signed with a key the whole

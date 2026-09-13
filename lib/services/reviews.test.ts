@@ -120,7 +120,7 @@ describe('loadMyReview', () => {
     expect(review).toMatchObject({ rating: 4.5, review: 'The author’s own words.' });
   });
 
-  it('🔴 answers with this film’s review, not another the member wrote', async () => {
+  it('answers with this film’s review, not another the member wrote', async () => {
     const review = await loadMyReview(fixture.otherFilm.tmdbId as string, fixture.author);
 
     expect(review).toMatchObject({
@@ -129,7 +129,7 @@ describe('loadMyReview', () => {
     });
   });
 
-  it('🔴 returns null for a member who has not reviewed the film', async () => {
+  it('returns null for a member who has not reviewed the film', async () => {
     const review = await loadMyReview(fixture.film.tmdbId as string, fixture.reader);
 
     expect(review).toBeNull();

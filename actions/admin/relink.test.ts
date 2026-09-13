@@ -51,7 +51,7 @@ describe('relinkUser', () => {
 
   afterEach(cleanup);
 
-  it('🔴 refuses a signed-in non-admin', async () => {
+  it('refuses a signed-in non-admin', async () => {
     await signInAs('user');
     const victim = await makeUser({ clerkId: 'user_owner' });
 
@@ -61,7 +61,7 @@ describe('relinkUser', () => {
     expect(row?.clerkId).toBe('user_owner');
   });
 
-  it('🔴 refuses a signed-out caller', async () => {
+  it('refuses a signed-out caller', async () => {
     currentUser.mockResolvedValue(null);
     const victim = await makeUser({ clerkId: 'user_owner' });
 

@@ -72,7 +72,7 @@ describe('DraftConsole — whose turn', () => {
     expect(screen.getByRole('heading', { name: 'Pick for Seat 1' })).toBeInTheDocument();
   });
 
-  it('🔴 lets the owner override it', async () => {
+  it('lets the owner override it', async () => {
     // Someone is always away from the call. A console that could only run in
     // sequence would make their pick impossible to enter.
     const { user } = setup();
@@ -116,7 +116,7 @@ describe('DraftConsole — whose turn', () => {
 });
 
 describe('DraftConsole — finding a film', () => {
-  it('🔴 searches on a fragment of the title', async () => {
+  it('searches on a fragment of the title', async () => {
     // The owner is typing what someone just said out loud.
     const { onSearch, user } = setup();
 
@@ -136,7 +136,7 @@ describe('DraftConsole — finding a film', () => {
     expect(onSearch).not.toHaveBeenCalledWith('');
   });
 
-  it('🔴 marks a film that is already gone and refuses to assign it', async () => {
+  it('marks a film that is already gone and refuses to assign it', async () => {
     // Mid-call the owner must not have to remember whether a film went three
     // seats ago.
     const { onAssign, user } = setup({ takenMovieIds: [1] });
@@ -160,7 +160,7 @@ describe('DraftConsole — assigning', () => {
     expect(onAssign).toHaveBeenCalledWith({ draftId: 100, movieId: 2 });
   });
 
-  it('🔴 assigns from the keyboard alone', async () => {
+  it('assigns from the keyboard alone', async () => {
     // Arrow to the film, Enter to take it — the owner's hands do not leave the
     // keyboard between picks.
     const { onAssign, user } = setup();
@@ -172,7 +172,7 @@ describe('DraftConsole — assigning', () => {
     expect(onAssign).toHaveBeenCalledWith({ draftId: 100, movieId: 2 });
   });
 
-  it('🔴 Enter refuses a taken film like the click does', async () => {
+  it('Enter refuses a taken film like the click does', async () => {
     const { onAssign, user } = setup({ takenMovieIds: [1] });
 
     await user.type(screen.getByRole('searchbox'), 'battle');
@@ -211,7 +211,7 @@ describe('DraftConsole — assigning', () => {
     expect(screen.getByRole('searchbox')).toHaveValue('battle');
   });
 
-  it('🔴 names the film when it is not in the app yet', async () => {
+  it('names the film when it is not in the app yet', async () => {
     // A film TMDB knows and this app has never ingested: `id` is null.
     // `FilmSearch` happily returns and selects one, so this is reachable in
     // normal use — and used to be a silent `return` on the one screen that is
@@ -239,7 +239,7 @@ describe('DraftConsole — assigning', () => {
     expect(screen.getByRole('searchbox')).toHaveValue('fight');
   });
 
-  it('🔴 says which film had no seat, rather than returning silently', () => {
+  it('says which film had no seat, rather than returning silently', () => {
     // With no seat the console says so in the heading *and* the field is
     // disabled, so the owner is never left pressing Enter into nothing. The
     // message branch behind it covers the race where a seat disappears between

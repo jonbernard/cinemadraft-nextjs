@@ -54,7 +54,7 @@ describe('getCurrentUser', () => {
     expect(await getCurrentUser()).toBeNull();
   });
 
-  it('🔴 does not consult the test session when the flag is unset', async () => {
+  it('does not consult the test session when the flag is unset', async () => {
     // The regression this guards: a refactor that reads the cookie first and
     // only then checks the flag. Every existing test in this file must still
     // pass unchanged, which is the other half of the assertion — the suite
@@ -117,7 +117,7 @@ describe('getCurrentUser', () => {
     expect(user?.id).toBe(legacy.id);
   });
 
-  it('🔴 treats an unverified Clerk address as no account, not as a claim', async () => {
+  it('treats an unverified Clerk address as no account, not as a claim', async () => {
     await db.user.create({
       data: {
         uuid: randomUUID(),
@@ -146,7 +146,7 @@ describe('getCurrentUser', () => {
     expect(await getCurrentUser()).toBeNull();
   });
 
-  it('🔴 raises AccountLinkError on a collision rather than returning the wrong account', async () => {
+  it('raises AccountLinkError on a collision rather than returning the wrong account', async () => {
     await db.user.create({
       data: {
         uuid: randomUUID(),
@@ -180,7 +180,7 @@ describe('requireAdmin', () => {
 
   afterEach(cleanup);
 
-  it('🔴 refuses a signed-in non-admin', async () => {
+  it('refuses a signed-in non-admin', async () => {
     await db.user.create({
       data: {
         uuid: randomUUID(),
@@ -212,7 +212,7 @@ describe('requireAdmin', () => {
     expect((await requireAdmin()).role).toBe('admin');
   });
 
-  it('🔴 refuses a newly created account, which defaults to the user role', async () => {
+  it('refuses a newly created account, which defaults to the user role', async () => {
     // A fresh Clerk signup must never arrive as an admin — createFromClerk
     // sets the role explicitly rather than relying on a column default.
     currentUser.mockResolvedValue(clerkUser({ id: 'user_brand_new' }));

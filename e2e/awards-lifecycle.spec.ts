@@ -226,7 +226,7 @@ test.describe('the awards lifecycle', () => {
   test.beforeAll(cleanup);
   test.afterAll(cleanup);
 
-  test('🔴 a nomination and a win reach the film, the board and the leaderboard', async ({
+  test('a nomination and a win reach the film, the board and the leaderboard', async ({
     page,
   }) => {
     await signInAs(page, { email: `${TAG}-admin@example.test`, firstName: 'Admin' });

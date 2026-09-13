@@ -34,7 +34,7 @@ afterAll(async () => {
  * test passes at 280 ms on a fast laptop; this one states the actual intent.
  */
 describe('scoring is batched', () => {
-  it('🔴 costs the same number of queries for one film as for a whole season', async () => {
+  it('costs the same number of queries for one film as for a whole season', async () => {
     const season = loadFixture<{ points: { movieId: string }[] }>('points-by-year');
     const many = season.points.map((entry) => Number(entry.movieId));
     expect(many.length).toBeGreaterThan(100);
@@ -49,7 +49,7 @@ describe('scoring is batched', () => {
     expect(all.queries).toBe(one.queries);
   });
 
-  it('🔴 scores an entire season in a handful of queries', async () => {
+  it('scores an entire season in a handful of queries', async () => {
     // A specific ceiling rather than "not many": a regression that doubled the
     // query count would otherwise pass a vaguer assertion.
     const season = loadFixture<{ points: { movieId: string }[] }>('points-by-year');
@@ -81,7 +81,7 @@ describe('scoring is batched', () => {
  * that makes computing on read safe as leagues get bigger.
  */
 describe('every page that shows a score loads them in bulk', () => {
-  it('🔴 a 16-seat league board costs a fixed number of queries', async () => {
+  it('a 16-seat league board costs a fixed number of queries', async () => {
     const { queries } = await countQueries(() => getLeagueBoard(1, 2026));
 
     // 16 seats, 144 picks, and it costs 10 queries. An N+1 would be 144.
@@ -91,7 +91,7 @@ describe('every page that shows a score loads them in bulk', () => {
     expect(queries).toBeGreaterThan(0);
   });
 
-  it('🔴 the board costs no more for a bigger league-year than a smaller one', async () => {
+  it('the board costs no more for a bigger league-year than a smaller one', async () => {
     // The actual property under test. League 1's 2026 season has 16 seats;
     // 2017 has fewer. If the count moves with the number of seats or picks,
     // something is querying per row.
@@ -114,7 +114,7 @@ describe('every page that shows a score loads them in bulk', () => {
     expect(queries).toBeGreaterThan(0);
   });
 
-  it('🔴 the dashboard costs no more for a 91-pick league than a 1-pick one', async () => {
+  it('the dashboard costs no more for a 91-pick league than a 1-pick one', async () => {
     // 🔴 The property, and unlike a ceiling it says what "batched" means here.
     //
     // The restored data gives two very different leagues. League 1's 2026
@@ -139,7 +139,7 @@ describe('every page that shows a score loads them in bulk', () => {
     expect(bigLeague - smallLeague).toBeLessThanOrEqual(2);
   });
 
-  it('🔴 the season leaderboard (P10.T4) costs a fixed number of queries', async () => {
+  it('the season leaderboard (P10.T4) costs a fixed number of queries', async () => {
     // 2025 has 529 nominations across ~123 films. An N+1 over nominations, or
     // over the films they resolve to, would dwarf this bound.
     const { queries } = await countQueries(() => getLeaderboard(2025));
@@ -148,7 +148,7 @@ describe('every page that shows a score loads them in bulk', () => {
     expect(queries).toBeGreaterThan(0);
   });
 
-  it('🔴 the leaderboard costs no more for a big season than a small one', async () => {
+  it('the leaderboard costs no more for a big season than a small one', async () => {
     // 2025 has 529 nominations; 2022 has 110. If the count moves with the
     // number of nominations or films, something is querying per row.
     const big = await countQueries(() => getLeaderboard(2025));
@@ -157,7 +157,7 @@ describe('every page that shows a score loads them in bulk', () => {
     expect(big.queries).toBe(small.queries);
   });
 
-  it('🔴 the live show page (P17.T16) costs a fixed number of queries', async () => {
+  it('the live show page (P17.T16) costs a fixed number of queries', async () => {
     // Every surface that shows a score arrives with a case here — the standing
     // rule since Phase 9. This one composes getAwardShow and getLeagueBoard and
     // filters their ledgers in memory; it must never query per film, per seat or
@@ -172,7 +172,7 @@ describe('every page that shows a score loads them in bulk', () => {
     expect(queries).toBeGreaterThan(0);
   });
 
-  it('🔴 the live page costs no more for a big show than a small one', async () => {
+  it('the live page costs no more for a big show than a small one', async () => {
     // The actual property. The Oscars carry 25 categories and 125 nominations
     // in 2026; the Golden Globes 15 and 92; AFI one and ten. If the count moves
     // with any of those, something is querying per row — which is what would
@@ -185,7 +185,7 @@ describe('every page that shows a score loads them in bulk', () => {
     expect(big.queries).toBe(tiny.queries);
   });
 
-  it('🔴 the live page asks nothing at all about leagues for a signed-out reader', async () => {
+  it('the live page asks nothing at all about leagues for a signed-out reader', async () => {
     // The load-bearing property of a PUBLIC page (P17.T16, amending D40):
     // `getLiveShow(abbr, year, null)` does not query leagues rather than
     // querying with a sentinel — the same shape D44 gives `getDashboard(null)`.
@@ -208,7 +208,7 @@ describe('every page that shows a score loads them in bulk', () => {
     expect(anonymous.queries).toBe(showOnly.queries);
   });
 
-  it('🔴 the league page’s standings section (P10.T10) adds no query beyond the board itself', async () => {
+  it('the league page’s standings section (P10.T10) adds no query beyond the board itself', async () => {
     // The board's own seats and totals already carry everything the standings
     // need; only a pure in-memory sort and dense-rank should sit on top.
     const boardOnly = await countQueries(() => getLeagueBoard(1, 2026));
@@ -260,7 +260,7 @@ describe('the film page', () => {
     );
   }
 
-  it('🔴 costs a fixed number of queries for a film with 46 nominations', async () => {
+  it('costs a fixed number of queries for a film with 46 nominations', async () => {
     stubTmdb();
 
     const { queries } = await countQueries(() => loadFilmPage('313369'));
@@ -271,7 +271,7 @@ describe('the film page', () => {
     expect(queries).toBeGreaterThan(0);
   });
 
-  it('🔴 costs no more for a heavily nominated film than a lightly nominated one', async () => {
+  it('costs no more for a heavily nominated film than a lightly nominated one', async () => {
     // The property, rather than a ceiling: La La Land earned 335 points across
     // eleven award shows; *Kubo and the Two Strings* (tmdb 313297) was nominated
     // in one season by far fewer. If the count moves with the number of

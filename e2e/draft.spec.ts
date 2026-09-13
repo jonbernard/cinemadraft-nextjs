@@ -132,7 +132,7 @@ test.describe('draft', () => {
   // failed `lib/db.test.ts`, which counts the restored 60.
   test.afterAll(cleanup);
 
-  test('🔴 the owner drafts a film onto the seat that is picking', async ({ page }) => {
+  test('the owner drafts a film onto the seat that is picking', async ({ page }) => {
     const { leagueId } = await signInAsOwner(page);
     await page.goto(`/leagues/${leagueId}/draft?year=${YEAR}`);
 
@@ -152,7 +152,7 @@ test.describe('draft', () => {
     ]);
   });
 
-  test('🔴 a film already taken in the group is offered as taken, not assignable', async ({
+  test('a film already taken in the group is offered as taken, not assignable', async ({
     page,
   }) => {
     const { leagueId } = await signInAsOwner(page);
@@ -168,7 +168,7 @@ test.describe('draft', () => {
     await expect(gone).toBeDisabled();
   });
 
-  test('🔴 a reorder survives a reload', async ({ page }) => {
+  test('a reorder survives a reload', async ({ page }) => {
     const { leagueId } = await signInAsOwner(page);
     await page.goto(`/leagues/${leagueId}/draft?year=${YEAR}`);
 
@@ -224,7 +224,7 @@ test.describe('draft', () => {
     ]);
   });
 
-  test('🔴 the board is public, and a stranger gets no controls and no console', async ({
+  test('the board is public, and a stranger gets no controls and no console', async ({
     page,
     browser,
   }) => {

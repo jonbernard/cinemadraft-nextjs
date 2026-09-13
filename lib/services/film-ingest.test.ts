@@ -62,7 +62,7 @@ afterAll(async () => {
 });
 
 describe('ensureFilm', () => {
-  it('🔴 caches a film TMDB knows and this app has never seen', async () => {
+  it('caches a film TMDB knows and this app has never seen', async () => {
     // The whole point: a brand-new release, nominated for the first time.
     vi.stubGlobal(
       'fetch',
@@ -78,7 +78,7 @@ describe('ensureFilm', () => {
     expect(stored).not.toBeNull();
   });
 
-  it('🔴 stores imdbId without its tt prefix, as every other row does', async () => {
+  it('stores imdbId without its tt prefix, as every other row does', async () => {
     // 1,355 rows are stored this way. A new row keeping the prefix would be
     // the only one that did — invisible until something compared or linked
     // them.
@@ -92,7 +92,7 @@ describe('ensureFilm', () => {
     expect(film.imdbId).toBe('8999762');
   });
 
-  it('🔴 prefers the US release date', async () => {
+  it('prefers the US release date', async () => {
     // The league is scored on US award seasons, and an international date can
     // fall in a different eligibility year.
     vi.stubGlobal(
@@ -116,7 +116,7 @@ describe('ensureFilm', () => {
     expect(film.releaseDate?.toISOString()).toContain('2025-01-20');
   });
 
-  it('🔴 drops a leading article from the sort title', async () => {
+  it('drops a leading article from the sort title', async () => {
     // sortTitle is what alphabetical ordering uses; without this the film
     // files under T.
     vi.stubGlobal(
@@ -129,7 +129,7 @@ describe('ensureFilm', () => {
     expect(film.sortTitle).toBe('Brutalist');
   });
 
-  it('🔴 asks TMDB once per film, ever', async () => {
+  it('asks TMDB once per film, ever', async () => {
     const fetchMock = vi.fn(async () => jsonResponse(DETAIL));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -140,7 +140,7 @@ describe('ensureFilm', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('🔴 never creates a second row for the same film', async () => {
+  it('never creates a second row for the same film', async () => {
     // Two admins entering the same nomination during a live ceremony. A
     // duplicate film is two films as far as scoring is concerned.
     vi.stubGlobal(
@@ -163,7 +163,7 @@ describe('ensureFilm', () => {
     await expect(ensureFilm(TMDB_ID)).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it('🔴 refuses when no key is configured rather than writing a half-film', async () => {
+  it('refuses when no key is configured rather than writing a half-film', async () => {
     // From the caller's side "no key" and "TMDB is down" are the same
     // situation: the film cannot be obtained, so the action must refuse.
     delete process.env.TMDB_API_KEY;

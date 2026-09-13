@@ -32,7 +32,7 @@ const DEPARTMENTS: CreditDepartment[] = [
 ];
 
 describe('what it shows', () => {
-  it('🔴 keeps each person’s exact job', () => {
+  it('keeps each person’s exact job', () => {
     // "Second Unit Director" is what the screenshot shows beside the name, and
     // that specificity is the reason the panel is worth reading — twenty-seven
     // people under "Art" with no jobs is a wall of names.
@@ -58,7 +58,7 @@ describe('what it shows', () => {
   });
 });
 
-describe('🔴 the names behind the disclosure', () => {
+describe('the names behind the disclosure', () => {
   it('are in the DOM, so find-in-page reaches them', () => {
     // The source's `+ More` grew a `useState` count, so unrevealed names did not
     // exist yet — and a "Crew" department with 62 entries is exactly what

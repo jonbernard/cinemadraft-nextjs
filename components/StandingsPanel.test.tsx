@@ -53,7 +53,7 @@ describe('StandingsPanel', () => {
     expect(screen.getByRole('rowheader', { name: /Ada Lovelace/ })).toBeInTheDocument();
   });
 
-  it('🔴 shows a shared position on every tied row, and the next distinct total skips', () => {
+  it('shows a shared position on every tied row, and the next distinct total skips', () => {
     // Dense ranking (1, 1, 3). The repeated number is printed rather than
     // blanked: a blank cell reads as data that failed to load, and ties are
     // the common case, not an anomaly.
@@ -90,7 +90,7 @@ describe('StandingsPanel', () => {
     }
   });
 
-  it('🔴 renders an all-zero table sensibly — this is opening day', () => {
+  it('renders an all-zero table sensibly — this is opening day', () => {
     // Nothing has been awarded, so every member is level on zero and shares
     // position 1. Most members will see the table in exactly this state first,
     // so it has to look deliberate: twelve positions, twelve totals, no gaps.
@@ -140,7 +140,7 @@ describe('StandingsPanel', () => {
     expect(screen.getByText(/once the league has drafted/i)).toBeInTheDocument();
   });
 
-  it('🔴 renders totals with tabular figures so the column cannot jitter (§6.5)', () => {
+  it('renders totals with tabular figures so the column cannot jitter (§6.5)', () => {
     render(
       <StandingsPanel
         rows={[

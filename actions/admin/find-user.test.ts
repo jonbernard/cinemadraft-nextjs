@@ -59,7 +59,7 @@ afterAll(async () => {
 });
 
 describe('findUserForRelink — refusals', () => {
-  it('🔴 refuses a signed-out caller', async () => {
+  it('refuses a signed-out caller', async () => {
     const target = await makeUser('user');
     signInAs(null);
 
@@ -67,7 +67,7 @@ describe('findUserForRelink — refusals', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('🔴 refuses a signed-in non-admin', async () => {
+  it('refuses a signed-in non-admin', async () => {
     const target = await makeUser('user');
     const other = await makeUser('user');
     signInAs(other);

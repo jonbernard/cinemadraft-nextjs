@@ -127,7 +127,7 @@ afterAll(async () => {
 });
 
 describe('refusals', () => {
-  it('🔴 refuses an anonymous caller and writes nothing', async () => {
+  it('refuses an anonymous caller and writes nothing', async () => {
     signInAs(null);
     const before = await db.watchlist.count();
 
@@ -179,7 +179,7 @@ describe('marking a film watched', () => {
     expect(await countFor(fixture.viewer.id, fixture.film.id)).toBe(1);
   });
 
-  it('🔴 is idempotent — marking twice leaves one row', async () => {
+  it('is idempotent — marking twice leaves one row', async () => {
     // A member double-taps the badge on a browse grid, or has two tabs open.
     // Neither is an error, and neither may produce a film that appears twice on
     // their watchlist.
@@ -227,7 +227,7 @@ describe('unmarking a film', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('🔴 deletes only the caller’s row', async () => {
+  it('deletes only the caller’s row', async () => {
     // The source deleted by a row id taken off the URL
     // (`DELETE /watchlist/item/:id`), so the id being someone else's was not a
     // question the route could ask. Keyed on (userId, movieId), another
@@ -245,7 +245,7 @@ describe('unmarking a film', () => {
 });
 
 describe('a film the app has never cached', () => {
-  it('🔴 ingests it, because this is a person deliberately acting', async () => {
+  it('ingests it, because this is a person deliberately acting', async () => {
     // The opposite decision from the film *page*, which never writes (D63). The
     // distinction is who caused it: a page render is anonymous traffic and may
     // be a crawler, while this is a logged-in member pressing a button, and the

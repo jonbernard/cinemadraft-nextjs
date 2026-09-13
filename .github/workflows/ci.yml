@@ -384,6 +384,22 @@ jobs:
           fi
           echo "no retired surface token names"
 
+      - name: No 🔴 in test titles
+        run: |
+          set -uo pipefail
+          # A reporter prints the title beside the result, and a red circle
+          # there reads as a failure on every green run. Comments keep theirs.
+          offenders=$(grep -rnE "(it|test|describe)(\.[a-z]+)*\([[:space:]]*['\"\`]🔴" \
+            app components lib actions theme e2e test scripts .storybook proxy.test.ts \
+            --include='*.ts' --include='*.tsx' --include='*.mts' 2>/dev/null \
+            || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::a test title starts with 🔴; say what it guards in words instead"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "no 🔴 in test titles"
+
   # package-lock.json must be generated on Linux.
   #
   # lightningcss (via Tailwind 4 and Vite) declares optional per-platform

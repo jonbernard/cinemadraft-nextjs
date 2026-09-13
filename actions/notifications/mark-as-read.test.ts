@@ -108,7 +108,7 @@ afterAll(async () => {
 });
 
 describe('markNotificationsRead', () => {
-  it('🔴 marks the caller’s own notification read and leaves the intruder’s unread', async () => {
+  it('marks the caller’s own notification read and leaves the intruder’s unread', async () => {
     signInAs(fixture.owner);
 
     const result = await markNotificationsRead([
@@ -132,7 +132,7 @@ describe('markNotificationsRead', () => {
     expect(await readFlagOf(fixture.ownerRead)).toBe(true);
   });
 
-  it('🔴 refuses a signed-out caller and writes nothing', async () => {
+  it('refuses a signed-out caller and writes nothing', async () => {
     signInAs(null);
 
     const result = await markNotificationsRead([fixture.ownerUnread]);

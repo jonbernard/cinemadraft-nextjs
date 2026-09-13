@@ -10,7 +10,7 @@ import { expect, test } from '@playwright/test';
  * development Next renders its own overlay instead.
  */
 test.describe('failure surfaces', () => {
-  test('🔴 an unmatched URL sends a logged-out visitor to log in, by design', async ({
+  test('an unmatched URL sends a logged-out visitor to log in, by design', async ({
     page,
   }) => {
     // 🔴 Skipped whenever the suite's own server is the one under test. Under
@@ -38,7 +38,7 @@ test.describe('failure surfaces', () => {
     await expect(page).toHaveURL(/\/auth\/login/);
   });
 
-  test('🔴 a page that exists but has no content gets the app’s own 404', async ({
+  test('a page that exists but has no content gets the app’s own 404', async ({
     page,
   }) => {
     // `/award-shows/*` is public, so this reaches the route and the route
@@ -60,7 +60,7 @@ test.describe('failure surfaces', () => {
     await expect(page.getByRole('heading', { name: 'Not here' })).toBeVisible();
   });
 
-  test('🔴 the owner-only console 404s for a stranger, revealing nothing', async ({
+  test('the owner-only console 404s for a stranger, revealing nothing', async ({
     page,
   }) => {
     // 404 rather than 403 on purpose: a bounce to login would confirm the
@@ -71,7 +71,7 @@ test.describe('failure surfaces', () => {
     await expect(page.getByRole('heading', { name: 'Not here' })).toBeVisible();
   });
 
-  test('🔴 no page leaks SQL or database internals', async ({ page }) => {
+  test('no page leaks SQL or database internals', async ({ page }) => {
     // The source app returned Postgres errors verbatim on every failing query.
     for (const url of ['/leagues/999999', '/award-shows/nope', '/leagues/1/draft']) {
       await page.goto(url);
@@ -80,7 +80,7 @@ test.describe('failure surfaces', () => {
     }
   });
 
-  test('🔴 an unmatched URL keeps the application, and there is one main', async ({
+  test('an unmatched URL keeps the application, and there is one main', async ({
     page,
   }) => {
     // `/members` and `/live` are directories with a dynamic child and no index,
@@ -107,9 +107,7 @@ test.describe('failure surfaces', () => {
     }
   });
 
-  test('🔴 the 404 panel does not repaint the ground inside the shell', async ({
-    page,
-  }) => {
+  test('the 404 panel does not repaint the ground inside the shell', async ({ page }) => {
     // ErrorPanel painted `bg-bg-base` — the *ground* — while sitting inside
     // AppShell's `bg-bg-surface` content panel, which punched a hole in it.
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -165,7 +163,7 @@ test.describe('failure surfaces', () => {
     expect(width).toBeLessThanOrEqual(390);
   });
 
-  test('🔴 the 404 keeps the app’s navigation, so it is not a dead end', async ({
+  test('the 404 keeps the app’s navigation, so it is not a dead end', async ({
     page,
   }) => {
     // Why `(app)/not-found.tsx` exists as well as the root one: the root file

@@ -80,7 +80,7 @@ afterAll(async () => {
 });
 
 describe('updateEvent — refusals', () => {
-  it('🔴 refuses a signed-out caller and writes nothing', async () => {
+  it('refuses a signed-out caller and writes nothing', async () => {
     const event = await makeEvent();
     signInAs(null);
 
@@ -91,7 +91,7 @@ describe('updateEvent — refusals', () => {
     expect(row?.name).toBe(event.name);
   });
 
-  it('🔴 refuses a signed-in non-admin and writes nothing', async () => {
+  it('refuses a signed-in non-admin and writes nothing', async () => {
     const event = await makeEvent();
     const member = await makeUser('user');
     signInAs(member);
@@ -121,7 +121,7 @@ describe('updateEvent — refusals', () => {
     expect(result).toMatchObject({ ok: false, code: 'NOT_FOUND' });
   });
 
-  it('🔴 refuses an abbreviation another show already uses, and writes nothing', async () => {
+  it('refuses an abbreviation another show already uses, and writes nothing', async () => {
     // F4: `abbreviation` has no `@unique` in the schema and `findByAbbreviation`
     // is `findFirst` — a collision would silently shadow the other show.
     const taken = await makeEvent();
@@ -176,7 +176,7 @@ describe('updateEvent', () => {
     expect(row?.fbId).toBe(event.fbId);
   });
 
-  it('🔴 drops a forbidden field carried alongside a permitted one in the same call', async () => {
+  it('drops a forbidden field carried alongside a permitted one in the same call', async () => {
     // The exact shape of the source bug: `Events.update(req.body, …)` wrote
     // whatever the client posted, `id` and `fbId` included. A payload that
     // mixes a real field with one only the whitelist should refuse must land
@@ -246,7 +246,7 @@ describe('updateEvent', () => {
     expect(row?.nomTime).toBe(1000n);
   });
 
-  it('🔴 writes all thirteen whitelisted fields, each distinguishable from every other', async () => {
+  it('writes all thirteen whitelisted fields, each distinguishable from every other', async () => {
     // F1: the repository's `update` hand-assembles the six schedule columns
     // one by one. A copy-paste swap (e.g. `awardsDate: toBigInt(nomDate)`) or
     // a dropped line must fail this test — so every column here gets its own

@@ -52,7 +52,7 @@ describe('LeaderboardTable', () => {
     expect(screen.queryByRole('button', { name: /show/i })).not.toBeInTheDocument();
   });
 
-  it('🔴 names every column in a legend, not in a tooltip', () => {
+  it('names every column in a legend, not in a tooltip', () => {
     render(
       <LeaderboardTable
         leaderboard={{
@@ -75,7 +75,7 @@ describe('LeaderboardTable', () => {
     }
   });
 
-  it('🔴 breaks a total into its shows, for the reader who cannot see the columns', async () => {
+  it('breaks a total into its shows, for the reader who cannot see the columns', async () => {
     const user = userEvent.setup();
     render(
       <LeaderboardTable
@@ -110,7 +110,7 @@ describe('LeaderboardTable', () => {
     expect(screen.queryByTestId('breakdown-1')).toBeNull();
   });
 
-  it('🔴 lists only the shows a film actually scored at', async () => {
+  it('lists only the shows a film actually scored at', async () => {
     const user = userEvent.setup();
     render(
       <LeaderboardTable
@@ -131,7 +131,7 @@ describe('LeaderboardTable', () => {
     expect(within(screen.getByTestId('breakdown-1')).queryByText('Razzies')).toBeNull();
   });
 
-  it('🔴 never scrolls horizontally below `lg` (D79), and does scroll above it', () => {
+  it('never scrolls horizontally below `lg` (D79), and does scroll above it', () => {
     const { container } = render(<LeaderboardTable leaderboard={leaderboardOf(3)} />);
     const table = container.querySelector('table');
 

@@ -169,7 +169,7 @@ describe('the list', () => {
     expect(screen.getByLabelText('Add a film')).toBeInTheDocument();
   });
 
-  it('🔴 reorders from the keyboard alone', async () => {
+  it('reorders from the keyboard alone', async () => {
     // Drag-only would make the feature unusable for anyone not using a mouse
     // (a11y: gesture-alternative).
     const onReorder = vi.fn(noop);
@@ -180,7 +180,7 @@ describe('the list', () => {
     await waitFor(() => expect(onReorder).toHaveBeenCalledWith([22, 21, 23]));
   });
 
-  it('🔴 snaps back when the server refuses', async () => {
+  it('snaps back when the server refuses', async () => {
     const onReorder = vi.fn(async () => ({
       ok: false as const,
       code: 'CONFLICT' as const,
@@ -200,7 +200,7 @@ describe('the list', () => {
 });
 
 describe('the marks', () => {
-  it('🔴 names every state rather than relying on colour', () => {
+  it('names every state rather than relying on colour', () => {
     renderEditor();
 
     // Every row renders all three names as `<option>` text, so a count over the
@@ -279,7 +279,7 @@ describe('adding and removing', () => {
     expect(onAdd).toHaveBeenCalledWith({ tmdbId: '5000' });
   });
 
-  it('🔴 says so, and refuses, for a film already on the list', async () => {
+  it('says so, and refuses, for a film already on the list', async () => {
     // A shortlist with the same film twice cannot be ranked, and the reason has
     // to be readable before the click rather than after the refusal.
     const onAdd = vi.fn(noop);

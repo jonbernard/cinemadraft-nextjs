@@ -45,7 +45,7 @@ describe('getDraftConsole', () => {
     }
   });
 
-  it('🔴 lists every film gone in the group, not just in one seat', async () => {
+  it('lists every film gone in the group, not just in one seat', async () => {
     // The owner must not have to remember what went three seats ago. The list
     // is the group because that is the scope a film is taken in — measured
     // across all 1025 production picks.

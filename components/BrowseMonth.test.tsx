@@ -41,7 +41,7 @@ describe('BrowseMonth', () => {
     );
   });
 
-  it('🔴 the poster wrapper is not a second, nameless stop', () => {
+  it('the poster wrapper is not a second, nameless stop', () => {
     // Two links per film point at the same page and only one of them says
     // where it goes. Measured on /browse: 17 of 54 links announced nothing.
     render(<BrowseMonth month={month} isSignedIn={false} />);

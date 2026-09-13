@@ -106,7 +106,7 @@ afterAll(async () => {
 });
 
 describe('setActiveYear — refusals', () => {
-  it('🔴 refuses a signed-out caller and leaves the season inactive', async () => {
+  it('refuses a signed-out caller and leaves the season inactive', async () => {
     const season = await makeSeason();
     signInAs(null);
 
@@ -117,7 +117,7 @@ describe('setActiveYear — refusals', () => {
     expect(row?.isActive).toBe(false);
   });
 
-  it('🔴 refuses a signed-in non-admin and leaves the season inactive', async () => {
+  it('refuses a signed-in non-admin and leaves the season inactive', async () => {
     const season = await makeSeason();
     const member = await makeUser('user');
     signInAs(member);

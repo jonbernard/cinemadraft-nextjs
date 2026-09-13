@@ -288,7 +288,7 @@ describe('SeasonStepper', () => {
     ];
   }
 
-  it('🔴 highlights the last incomplete show when nothing left is scheduled', () => {
+  it('highlights the last incomplete show when nothing left is scheduled', () => {
     render(<SeasonStepper phases={unscheduledSeason()} />);
 
     // Something is current. Before this task, nothing was — `next` required a
@@ -298,7 +298,7 @@ describe('SeasonStepper', () => {
     expect(within(current).getByText('Ceremony')).toBeInTheDocument();
   });
 
-  it('🔴 says the date is unknown in the chip, once', () => {
+  it('says the date is unknown in the chip, once', () => {
     render(<SeasonStepper phases={unscheduledSeason()} />);
 
     const current = screen.getByRole('listitem', { current: 'step' });
@@ -311,7 +311,7 @@ describe('SeasonStepper', () => {
     expect(others.some((li) => within(li).queryByText('Date TBA') != null)).toBe(true);
   });
 
-  it('🔴 a dated incomplete phase still wins over an undated one', () => {
+  it('a dated incomplete phase still wins over an undated one', () => {
     const soon = Date.now() + 5 * DAY;
     render(
       <SeasonStepper
@@ -343,7 +343,7 @@ describe('SeasonStepper', () => {
     expect(within(current).getByText('in 5 days')).toBeInTheDocument();
   });
 
-  it('🔴 opens on the next show rather than on the end of the array', () => {
+  it('opens on the next show rather than on the end of the array', () => {
     atWidth(PHONE_WINDOW); // two boxes
     const twelve = phases(12);
     // Box 4 is the only incomplete one; 5..12 are finished. The end-anchor

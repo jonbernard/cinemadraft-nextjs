@@ -180,7 +180,7 @@ test.describe('award shows', () => {
   // failed `lib/db.test.ts`, which counts the restored 60.
   test.afterAll(cleanup);
 
-  test('🔴 the page is public, and a visitor gets no controls', async ({ page }) => {
+  test('the page is public, and a visitor gets no controls', async ({ page }) => {
     // D44: the source never guarded these, and they are what a member opens
     // mid-ceremony. This test signs nobody in at all — that is the point of it.
     const { abbreviation } = await seedShow();
@@ -215,7 +215,7 @@ test.describe('award shows', () => {
     await expect(card).not.toContainText('1 categories');
   });
 
-  test('🔴 shows the resolved point value, not the raw foreign key', async ({ page }) => {
+  test('shows the resolved point value, not the raw foreign key', async ({ page }) => {
     // `awards.points` holds a foreign key into `points.id` (D41). The scratch
     // category points at a tier worth 7; if the page printed the column it
     // would show the tier's id instead.
@@ -251,7 +251,7 @@ test.describe('award shows', () => {
   });
 
   test.describe('as an admin', () => {
-    test('🔴 nominates a film, marks a winner, then corrects it', async ({ page }) => {
+    test('nominates a film, marks a winner, then corrects it', async ({ page }) => {
       const { abbreviation } = await seedShow();
       await signInAsAdmin(page);
       await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
@@ -294,7 +294,7 @@ test.describe('award shows', () => {
         .toEqual([FILMS[1]]);
     });
 
-    test('🔴 nominates a film TMDB knows and this app has never cached', async ({
+    test('nominates a film TMDB knows and this app has never cached', async ({
       page,
     }) => {
       // The capability the whole phase turns on. `movies` is a cache of TMDB,
@@ -338,7 +338,7 @@ test.describe('award shows', () => {
       );
     });
 
-    test('🔴 removing the winning nominee takes its win with it', async ({ page }) => {
+    test('removing the winning nominee takes its win with it', async ({ page }) => {
       // Otherwise the category is won by a film it does not list, and that film
       // keeps scoring for a nomination the app no longer believes in.
       const { abbreviation } = await seedShow();

@@ -141,7 +141,7 @@ afterAll(async () => {
 });
 
 describe('postFeedItem', () => {
-  it('🔴 refuses an anonymous caller and writes nothing', async () => {
+  it('refuses an anonymous caller and writes nothing', async () => {
     signInAs(null);
 
     const result = await postFeedItem({
@@ -168,7 +168,7 @@ describe('postFeedItem', () => {
     ]);
   });
 
-  it('🔴 posts to the caller’s own feed and to no one else’s', async () => {
+  it('posts to the caller’s own feed and to no one else’s', async () => {
     signInAs(fixture.author);
 
     const result = await postFeedItem({ message: `${TAG} the author posted just now` });
@@ -185,7 +185,7 @@ describe('postFeedItem', () => {
     expect(revalidatePath).toHaveBeenCalledWith(`/members/${fixture.author.uuid}`);
   });
 
-  it('🔴 refuses an account with no uuid rather than writing an unreachable row', async () => {
+  it('refuses an account with no uuid rather than writing an unreachable row', async () => {
     signInAs(fixture.unclaimed);
 
     const result = await postFeedItem({ message: `${TAG} nowhere to put this` });
@@ -197,7 +197,7 @@ describe('postFeedItem', () => {
 });
 
 describe('deleteFeedItem', () => {
-  it('🔴 will not remove another member’s post', async () => {
+  it('will not remove another member’s post', async () => {
     signInAs(fixture.intruder);
 
     const result = await deleteFeedItem({ id: fixture.authorPost });
@@ -240,7 +240,7 @@ describe('deleteFeedItem', () => {
     expect(await messageOf(fixture.authorPost)).toBe(`${TAG} the author wrote this`);
   });
 
-  it('🔴 refuses an account with no uuid rather than matching every row that has none', async () => {
+  it('refuses an account with no uuid rather than matching every row that has none', async () => {
     signInAs(fixture.unclaimed);
 
     const result = await deleteFeedItem({ id: fixture.orphanPost });
@@ -250,7 +250,7 @@ describe('deleteFeedItem', () => {
     expect(await messageOf(fixture.orphanPost)).toBe(`${TAG} this row belongs to nobody`);
   });
 
-  it('🔴 refuses an anonymous caller', async () => {
+  it('refuses an anonymous caller', async () => {
     signInAs(null);
 
     const result = await deleteFeedItem({ id: fixture.authorPost });

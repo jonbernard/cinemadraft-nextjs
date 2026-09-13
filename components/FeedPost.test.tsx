@@ -83,7 +83,7 @@ describe('a feed post', () => {
 });
 
 describe('the delete control', () => {
-  it('🔴 is absent for a reader who is not the author', () => {
+  it('is absent for a reader who is not the author', () => {
     render(<FeedPost item={DRAFTED} />);
 
     expect(screen.queryByRole('button', { name: /delete/i })).toBeNull();

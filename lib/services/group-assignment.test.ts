@@ -25,7 +25,7 @@ describe('dealIntoGroups', () => {
     expect(sizes(assignments)).toEqual([4, 4, 4, 4]);
   });
 
-  it('🔴 spreads the remainder rather than piling it on one group', () => {
+  it('spreads the remainder rather than piling it on one group', () => {
     // The reason this is round-robin rather than chunked. Nineteen people
     // sliced into chunks of five gives 5/5/5/4; dealt, it gives 5/5/5/4 too —
     // but seventeen chunked gives 5/5/5/2, which is a group of two.
@@ -91,7 +91,7 @@ describe('shuffle', () => {
     expect(items).toEqual([1, 2, 3]);
   });
 
-  it('🔴 can put any item in any position', () => {
+  it('can put any item in any position', () => {
     // The property a broken Fisher–Yates loses. Written as a distribution
     // check rather than by forcing a single draw: the first attempt mocked
     // `Math.random` to its maximum and asserted the result changed, which

@@ -52,7 +52,7 @@ describe('getNowPlaying', () => {
     ]);
   });
 
-  it('🔴 drops results with no poster — a shelf built entirely of artwork', async () => {
+  it('drops results with no poster — a shelf built entirely of artwork', async () => {
     mockNowPlaying({
       page: 1,
       results: [result({ id: 1, poster_path: null }), result({ id: 2 })],
@@ -63,7 +63,7 @@ describe('getNowPlaying', () => {
     expect(films.map((film) => film.tmdbId)).toEqual(['2']);
   });
 
-  it('🔴 renders nothing at all when TMDB is unconfigured, rather than an error', async () => {
+  it('renders nothing at all when TMDB is unconfigured, rather than an error', async () => {
     delete process.env.TMDB_API_KEY;
     const fetchMock = mockNowPlaying({ page: 1, results: [result()] });
 
@@ -73,7 +73,7 @@ describe('getNowPlaying', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('🔴 renders nothing at all when the request fails, rather than an error', async () => {
+  it('renders nothing at all when the request fails, rather than an error', async () => {
     mockNowPlaying({}, false);
 
     const films = await getNowPlaying();

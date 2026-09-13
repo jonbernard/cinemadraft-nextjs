@@ -143,7 +143,7 @@ afterAll(async () => {
 });
 
 describe('seat management — refusals', () => {
-  it('🔴 a member cannot add a seat to a league they do not own', async () => {
+  it('a member cannot add a seat to a league they do not own', async () => {
     // Source bug 4: `verifyLeagueOwner` guards on a param that route does not
     // have, so any logged-in user could add a seat to any league.
     signInAs(fixture.member);
@@ -158,7 +158,7 @@ describe('seat management — refusals', () => {
     expect(await seatsOf(fixture.league.id)).toHaveLength(2);
   });
 
-  it('🔴 a stranger cannot remove a seat', async () => {
+  it('a stranger cannot remove a seat', async () => {
     // Source bug 5: `DELETE /draft/:id` authenticated but never authorised, so
     // any logged-in user could delete any seat in any league.
     signInAs(fixture.stranger);
@@ -172,7 +172,7 @@ describe('seat management — refusals', () => {
     expect(await seatsOf(fixture.league.id)).toHaveLength(2);
   });
 
-  it('🔴 a logged-out caller cannot rearrange groups', async () => {
+  it('a logged-out caller cannot rearrange groups', async () => {
     signInAs(null);
 
     const result = await randomiseGroups({
@@ -220,7 +220,7 @@ describe('seat management', () => {
     expect(seats.find((seat) => seat.id === draftId)?.dummyName).toBe('Fixed');
   });
 
-  it('🔴 refuses to rename a real member’s seat', async () => {
+  it('refuses to rename a real member’s seat', async () => {
     // Their name is their own, and it is the same person in every league.
     signInAs(fixture.owner);
 
@@ -245,7 +245,7 @@ describe('seat management', () => {
     expect(await seatsOf(fixture.league.id)).toHaveLength(1);
   });
 
-  it('🔴 refuses to remove a seat that holds picks, which would orphan them', async () => {
+  it('refuses to remove a seat that holds picks, which would orphan them', async () => {
     // `draft_picks` has no foreign key, so nothing cascades: the picks would
     // belong to nobody, and the board drops them while scoring keeps them.
     signInAs(fixture.owner);
@@ -334,7 +334,7 @@ describe('groups', () => {
     );
   });
 
-  it('🔴 refuses once the draft has started', async () => {
+  it('refuses once the draft has started', async () => {
     // Reshuffling mid-draft moves people away from picks they already made,
     // and the board reads `group` to decide which board a seat is on.
     signInAs(fixture.owner);
@@ -366,7 +366,7 @@ describe('groups', () => {
     expect(seats.find((s) => s.id === fixture.seats[1]?.id)?.group).toBe(1);
   });
 
-  it('🔴 cannot reassign a seat belonging to another league', async () => {
+  it('cannot reassign a seat belonging to another league', async () => {
     // The league is in the WHERE clause, so a foreign seat id matches nothing
     // rather than being silently rewritten.
     const other = await db.league.create({
@@ -396,7 +396,7 @@ describe('groups', () => {
 });
 
 describe('draft status', () => {
-  it('🔴 starting the draft does not seat the owner again', async () => {
+  it('starting the draft does not seat the owner again', async () => {
     // Source bug 6: the equivalent route inserted a `drafts` row for the
     // caller on every call, so an owner who clicked twice got two seats.
     signInAs(fixture.owner);
@@ -411,7 +411,7 @@ describe('draft status', () => {
     );
   });
 
-  it('🔴 refuses to start with everyone ungrouped', async () => {
+  it('refuses to start with everyone ungrouped', async () => {
     // `getLeagueBoard` groups by `group`; all-null collapses into one group of
     // everybody, which is not the league anyone set up.
     signInAs(fixture.owner);
@@ -446,7 +446,7 @@ describe('settings', () => {
     );
   });
 
-  it('🔴 cannot be used to take the league', async () => {
+  it('cannot be used to take the league', async () => {
     // Source bug 6: `PUT /league/:id` wrote req.body straight through, so a
     // request could set `owner` — the column every ownership check reads. The
     // schema here is an allowlist, so the extra field is dropped rather than
@@ -496,7 +496,7 @@ describe('staging next season', () => {
     expect(next).toHaveLength(2);
   });
 
-  it('🔴 running it twice does not double the league', async () => {
+  it('running it twice does not double the league', async () => {
     signInAs(fixture.owner);
     await stageNextSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
 

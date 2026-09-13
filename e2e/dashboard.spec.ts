@@ -122,7 +122,7 @@ test.describe('dashboard', () => {
     });
   });
 
-  test('🔴 signed out, it shows the season and no one else’s team (D44)', async ({
+  test('signed out, it shows the season and no one else’s team (D44)', async ({
     page,
   }) => {
     await page.goto('/');
@@ -142,9 +142,7 @@ test.describe('dashboard', () => {
     await expect(page.getByRole('list', { name: /drafted films/i })).toHaveCount(0);
   });
 
-  test('🔴 a signed-out reader is told what this is, above the fold', async ({
-    page,
-  }) => {
+  test('a signed-out reader is told what this is, above the fold', async ({ page }) => {
     await page.goto('/');
 
     const lede = page.getByTestId('signed-out-lede');
@@ -162,7 +160,7 @@ test.describe('dashboard', () => {
     expect(box?.y ?? Infinity).toBeLessThan(rail?.y ?? 0);
   });
 
-  test('🔴 and it is gone the moment they are signed in', async ({ page }) => {
+  test('and it is gone the moment they are signed in', async ({ page }) => {
     await signInAs(page, { email: `${TAG}-lede@example.test`, firstName: 'Reader' });
     await page.goto('/');
 
@@ -172,7 +170,7 @@ test.describe('dashboard', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Season' })).toBeVisible();
   });
 
-  test('🔴 the page has a valid heading outline', async ({ page }) => {
+  test('the page has a valid heading outline', async ({ page }) => {
     await page.goto('/');
 
     const levels = await page.evaluate(() =>
@@ -191,7 +189,7 @@ test.describe('dashboard', () => {
     }
   });
 
-  test('🔴 headings render at 28 / 20 / 17, and an h1 outranks a league name', async ({
+  test('headings render at 28 / 20 / 17, and an h1 outranks a league name', async ({
     page,
   }) => {
     await page.goto('/');
@@ -210,7 +208,7 @@ test.describe('dashboard', () => {
     expect(await px('main h1')).toBeGreaterThan(24);
   });
 
-  test('🔴 every season target clears 44px', async ({ page }) => {
+  test('every season target clears 44px', async ({ page }) => {
     await withDb((query) =>
       query(
         `insert into available_years (year, is_active, created_at, updated_at)
@@ -242,7 +240,7 @@ test.describe('dashboard', () => {
     }
   });
 
-  test('🔴 the table owns its overflow, and the film column pins (1024px)', async ({
+  test('the table owns its overflow, and the film column pins (1024px)', async ({
     page,
   }) => {
     // 🔴 Reads the active season's real leaderboard. CI's seeded database has
@@ -293,7 +291,7 @@ test.describe('dashboard', () => {
    *
    * Two exact, not "at least one": both a zero and a twelve have to fail.
    */
-  test('🔴 the first two In cinemas now frames preload, and only those two', async ({
+  test('the first two In cinemas now frames preload, and only those two', async ({
     page,
   }) => {
     await page.goto('/');
@@ -321,7 +319,7 @@ test.describe('dashboard', () => {
     await expect(shelf.locator('img').nth(2)).toHaveAttribute('loading', 'lazy');
   });
 
-  test('🔴 a phone can see where a total came from', async ({ page }) => {
+  test('a phone can see where a total came from', async ({ page }) => {
     // 🔴 Reads the active season's real leaderboard. CI's seeded database has
     // none, and this passed there only when a concurrent spec's scratch league
     // happened to be on the board — a race, not coverage.
@@ -363,9 +361,7 @@ test.describe('dashboard', () => {
      * films that genuinely won this season: the seal reaches the page from the
      * ledger, not from a prop a test set.
      */
-    test('🔴 a film that won is sealed on the roster, from real data', async ({
-      page,
-    }) => {
+    test('a film that won is sealed on the roster, from real data', async ({ page }) => {
       await signInAsMember(page);
       await page.goto('/');
 
@@ -427,7 +423,7 @@ test.describe('dashboard', () => {
     // 375 is an iPhone SE, 768 an iPad portrait, 1440 a laptop — the three
     // widths the roster grid changes shape at (2 / 4 / 8 across).
     for (const width of [375, 768, 1440]) {
-      test(`🔴 no truncated titles at ${width}px`, async ({ page }) => {
+      test(`no truncated titles at ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await signInAsMember(page);
         await page.goto('/');

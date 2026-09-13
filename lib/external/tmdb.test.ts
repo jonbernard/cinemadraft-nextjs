@@ -32,17 +32,17 @@ afterEach(() => {
 });
 
 describe('no key configured — the state the app ships in', () => {
-  it('🔴 reports itself unconfigured', () => {
+  it('reports itself unconfigured', () => {
     expect(isTmdbConfigured()).toBe(false);
   });
 
-  it('🔴 returns nothing rather than throwing', async () => {
+  it('returns nothing rather than throwing', async () => {
     // Local search is a complete answer. An exception here would break the
     // search box for the sake of an optional source.
     expect(await searchTmdb('dune')).toEqual([]);
   });
 
-  it('🔴 makes no request at all', async () => {
+  it('makes no request at all', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
@@ -101,7 +101,7 @@ describe('with a key', () => {
     });
   });
 
-  it('🔴 never filters TMDB by the award year', async () => {
+  it('never filters TMDB by the award year', async () => {
     // An award season honours the *previous* year's releases: of 526
     // nominations in the restored 2026 season, 507 are 2025 films and 7 are
     // 2026 films. Sending the season year as `primary_release_year` hid 96% of
@@ -147,7 +147,7 @@ describe('with a key', () => {
   });
 });
 
-describe('🔴 failure never reaches the caller', () => {
+describe('failure never reaches the caller', () => {
   beforeEach(() => {
     process.env.TMDB_API_KEY = KEY;
   });
@@ -187,7 +187,7 @@ describe('caching', () => {
     process.env.TMDB_API_KEY = KEY;
   });
 
-  it('🔴 asks TMDB once for the same query', async () => {
+  it('asks TMDB once for the same query', async () => {
     // The rate limit is the whole reason this cache exists: during a live
     // ceremony the same titles are typed repeatedly by the same person.
     const fetchMock = vi.fn(async () =>
@@ -214,7 +214,7 @@ describe('the cache itself', () => {
     expect(produce).toHaveBeenCalledTimes(1);
   });
 
-  it('🔴 works outside Vercel, which is where every test and `next dev` runs', async () => {
+  it('works outside Vercel, which is where every test and `next dev` runs', async () => {
     // `getCache()` does not throw off-platform — it falls back to its own
     // in-process map. Checked rather than assumed, and it deleted a
     // hand-written fallback that duplicated the SDK.

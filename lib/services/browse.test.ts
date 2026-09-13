@@ -78,7 +78,7 @@ describe('grouping by month', () => {
     ]);
   });
 
-  it('🔴 orders newest first when looking back', async () => {
+  it('orders newest first when looking back', async () => {
     // The direction the reader is looking is the order of the page. Looking
     // back, the newest month is the top.
     mockDiscover(ACROSS_MONTHS);
@@ -88,7 +88,7 @@ describe('grouping by month', () => {
     expect(page.months.at(0)?.label).toBe('08/2026');
   });
 
-  it('🔴 orders soonest first when looking forward', async () => {
+  it('orders soonest first when looking forward', async () => {
     // And looking forward it is the other way round. A single sort would have
     // put next year's releases above next month's.
     //
@@ -110,7 +110,7 @@ describe('grouping by month', () => {
     ]);
   });
 
-  it('🔴 labels months in UTC', async () => {
+  it('labels months in UTC', async () => {
     // A film released on the 1st would otherwise fall into the previous month for
     // every reader west of UTC — so the page would group differently depending on
     // who was looking, and disagree with the date on the film's own page.
@@ -123,7 +123,7 @@ describe('grouping by month', () => {
 });
 
 describe('films with no release date', () => {
-  it('🔴 keeps them in their own group rather than dropping them', async () => {
+  it('keeps them in their own group rather than dropping them', async () => {
     // An announced film with no date is still a film, and TMDB has plenty.
     mockDiscover([...ACROSS_MONTHS, result(5, 'Announced only', null)]);
 
@@ -132,7 +132,7 @@ describe('films with no release date', () => {
     expect(page.months.map((month) => month.label)).toContain('Undated');
   });
 
-  it('🔴 sorts them last on both sides', async () => {
+  it('sorts them last on both sides', async () => {
     // Not simply reversed with everything else: the label has no month, so an
     // order value of Infinity multiplied by -1 would put it *first* when looking
     // back. Both directions are asserted because only one of them catches that.
@@ -156,7 +156,7 @@ describe('the watched marks', () => {
     ).toBe(true);
   });
 
-  it('🔴 asks the database nothing at all for an anonymous reader', async () => {
+  it('asks the database nothing at all for an anonymous reader', async () => {
     // Browse is public, so this is the common case. A logged-out reader should
     // cost zero queries.
     mockDiscover(ACROSS_MONTHS);
@@ -212,7 +212,7 @@ describe('the watched marks', () => {
     }
   });
 
-  it('🔴 costs the same number of queries for forty films as for four', async () => {
+  it('costs the same number of queries for forty films as for four', async () => {
     // The N+1 this is guarding (D59). `isFilmWatched` per poster would be forty
     // round trips for one shelf, and nothing about that code would look wrong.
     const now = new Date();
@@ -295,7 +295,7 @@ describe('what the shelf carries', () => {
     expect(page.hero).toBeNull();
   });
 
-  it('🔴 has no hero on later pages', async () => {
+  it('has no hero on later pages', async () => {
     // The band belongs at the top of the page, and page 3 is the middle of a
     // scroll — a second hero appearing mid-list is the bug this prevents.
     mockDiscover([

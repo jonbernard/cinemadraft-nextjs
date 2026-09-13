@@ -120,7 +120,7 @@ async function forgetFilm(tmdbId: string): Promise<void> {
 test.describe('browse', () => {
   test.skip(!hasTmdb, 'TMDB_API_KEY not configured');
 
-  test('🔴 the past/future choice is in the URL, not in component state', async ({
+  test('the past/future choice is in the URL, not in component state', async ({
     page,
   }) => {
     // The source held it in `useState`, so the view could not be linked and Back
@@ -148,7 +148,7 @@ test.describe('browse', () => {
     );
   });
 
-  test('🔴 the months reverse when looking forward', async ({ page }) => {
+  test('the months reverse when looking forward', async ({ page }) => {
     // Looking back the newest month is the top of the page; looking forward the
     // soonest is. Read the first heading on each side and compare.
     await page.goto('/browse?when=past');
@@ -171,7 +171,7 @@ test.describe('browse', () => {
     expect(order(newestPast)).toBeLessThanOrEqual(order(soonestFuture));
   });
 
-  test('🔴 the shelf appends when the reader reaches the bottom', async ({ page }) => {
+  test('the shelf appends when the reader reaches the bottom', async ({ page }) => {
     // D80 traded the "Show more" link for auto-append. Proven in a browser
     // because a component test supplies its own IntersectionObserver — whether
     // a real one fires is exactly what it cannot say.
@@ -190,7 +190,7 @@ test.describe('browse', () => {
     expect(new Set(months).size).toBe(months.length);
   });
 
-  test('🔴 the cursor follows the reader into the URL (amends D80)', async ({ page }) => {
+  test('the cursor follows the reader into the URL (amends D80)', async ({ page }) => {
     // 🔴 jsdom has a history object but no scrolling, no real navigation and no
     // bfcache, so every property this task exists for is a browser property.
     //
@@ -219,9 +219,7 @@ test.describe('browse', () => {
     expect(await page.evaluate(() => history.length)).toBe(entries);
   });
 
-  test('🔴 the cursor survives a trip to a film and back (amends D80)', async ({
-    page,
-  }) => {
+  test('the cursor survives a trip to a film and back (amends D80)', async ({ page }) => {
     await page.goto('/browse');
     const films = page.locator('section ul > li');
     const start = await films.count();
@@ -250,7 +248,7 @@ test.describe('browse', () => {
     await expect(films.first()).toBeVisible();
   });
 
-  test('🔴 a shared cursor opens where the sender was', async ({ page }) => {
+  test('a shared cursor opens where the sender was', async ({ page }) => {
     // The entry point `?page=` already worked (D65, kept by D80) — nothing had
     // ever pointed at it. Now the address bar does, so this is the other end of
     // the same trip.
@@ -272,7 +270,7 @@ test.describe('browse', () => {
     await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible();
   });
 
-  test('🔴 a crawler still has a path into page 2', async ({ page }) => {
+  test('a crawler still has a path into page 2', async ({ page }) => {
     // The one property of D65 that auto-append keeps. The sitemap (P15.T6)
     // leads here, and the sentinel offers nothing to a client without
     // JavaScript — so the link stays, in a <noscript> readers never see.
@@ -319,7 +317,7 @@ test.describe('browse', () => {
 test.describe('marking a film watched', () => {
   test.skip(!hasTmdb, 'TMDB_API_KEY not configured');
 
-  test('🔴 survives a reload, and can be undone', async ({ page }) => {
+  test('survives a reload, and can be undone', async ({ page }) => {
     const address = await signUp(page);
     let markedFilm: string | null = null;
     let wasCached = true;

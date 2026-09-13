@@ -37,7 +37,7 @@ describe('findFilms — local', () => {
     expect(results.map((film) => film.title)).toContain(KNOWN);
   });
 
-  it('🔴 still finds it with a transposed letter', async () => {
+  it('still finds it with a transposed letter', async () => {
     // The reason the threshold is 0.5 rather than Postgres's default 0.6.
     // Transposition is the typo people make when typing at speed, and the
     // owner is typing what someone just said out loud.
@@ -79,7 +79,7 @@ describe('findFilms — local', () => {
 });
 
 describe('findFilms — a draft in progress', () => {
-  it('🔴 marks a taken film as taken rather than hiding it', async () => {
+  it('marks a taken film as taken rather than hiding it', async () => {
     const [first] = await findFilms('oppenheim', browse);
     const takenId = first?.id as number;
 
@@ -95,7 +95,7 @@ describe('findFilms — a draft in progress', () => {
 });
 
 describe('findFilms — TMDB is the catalogue', () => {
-  it('🔴 always asks TMDB, even when local results are plentiful', async () => {
+  it('always asks TMDB, even when local results are plentiful', async () => {
     // `movies` is a *cache* of TMDB: a film enters it the first time somebody
     // drafts or nominates it. So the local table can only answer with films
     // the league has already used, and a query like "the" — which matches
@@ -125,7 +125,7 @@ describe('findFilms — TMDB is the catalogue', () => {
     expect(results.length).toBeGreaterThan(0);
   });
 
-  it('🔴 does not narrow the TMDB query by the award year', async () => {
+  it('does not narrow the TMDB query by the award year', async () => {
     // An award season honours the previous year's films — 507 of the 2026
     // season's 526 nominations are 2025 releases — so sending the season year
     // to TMDB hid almost every candidate. The season is applied by ranking
@@ -137,7 +137,7 @@ describe('findFilms — TMDB is the catalogue', () => {
     expect(remote).toHaveBeenCalledWith('oppenheim');
   });
 
-  it('🔴 survives TMDB failing, and still returns the local films', async () => {
+  it('survives TMDB failing, and still returns the local films', async () => {
     // The owner is mid-draft and can see the film in the list. An error where
     // the results should be is strictly worse than a shorter list.
     const remote = vi.fn(async () => {
@@ -149,7 +149,7 @@ describe('findFilms — TMDB is the catalogue', () => {
     expect(results.map((film) => film.title)).toContain(KNOWN);
   });
 
-  it('🔴 never returns the same film twice when TMDB knows it too', async () => {
+  it('never returns the same film twice when TMDB knows it too', async () => {
     const [local] = await findFilms('oppenheim', browse);
     const duplicate: Candidate = {
       id: null,

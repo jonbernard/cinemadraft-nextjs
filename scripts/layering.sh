@@ -172,4 +172,14 @@ check "no retired surface token names" \
      --include='*.tsx' --include='*.ts' --include='*.css' --include='*.mdx' 2>/dev/null \
      || true)"
 
+# A test's name is what a reporter prints beside a pass or a fail, and a red
+# circle there reads as a failure on every green run. It marked "this pins a
+# real bug or a safety rule" — on 487 titles, a quarter of the suite, which is
+# no signal at all. The title says what it guards; comments keep their 🔴.
+check "no 🔴 in test titles" \
+  "$(grep -rnE "(it|test|describe)(\.[a-z]+)*\([[:space:]]*['\"\`]🔴" \
+     app components lib actions theme e2e test scripts .storybook proxy.test.ts \
+     --include='*.ts' --include='*.tsx' --include='*.mts' 2>/dev/null \
+     || true)"
+
 exit $fail

@@ -75,7 +75,7 @@ describe('claiming a real restored production account', () => {
     expect(before.clerkId).toBeNull();
   });
 
-  it('🔴 the account has real history to lose', () => {
+  it('the account has real history to lose', () => {
     if (!before) return;
     // If this ever reads zero the gate below proves nothing — it would be
     // asserting that an empty account survived being claimed.
@@ -83,7 +83,7 @@ describe('claiming a real restored production account', () => {
     expect(before.picks).toBeGreaterThan(0);
   });
 
-  it('🔴 an unverified address cannot claim it', async () => {
+  it('an unverified address cannot claim it', async () => {
     if (!before) return;
 
     const result = await syncClerkIdentity({
@@ -99,7 +99,7 @@ describe('claiming a real restored production account', () => {
     expect(after.clerkId).toBeNull();
   });
 
-  it('🔴 a verified address claims it with every draft, pick and watchlist row intact', async () => {
+  it('a verified address claims it with every draft, pick and watchlist row intact', async () => {
     if (!before) return;
 
     const result = await syncClerkIdentity({
@@ -123,7 +123,7 @@ describe('claiming a real restored production account', () => {
     expect(after.watchlist).toBe(before.watchlist);
   });
 
-  it('🔴 a second identity cannot take the account after it is claimed', async () => {
+  it('a second identity cannot take the account after it is claimed', async () => {
     if (!before) return;
 
     const result = await syncClerkIdentity({

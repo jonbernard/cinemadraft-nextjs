@@ -17,7 +17,7 @@ const TRAILERS = [
   { key: 'ccc333', name: 'Featurette' },
 ];
 
-describe('🔴 before anybody presses play', () => {
+describe('before anybody presses play', () => {
   it('mounts no iframe at all', () => {
     const { container } = render(<TrailerReel trailers={TRAILERS} />);
 
@@ -43,7 +43,7 @@ describe('pressing play', () => {
     expect(container.querySelectorAll('iframe')).toHaveLength(1);
   });
 
-  it('🔴 embeds through youtube-nocookie', () => {
+  it('embeds through youtube-nocookie', () => {
     // The page is public: a logged-out reader should not pick up advertising
     // cookies from looking at a film.
     const { container } = render(<TrailerReel trailers={TRAILERS} />);
@@ -63,7 +63,7 @@ describe('pressing play', () => {
     expect(container.querySelector('iframe')?.getAttribute('title')).toBe('Featurette');
   });
 
-  it('🔴 replaces the frame when switching, rather than keeping both', () => {
+  it('replaces the frame when switching, rather than keeping both', () => {
     const { container } = render(<TrailerReel trailers={TRAILERS} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Teaser/ }));
@@ -111,7 +111,7 @@ describe('a film with a great many clips', () => {
     expect(screen.getByText('Show 26 more clips')).toBeTruthy();
   });
 
-  it('🔴 keeps every hidden clip in the DOM, so find-in-page reaches it', () => {
+  it('keeps every hidden clip in the DOM, so find-in-page reaches it', () => {
     render(<TrailerReel trailers={MANY} />);
 
     expect(screen.getByRole('button', { name: /Clip 31/ })).toBeTruthy();

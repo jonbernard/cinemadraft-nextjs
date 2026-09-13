@@ -98,7 +98,7 @@ describe('PickList', () => {
     expect(screen.getByText('No picks yet.')).toBeInTheDocument();
   });
 
-  it('🔴 reorders from the keyboard alone', async () => {
+  it('reorders from the keyboard alone', async () => {
     // Drag-only would make the feature unusable for anyone not using a mouse
     // (a11y: gesture-alternative).
     const onReorder = vi.fn(async () => ({ ok: true as const, data: null }));
@@ -130,7 +130,7 @@ describe('PickList', () => {
     release();
   });
 
-  it('🔴 snaps back when the server refuses', async () => {
+  it('snaps back when the server refuses', async () => {
     // The board is what the league is watching, and it now disagrees with this
     // list. Showing the move as if it stuck would be a lie about the draft.
     let refuse = (): void => {};

@@ -67,7 +67,7 @@ test.describe('leagues', () => {
 
   test.afterAll(cleanup);
 
-  test('🔴 create a league, then someone else joins by the link', async ({
+  test('create a league, then someone else joins by the link', async ({
     page,
     browser,
   }) => {

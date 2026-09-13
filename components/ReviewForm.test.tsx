@@ -47,7 +47,7 @@ describe('writing a review', () => {
     expect(screen.getByRole('radio', { name: 'None' })).toBeChecked();
   });
 
-  it('🔴 sends the rating and the words together', async () => {
+  it('sends the rating and the words together', async () => {
     const { onSave } = renderForm();
 
     await userEvent.click(screen.getByRole('radio', { name: '4.5 stars' }));
@@ -75,7 +75,7 @@ describe('writing a review', () => {
     expect(await screen.findByText('Review saved')).toBeInTheDocument();
   });
 
-  it('🔴 shows the refusal instead of claiming success', async () => {
+  it('shows the refusal instead of claiming success', async () => {
     // The source's form enqueued "Review saved" before the request resolved, so
     // a rejected write still reported success.
     renderForm({
@@ -107,7 +107,7 @@ describe('editing what is already there', () => {
     expect(screen.getByRole('radio', { name: '3.5 stars' })).toBeChecked();
   });
 
-  it('🔴 offers no Remove when there is nothing to remove', () => {
+  it('offers no Remove when there is nothing to remove', () => {
     renderForm({ review: null });
 
     expect(screen.queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
@@ -126,7 +126,7 @@ describe('editing what is already there', () => {
     expect(screen.queryByRole('button', { name: 'Save review' })).not.toBeInTheDocument();
   });
 
-  it('🔴 empties the fields after a removal, and stops offering Remove', async () => {
+  it('empties the fields after a removal, and stops offering Remove', async () => {
     const { onDelete } = renderForm({ review: EXISTING });
 
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));

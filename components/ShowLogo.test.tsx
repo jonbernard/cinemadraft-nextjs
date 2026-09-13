@@ -38,7 +38,7 @@ describe('ShowLogo', () => {
     expect(screen.getByTestId('image')).toHaveAttribute('alt', '');
   });
 
-  it('🔴 renders the mark at 64px or larger', () => {
+  it('renders the mark at 64px or larger', () => {
     // Twelve award bodies are the app's primary vocabulary. At 40px a wordmark
     // logo is not identifiable, which makes the page that teaches them useless.
     render(<ShowLogo imageUrl="https://x.public.blob.vercel-storage.com/a.jpg" />);
@@ -47,7 +47,7 @@ describe('ShowLogo', () => {
     expect(Number(mark.getAttribute('height'))).toBeGreaterThanOrEqual(64);
   });
 
-  it('🔴 puts the mark on a plate that does not follow the scheme', () => {
+  it('puts the mark on a plate that does not follow the scheme', () => {
     // The marks are dark-on-transparent. bg-raised is near-black in dark and
     // near-parchment in light, so one of the two schemes renders them dark on
     // dark whatever value it takes.

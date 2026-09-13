@@ -46,7 +46,7 @@ describe('getDashboard', () => {
     expect(view.year).toBe(2026);
   });
 
-  it('🔴 does not assume a roster size (D34)', async () => {
+  it('does not assume a roster size (D34)', async () => {
     const view = await getDashboard(await aMemberOfLeague1());
     const league = view.leagues.find((entry) => entry.id === 1);
 
@@ -74,7 +74,7 @@ describe('getDashboard', () => {
     expect([...totals]).toEqual([...totals].sort((a, b) => b - a));
   });
 
-  it('🔴 ranks ties densely — the normal state before anything is awarded', async () => {
+  it('ranks ties densely — the normal state before anything is awarded', async () => {
     const view = await getDashboard(await aMemberOfLeague1());
     const standings = view.leagues.find((l) => l.id === 1)?.standings ?? [];
 
@@ -107,7 +107,7 @@ describe('getDashboard', () => {
     expect(league?.total).toBe(summed);
   });
 
-  it('🔴 sends the roster real artwork, not an initials box', async () => {
+  it('sends the roster real artwork, not an initials box', async () => {
     // The dashboard was the last surface handing PosterFrame a null. A member's
     // own drafted team rendered as grey two-letter squares while the draft
     // console two clicks away showed the same films with posters.
@@ -131,7 +131,7 @@ describe('getDashboard', () => {
     }
   });
 
-  it('🔴 tells the roster which films were nominated and which won', async () => {
+  it('tells the roster which films were nominated and which won', async () => {
     // The winner seal has existed in PosterFrame since Phase 3.5 and has never
     // rendered: nothing in the app ever set `status`. The ledger already knows
     // — `MovieLedger.lines` carry `won` — so this is a read, not a new rule.
@@ -151,7 +151,7 @@ describe('getDashboard', () => {
     }
   });
 
-  it('🔴 marks some films won and others merely nominated', async () => {
+  it('marks some films won and others merely nominated', async () => {
     // Half of T15 is that the seal had never rendered, so both degenerate
     // answers have to fail here. All-'none' is the state being fixed; all-'won'
     // is the way a "fix" passes a union check while marking every poster —
@@ -171,7 +171,7 @@ describe('getDashboard', () => {
     expect(won.length).toBeLessThan(statuses.length);
   });
 
-  it('🔴 keeps the seat totals it had before the ledger swap', async () => {
+  it('keeps the seat totals it had before the ledger swap', async () => {
     // 🔴 Checked against `pointsForMovieIds` — the call the dashboard USED to
     // make — rather than against itself. Comparing `league.total` to the sum of
     // `entry.points` proves nothing: both are read out of the same map, so that
@@ -199,7 +199,7 @@ describe('getDashboard', () => {
     }
   });
 
-  it('🔴 never divides by zero when nothing has scored', async () => {
+  it('never divides by zero when nothing has scored', async () => {
     // Opening day: every seat is on zero. An unguarded share would make every
     // contribution bar NaN on the one day the most people are looking.
     const view = await getDashboard(await aMemberOfLeague1());
@@ -252,21 +252,21 @@ describe('getDashboard', () => {
 });
 
 describe('the public dashboard (D44)', () => {
-  it('🔴 renders for a signed-out visitor without querying any leagues', async () => {
+  it('renders for a signed-out visitor without querying any leagues', async () => {
     const view = await getDashboard(null);
 
     expect(view.leagues).toEqual([]);
     expect(view.year).toBe(2026);
   });
 
-  it('🔴 still shows the season — that is the point of the public page', async () => {
+  it('still shows the season — that is the point of the public page', async () => {
     // A login wall on the front page during awards season is the worst
     // possible first impression, and `/` was never guarded in the source app.
     const view = await getDashboard(null);
     expect(view.events.length).toBeGreaterThan(0);
   });
 
-  it('🔴 leaks no user-scoped data on the public path', async () => {
+  it('leaks no user-scoped data on the public path', async () => {
     // The guarantee is structural, not incidental: with no user there is no
     // roster and no standings anywhere in the payload, so there is no code
     // path on which the public page can render somebody else's team.
@@ -287,7 +287,7 @@ describe('the now-playing shelf', () => {
     delete process.env.TMDB_API_KEY;
   });
 
-  it('🔴 is empty when TMDB is unconfigured, not an error', async () => {
+  it('is empty when TMDB is unconfigured, not an error', async () => {
     delete process.env.TMDB_API_KEY;
 
     const view = await getDashboard(null);

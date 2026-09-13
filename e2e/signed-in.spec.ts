@@ -160,7 +160,7 @@ test.afterAll(async () => {
 });
 
 test.describe('signed-in surfaces', () => {
-  test('🔴 the active season cannot be changed without confirming', async ({ page }) => {
+  test('the active season cannot be changed without confirming', async ({ page }) => {
     // 🔴 This test never accepts the confirmation, so it never writes. The
     // scratch account is promoted to admin rather than skipping — a skipped
     // safety test is not a safety test — and deleted in afterAll.
@@ -240,7 +240,7 @@ test.describe('signed-in surfaces', () => {
     }
   });
 
-  test('🔴 a single-column page has one left edge, not three', async ({ page }) => {
+  test('a single-column page has one left edge, not three', async ({ page }) => {
     // 🔴 Its own address. Two tests in this file sharing one email means two
     // workers running the same `insert … on conflict` on `users` at the same
     // moment, and the lock that takes blocks every page in the suite that reads
@@ -259,9 +259,7 @@ test.describe('signed-in surfaces', () => {
     expect(Math.abs(heading.x - field.x)).toBeLessThan(2);
   });
 
-  test('🔴 the empty state is a card on the column, not a third edge', async ({
-    page,
-  }) => {
+  test('the empty state is a card on the column, not a third edge', async ({ page }) => {
     // 445 / 469 / 493 was heading / search field / empty state. Deleting the
     // page's own Panel removes the middle edge; the empty state's *card edge*
     // then lands on the column and only its text is inset, which is a card's
@@ -305,7 +303,7 @@ test.describe('the league page', () => {
   test.beforeAll(cleanupLeagues);
   test.afterAll(cleanupLeagues);
 
-  test('🔴 an owner gets controls, not underlined metadata, and no raw invite URL', async ({
+  test('an owner gets controls, not underlined metadata, and no raw invite URL', async ({
     page,
   }) => {
     const userId = await signInAs(page, {
@@ -374,7 +372,7 @@ test.describe('the league page', () => {
     expect(await fill('Run the draft')).toMatch(transparent);
   });
 
-  test('🔴 a complete season offers no invite at all', async ({ page }) => {
+  test('a complete season offers no invite at all', async ({ page }) => {
     // `drafting_status = 'complete'` is a real enum value and two production
     // leagues carry it. Nobody is left to invite, and a standing join
     // credential on screen is a liability rather than an affordance.
@@ -421,7 +419,7 @@ test.describe('the league page', () => {
     expect(width).toBeLessThanOrEqual(390);
   });
 
-  test("🔴 the reader's own roster sits beside the standings, not 5,000px below", async ({
+  test("the reader's own roster sits beside the standings, not 5,000px below", async ({
     page,
   }) => {
     const userId = await signInAs(page, {
@@ -478,7 +476,7 @@ test.describe('the league page', () => {
     expect(roster.y).toBeLessThan(standings.y);
   });
 
-  test('🔴 a stranger gets a stated empty state in that column, not a hole', async ({
+  test('a stranger gets a stated empty state in that column, not a hole', async ({
     page,
   }) => {
     // The ordinary case on a shared link (D44/D45): there is no "own roster"

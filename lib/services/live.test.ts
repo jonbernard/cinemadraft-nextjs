@@ -34,7 +34,7 @@ describe('getLiveShow', () => {
     expect(view.resolved).toBeGreaterThan(0);
   });
 
-  it('🔴 carries the ceremony instant and the ceremony day separately', async () => {
+  it('carries the ceremony instant and the ceremony day separately', async () => {
     // `awards_date` is UTC midnight of the ceremony day and `awards_time` is
     // milliseconds past it. The countdown needs the sum; the printed date needs
     // the day, and they are NOT the same UTC date — the Oscars store 91,800,000
@@ -65,7 +65,7 @@ describe('getLiveShow', () => {
     expect(view.onAir).toBe(false);
   });
 
-  it('🔴 resolves the point value, never the foreign key (D41)', async () => {
+  it('resolves the point value, never the foreign key (D41)', async () => {
     // `awards.points` is an FK into `points.id`. "Performance by an Ensemble"
     // stores 1 and is worth 5. This page is one a reader would check a score
     // against, so a confident wrong number here is the worst kind.
@@ -88,7 +88,7 @@ describe('getLiveShow', () => {
     }
   });
 
-  it('🔴 shows a signed-out reader no leagues, where a member sees real ones', async () => {
+  it('shows a signed-out reader no leagues, where a member sees real ones', async () => {
     // Same rule as the public dashboard (D44): the signed-out path does not
     // query leagues rather than querying with a sentinel, so there is no code
     // path on which this page can resolve somebody else's team.
@@ -105,7 +105,7 @@ describe('getLiveShow', () => {
     expect(member.leagues[0]?.seats.length).toBeGreaterThan(0);
   });
 
-  it("🔴 a seat's take is this show's lines only, and the league total adds up", async () => {
+  it("a seat's take is this show's lines only, and the league total adds up", async () => {
     const view = await getLiveShow('oscars', 2026, 6);
     const league = view.leagues[0];
     expect(league).toBeDefined();
@@ -133,7 +133,7 @@ describe('getLiveShow', () => {
     expect(viewer?.films.length).toBeGreaterThan(0);
   });
 
-  it('🔴 narrows the season ledger to this show and no other', async () => {
+  it('narrows the season ledger to this show and no other', async () => {
     // The whole scoring content of the page is one filter on
     // `LedgerLine.eventAbbreviation`. If it were dropped, every seat would show
     // its season total here — so the two shows would agree, and they must not.
