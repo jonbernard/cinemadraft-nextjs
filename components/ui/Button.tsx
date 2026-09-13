@@ -1,7 +1,7 @@
 'use client';
 
 import MuiButton, { type ButtonProps } from '@mui/material/Button';
-import { forwardRef } from 'react';
+import type { RefObject } from 'react';
 
 /**
  * The one button.
@@ -15,10 +15,14 @@ import { forwardRef } from 'react';
  * default, and the brief named squared buttons specifically, so this one is
  * not left to a default that a later change could move.
  */
-export const Button = forwardRef<
-  HTMLButtonElement,
-  ButtonProps & { accent?: 'carmine' | 'brass' }
->(function Button({ accent = 'carmine', sx, ...props }, ref) {
+export const Button = function Button({
+  accent = 'carmine',
+  sx,
+  ref,
+  ...props
+}: ButtonProps & { accent?: 'carmine' | 'brass' } & {
+  ref?: RefObject<HTMLButtonElement | null>;
+}) {
   return (
     <MuiButton
       ref={ref}
@@ -39,4 +43,4 @@ export const Button = forwardRef<
       {...props}
     />
   );
-});
+};

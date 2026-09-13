@@ -211,20 +211,17 @@ export default async function LeaguePage({
   }));
 
   return (
-    <>
-      <div className="mx-auto flex max-w-6xl flex-col gap-10">
-        <header className="flex flex-col gap-4">
-          <SectionHead
-            as="h1"
-            name
-            eyebrow={
-              board.status ? `${board.year} · ${board.status}` : String(board.year)
-            }
-          >
-            {board.leagueName ?? 'League'}
-          </SectionHead>
+    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+      <header className="flex flex-col gap-4">
+        <SectionHead
+          as="h1"
+          name
+          eyebrow={board.status ? `${board.year} · ${board.status}` : String(board.year)}
+        >
+          {board.leagueName ?? 'League'}
+        </SectionHead>
 
-          {/* 🔴 Controls, not metadata (P17.T30). These were `text-accent-text
+        {/* 🔴 Controls, not metadata (P17.T30). These were `text-accent-text
               underline` inside a baseline row between the year and the status
               word — a footnote treatment on the two most consequential actions
               an owner takes, one of which is the only way into the console.
@@ -234,50 +231,50 @@ export default async function LeaguePage({
               the act; a pending draft means the season is set up and the league
               is waiting on the owner to start. Otherwise the page's subject is
               the board, and both step back. */}
-          {canManage ? (
-            <div className="flex flex-wrap items-center gap-3">
-              {board.groups.length === 0 ? (
-                <>
-                  <PrimaryAction
-                    href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
-                  >
-                    Set up the season
-                  </PrimaryAction>
-                  <SecondaryAction
-                    href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
-                  >
-                    Run the draft
-                  </SecondaryAction>
-                </>
-              ) : isPending ? (
-                <>
-                  <PrimaryAction
-                    href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
-                  >
-                    Run the draft
-                  </PrimaryAction>
-                  <SecondaryAction
-                    href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
-                  >
-                    Set up the season
-                  </SecondaryAction>
-                </>
-              ) : (
-                <>
-                  <SecondaryAction
-                    href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
-                  >
-                    Run the draft
-                  </SecondaryAction>
-                  <SecondaryAction
-                    href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
-                  >
-                    Set up the season
-                  </SecondaryAction>
-                </>
-              )}
+        {canManage ? (
+          <div className="flex flex-wrap items-center gap-3">
+            {board.groups.length === 0 ? (
+              <>
+                <PrimaryAction
+                  href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
+                >
+                  Set up the season
+                </PrimaryAction>
+                <SecondaryAction
+                  href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
+                >
+                  Run the draft
+                </SecondaryAction>
+              </>
+            ) : isPending ? (
+              <>
+                <PrimaryAction
+                  href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
+                >
+                  Run the draft
+                </PrimaryAction>
+                <SecondaryAction
+                  href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
+                >
+                  Set up the season
+                </SecondaryAction>
+              </>
+            ) : (
+              <>
+                <SecondaryAction
+                  href={`/leagues/${board.leagueId}/draft?year=${board.year}`}
+                >
+                  Run the draft
+                </SecondaryAction>
+                <SecondaryAction
+                  href={`/leagues/${board.leagueId}/setup?year=${board.year}`}
+                >
+                  Set up the season
+                </SecondaryAction>
+              </>
+            )}
 
-              {/* 🔴 Owners only, and only while there is somebody to invite.
+            {/* 🔴 Owners only, and only while there is somebody to invite.
                   The uuid is the join credential — anyone holding it can seat
                   themselves — so showing it to every member would make every
                   member able to re-share the league, and leaving it on a
@@ -285,31 +282,31 @@ export default async function LeaguePage({
                   reason. Behind a disclosure either way: as a bare `<code>` it
                   was the second element on the page and two mono lines at
                   390px. */}
-              {inviteUrl ? <InviteAction url={inviteUrl} /> : null}
-            </div>
-          ) : null}
+            {inviteUrl ? <InviteAction url={inviteUrl} /> : null}
+          </div>
+        ) : null}
 
-          {seasons.length > 1 ? (
-            <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
-              {seasons.map((entry) => (
-                <Link
-                  key={entry}
-                  href={`/leagues/${board.leagueId}?year=${entry}`}
-                  aria-current={entry === board.year ? 'page' : undefined}
-                  className={
-                    entry === board.year
-                      ? 'text-accent-text tabular font-mono'
-                      : 'text-text-secondary tabular font-mono underline'
-                  }
-                >
-                  {entry}
-                </Link>
-              ))}
-            </nav>
-          ) : null}
-        </header>
+        {seasons.length > 1 ? (
+          <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
+            {seasons.map((entry) => (
+              <Link
+                key={entry}
+                href={`/leagues/${board.leagueId}?year=${entry}`}
+                aria-current={entry === board.year ? 'page' : undefined}
+                className={
+                  entry === board.year
+                    ? 'text-accent-text tabular font-mono'
+                    : 'text-text-secondary tabular font-mono underline'
+                }
+              >
+                {entry}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+      </header>
 
-        {/* P10.T10: standings for whoever has this link, signed in or not —
+      {/* P10.T10: standings for whoever has this link, signed in or not —
             the deficiency being closed is that the source only showed this on
             the dashboard, to a signed-in member. One view, not a total/event
             toggle: the source's own `:type` segment was ignored by both routes
@@ -328,126 +325,125 @@ export default async function LeaguePage({
             slot has nothing of the reader's to show. It is then a deliberate
             statement of what the slot is for — the link, and what signing in
             adds — rather than a hole the standings float beside. */}
-        {standings.length > 0 ? (
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
-            <section className="flex min-w-0 flex-1 flex-col gap-3">
-              <SectionHead as="h2" eyebrow="Yours">
-                Your roster
-              </SectionHead>
-              {viewerRoster.length > 0 ? (
-                <RosterStrip films={viewerRoster} />
-              ) : viewerSeat != null ? (
-                // 🔴 A seat with no picks is still a seat. This branch used to
-                // test `viewerRoster.length` and fall through to "you do not
-                // hold a seat this season" — told to a member whose name was
-                // listed in the standings table directly beside it. Found by
-                // P19.T2's journey on its final frame, where the league owner
-                // is seated and has not drafted.
-                <EmptyState title="Your seat is empty until the draft">
-                  You hold a seat this season. Your picks and what each one has scored
-                  appear here as the draft runs.
-                </EmptyState>
-              ) : user == null ? (
-                <EmptyState
-                  title="Sign in to see your own roster here"
-                  action={{ label: 'Sign in', href: SIGN_IN_URL }}
-                >
-                  The board and the standings below are the whole season, and they are
-                  open to whoever has this link. Your own picks and what each one has
-                  scored sit here once you are in.
-                </EmptyState>
-              ) : (
-                <EmptyState title="You do not hold a seat this season">
-                  This is somebody else's league, or a season you sat out — the standings
-                  and the board are still the whole story.
-                </EmptyState>
-              )}
-            </section>
+      {standings.length > 0 ? (
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
+          <section className="flex min-w-0 flex-1 flex-col gap-3">
+            <SectionHead as="h2" eyebrow="Yours">
+              Your roster
+            </SectionHead>
+            {viewerRoster.length > 0 ? (
+              <RosterStrip films={viewerRoster} />
+            ) : viewerSeat != null ? (
+              // 🔴 A seat with no picks is still a seat. This branch used to
+              // test `viewerRoster.length` and fall through to "you do not
+              // hold a seat this season" — told to a member whose name was
+              // listed in the standings table directly beside it. Found by
+              // P19.T2's journey on its final frame, where the league owner
+              // is seated and has not drafted.
+              <EmptyState title="Your seat is empty until the draft">
+                You hold a seat this season. Your picks and what each one has scored
+                appear here as the draft runs.
+              </EmptyState>
+            ) : user == null ? (
+              <EmptyState
+                title="Sign in to see your own roster here"
+                action={{ label: 'Sign in', href: SIGN_IN_URL }}
+              >
+                The board and the standings below are the whole season, and they are open
+                to whoever has this link. Your own picks and what each one has scored sit
+                here once you are in.
+              </EmptyState>
+            ) : (
+              <EmptyState title="You do not hold a seat this season">
+                This is somebody else's league, or a season you sat out — the standings
+                and the board are still the whole story.
+              </EmptyState>
+            )}
+          </section>
 
-            <section className="flex w-full flex-col gap-3 lg:max-w-sm">
-              <SectionHead as="h2">Standings</SectionHead>
-              <StandingsPanel rows={standings} />
-            </section>
-          </div>
-        ) : null}
+          <section className="flex w-full flex-col gap-3 lg:max-w-sm">
+            <SectionHead as="h2">Standings</SectionHead>
+            <StandingsPanel rows={standings} />
+          </section>
+        </div>
+      ) : null}
 
-        {board.groups.length === 0 ? (
-          <p className="text-text-secondary text-sm">
-            No seats in this league for {board.year}.
-          </p>
-        ) : (
-          board.groups.map((group) => (
-            <section key={group.group} className="flex flex-col gap-4">
-              {/* A heading and a running-order position are content, so
+      {board.groups.length === 0 ? (
+        <p className="text-text-secondary text-sm">
+          No seats in this league for {board.year}.
+        </p>
+      ) : (
+        board.groups.map((group) => (
+          <section key={group.group} className="flex flex-col gap-4">
+            {/* A heading and a running-order position are content, so
                   `secondary`, not `dim` (P17.T34). */}
-              <h2 className="text-text-secondary text-xs font-normal">
-                Group {group.group}
-              </h2>
+            <h2 className="text-text-secondary text-xs font-normal">
+              Group {group.group}
+            </h2>
 
-              {isPending ? (
-                /* Before a draft starts there is nothing to put on a board, and
+            {isPending ? (
+              /* Before a draft starts there is nothing to put on a board, and
                    an empty grid would read as a draft in progress that nobody
                    has picked in. What exists at this point is the running
                    order, which is what the source app showed. */
-                <ol className="flex flex-col">
-                  {group.seats.map((seat) => (
-                    <li
-                      key={seat.draftId}
-                      aria-current={seat.draftId === viewerSeatId ? true : undefined}
-                      className="border-border-rule flex items-baseline gap-3 border-b px-2 py-2"
-                    >
-                      <span className="text-text-secondary tabular w-6 font-mono text-xs">
-                        {String(seat.order).padStart(2, '0')}
-                      </span>
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-text-primary text-sm">
-                          {seat.uuid ? (
-                            <Link
-                              href={`/members/${seat.uuid}`}
-                              className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
-                            >
-                              {seat.name}
-                            </Link>
-                          ) : (
-                            seat.name
-                          )}
-                          {seat.draftId === viewerSeatId ? (
-                            <span className="text-accent-text"> · You</span>
-                          ) : null}
-                        </span>
-                        {seat.isDummy ? (
-                          <StatusChip tone="neutral">Unclaimed</StatusChip>
+              <ol className="flex flex-col">
+                {group.seats.map((seat) => (
+                  <li
+                    key={seat.draftId}
+                    aria-current={seat.draftId === viewerSeatId ? true : undefined}
+                    className="border-border-rule flex items-baseline gap-3 border-b px-2 py-2"
+                  >
+                    <span className="text-text-secondary tabular w-6 font-mono text-xs">
+                      {String(seat.order).padStart(2, '0')}
+                    </span>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-text-primary text-sm">
+                        {seat.uuid ? (
+                          <Link
+                            href={`/members/${seat.uuid}`}
+                            className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
+                          >
+                            {seat.name}
+                          </Link>
+                        ) : (
+                          seat.name
+                        )}
+                        {seat.draftId === viewerSeatId ? (
+                          <span className="text-accent-text"> · You</span>
                         ) : null}
                       </span>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <DraftBoard
-                  rounds={group.rounds}
-                  viewerSeatId={viewerSeatId}
-                  seats={group.seats.map((seat) => ({
-                    draftId: seat.draftId,
-                    name: seat.name,
-                    isDummy: seat.isDummy,
-                    uuid: seat.uuid,
-                    total: seat.total,
-                    order: seat.order,
-                    picks: seat.picks.map((pick) => ({
-                      pickId: pick.pickId,
-                      round: pick.round,
-                      title: pick.movie.title ?? 'Untitled',
-                      posterUrl: posterUrl(pick.movie.poster, 'w185'),
-                      points: pick.points,
-                      ledger: pick.ledger,
-                    })),
-                  }))}
-                />
-              )}
-            </section>
-          ))
-        )}
-      </div>
-    </>
+                      {seat.isDummy ? (
+                        <StatusChip tone="neutral">Unclaimed</StatusChip>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <DraftBoard
+                rounds={group.rounds}
+                viewerSeatId={viewerSeatId}
+                seats={group.seats.map((seat) => ({
+                  draftId: seat.draftId,
+                  name: seat.name,
+                  isDummy: seat.isDummy,
+                  uuid: seat.uuid,
+                  total: seat.total,
+                  order: seat.order,
+                  picks: seat.picks.map((pick) => ({
+                    pickId: pick.pickId,
+                    round: pick.round,
+                    title: pick.movie.title ?? 'Untitled',
+                    posterUrl: posterUrl(pick.movie.poster, 'w185'),
+                    points: pick.points,
+                    ledger: pick.ledger,
+                  })),
+                }))}
+              />
+            )}
+          </section>
+        ))
+      )}
+    </div>
   );
 }

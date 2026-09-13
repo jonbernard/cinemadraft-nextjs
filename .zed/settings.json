@@ -1,0 +1,69 @@
+{
+  "format_on_save": "on",
+  "languages": {
+    "JavaScript": {
+      "language_servers": ["biome", "!eslint", "..."],
+      "formatter": {
+        "external": {
+          "command": "npx",
+          "arguments": [
+            "biome",
+            "check",
+            "--write",
+            "--unsafe",
+            "--stdin-file-path",
+            "{buffer_path}"
+          ]
+        }
+      }
+    },
+    "JSX": {
+      "language_servers": ["biome", "!eslint", "..."],
+      "formatter": {
+        "external": {
+          "command": "npx",
+          "arguments": [
+            "biome",
+            "check",
+            "--write",
+            "--unsafe",
+            "--stdin-file-path",
+            "{buffer_path}"
+          ]
+        }
+      }
+    },
+    "TypeScript": {
+      "language_servers": ["biome", "!eslint", "..."],
+      "formatter": {
+        "external": {
+          "command": "npx",
+          "arguments": [
+            "biome",
+            "check",
+            "--write",
+            "--unsafe",
+            "--stdin-file-path",
+            "{buffer_path}"
+          ]
+        }
+      }
+    },
+    "TSX": {
+      "language_servers": ["biome", "!eslint", "..."],
+      "formatter": {
+        "external": {
+          "command": "npx",
+          "arguments": [
+            "biome",
+            "check",
+            "--write",
+            "--unsafe",
+            "--stdin-file-path",
+            "{buffer_path}"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -12,17 +12,15 @@ export default async function NewLeaguePage() {
   await requireUser();
 
   return (
-    <>
-      <div className="mx-auto flex max-w-lg flex-col gap-10">
-        <SectionHead as="h1">Start a league</SectionHead>
+    <div className="mx-auto flex max-w-lg flex-col gap-10">
+      <SectionHead as="h1">Start a league</SectionHead>
 
-        <p className="text-text-secondary text-sm leading-relaxed">
-          You will run this one: entering everyone's picks on draft night, and setting the
-          order and groups before it. Once it exists you get a link to send the others.
-        </p>
+      <p className="text-text-secondary text-sm leading-relaxed">
+        You will run this one: entering everyone's picks on draft night, and setting the
+        order and groups before it. Once it exists you get a link to send the others.
+      </p>
 
-        <CreateLeagueForm />
-      </div>
-    </>
+      <CreateLeagueForm />
+    </div>
   );
 }

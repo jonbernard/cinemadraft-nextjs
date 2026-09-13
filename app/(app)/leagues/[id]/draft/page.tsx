@@ -60,69 +60,66 @@ export default async function DraftConsolePage({
   if (!canManageLeague(view, user?.id)) notFound();
 
   return (
-    <>
-      <div className="mx-auto flex max-w-6xl flex-col gap-10">
-        <header className="flex flex-col gap-2">
-          <SectionHead
-            as="h1"
-            name
-            eyebrow={`${view.year} · Group ${view.group} · Round ${view.round}`}
-          >
-            {view.leagueName ?? 'Draft'}
-          </SectionHead>
-          <p className="text-text-secondary text-sm">
-            <Link href={`/leagues/${view.leagueId}`} className="underline">
-              the board the league is watching
-            </Link>
-          </p>
+    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+      <header className="flex flex-col gap-2">
+        <SectionHead
+          as="h1"
+          name
+          eyebrow={`${view.year} · Group ${view.group} · Round ${view.round}`}
+        >
+          {view.leagueName ?? 'Draft'}
+        </SectionHead>
+        <p className="text-text-secondary text-sm">
+          <Link href={`/leagues/${view.leagueId}`} className="underline">
+            the board the league is watching
+          </Link>
+        </p>
 
-          {view.groups.length > 1 ? (
-            <nav aria-label="Groups" className="flex gap-3 text-sm">
-              {view.groups.map((entry) => (
-                <Link
-                  key={entry}
-                  href={`/leagues/${view.leagueId}/draft?group=${entry}&year=${view.year}`}
-                  aria-current={entry === view.group ? 'page' : undefined}
-                  className={
-                    entry === view.group
-                      ? 'text-accent-text'
-                      : 'text-text-secondary underline'
-                  }
-                >
-                  Group {entry}
-                </Link>
-              ))}
-            </nav>
-          ) : null}
-        </header>
+        {view.groups.length > 1 ? (
+          <nav aria-label="Groups" className="flex gap-3 text-sm">
+            {view.groups.map((entry) => (
+              <Link
+                key={entry}
+                href={`/leagues/${view.leagueId}/draft?group=${entry}&year=${view.year}`}
+                aria-current={entry === view.group ? 'page' : undefined}
+                className={
+                  entry === view.group
+                    ? 'text-accent-text'
+                    : 'text-text-secondary underline'
+                }
+              >
+                Group {entry}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+      </header>
 
-        {/*
+      {/*
           The search is bound to this draft's context — the year and the films
           already gone — so ranking can sink a taken film and favour one
           eligible this season (§10). An inline Server Action rather than a
           prop on the component, because the context is server data and the
           console must stay injectable for its tests.
         */}
-        <DraftConsole
-          seats={view.seats}
-          suggestedSeatId={view.suggestedSeatId}
-          takenMovieIds={view.takenMovieIds}
-          // biome-ignore lint/performance/noJsxPropsBind: a Server Action in a Server Component — this is not a client closure being rebuilt on render, it is compiled to a stable action reference
-          onSearch={async (query: string) => {
-            'use server';
-            return findFilmsAction({
-              query,
-              context: {
-                kind: 'draft',
-                year: view.year,
-                takenMovieIds: view.takenMovieIds,
-              },
-            });
-          }}
-          onAssign={addPick}
-          onReorder={reorderPicks}
-        />
-      </div>
-    </>
+      <DraftConsole
+        seats={view.seats}
+        suggestedSeatId={view.suggestedSeatId}
+        takenMovieIds={view.takenMovieIds}
+        onSearch={async (query: string) => {
+          'use server';
+          return findFilmsAction({
+            query,
+            context: {
+              kind: 'draft',
+              year: view.year,
+              takenMovieIds: view.takenMovieIds,
+            },
+          });
+        }}
+        onAssign={addPick}
+        onReorder={reorderPicks}
+      />
+    </div>
   );
 }

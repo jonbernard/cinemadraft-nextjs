@@ -10,7 +10,6 @@ import { CARD } from '@/lib/og';
  */
 export function OgMark({ size, ink = CARD.ink }: { size: number; ink?: string }) {
   return (
-    // biome-ignore lint/a11y/noSvgWithoutTitle: Satori rasterises this to a PNG,
     // where a <title> is not read by anything and *does* render as visible text
     // in the card. The card's alt text is the route's own `alt` export.
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">

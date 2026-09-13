@@ -82,79 +82,75 @@ export default async function BrowsePage({ searchParams }: PageProps<'/browse'>)
     // No ground and no padding of its own: `AppShell`'s content panel owns
     // both, and repainting `bg-bg-ground` here paints its outer ground back over
     // the panel this sits inside.
-    <>
-      <div className="mx-auto flex max-w-6xl flex-col gap-10">
-        {/* 🔴 A still from the shelf, so `/browse` is not a heading over a grid
+    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+      {/* 🔴 A still from the shelf, so `/browse` is not a heading over a grid
             (P15.T8). The aspect ratio is reserved at both sizes so the band
             cannot shift the grid beneath it as the image arrives (CLS), and
             `alt=""` is deliberate — the band is decoration, the heading below
             it is the content, and "a still from whichever film TMDB ranked
             first today" tells a screen-reader reader nothing. */}
-        {shelf.hero ? (
-          <div className="relative -mx-4 aspect-[21/9] overflow-hidden sm:aspect-[3/1] xl:-mx-6">
-            <RemoteImage
-              src={shelf.hero.backdropUrl}
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
-            {/* The scrim is what makes the heading legible over an unknown
+      {shelf.hero ? (
+        <div className="relative -mx-4 aspect-[21/9] overflow-hidden sm:aspect-[3/1] xl:-mx-6">
+          <RemoteImage
+            src={shelf.hero.backdropUrl}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          {/* The scrim is what makes the heading legible over an unknown
                 image — the backdrop changes daily, so no fixed text colour can
                 be trusted against it. */}
-            <div className="from-bg-panel absolute inset-0 bg-gradient-to-t via-transparent" />
-          </div>
-        ) : null}
+          <div className="from-bg-panel absolute inset-0 bg-gradient-to-t via-transparent" />
+        </div>
+      ) : null}
 
-        <header className="flex flex-col gap-4">
-          {/* No film count and no page indicator here. Both were true of the
+      <header className="flex flex-col gap-4">
+        {/* No film count and no page indicator here. Both were true of the
               first page only, and the list now grows underneath them — a header
               reading "20 films · 1/9" above forty films is worse than no header
               at all. Each month still counts its own. */}
-          <SectionHead as="h1">Browse</SectionHead>
+        <SectionHead as="h1">Browse</SectionHead>
 
-          {/* 🔴 Two links, not a switch. The source used a single `<Switch>`
+        {/* 🔴 Two links, not a switch. The source used a single `<Switch>`
               labelled "The Future/The Past", which does not say which side it is
               currently on — a checked toggle reading both options at once is
               ambiguous, and it was the *unchecked* state that meant "future". Two
               controls with `aria-current` state where you are, and being links
               makes each side a real URL. */}
-          <nav aria-label="Which films" className="flex items-center gap-2">
-            <WhenLink when="past" current={when} label="The past" />
-            <WhenLink when="future" current={when} label="The future" />
-          </nav>
-        </header>
+        <nav aria-label="Which films" className="flex items-center gap-2">
+          <WhenLink when="past" current={when} label="The past" />
+          <WhenLink when="future" current={when} label="The future" />
+        </nav>
+      </header>
 
-        {shelf.months.length === 0 ? (
-          <EmptyState
-            title="Nothing to show"
-            action={
-              when === 'future'
-                ? { label: 'Look at the past', href: '/browse' }
-                : undefined
-            }
-          >
-            {when === 'future'
-              ? 'Nothing is scheduled for release yet.'
-              : 'The film catalogue could not be reached. Try again in a moment.'}
-          </EmptyState>
-        ) : (
-          <BrowseList when={when} initial={shelf} isSignedIn={user != null} />
-        )}
+      {shelf.months.length === 0 ? (
+        <EmptyState
+          title="Nothing to show"
+          action={
+            when === 'future' ? { label: 'Look at the past', href: '/browse' } : undefined
+          }
+        >
+          {when === 'future'
+            ? 'Nothing is scheduled for release yet.'
+            : 'The film catalogue could not be reached. Try again in a moment.'}
+        </EmptyState>
+      ) : (
+        <BrowseList when={when} initial={shelf} isSignedIn={user != null} />
+      )}
 
-        {/* 🔴 The crawl path D80 kept. Readers never see it — it exists so the
+      {/* 🔴 The crawl path D80 kept. Readers never see it — it exists so the
             sitemap (P15.T6) has a way into pages 2..N, which the intersection
             sentinel does not provide to anything without JavaScript. */}
-        {hasMore ? (
-          <noscript>
-            <a href={`/browse?when=${when}&page=${shelf.page + 1}`}>
-              More films, page {shelf.page + 1} of {shelf.pageCount}
-            </a>
-          </noscript>
-        ) : null}
-      </div>
-    </>
+      {hasMore ? (
+        <noscript>
+          <a href={`/browse?when=${when}&page=${shelf.page + 1}`}>
+            More films, page {shelf.page + 1} of {shelf.pageCount}
+          </a>
+        </noscript>
+      ) : null}
+    </div>
   );
 }
 

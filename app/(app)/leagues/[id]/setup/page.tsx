@@ -44,28 +44,26 @@ export default async function SeasonSetupPage({
   if (!canManageLeague(view, user?.id)) notFound();
 
   return (
-    <>
-      <div className="mx-auto flex max-w-3xl flex-col gap-10">
-        <header className="flex flex-col gap-2">
-          <SectionHead as="h1" name eyebrow={`${view.year} · Setting up`}>
-            {view.leagueName}
-          </SectionHead>
-          <p className="text-text-secondary text-sm">
-            <Link href={`/leagues/${view.leagueId}`} className="underline">
-              the board
-            </Link>
-          </p>
-        </header>
+    <div className="mx-auto flex max-w-3xl flex-col gap-10">
+      <header className="flex flex-col gap-2">
+        <SectionHead as="h1" name eyebrow={`${view.year} · Setting up`}>
+          {view.leagueName}
+        </SectionHead>
+        <p className="text-text-secondary text-sm">
+          <Link href={`/leagues/${view.leagueId}`} className="underline">
+            the board
+          </Link>
+        </p>
+      </header>
 
-        <SeasonSetup
-          leagueId={view.leagueId}
-          year={view.year}
-          seats={view.seats}
-          groups={view.groups}
-          suggestedGroupCount={view.suggestedGroupCount}
-          status={view.status}
-        />
-      </div>
-    </>
+      <SeasonSetup
+        leagueId={view.leagueId}
+        year={view.year}
+        seats={view.seats}
+        groups={view.groups}
+        suggestedGroupCount={view.suggestedGroupCount}
+        status={view.status}
+      />
+    </div>
   );
 }

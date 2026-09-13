@@ -54,72 +54,70 @@ export default async function AwardShowsPage() {
   const outstanding = shows.filter((show) => show.needsNominations || show.needsWinners);
 
   return (
-    <>
-      <div className="mx-auto flex max-w-5xl flex-col gap-10">
-        <SectionHead as="h1" right={String(year)}>
-          Award shows
-        </SectionHead>
+    <div className="mx-auto flex max-w-5xl flex-col gap-10">
+      <SectionHead as="h1" right={String(year)}>
+        Award shows
+      </SectionHead>
 
-        {isAdmin && outstanding.length > 0 ? (
-          <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
-            <SectionHead as="h2" className="pb-0">
-              Still to enter
-            </SectionHead>
-            <ul className="flex flex-col gap-2">
-              {outstanding.map((show) => (
-                <li key={show.eventId} className="flex flex-wrap items-center gap-2">
-                  <Link
-                    href={`/award-shows/${show.abbreviation}?year=${year}`}
-                    className="text-text-primary hover:text-accent-text font-serif text-base"
-                  >
-                    {show.name}
-                  </Link>
-                  {/* Carmine: work outstanding during a ceremony is urgency,
-                      not an award. */}
-                  {show.needsNominations ? (
-                    <StatusChip tone="carmine">Nominations</StatusChip>
-                  ) : null}
-                  {show.needsWinners ? (
-                    <StatusChip tone="carmine">Winners</StatusChip>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </Panel>
-        ) : null}
-
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
-          {shows.map((show) => (
-            <li key={show.eventId}>
-              <Link
-                href={`/award-shows/${show.abbreviation}?year=${year}`}
-                className="bg-bg-panel hover:bg-bg-surface focus-visible:outline-accent-fill flex h-full flex-col gap-1 rounded-sm p-4 focus-visible:outline-2"
-              >
-                <ShowLogo imageUrl={show.imageUrl} className="mb-2" />
-                <Eyebrow>{show.abbreviation}</Eyebrow>
-                <span className="text-text-primary font-serif text-base tracking-[-0.02em]">
-                  {show.name}
-                </span>
-                <span className="text-text-secondary tabular font-mono text-xs">
-                  {show.categoryCount}{' '}
-                  {show.categoryCount === 1 ? 'category' : 'categories'}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-
+      {isAdmin && outstanding.length > 0 ? (
         <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
           <SectionHead as="h2" className="pb-0">
-            Subscribe to ceremony dates
+            Still to enter
           </SectionHead>
-          <p className="text-text-secondary text-sm">
-            Add every show's nomination and awards dates to your own calendar app. Paste
-            this URL wherever it asks for a calendar subscription, not a file to download.
-          </p>
-          <InviteLink url={`${origin}/api/ical`} />
+          <ul className="flex flex-col gap-2">
+            {outstanding.map((show) => (
+              <li key={show.eventId} className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/award-shows/${show.abbreviation}?year=${year}`}
+                  className="text-text-primary hover:text-accent-text font-serif text-base"
+                >
+                  {show.name}
+                </Link>
+                {/* Carmine: work outstanding during a ceremony is urgency,
+                      not an award. */}
+                {show.needsNominations ? (
+                  <StatusChip tone="carmine">Nominations</StatusChip>
+                ) : null}
+                {show.needsWinners ? (
+                  <StatusChip tone="carmine">Winners</StatusChip>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         </Panel>
-      </div>
-    </>
+      ) : null}
+
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
+        {shows.map((show) => (
+          <li key={show.eventId}>
+            <Link
+              href={`/award-shows/${show.abbreviation}?year=${year}`}
+              className="bg-bg-panel hover:bg-bg-surface focus-visible:outline-accent-fill flex h-full flex-col gap-1 rounded-sm p-4 focus-visible:outline-2"
+            >
+              <ShowLogo imageUrl={show.imageUrl} className="mb-2" />
+              <Eyebrow>{show.abbreviation}</Eyebrow>
+              <span className="text-text-primary font-serif text-base tracking-[-0.02em]">
+                {show.name}
+              </span>
+              <span className="text-text-secondary tabular font-mono text-xs">
+                {show.categoryCount}{' '}
+                {show.categoryCount === 1 ? 'category' : 'categories'}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
+        <SectionHead as="h2" className="pb-0">
+          Subscribe to ceremony dates
+        </SectionHead>
+        <p className="text-text-secondary text-sm">
+          Add every show's nomination and awards dates to your own calendar app. Paste
+          this URL wherever it asks for a calendar subscription, not a file to download.
+        </p>
+        <InviteLink url={`${origin}/api/ical`} />
+      </Panel>
+    </div>
   );
 }

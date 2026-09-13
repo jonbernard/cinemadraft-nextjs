@@ -114,6 +114,8 @@ export function NotificationBell({
     };
   }, [open]);
 
+  const unreadCountLabel = unreadCount > 9 ? '9+' : unreadCount;
+
   return (
     <div ref={containerRef} className="relative">
       <button
@@ -130,7 +132,7 @@ export function NotificationBell({
             aria-hidden="true"
             className="bg-accent-fill absolute top-2 right-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-xs text-white"
           >
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCountLabel}
           </span>
         ) : null}
         <span className="sr-only">

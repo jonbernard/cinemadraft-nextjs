@@ -100,28 +100,27 @@ export default async function AwardShowPage({
     : [null, []];
 
   return (
-    <>
-      <div className="mx-auto flex max-w-5xl flex-col gap-10">
-        <header className="flex flex-col gap-3">
-          <div className="flex items-start gap-4">
-            <ShowLogo imageUrl={show.imageUrl} size="lg" />
-            <SectionHead
-              as="h1"
-              name
-              eyebrow={show.abbreviation}
-              right={String(show.year)}
-              className="pb-0"
-            >
-              {show.name}
-            </SectionHead>
-          </div>
+    <div className="mx-auto flex max-w-5xl flex-col gap-10">
+      <header className="flex flex-col gap-3">
+        <div className="flex items-start gap-4">
+          <ShowLogo imageUrl={show.imageUrl} size="lg" />
+          <SectionHead
+            as="h1"
+            name
+            eyebrow={show.abbreviation}
+            right={String(show.year)}
+            className="pb-0"
+          >
+            {show.name}
+          </SectionHead>
+        </div>
 
-          <p className="text-text-secondary text-sm">
-            {show.categories.length}{' '}
-            {show.categories.length === 1 ? 'category' : 'categories'}
-          </p>
+        <p className="text-text-secondary text-sm">
+          {show.categories.length}{' '}
+          {show.categories.length === 1 ? 'category' : 'categories'}
+        </p>
 
-          {/* The live surface, while the ceremony is on air. No session gate:
+        {/* The live surface, while the ceremony is on air. No session gate:
               `/live/[abbr]` is public (P17.T16, amending D40), and a stranger
               handed this link during a ceremony being able to follow it is the
               whole point of the route.
@@ -130,122 +129,121 @@ export default async function AwardShowPage({
               flag for "the winners are being worked on", i.e. the broadcast
               window. The prop name reads admin-ish because that is the only
               thing it fed until now; it is the right column. */}
-          {show.needsWinners ? (
-            <Link
-              href={`/live/${show.abbreviation}?year=${show.year}`}
-              className="text-accent-text hover:text-text-primary focus-visible:outline-accent-fill w-fit text-sm focus-visible:outline-2"
-            >
-              Follow live →
-            </Link>
-          ) : null}
-
-          {seasons.length > 1 ? (
-            <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
-              {seasons.map((entry) => (
-                <Link
-                  key={entry}
-                  href={`/award-shows/${show.abbreviation}?year=${entry}`}
-                  aria-current={entry === show.year ? 'page' : undefined}
-                  className={
-                    entry === show.year
-                      ? 'text-accent-text tabular font-mono'
-                      : 'text-text-secondary tabular font-mono underline'
-                  }
-                >
-                  {entry}
-                </Link>
-              ))}
-            </nav>
-          ) : null}
-        </header>
-
-        {isAdmin && event ? (
-          <Panel tone="surface" as="section" className="flex flex-col gap-4 p-4">
-            <SectionHead as="h2" className="pb-0">
-              Edit this show
-            </SectionHead>
-            <EventAdmin
-              event={{
-                id: event.id,
-                name: event.name,
-                abbreviation: event.abbreviation,
-                image: event.image,
-                nomActive: event.nomActive,
-                nomDate: event.nomDate,
-                nomTime: event.nomTime,
-                nomDuration: event.nomDuration,
-                awardsActive: event.awardsActive,
-                awardsDate: event.awardsDate,
-                awardsTime: event.awardsTime,
-                awardsDuration: event.awardsDuration,
-                liveResults: event.liveResults,
-              }}
-            />
-          </Panel>
+        {show.needsWinners ? (
+          <Link
+            href={`/live/${show.abbreviation}?year=${show.year}`}
+            className="text-accent-text hover:text-text-primary focus-visible:outline-accent-fill w-fit text-sm focus-visible:outline-2"
+          >
+            Follow live →
+          </Link>
         ) : null}
 
-        {show.categories.length === 0 ? (
-          <EmptyState title="No categories yet">
-            Nothing has been entered for this show and season.
-          </EmptyState>
-        ) : (
-          show.categories.map((category) => (
-            <section key={category.awardId} className="flex flex-col gap-4">
-              {/* A nomination earns the category's points; a win earns them a
+        {seasons.length > 1 ? (
+          <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
+            {seasons.map((entry) => (
+              <Link
+                key={entry}
+                href={`/award-shows/${show.abbreviation}?year=${entry}`}
+                aria-current={entry === show.year ? 'page' : undefined}
+                className={
+                  entry === show.year
+                    ? 'text-accent-text tabular font-mono'
+                    : 'text-text-secondary tabular font-mono underline'
+                }
+              >
+                {entry}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+      </header>
+
+      {isAdmin && event ? (
+        <Panel tone="surface" as="section" className="flex flex-col gap-4 p-4">
+          <SectionHead as="h2" className="pb-0">
+            Edit this show
+          </SectionHead>
+          <EventAdmin
+            event={{
+              id: event.id,
+              name: event.name,
+              abbreviation: event.abbreviation,
+              image: event.image,
+              nomActive: event.nomActive,
+              nomDate: event.nomDate,
+              nomTime: event.nomTime,
+              nomDuration: event.nomDuration,
+              awardsActive: event.awardsActive,
+              awardsDate: event.awardsDate,
+              awardsTime: event.awardsTime,
+              awardsDuration: event.awardsDuration,
+              liveResults: event.liveResults,
+            }}
+          />
+        </Panel>
+      ) : null}
+
+      {show.categories.length === 0 ? (
+        <EmptyState title="No categories yet">
+          Nothing has been entered for this show and season.
+        </EmptyState>
+      ) : (
+        show.categories.map((category) => (
+          <section key={category.awardId} className="flex flex-col gap-4">
+            {/* A nomination earns the category's points; a win earns them a
                   second time, so it is worth twice this to whoever wins it. */}
-              <SectionHead as="h2" right={`${category.points} pts`} className="pb-0">
-                {category.name}
-              </SectionHead>
-
-              {category.nominees.length > 0 || !category.hasWinner ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  {category.nominees.length > 0 ? (
-                    <StatusChip tone="brass">
-                      {category.nominees.length}{' '}
-                      {category.nominees.length === 1 ? 'nomination' : 'nominations'}
-                    </StatusChip>
-                  ) : null}
-                  {category.hasWinner ? null : <StatusChip>No winner yet</StatusChip>}
-                </div>
-              ) : null}
-
-              <NomineeGrid nominees={category.nominees} />
-
-              {isAdmin ? (
-                <CategoryAdmin
-                  awardId={category.awardId}
-                  categoryName={category.name}
-                  year={show.year}
-                  requiresNomineeName={category.requiresNomineeName}
-                  nominees={category.nominees.map((nominee) => ({
-                    nominationId: nominee.nominationId,
-                    movieId: nominee.movieId,
-                    title: nominee.title,
-                    isWinner: nominee.isWinner,
-                  }))}
-                />
-              ) : null}
-            </section>
-          ))
-        )}
-
-        {isAdmin && event ? (
-          <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
-            <SectionHead as="h2" className="pb-0">
-              Add a category
+            <SectionHead as="h2" right={`${category.points} pts`} className="pb-0">
+              {category.name}
             </SectionHead>
-            <CategoryCreate
-              eventId={event.id}
-              tiers={tiers.map((tier) => ({
-                id: tier.id,
-                level: tier.level ?? 'Untiered',
-                tier: tier.tier ?? 0,
-                points: tier.points ?? 0,
-              }))}
-            />
-          </Panel>
-        ) : null}
-      </div>
-    </>
+
+            {category.nominees.length > 0 || !category.hasWinner ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {category.nominees.length > 0 ? (
+                  <StatusChip tone="brass">
+                    {category.nominees.length}{' '}
+                    {category.nominees.length === 1 ? 'nomination' : 'nominations'}
+                  </StatusChip>
+                ) : null}
+                {category.hasWinner ? null : <StatusChip>No winner yet</StatusChip>}
+              </div>
+            ) : null}
+
+            <NomineeGrid nominees={category.nominees} />
+
+            {isAdmin ? (
+              <CategoryAdmin
+                awardId={category.awardId}
+                categoryName={category.name}
+                year={show.year}
+                requiresNomineeName={category.requiresNomineeName}
+                nominees={category.nominees.map((nominee) => ({
+                  nominationId: nominee.nominationId,
+                  movieId: nominee.movieId,
+                  title: nominee.title,
+                  isWinner: nominee.isWinner,
+                }))}
+              />
+            ) : null}
+          </section>
+        ))
+      )}
+
+      {isAdmin && event ? (
+        <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
+          <SectionHead as="h2" className="pb-0">
+            Add a category
+          </SectionHead>
+          <CategoryCreate
+            eventId={event.id}
+            tiers={tiers.map((tier) => ({
+              id: tier.id,
+              level: tier.level ?? 'Untiered',
+              tier: tier.tier ?? 0,
+              points: tier.points ?? 0,
+            }))}
+          />
+        </Panel>
+      ) : null}
+    </div>
   );
 }

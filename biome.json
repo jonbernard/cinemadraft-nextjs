@@ -46,6 +46,9 @@
     },
     "rules": {
       "preset": "recommended",
+      "performance": {
+        "noJsxPropsBind": "off"
+      },
       "correctness": {
         "noUnusedImports": "error",
         "noUnusedVariables": "error",
