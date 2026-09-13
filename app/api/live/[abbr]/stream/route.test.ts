@@ -145,7 +145,7 @@ describe('GET /api/live/[abbr]/stream', () => {
     await settle();
 
     // 🔴 The whole view, not a summary of it: a reconnecting client is correct
-    // from this frame alone, which is what makes the 290s close survivable.
+    // from this frame alone, which is what makes the self-close survivable.
     expect(stream.frames).toEqual([`data: ${JSON.stringify(BASE)}\n\n`]);
     expect(JSON.parse(stream.frames[0].slice('data: '.length))).toEqual(BASE);
   });
@@ -213,13 +213,13 @@ describe('GET /api/live/[abbr]/stream', () => {
     expect(mocks.getLiveShow).toHaveBeenCalledTimes(polled);
   });
 
-  it('closes itself at 290s, ahead of the platform kill, and stops polling', async () => {
+  it('closes itself at 50s, ahead of the platform kill, and stops polling', async () => {
     mocks.getLiveShow.mockResolvedValue(BASE);
 
     const stream = collect(await GET(request('?year=2026'), params));
     await settle();
 
-    await vi.advanceTimersByTimeAsync(289_000);
+    await vi.advanceTimersByTimeAsync(49_000);
     expect(stream.closed).toBe(false);
 
     await vi.advanceTimersByTimeAsync(1_000);

@@ -100,7 +100,7 @@ function justDecided(before: LiveRoomView, after: LiveRoomView): number | null {
  *      `error` with `readyState === CLOSED` — and neither do we. The 204 the
  *      route answers off air is the server saying *stop asking*, and a backoff
  *      loop written on top of it would reinstate exactly the leak this list
- *      exists to prevent. A clean close every ~290s is the other thing, and is
+ *      exists to prevent. A clean close every ~50s is the other thing, and is
  *      not an error: `readyState` is `CONNECTING`, the browser reconnects on
  *      its own, and nothing here interferes.
  *
@@ -111,7 +111,7 @@ function justDecided(before: LiveRoomView, after: LiveRoomView): number | null {
  *
  * 🔴 **The effect must not depend on the view it sets.** `view.onAir` in the
  * dependency array would tear the connection down and build a new one on every
- * frame — the whole 290s budget spent in a couple of minutes, and the bug would
+ * frame — the whole connection budget spent in seconds, and the bug would
  * look like the page working perfectly. It depends on the *server's* `initial`
  * and on the URL, both of which are stable for the life of the mount.
  */
@@ -197,7 +197,7 @@ export function LiveRoom({
       };
 
       opened.onerror = () => {
-        // `CONNECTING` is the ~290s self-close, or a blip: the browser is
+        // `CONNECTING` is the ~50s self-close, or a blip: the browser is
         // already reconnecting and must be left to. `CLOSED` is a non-200 —
         // the 204 off air, or a 404 — which `EventSource` never retries and
         // nor do we.

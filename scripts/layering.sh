@@ -182,4 +182,20 @@ check "no 🔴 in test titles" \
      --include='*.ts' --include='*.tsx' --include='*.mts' 2>/dev/null \
      || true)"
 
+# 🔴 A route may not ask for more seconds than the plan allows. `maxDuration`
+# is validated by Vercel at DEPLOY time, against the plan the project is on —
+# Hobby's ceiling is 60 — so `export const maxDuration = 300` typechecks,
+# builds, passes every test and then fails the deployment with "Serverless
+# Functions must have a maxDuration between 1 and 60 for plan hobby". That is
+# exactly what happened to the live stream on 2026-09-13: the transport spec
+# and D102 were both sized against the 300s figure, which is the Pro default.
+#
+# This grep is the local check that did not exist. It matches any two- or
+# three-digit value and lets 1–60 through, so 61 upward is caught; raising the
+# ceiling means a paid plan and an edit to this line, together.
+check "no maxDuration above the Hobby ceiling of 60" \
+  "$(grep -rnE "export const maxDuration = ([7-9][0-9]|[1-9][0-9][0-9]+|6[1-9])\b" \
+     app lib actions --include='*.ts' --include='*.tsx' 2>/dev/null \
+     || true)"
+
 exit $fail

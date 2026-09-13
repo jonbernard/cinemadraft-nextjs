@@ -54,7 +54,7 @@ class FakeEventSource {
 
   /**
    * `CLOSED` is a non-200 — the 204 the route answers off air — which a real
-   * `EventSource` never retries. `CONNECTING` is the ~290s self-close, which it
+   * `EventSource` never retries. `CONNECTING` is the ~50s self-close, which it
    * retries on its own.
    */
   fail(readyState: number) {
@@ -316,7 +316,7 @@ describe('LiveRoom', () => {
 
   it('leaves the browser to reconnect its own clean close', () => {
     // The other half of the test above, and the one that makes it mean
-    // something: the route closes itself every ~290s and the browser
+    // something: the route closes itself every ~50s and the browser
     // reconnects on its own. Treating that as a refusal would leave a live
     // page dead after five minutes, which nothing else here would catch.
     room(view());

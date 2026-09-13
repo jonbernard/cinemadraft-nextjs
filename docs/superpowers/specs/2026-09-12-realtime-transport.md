@@ -1,5 +1,13 @@
 # Realtime transport — P14.T0
 
+> **Correction, 2026-09-13.** This spec is sized throughout against a 300s
+> function ceiling and a 290s self-close. That is the **Pro** ceiling. Hobby's
+> is **60 seconds**, and Vercel refuses the deployment outright above it, so
+> the stream ships with `maxDuration = 60` and a 50s self-close — a reconnect
+> roughly every 53s rather than every 293s. See **D115**. The conclusion the
+> spec reaches is unchanged, and the reason is its own core rule: every frame
+> is complete state, so a more frequent gap has nothing to replay.
+
 **Status:** recommendation, awaiting the owner. Nothing implemented. No source file
 written, `docs/DECISIONS.md` untouched.
 

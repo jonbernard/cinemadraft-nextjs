@@ -10,8 +10,9 @@ import { getActiveYear } from '@/lib/services/season';
  *
  * 🔴 **Every event's `data` is the complete `LiveShowView`, never a delta** —
  * the first frame of a connection and every frame after it. That single rule is
- * the whole reconnection story. Vercel kills a function at 300s, so a
- * three-hour ceremony is ~36 forced disconnects per viewer; a *delta* announced
+ * the whole reconnection story. Vercel kills a function at this plan's ceiling
+ * — 60s on Hobby — so a three-hour ceremony is ~200 forced disconnects per
+ * viewer; a *delta* announced
  * inside one of those gaps would be lost forever, while a full frame makes the
  * gap unmissable. It is also why no broker is needed: there is nothing to
  * replay and nothing to merge.
@@ -35,10 +36,18 @@ import { getActiveYear } from '@/lib/services/season';
 export const runtime = 'nodejs';
 
 /**
- * The platform ceiling, declared rather than inherited. The 290s self-close
- * below is only graceful if the function is actually allowed to live to 290s.
+ * The platform ceiling, declared rather than inherited — the self-close below
+ * is only graceful if the function is actually allowed to live that long.
+ *
+ * 🔴 **60, because the ceiling is per-plan and Hobby's is 60 seconds.**
+ * This said 300 until Vercel refused the deployment outright: "Serverless
+ * Functions must have a maxDuration between 1 and 60 for plan hobby". The 300s
+ * figure is the Pro/Enterprise default and is what the transport spec and D102
+ * were sized against; it is wrong here, and it failed at deploy rather than at
+ * build, test or review, because no local check knows what plan the project is
+ * on. Raising this above 60 requires a paid plan, not an edit.
  */
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 /** Two seconds is a latency decision, not a cost one — the compute is awake either way. */
 const POLL_MS = 2_000;
@@ -54,8 +63,13 @@ const HEARTBEAT_BEATS = 10;
  * 🔴 Ten seconds short of `maxDuration`. Closing ourselves means the client
  * sees a clean end and `EventSource` reconnects on its own; being killed means
  * a truncated frame mid-write.
+ *
+ * At Hobby's 60s ceiling that is a reconnect roughly every 53s (50s here plus
+ * the browser's 3s retry) rather than every 293s. The cost of that is a
+ * handshake, not a stall: every frame is complete state (D110), so the gap is
+ * invisible to a reader and there is nothing to replay.
  */
-const LIFETIME_MS = 290_000;
+const LIFETIME_MS = 50_000;
 
 export async function GET(
   request: NextRequest,
@@ -90,7 +104,7 @@ export async function GET(
   /**
    * 🔴 Off air, no stream — and this is the free-tier guard, not politeness.
    * Neon bills awake-time, so one forgotten monitor left on a finished show
-   * reconnecting every 290s spends 180 CU-hrs against a 100 CU-hr allowance and
+   * reconnecting for ever spends 180 CU-hrs against a 100 CU-hr allowance and
    * exhausts the tier by itself. 204 rather than an empty stream because
    * `EventSource` *fails* a connection whose status is not 200 and does not
    * retry, which is the only way a server can say "stop asking".

@@ -706,7 +706,7 @@ test.describe('live show', () => {
    *
    * `fetch` inside the page rather than `request.get`: an APIResponse's body is
    * only readable once the response completes, and this one does not complete
-   * for 290 seconds. The reader is cancelled as soon as a frame is in hand,
+   * for its whole lifetime. The reader is cancelled as soon as a frame is in hand,
    * which is also what stops the test leaving a stream open behind it.
    */
   async function firstFrame(page: Page, url: string): Promise<string> {
@@ -923,13 +923,13 @@ test.describe('live show', () => {
      *
      * 🔴 **What is watched is the request ending, not a quiet interval.** The
      * plan's shape for this was "no request to `/api/live/` for longer than the
-     * route's 290s self-close", on the grounds that a shorter window cannot
+     * route's self-close", on the grounds that a shorter window cannot
      * tell a closed stream from one that has not reconnected yet. True of a
      * window — and unnecessary, because the distinction is directly
      * observable: a stream the client closed ENDS, and Chromium reports that
      * end to Playwright the moment it happens. A tab that had merely not
      * reconnected still has its request in flight and produces no end event at
-     * all until the server's own 290s close, which is five minutes from here.
+     * all until the server's own close.
      * So the three facts below — one connection, it ends within seconds of the
      * tab being hidden, and no second one opens while it stays hidden — are
      * what a 293-second window was a proxy for, measured rather than waited
