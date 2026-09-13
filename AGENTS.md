@@ -64,6 +64,8 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
 
 - **Measure in a production build, not `next dev`.** A design review run against a dev server produced five findings that were artefacts: a "detached avatar" that was Next's dev-tools indicator, a 1024px table overflow that does not exist in production, a film-page width taken from a different film, award marks described as dark-on-transparent that are opaque JPEGs, and a dead column off by 700px. 🔴 `next dev` also answers **403 for every `_next/static` chunk on `127.0.0.1`** while `localhost` serves fine — so a dev measurement on that host is of an unstyled page. `npm run start` is unaffected by both problems.
 
+- 🔴 **Run the unit suite with `E2E_TEST_AUTH` unset.** Exported, it turns 186 unit tests red on `headers` called outside a request scope — a wall of failures that looks like catastrophic breakage and is only a leaked environment variable from a browser run. The e2e suite sets it for its own server; nothing else should inherit it.
+
 - 🔴 **`npm run test:ci` passing locally does not mean CI passes.** It runs against *your* database, which holds the restored production copy — so a test that reads real rows passes locally and fails on CI, where the database is migrations plus a minimal seed. This has broken `main` twice. To actually reproduce CI, point it at an empty one:
 
   ```bash

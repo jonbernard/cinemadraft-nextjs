@@ -1327,6 +1327,18 @@ product and should only inherit tokens from this phase, not be redesigned by it.
   those 51 URLs are legacy Auth0 data and Clerk owns identity now. That is a
   migration, not this task.
 
+- [ ] P17.T38 — 🔴 **The member index only works before a draft starts.** Found
+  while shipping T30 (2026-09-12): `leagues/[id]/page.tsx` links each seat to
+  `/members/<uuid>` on the **pending** branch only. Once `draftingStatus` is
+  `active` or `complete` the page renders `DraftBoard`, and `grep members
+  components/DraftBoard.tsx` is empty — so there is no route from a league to a
+  member at all. The restored data is 5 pending / 6 active / 2 complete, so it
+  is broken for most seasons, and the owner's decision that "the league page is
+  the member index" depends on it. Not fixed in T30: `DraftBoard` is a file
+  tranche 4 is sweeping, and adding a link mid-sweep would have muddied its
+  no-visual-diff verification. 🔴 Also note the board renders every seat twice
+  (mobile `<ul>` + desktop `<table>`), so the link lands in two places.
+
 ### Recording the decisions
 
 - 🔴 **The league page IS the member index — decided by the owner 2026-09-12,
