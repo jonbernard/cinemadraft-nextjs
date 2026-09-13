@@ -449,6 +449,47 @@ test.describe('the league page', () => {
     expect(roster.y).toBeLessThan(standings.y);
   });
 
+  test('🔴 no signed-in text renders below the 11px floor', async ({ page }) => {
+    // P17.T33. 11px is `Eyebrow`'s floor, the smallest size the product
+    // sanctions (D74). Before T18 the board's round badge was `text-[0.65rem]`
+    // — 10.4px, 112 rendered on `/leagues/1` alone — and an arbitrary value is
+    // invisible to a sweep that matches `text-sm`/`text-xs`. `layering.sh`
+    // stops the literal; this stops the *rendered* size, whatever produced it.
+    //
+    // 🔴 An active league with picks, or the board — where the badge lives —
+    // never renders and this passes against the defect.
+    const userId = await signInAs(page, {
+      email: `${TAG}-floor@example.test`,
+      firstName: 'Floor',
+    });
+    const leagueId = await scratchLeague(userId, {
+      name: 'floor',
+      status: 'active',
+      picks: 3,
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    for (const url of ['/', `/leagues/${leagueId}`, '/leagues', '/list']) {
+      await page.goto(url);
+      if (url === `/leagues/${leagueId}`) {
+        // The board, with a badge on it, actually rendered.
+        await expect(page.getByRole('table', { name: /Draft board/ })).toBeVisible();
+      }
+
+      // Every leaf element with text, including the layout CSS hides at this
+      // width: a hidden phone board still ships its badges to the phone.
+      const tooSmall = await page.evaluate(() =>
+        [...document.body.querySelectorAll('*')]
+          .filter((node) => (node.textContent ?? '').trim().length > 0)
+          .filter((node) => node.children.length === 0)
+          .map((node) => Number.parseFloat(getComputedStyle(node).fontSize))
+          .filter((size) => size > 0 && size < 11),
+      );
+
+      expect(tooSmall, `${url} renders text below 11px`).toEqual([]);
+    }
+  });
+
   test('🔴 a stranger gets a stated empty state in that column, not a hole', async ({
     page,
   }) => {
