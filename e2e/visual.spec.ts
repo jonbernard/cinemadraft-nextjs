@@ -75,13 +75,36 @@ test.describe('the surface rename moves no pixels', () => {
           if (surface.auth) {
             await signInAs(page, { email: `${TAG}-reader@example.test` });
           }
+
+          // 🔴 The scheme is set in localStorage BEFORE the page loads, not by
+          // stamping the attribute afterwards. `app/providers.tsx` mounts MUI's
+          // `InitColorSchemeScript`, which runs before paint and writes
+          // `data-mui-color-scheme` from storage — so an attribute set between
+          // `goto` and hydration is a race the script wins about one time in
+          // sixteen. The plan's version did exactly that, and a no-change
+          // re-run failed 3 of 48 with whole-page diffs: the baseline was
+          // captured light and the comparison rendered dark. A harness that
+          // fails without a change cannot certify that a change made none.
+          await page.addInitScript((v) => {
+            try {
+              window.localStorage.setItem('mui-mode', v);
+            } catch {
+              // Private mode or blocked storage: the belt-and-braces set below
+              // still applies, and the assertion catches it if neither did.
+            }
+          }, scheme);
+          await page.emulateMedia({ colorScheme: scheme });
           await page.setViewportSize({ width, height: 1000 });
           await page.goto(surface.path);
+          await page.waitForLoadState('networkidle');
           await page.evaluate(
             (v) => document.documentElement.setAttribute('data-mui-color-scheme', v),
             scheme,
           );
-          await page.waitForLoadState('networkidle');
+          await expect(page.locator('html')).toHaveAttribute(
+            'data-mui-color-scheme',
+            scheme,
+          );
 
           await expect(page).toHaveScreenshot(`${surface.name}-${scheme}-${width}.png`, {
             fullPage: surface.full,
@@ -90,6 +113,14 @@ test.describe('the surface rename moves no pixels', () => {
             // Masking it is what makes a zero-diff claim about *our* CSS.
             mask: [page.locator('img')],
             maxDiffPixels: 0,
+            // 🔴 `threshold: 0` as well as `maxDiffPixels: 0`. They are not the
+            // same claim: `maxDiffPixels` counts pixels that differ by MORE
+            // than `threshold`, whose default is 0.2 in YIQ colour distance.
+            // Verified — with the default, changing `--color-bg-raised` from
+            // #211c29 to #211c2a passed all 48, so "zero diff pixels" meant
+            // "nothing moved by more than a fifth of the colour space". At 0
+            // that same one-digit mutation fails 48 of 48.
+            threshold: 0,
             animations: 'disabled',
           });
         });
