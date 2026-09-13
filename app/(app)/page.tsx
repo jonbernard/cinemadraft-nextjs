@@ -246,82 +246,54 @@ function SignedOutHero({ facts }: { facts: LandingFacts | null }) {
             on the fold at 1440×900. */
         <div
           data-testid="hero-films"
-          className="flex w-full shrink-0 items-end gap-2 sm:gap-3 lg:w-[34rem]"
+          className="flex h-56 w-full shrink-0 items-stretch gap-2 sm:h-72 sm:gap-3 lg:h-[26rem] lg:w-[34rem]"
         >
-          {/* A cascade: one large poster on the left, then columns that hold
-              more of them and grow narrower to the right, so the wall reads as
-              depth rather than as a grid. The type follows the artwork down —
-              the leading film is named at 20px and the smallest column at
-              13px — because a caption the size of its poster is what makes the
-              nearest film feel nearest.
+          {/* A cascade of artwork: one large poster, then columns holding more
+              of them and growing narrower to the right.
 
-              🔴 **The widths are 12 / 6 / 4 / 3, and that is arithmetic
-              rather than taste.** A poster is 2:3, so a column of `n` posters
-              is `n × 1.5 × width` tall; for every column to finish at the same
-              height, each width has to be the lead's divided by its own count
-              — 1, ½, ⅓, ¼. At the previous ratios the third column was taller
-              than the lead poster and rose above it, which is what the owner
-              saw.
+              🔴 **The wall owns the height and the columns fill it**, which is
+              what makes every top and every bottom line up. Left to their own
+              sizes the columns end level only by accident — a column of `n`
+              posters is `n × 1.5 × width` tall plus its gaps, so any width
+              that is not exactly the lead's over `n` leaves one column poking
+              out, which is what the owner saw. Fixing the height and letting
+              each poster take an equal share of it removes the arithmetic
+              entirely. The widths stay near 12 / 6 / 4 / 3 so the frames stay
+              close to a poster's own 2:3 and `object-cover` absorbs the rest.
 
-              🔴 **Only the lead film is named.** At 83px and 64px a title
-              truncated to "The Secret A…", which is worse than silence, and
-              captions under the short columns broke the equal-height
-              arithmetic above by adding a line the geometry does not account
-              for. Every poster still announces its film to a screen reader.
-
-              🔴 Each column is `[from, to, width, titleSize, caption]`, and the
-              slices run 1, 2, 3, 4. `slice` past the end is empty rather than
-              undefined, so a season with fewer than ten scoring films simply
-              shortens the cascade instead of leaving a hole. */}
+              🔴 **No captions at all**, by the owner's call. A title under an
+              81px column truncated, and captions are also what broke the
+              alignment above by adding a line to some columns and not others.
+              Every film is still announced to a screen reader — drawn for
+              nobody, available to anybody who needs it. */}
           {(
             [
-              [0, 1, 'flex-[12]', 'text-xl', 'both'],
-              [1, 3, 'flex-[6]', 'text-base', 'none'],
-              [3, 6, 'flex-[4]', 'text-sm', 'none'],
-              [6, 10, 'flex-[3]', 'text-xs', 'none'],
+              [0, 1, 'flex-[12]'],
+              [1, 3, 'flex-[6]'],
+              [3, 6, 'flex-[4]'],
+              [6, 10, 'flex-[3]'],
             ] as const
-          ).map(([from, to, width, titleSize, caption], column) => (
+          ).map(([from, to, width], column) => (
             <div key={from} className={cn('flex min-w-0 flex-col gap-2 sm:gap-3', width)}>
               {facts.films.slice(from, to).map((film, index) => (
-                <figure key={film.movieId} className="flex flex-col gap-1">
-                  <div className="poster-radius bg-bg-surface relative aspect-[2/3] overflow-hidden">
-                    {film.posterUrl ? (
-                      <RemoteImage
-                        src={film.posterUrl}
-                        alt=""
-                        fill
-                        sizes="(min-width: 1024px) 22rem, 50vw"
-                        className="object-cover"
-                        // One preload, and it is the big one: the leading
-                        // poster is the largest thing in the first viewport.
-                        priority={column === 0 && index === 0}
-                      />
-                    ) : null}
-                  </div>
-                  <figcaption className="flex flex-col">
-                    {caption === 'both' ? (
-                      <>
-                        <span
-                          className={cn(
-                            'text-text-primary font-serif leading-tight',
-                            titleSize,
-                          )}
-                        >
-                          {film.title}
-                        </span>
-                        <span className="text-text-dim tabular font-mono text-xs">
-                          {film.total}
-                        </span>
-                      </>
-                    ) : (
-                      // 🔴 Drawn for nobody, announced to everybody who needs
-                      // it. An earlier version returned no caption at all for
-                      // these columns while its own comment claimed the name
-                      // was still announced; the test caught the lie.
-                      <span className="sr-only">
-                        {film.title}, {film.total} points
-                      </span>
-                    )}
+                <figure
+                  key={film.movieId}
+                  className="poster-radius bg-bg-surface relative min-h-0 flex-1 overflow-hidden"
+                >
+                  {film.posterUrl ? (
+                    <RemoteImage
+                      src={film.posterUrl}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 22rem, 50vw"
+                      className="object-cover"
+                      // One preload, and it is the big one: the leading poster
+                      // is the largest thing in the first viewport.
+                      priority={column === 0 && index === 0}
+                    />
+                  ) : null}
+                  <figcaption className="sr-only">
+                    {film.title}, {film.total} points
                   </figcaption>
                 </figure>
               ))}

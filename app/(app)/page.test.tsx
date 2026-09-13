@@ -112,7 +112,7 @@ describe('the signed-out dashboard', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
-  it('renders the season’s own films with their names and scores', async () => {
+  it('renders the season’s own films as artwork, every one of them announced', async () => {
     render(await DashboardPage(props()));
 
     const wall = screen.getByTestId('hero-films');
@@ -127,14 +127,14 @@ describe('the signed-out dashboard', () => {
     expect(within(wall).queryAllByRole('link')).toHaveLength(0);
     expect(wall.querySelectorAll('a, button, [tabindex]')).toHaveLength(0);
 
-    // The lead film is named and scored; the rest are artwork, because a
-    // caption under an 81px column truncates and breaks the height
-    // arithmetic the columns depend on.
-    expect(within(wall).getByText(films[0].title)).toBeInTheDocument();
-    expect(within(wall).getByText(String(films[0].total))).toBeInTheDocument();
-    expect(within(wall).queryByText(String(films[4].total))).not.toBeInTheDocument();
-    // 🔴 Still announced, just not drawn: every film keeps its name for a
-    // screen reader.
+    // 🔴 No visible captions anywhere: a title under the narrow columns
+    // truncated, and captions broke the equal-height alignment by adding a
+    // line to some columns and not others. Every film is still announced.
+    // The lead film too: its name is announced, never drawn.
+    expect(within(wall).queryByText(films[0].title, { exact: true })).toBeNull();
+    expect(
+      within(wall).getByText(`${films[0].title}, ${films[0].total} points`),
+    ).toHaveClass('sr-only');
     expect(
       within(wall).getByText(`${films[4].title}, ${films[4].total} points`),
     ).toHaveClass('sr-only');

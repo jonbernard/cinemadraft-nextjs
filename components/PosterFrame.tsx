@@ -53,9 +53,16 @@ export type PosterFrameProps = {
  * the artwork, which truncates to "One Ba…", "Is This …", "Wake …" — the film
  * becomes unidentifiable at exactly the moment you are scanning for it.
  *
- * One signal per fact. A win is a carmine corner seal; a live nomination is a
- * top hairline. The current app marks a winner with both a size change and a
+ * One signal per fact. A win is a **brass** corner seal; a live nomination is
+ * a top hairline. The current app marks a winner with both a size change and a
  * green check, and green reads as validation state rather than victory.
+ *
+ * 🔴 The seal was carmine from Phase 3.5 until 2026-09-13. D99 then settled
+ * what brass means — an award outcome, and nothing else — and a win is the
+ * award outcome the whole product is about, so carmine here was the palette
+ * arguing with itself: the same red marked a deadline, the viewer's own seat,
+ * and a victory. The owner's ruling was that the sitewide rule wins over the
+ * local choice. Nothing else about the seal moved.
  *
  * Never greyed out by score. The strip is ordered by draft position, not
  * performance — a last pick may be the best pick, and dimming it asserts
@@ -136,7 +143,7 @@ export function PosterFrame({
           <span
             aria-label="Winner"
             role="img"
-            className="bg-accent-fill animate-stamp motion-reduce:animate-none absolute right-0 top-0 h-6 w-6 [clip-path:polygon(100%_0,100%_100%,0_0)]"
+            className="bg-brass-fill animate-stamp motion-reduce:animate-none absolute right-0 top-0 h-6 w-6 [clip-path:polygon(100%_0,100%_100%,0_0)]"
           />
         )}
       </div>

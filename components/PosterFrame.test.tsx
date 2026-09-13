@@ -24,6 +24,17 @@ describe('PosterFrame', () => {
     expect(screen.getByLabelText('Winner')).toBeInTheDocument();
   });
 
+  it('seals a win in brass, because brass is what an award outcome is', () => {
+    // 🔴 Nothing pinned this colour until 2026-09-13, which is how the seal
+    // sat carmine for two phases while D99 said brass means an award outcome
+    // and nothing else. The same red was marking a deadline, the viewer's own
+    // seat, and a victory. Carmine here goes red now.
+    render(<PosterFrame {...base} status="won" />);
+
+    expect(screen.getByLabelText('Winner')).toHaveClass('bg-brass-fill');
+    expect(screen.getByLabelText('Winner')).not.toHaveClass('bg-accent-fill');
+  });
+
   it('stamps the seal rather than having it simply be there', () => {
     render(<PosterFrame {...base} status="won" />);
     expect(screen.getByLabelText('Winner')).toHaveClass('animate-stamp');
