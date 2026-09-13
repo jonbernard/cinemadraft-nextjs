@@ -566,4 +566,121 @@ test.describe('live show', () => {
     await link.click();
     await expect(page).toHaveURL(new RegExp(`/live/${abbreviation}`));
   });
+  /**
+   * Every fact this page exists to state, read off whatever is on screen.
+   *
+   * 🔴 Scoped to `<main>` for the headings and page-wide for the rest, on
+   * purpose: TV mode removes chrome from the screen, so anything that counted
+   * chrome would differ between the two modes for a reason that has nothing to
+   * do with the room. None of these live in the chrome in either mode.
+   */
+  async function roomFacts(page: Page) {
+    const main = page.getByRole('main');
+    return {
+      headings: await main.getByRole('heading').allInnerTexts(),
+      alpha: await page.getByText(FILMS[0] as string).count(),
+      bravo: await page.getByText(FILMS[1] as string).count(),
+      points: await page.getByText('7 pts').count(),
+      seals: await page.getByText('Winner', { exact: true }).count(),
+      sealed: (await page.getByTestId('live-winner').innerText()).trim(),
+      resolved: await page.getByText('1 of 2').count(),
+      mains: await page.getByRole('main').count(),
+      skipLinks: await page.getByRole('link', { name: 'Skip to content' }).count(),
+    };
+  }
+
+  test('TV mode hides the chrome, and changes nothing else', async ({ page }) => {
+    // P14.T6, and the plan asked for this shape by name: "the same assertions
+    // passing in both modes rather than by inspection". `roomFacts` is read
+    // twice from one build at one viewport and compared whole — the heading
+    // order, both films in both categories, the point value, the single seal
+    // and which film carries it, the resolved counter, the `<main>` landmark
+    // and the skip link. A TV mode that touched the room in any of those ways
+    // fails here rather than being noticed on a television.
+    const { abbreviation } = await seedShow();
+    // 1920 is the television, and it is also the only width where the rail is
+    // on screen at all (`xl`), so it is the width that can tell hidden from
+    // never-rendered.
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    const rail = page.locator('nav[aria-label="Main"]');
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+    await expect(rail).toBeVisible();
+    const plain = await roomFacts(page);
+    const plainBox = await page.getByRole('main').boundingBox();
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}&tv=1`);
+    // 🔴 Still in the DOM, and not on screen. `toHaveCount(1)` is what stops
+    // this passing against a shell that never rendered the rail — and a rail
+    // that is merely `visibility: hidden` or moved off-screen would still hold
+    // its 208px, which the geometry below would then catch.
+    await expect(rail).toHaveCount(1);
+    await expect(rail).toBeHidden();
+    const tv = await roomFacts(page);
+    const tvBox = await page.getByRole('main').boundingBox();
+
+    expect(tv).toEqual(plain);
+
+    // And the room got the chrome's pixels: the rail's column and the utility
+    // strip's 52px both go to `<main>`.
+    expect(tvBox?.width).toBeGreaterThan((plainBox?.width ?? 0) + 100);
+    expect(tvBox?.x).toBeLessThan(plainBox?.x ?? 0);
+    expect(tvBox?.y).toBeLessThan(plainBox?.y ?? 0);
+  });
+
+  test('the way out of TV mode is on the screen TV mode leaves behind', async ({
+    page,
+  }) => {
+    // A control that hides itself with the chrome strands a reader holding a
+    // remote: no address bar, no Escape key, no shortcut to know. Both
+    // directions, same place, and the label says what pressing it will do.
+    const { abbreviation } = await seedShow();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+    await expect(page.getByRole('link', { name: 'TV mode', exact: true })).toBeVisible();
+
+    await page.getByRole('link', { name: 'TV mode', exact: true }).click();
+    await expect(page).toHaveURL(/tv=1/);
+    // 🔴 Visible, not merely present. In TV mode this is the only control left.
+    await expect(page.getByRole('link', { name: 'Leave TV mode' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Leave TV mode' }).click();
+    await expect(page).not.toHaveURL(/tv=1/);
+    await expect(page.locator('nav[aria-label="Main"]')).toBeVisible();
+    // The season survived the round trip; TV mode is not a way to lose the URL.
+    await expect(page).toHaveURL(new RegExp(`year=${YEAR}`));
+  });
+
+  test('toggling TV mode does not reconnect the stream', async ({ page }) => {
+    // 🔴 The property P14.T4 bought by keying `LiveRoom` on the stream URL
+    // alone. `?tv=1` is not in that URL, so a toggle reconciles rather than
+    // remounts and the `EventSource` is never touched — which is the whole
+    // reason TV mode is a CSS rule and not a prop on the shell. Three client
+    // navigations, each a real round trip: a remount on any of them opens a
+    // second connection and this reads 4 instead of 1.
+    const { abbreviation } = await seedShow();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+
+    const opened: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes(`/api/live/${abbreviation}/stream`)) {
+        opened.push(request.url());
+      }
+    });
+
+    await page.goto(`/live/${abbreviation}?year=${YEAR}`);
+    // Not vacuous: the show is seeded on air, so exactly one stream opens.
+    await expect.poll(() => opened.length).toBe(1);
+
+    const rail = page.locator('nav[aria-label="Main"]');
+    await page.getByRole('link', { name: 'TV mode', exact: true }).click();
+    await expect(rail).toBeHidden();
+    await page.getByRole('link', { name: 'Leave TV mode' }).click();
+    await expect(rail).toBeVisible();
+    await page.getByRole('link', { name: 'TV mode', exact: true }).click();
+    await expect(rail).toBeHidden();
+
+    expect(opened).toHaveLength(1);
+  });
 });

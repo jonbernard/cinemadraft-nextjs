@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { LiveCountdown } from '@/components/awards/LiveCountdown';
 import { LiveRoom } from '@/components/awards/LiveRoom';
 import { ShowLogo } from '@/components/awards/ShowLogo';
+import { TvModeLink } from '@/components/awards/TvModeLink';
 import { Panel } from '@/components/ui/Panel';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { StatusChip } from '@/components/ui/StatusChip';
@@ -77,11 +78,20 @@ export default async function LivePage({
   searchParams,
 }: {
   params: Promise<{ abbr: string }>;
-  searchParams: Promise<{ year?: string; league?: string }>;
+  searchParams: Promise<{ year?: string; league?: string; tv?: string }>;
 }) {
   const { abbr } = await params;
-  const { year, league } = await searchParams;
+  const { year, league, tv } = await searchParams;
   const requested = await season(year);
+
+  // 🔴 TV mode is chrome and nothing else (P14.T6). Everything below this line
+  // is computed the same way in both modes, from the same parameters, and
+  // `tvMode` reaches exactly two places: the `data-tv-mode` marker one CSS rule
+  // in globals.css reads, and the label on the link that toggles it. It is
+  // deliberately NOT part of `stream` below — see the note on `key` at the
+  // bottom of this file, which is what keeps the connection alive across a
+  // toggle.
+  const tvMode = tv === '1';
 
   // 🔴 `getCurrentUser()`, not Clerk's `auth()`, which throws when
   // `clerkMiddleware` is absent — and under `E2E_TEST_AUTH` it is (D82/D84).
@@ -110,12 +120,26 @@ export default async function LivePage({
     pinned == null ? '' : `&league=${pinned}`
   }`;
 
+  // This page's own URL with TV mode flipped. Built from `requested` and
+  // `pinned` for the same reason `stream` is: the link has to lead back to the
+  // page the reader is looking at, not to whatever the raw query string said.
+  const toggle = `/live/${encodeURIComponent(abbr)}?year=${requested}${
+    pinned == null ? '' : `&league=${pinned}`
+  }${tvMode ? '' : '&tv=1'}`;
+
   return (
     // 🔴 No `max-w-*`, and that is the P14 change: this page goes on a
     // television. `max-w-5xl` centred 1024px of content inside the 1664px the
     // shell leaves at 1920, so the poster rows T1 adds would have scrolled at
     // the one width the page exists for. The shell's own `p-6` is the gutter.
-    <div className="flex flex-col gap-10">
+    // 🔴 The marker, and the whole of TV mode's effect on this tree. One
+    // unlayered rule in globals.css — `body:has([data-tv-mode])
+    // [data-app-chrome]` — hides the rail, the utility strip and the tab bar
+    // while it is present. Nothing else on the page reads it, no client
+    // component learns about it, and the React tree is otherwise identical in
+    // both modes, which is what makes "it changes nothing else" a property
+    // rather than a promise.
+    <div className="flex flex-col gap-10" data-tv-mode={tvMode ? '' : undefined}>
       <header className="flex flex-col gap-3">
         {/* 🔴 `Panel`, not `CinemaFrame`, and the plan asked for this to be
             measured rather than assumed. `CinemaFrame` is `aspect-ratio:
@@ -152,6 +176,11 @@ export default async function LivePage({
               The conclusion holds for the other reason: T35 has not ruled.) */}
           {show.onAir ? <StatusChip tone="carmine">Live</StatusChip> : null}
           <LiveCountdown startsAt={show.startsAt} day={show.startsOn} />
+          {/* 🔴 In the header, which TV mode keeps — not in the chrome it
+              hides. A control that goes away with the thing it turned on
+              leaves the reader with no way back but the address bar, and the
+              reader is holding a remote. */}
+          <TvModeLink href={toggle} active={tvMode} />
         </div>
       </header>
 

@@ -318,3 +318,33 @@
   --color-score-mid: #7a5410;
   --color-score-low: #8c2f39;
 }
+
+/* TV mode (P14.T6). `?tv=1` puts `data-tv-mode` on the live page's root and
+ * this hides the shell's chrome — the rail, the utility strip and the phone
+ * tab bar — so a full-screen browser shows nothing but the room. It hides
+ * chrome and nothing else: the skip link, the `<main>` landmark, the heading
+ * order and every pixel of the page below are untouched, which is what lets
+ * the same assertions run in both modes.
+ *
+ * 🔴 It is CSS rather than a prop because it cannot be a prop.
+ * `app/(app)/layout.tsx` is a server layout and Next does not hand layouts
+ * search params — layouts do not re-render on navigation, so the value would
+ * go stale (Next 16, layout reference). `useSearchParams()` in `AppShell`
+ * would answer it, at the price of pushing the shell of EVERY page under this
+ * layout to client-side rendering up to the nearest Suspense boundary
+ * (Next 16, useSearchParams "Prerendering"), and of breaking the
+ * `next/navigation` mock in AppShell.test.tsx. One selector costs neither —
+ * and because nothing in the React tree changes, it cannot disturb the SSE
+ * connection the room is holding.
+ *
+ * 🔴 Unlayered on purpose, not by oversight. The chrome's visibility is
+ * Tailwind's own (`xl:block`, `xl:flex`, `xl:hidden`), which lives in the
+ * `utilities` layer — the last one — so no rule inside `components` can beat
+ * it at any specificity. An unlayered rule outranks every layer by the
+ * cascade's own ordering. That is the mechanism the spec provides for exactly
+ * this, not the `!important` escalation D29 forbids: the layer statement at
+ * the top of this file is unchanged and e2e/smoke.spec.ts still pins it.
+ */
+body:has([data-tv-mode]) [data-app-chrome] {
+  display: none;
+}
