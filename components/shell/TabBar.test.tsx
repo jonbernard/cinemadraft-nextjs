@@ -50,21 +50,31 @@ describe('TabBar', () => {
     renderBar();
 
     // Present on the bar...
-    expect(screen.getByRole('link', { name: 'Cinemadraft, home' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Search' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument();
 
-    // ...and none of them inside the destination list.
-    expect(within(tabs()).queryByRole('link', { name: 'Cinemadraft, home' })).toBeNull();
+    // ...and neither of them inside the destination list.
     expect(within(tabs()).queryByRole('button', { name: 'Search' })).toBeNull();
     expect(within(tabs()).queryByRole('link', { name: 'Log in' })).toBeNull();
   });
 
+  // 🔴 P14.T16 moved the identity to `components/shell/TopBar.tsx`, and this
+  // asserts it did not stay here as well. Deleting the case instead would let
+  // the mark come back and leave the app with two links home below `xl` — a
+  // duplicate on every phone and tablet. The `markOnly` square this replaces
+  // was `hidden sm:flex`, so below `sm` there was no wordmark in the
+  // application at all, which is the defect the owner reported.
+  it("does not carry the wordmark — it is TopBar's now", () => {
+    renderBar();
+    expect(screen.queryByRole('link', { name: 'Cinemadraft, home' })).toBeNull();
+    expect(screen.queryByRole('img', { name: 'Cinemadraft' })).toBeNull();
+  });
+
   it('no chrome control ever claims to be the current page', () => {
     renderBar({ pathname: '/' });
-    for (const name of ['Cinemadraft, home', 'Log in']) {
-      expect(screen.getByRole('link', { name })).not.toHaveAttribute('aria-current');
-    }
+    expect(screen.getByRole('link', { name: 'Log in' })).not.toHaveAttribute(
+      'aria-current',
+    );
     expect(screen.getByRole('button', { name: 'Search' })).not.toHaveAttribute(
       'aria-current',
     );
@@ -76,14 +86,15 @@ describe('TabBar', () => {
   // label wraps to two lines and the bar grows from 48.5px to 65px, which is
   // the one thing folding the chrome in was chosen to avoid. So the chrome is
   // `hidden sm:flex`: it exists from 640px up, which covers the 1024–1280px
-  // dead zone this task is about, and below `sm` the phone bar is untouched and
+  // dead zone P17.T2 was about, and below `sm` the phone bar is untouched and
   // search and the account control stay in the More sheet where D75 put them.
+  // Two squares now, not three — P14.T16 took the mark out to `TopBar`, which
+  // is the one piece of that group a phone could not do without.
   // The class is the only part of that a jsdom test can see; `e2e/nav.spec.ts`
   // measures the geometry.
   it('keeps the chrome off the bar below sm, where it does not fit', () => {
     renderBar();
     for (const element of [
-      screen.getByRole('link', { name: 'Cinemadraft, home' }),
       screen.getByRole('button', { name: 'Search' }),
       screen.getByRole('link', { name: 'Log in' }).parentElement,
     ]) {

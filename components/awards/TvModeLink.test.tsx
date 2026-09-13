@@ -66,17 +66,25 @@ describe('the TV mode seam', () => {
   });
 
   it('every piece of shell chrome the rule targets still carries the hook', () => {
-    // Three elements, named here so that removing one is a failure rather than
-    // a silently smaller TV mode: the rail wrapper, the utility strip, and the
-    // phone tab bar.
+    // Four elements now, named here so that removing one is a failure rather
+    // than a silently smaller TV mode: the rail wrapper and the utility strip
+    // (both in AppShell), the phone and tablet top bar, and the phone tab bar.
+    //
+    // 🔴 P14.T16 added the fourth and the count in `AppShell.tsx` did NOT move:
+    // the top bar is its own component, so its hook is in `TopBar.tsx`. The
+    // plan predicted three here; a third file is what the change actually
+    // needs, and bumping this to 3 would have turned the guard red against a
+    // correct shell.
     const shell = read('components/shell/AppShell.tsx');
     const tabBar = read('components/shell/TabBar.tsx');
+    const topBar = read('components/shell/TopBar.tsx');
 
-    // As an attribute, not as prose: both files talk about the hook in a
-    // comment as well as carrying it.
+    // As an attribute, not as prose: every one of these files talks about the
+    // hook in a comment as well as carrying it.
     const attribute = /^\s*data-app-chrome$|data-app-chrome>/gm;
     expect(shell.match(attribute)).toHaveLength(2);
     expect(tabBar.match(attribute)).toHaveLength(1);
+    expect(topBar.match(attribute)).toHaveLength(1);
   });
 
   it('the live page is what sets the marker, and only under ?tv=1', () => {
