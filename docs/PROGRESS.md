@@ -1297,15 +1297,15 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 - [x] P17.T27 — `not-found` renders inside the app shell; `/live` and `/members` currently drop the whole shell. 🔴 A catch-all inside `(app)` fixes every unmatched URL at once, not the two the review tried; `ErrorPanel` stopped rendering its own `<main>` (it was nesting a landmark inside `AppShell`'s on *every* in-shell 404). **`/members` deliberately not built** — nothing links to it and a directory of sixty real people is an owner's product decision, not a polish-phase gap; it 404s inside the shell instead
 - [x] P17.T28 — 🔴 `/admin/season` confirms before re-scoping the app for every user. **Safety-bearing; own reviewer pass.** `/admin/broadcast` is the model. Ten adjacent "Make active" buttons became one `<select>` and one gated commit; the member count is read server-side and named in the form and again in the dialog. Reviewer pass done — no finding on any of the four paths to the action; five low/info findings addressed (a decorative alternation in one assertion, the active season no longer stated outside a disabled control, a doubled-space label when no season is active)
 - [ ] P17.T29 — signed-in home shows the member's own state (today it is the signed-out page plus three icons)
-- [ ] P17.T30 — league page: promote the owner actions, move the raw invite URL behind an Invite action, hide it on a complete season
-- [ ] P17.T31 — roster beside standings, into the empty 55% of the content width
+- [x] P17.T30 — league page: promote the owner actions, move the raw invite URL behind an Invite action, hide it on a complete season. **Done 2026-09-12.** "Run the draft" and "Set up the season" were `text-accent-text underline` in a baseline row between the year and the status word; they are now 44px controls, and which one is filled comes from state the page already had — no seats → "Set up the season", `pending` → "Run the draft", otherwise both secondary. The year and status moved into the heading's `eyebrow`. 🔴 **The signal for "complete" is `draftingStatus` itself** — `LeagueDraftingStatus` is `pending | active | complete` (`prisma/schema.prisma:268`) and the restored data carries all three (5 active / 6 pending / 2 complete), so the plan's "if the schema has no complete value, fall back to every-seat-claimed" branch was not taken. `components/InviteAction.tsx` is a **native `<details>`, not a client component**: the plan's `useState` + `onToggle` only mirrored the element's own state, so it is a server component and `InviteLink` stays the one client island. 🔴 Two errors in the plan, both found by running it: it says "use `Button`, not a hand-rolled `<Link>`" and then specifies hand-rolled `<Link>`s — `Button` renders a `<button>` and both of these navigate, so the `<Link>`s are right and the sentence is wrong; and its own browser test asserts `getByText(/\/join\//)` has count 0 on arrival, which is **false against its own `<details>`** — a closed disclosure keeps its contents in the DOM and in the served HTML. `not.toBeVisible()` instead. That is not a secrecy claim quietly dropped: the invite renders only when `canManage`, so those bytes only ever reach an owner; what the disclosure fixes is that the credential was the loudest thing on the page. `e2e/leagues.spec.ts` caught the change as designed and now opens the disclosure first
+- [x] P17.T31 — roster beside standings, into the empty 55% of the content width. **Done 2026-09-12.** Measured before and after in a production build at 1440px: the standings table is 384px of an 1202px content box (31.9%) and used to sit alone; the pair now spans 95.8% of it. Nothing new is queried — the seat and its picks were already loaded and `share` is `pick.points / seat.total`, derived on the page the way `lib/services/dashboard.ts` derives it, rather than added to `getLeagueBoard`. Roster first in DOM order, so a phone reads the reader's own team before the table. 🔴 **The anonymous case is the ordinary one** — a league page is public (D44/D45) and a stranger has no seat, so the slot is a stated empty state ("Sign in to see your own roster here", with the sign-in action) rather than a hole the standings float beside; a signed-in member with no seat this season gets a different sentence, because "sign in" is not their remedy. Mutation-tested three ways: deleting the roster column reddens all three tests, swapping the DOM order reddens only the phone-order test, and removing just the anonymous empty state reddens only the stranger test
 - [x] P17.T32 — `/leagues`: one label for one action; mark the admin section. The strip said "Create league" and `/leagues` said "Start a league" ~700px apart; the latter wins (3 of 4 sites and the destination's own heading already said it), so only `AppShell` changed — `/leagues` needed no edit. 🔴 **The second half was re-pointed:** `/leagues` has no admin section; the page matching the description is `app/(app)/admin/page.tsx`, three identical cards two of which are irreversible for every member. Implemented there, split into "Affects every member" / "Affects one account". **If the owner meant something else on `/leagues`, this half needs re-pointing; the label fix stands either way**
 - [ ] P17.T33 — 88% of signed-in text is 12px; kill the `text-[0.65rem]` arbitrary value (117 elements at 10.4px)
 - [ ] P17.T34 — `text-dim` outnumbers `text-primary` 3.6:1; audit what deserves it
 - [x] P17.T35 — brass means an **award outcome only**; the review's "320 instances on the draft board" does not reproduce (570 elements, every one of them the word `Won`, from one source site rendered twice per seat). **P18.T6 and T21 unblocked.** Method and numbers in the Phase 17 notes below; 🔴 T26 owes it a D-row in the D85+ block
 - [x] P17.T36 — `/list` has three left edges (445 / 469 / 493). Re-measured at 1440px before touching anything and the review's numbers reproduce exactly: heading 445, search field 469, empty state 493. The middle edge was a `Panel` wrapping the whole page body at the same `surface` tone as `AppShell`'s content panel — invisible, worth only a 24px gutter. Deleted; heading and field now both sit at 445. Audited the other single-column pages at 1440px: `/leagues` h1 445, `/admin` h1 445 / first card 445, `/leagues/new` h1 573 / first field 573, `/members/[uuid]` column 445 — all aligned. 🔴 `/watchlist` measured and left alone (h1 x=381)
 
-- [ ] P17.T37 — 🔴 **`/members/[uuid]` becomes public, with initials for a
+- [x] P17.T37 — 🔴 **`/members/[uuid]` becomes public, with initials for a
   signed-out reader.** Owner's decision 2026-09-12, after the PII audit it
   asked for. The DTO is already clean — `ProfileMember` is uuid, name, image,
   memberSince, and its own comment records that the source's public projection
@@ -1327,6 +1327,26 @@ product and should only inherit tokens from this phase, not be redesigned by it.
   those 51 URLs are legacy Auth0 data and Clerk owns identity now. That is a
   migration, not this task.
 
+  **Done 2026-09-12.** The audit reproduces exactly on the 5434 clone: 51
+  gravatar, 4 `lh*.googleusercontent.com`, 5 null. `requireUser()` →
+  `getCurrentUser()`; `isSelf` is now `viewer != null && …`, so the composer and
+  the delete control are absent for an anonymous reader; `Avatar` is passed
+  `viewer == null ? null : member.image`, which is the whole switch.
+  `/members/(.*)` added to `proxy.ts` and to `proxy.test.ts`'s verbatim list;
+  `robots: { index: false, follow: false }` kept.
+
+  🔴 **Grepped the served HTML from the production build**, signed out, on a
+  real member who carries a Gravatar URL: `gravatar` **0**, email-shaped string
+  **0**, 32-hex (an MD5) **0**, literal `@` **5** — every one of them a CSS
+  at-rule (`@layer mui`, two `@media`) or React's `$@b` flight marker, none
+  anywhere near an address. Signed in, the same page carries `gravatar` once,
+  which is expected and fine. Mutation-tested both guards: removing
+  `/members/(.*)` from `proxy.ts` turns `proxy.test.ts` red, and passing
+  `member.image` unconditionally turns the served-HTML assertion in
+  `e2e/members.spec.ts` red. 🔴 The scratch member that test seeds carries a
+  **Gravatar-shaped** avatar on purpose — a member with a null image renders
+  initials whatever the page does, so a test against one could not go red.
+
 - [ ] P17.T38 — 🔴 **The member index only works before a draft starts.** Found
   while shipping T30 (2026-09-12): `leagues/[id]/page.tsx` links each seat to
   `/members/<uuid>` on the **pending** branch only. Once `draftingStatus` is
@@ -1346,15 +1366,23 @@ product and should only inherit tokens from this phase, not be redesigned by it.
   seat name in a league you are in; there is no global directory. Already built:
   `app/(app)/leagues/[id]/page.tsx:231` links each seat to `/members/<uuid>`.
 
-  🔴 **One seam, for P17.T30 to close.** League pages are public (D44/D45 — the
-  link pasted into a group chat has to open), but `/members` is **not** in
-  `proxy.ts`'s public list. So a signed-out visitor on a public league page sees
-  a roster of names that every one of which bounces to sign-in. The fix belongs
-  with T30, which already owns that page's hierarchy: **render the seat name as
-  plain text when there is no session**, rather than making member pages public.
-  A league page is standings and rosters — what a pasted link is for; a member
-  page is someone's posts and drafts, which is wider than "people in your
-  league" and should stay behind a session.
+  🔴 **The seam is closed, the other way round — corrected 2026-09-12 in
+  P17.T30.** This note used to say: render the seat name as plain text when
+  there is no session, rather than making member pages public. **That is
+  superseded by P17.T37**, which the owner decided after the PII audit: member
+  pages *are* public now, so the seat names stay links and a stranger following
+  one lands on a real page. The link is what makes the league page a member
+  index at all; stripping it would have left a roster of inert names.
+
+  🔴 **And the index is only half-built.** The seat name links to
+  `/members/<uuid>` on the **pending** branch only — the running-order list at
+  `app/(app)/leagues/[id]/page.tsx`. Once a draft is under way the page renders
+  `DraftBoard`, which prints seat names as plain text with no link anywhere in
+  it (`grep members components/DraftBoard.tsx` is empty). So on an active or
+  complete season there is no route from a league to a member at all. Not fixed
+  here — it is new work on a component neither T30 nor T31 owns, and tranche 4
+  is sweeping that file's tokens right now. `e2e/signed-in.spec.ts` pins the
+  half that exists and says so.
 
 - 🔴 **No *global* member index — same decision, awaiting the same D-number.** Individual member pages stay and are wanted: a seat name leads to
   a member's posts and drafts, and that is the point of them. What is refused is

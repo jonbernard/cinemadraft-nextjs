@@ -110,6 +110,21 @@ const isPublic = createRouteMatcher([
   // `/leagues/[id]/draft` does. `/api/live/...` is a different prefix and is
   // not matched by this.
   '/live/(.*)',
+  // 🔴 Member profiles, by the owner's ruling (P17.T37). The league page is
+  // the member index — every seat on it links to `/members/<uuid>` — and league
+  // pages are public, so without this every name on a shared league page
+  // bounces a stranger to sign-in.
+  //
+  // Public is not discoverable: the page keeps `robots: index:false`,
+  // `app/robots.ts` disallows `/members`, `app/sitemap.ts` omits it, and
+  // `/members` itself 404s. What a stranger can reach is one member's page,
+  // from a uuid they were given.
+  //
+  // 🔴 The page withholds the avatar from a signed-out reader — 51 of 60
+  // stored avatars are Gravatar URLs whose path is `MD5(email)`, so the `<img
+  // src>` would publish a weak hash of the address. Initials instead. That
+  // rule lives in the page, not here; this entry only opens the door.
+  '/members/(.*)',
   // 🔴 Crawler and scraper endpoints, which are useless behind a redirect: a
   // bot asking for robots.txt or a sitemap gets a 307 to the login page, and a
   // scraper building a link preview gets one for the share card. All three are
