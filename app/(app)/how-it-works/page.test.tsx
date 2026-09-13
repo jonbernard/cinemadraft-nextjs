@@ -169,7 +169,7 @@ describe('HowItWorksPage', () => {
       'How the scoring works',
       'And somebody drafted this',
       'Twelve shows, and what each pays',
-      'Start a league',
+      'Draft this season.',
     ]);
   });
 
@@ -268,7 +268,7 @@ describe('HowItWorksPage', () => {
     // rulebook are absent rather than rendering empty shells.
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent),
-    ).toEqual(['How the scoring works', 'Start a league']);
+    ).toEqual(['How the scoring works', 'Draft this season.']);
     expect(screen.queryAllByTestId('worked-example-total')).toHaveLength(0);
     // The rules still read, with em dashes where the figures would be, rather
     // than "undefined" or a typed fallback number.

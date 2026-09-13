@@ -263,17 +263,32 @@ export default async function HowItWorksPage() {
         </section>
       ) : null}
 
-      <section className={`${BAND} flex flex-col items-start gap-4 py-12`}>
-        <SectionHead as="h2">Start a league</SectionHead>
-        <p className="text-text-secondary max-w-prose text-sm leading-relaxed">
-          Private, invite-only, one season at a time.
+      {/* The way in (P18.T7). One action, and this is its second appearance
+          on the page — the hero carries the first. A third would be the
+          pattern the PLAN caps at two. */}
+      <section className={`${BAND} bg-bg-surface flex flex-col items-start gap-6 py-16`}>
+        <h2 className="text-text-primary max-w-[18ch] font-sans text-display font-semibold">
+          Draft this season.
+        </h2>
+        <p className="text-text-secondary max-w-prose text-sm leading-relaxed sm:text-base">
+          A league is private and invite-only, runs one season at a time, and takes one
+          evening to draft. Played before? Register with the same email and your leagues,
+          drafts and points come with you.
         </p>
-        <Link
-          href="/auth/register"
-          className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          Start a league
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/auth/register"
+            className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            Start a league
+          </Link>
+          <Link
+            href="/"
+            className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center px-1 text-sm underline underline-offset-4 focus-visible:outline-2"
+          >
+            See this season first
+          </Link>
+        </div>
       </section>
     </div>
   );
