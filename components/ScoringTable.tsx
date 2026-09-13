@@ -98,6 +98,11 @@ export function ScoringTable({
       {levels.map((group) => {
         const penalty = group.tiers.every((tier) => tier.points < 0);
         const meaning = penalty ? PENALTY_TIER_MEANING : TIER_MEANING;
+        // 🔴 A level with one or two shows sets its marks beside its figures
+        // rather than above them. Stacked, a single 64px mark left most of the
+        // row empty and the group read as unfinished next to the nine-mark one
+        // below it. From three marks up, stacking is what fits.
+        const asideMarks = (group.shows?.length ?? 0) <= 2;
         return (
           <div
             key={group.level}
@@ -108,41 +113,54 @@ export function ScoringTable({
               {group.level}
             </SectionHead>
 
-            {group.shows && group.shows.length > 0 ? (
-              <ul className="flex flex-wrap items-center gap-2 pb-2">
-                {group.shows.map((show) => (
-                  <li key={show.eventId}>
-                    {show.abbreviation ? (
-                      <Link
-                        href={`/award-shows/${show.abbreviation}`}
-                        title={show.name ?? show.abbreviation}
-                        className="focus-visible:outline-accent-fill block rounded-sm focus-visible:outline-2"
-                      >
-                        <ShowLogo imageUrl={show.imageUrl} />
-                        <span className="sr-only">{show.name ?? show.abbreviation}</span>
-                      </Link>
-                    ) : (
-                      <ShowLogo imageUrl={show.imageUrl} />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <dl className="flex flex-col">
-              {group.tiers.map((tier) => (
-                <div
-                  key={tier.tier}
-                  className="border-border-rule flex items-baseline justify-between gap-4 border-t py-2"
+            <div
+              className={cn(
+                asideMarks && 'sm:grid sm:grid-cols-[auto_1fr] sm:items-start sm:gap-8',
+              )}
+            >
+              {group.shows && group.shows.length > 0 ? (
+                <ul
+                  className={cn(
+                    'flex flex-wrap items-center gap-2 pb-2',
+                    asideMarks && 'sm:pb-0',
+                  )}
                 >
-                  <dt className="text-text-secondary text-sm">
-                    {meaning[tier.tier] ?? `Tier ${tier.tier}`}
-                  </dt>
-                  <dd className="text-text-primary tabular shrink-0 font-mono text-sm">
-                    {tier.points}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+                  {group.shows.map((show) => (
+                    <li key={show.eventId}>
+                      {show.abbreviation ? (
+                        <Link
+                          href={`/award-shows/${show.abbreviation}`}
+                          title={show.name ?? show.abbreviation}
+                          className="focus-visible:outline-accent-fill block rounded-sm focus-visible:outline-2"
+                        >
+                          <ShowLogo imageUrl={show.imageUrl} />
+                          <span className="sr-only">
+                            {show.name ?? show.abbreviation}
+                          </span>
+                        </Link>
+                      ) : (
+                        <ShowLogo imageUrl={show.imageUrl} />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <dl className="flex flex-col">
+                {group.tiers.map((tier) => (
+                  <div
+                    key={tier.tier}
+                    className="border-border-rule flex items-baseline justify-between gap-4 border-t py-2"
+                  >
+                    <dt className="text-text-secondary text-sm">
+                      {meaning[tier.tier] ?? `Tier ${tier.tier}`}
+                    </dt>
+                    <dd className="text-text-primary tabular shrink-0 font-mono text-sm">
+                      {tier.points}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           </div>
         );
       })}
