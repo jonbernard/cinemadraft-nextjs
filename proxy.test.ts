@@ -75,6 +75,12 @@ describe('proxy', () => {
       // The mechanism is unchanged — this list still enumerates the public and a
       // page under `(app)` is still protected by default.
       '/live/(.*)',
+      // 🔴 Public by the owner's ruling (P17.T37): the league page is the
+      // member index and league pages are public, so every seat name on a
+      // shared league page has to open. This test is the ONLY guard on that
+      // entry — under `E2E_TEST_AUTH=1` the proxy is a pass-through, so no
+      // browser test in this repo can ever observe the redirect it removes.
+      '/members/(.*)',
       '/robots.txt',
       '/sitemap.xml',
       '/opengraph-image',

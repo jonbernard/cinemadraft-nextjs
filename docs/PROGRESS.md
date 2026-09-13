@@ -1305,7 +1305,7 @@ product and should only inherit tokens from this phase, not be redesigned by it.
 - [x] P17.T35 — brass means an **award outcome only**; the review's "320 instances on the draft board" does not reproduce (570 elements, every one of them the word `Won`, from one source site rendered twice per seat). **P18.T6 and T21 unblocked.** Method and numbers in the Phase 17 notes below; 🔴 T26 owes it a D-row in the D85+ block
 - [x] P17.T36 — `/list` has three left edges (445 / 469 / 493). Re-measured at 1440px before touching anything and the review's numbers reproduce exactly: heading 445, search field 469, empty state 493. The middle edge was a `Panel` wrapping the whole page body at the same `surface` tone as `AppShell`'s content panel — invisible, worth only a 24px gutter. Deleted; heading and field now both sit at 445. Audited the other single-column pages at 1440px: `/leagues` h1 445, `/admin` h1 445 / first card 445, `/leagues/new` h1 573 / first field 573, `/members/[uuid]` column 445 — all aligned. 🔴 `/watchlist` measured and left alone (h1 x=381)
 
-- [ ] P17.T37 — 🔴 **`/members/[uuid]` becomes public, with initials for a
+- [x] P17.T37 — 🔴 **`/members/[uuid]` becomes public, with initials for a
   signed-out reader.** Owner's decision 2026-09-12, after the PII audit it
   asked for. The DTO is already clean — `ProfileMember` is uuid, name, image,
   memberSince, and its own comment records that the source's public projection
@@ -1326,6 +1326,26 @@ product and should only inherit tokens from this phase, not be redesigned by it.
   everyone rather than only for strangers, and is the better long-term answer;
   those 51 URLs are legacy Auth0 data and Clerk owns identity now. That is a
   migration, not this task.
+
+  **Done 2026-09-12.** The audit reproduces exactly on the 5434 clone: 51
+  gravatar, 4 `lh*.googleusercontent.com`, 5 null. `requireUser()` →
+  `getCurrentUser()`; `isSelf` is now `viewer != null && …`, so the composer and
+  the delete control are absent for an anonymous reader; `Avatar` is passed
+  `viewer == null ? null : member.image`, which is the whole switch.
+  `/members/(.*)` added to `proxy.ts` and to `proxy.test.ts`'s verbatim list;
+  `robots: { index: false, follow: false }` kept.
+
+  🔴 **Grepped the served HTML from the production build**, signed out, on a
+  real member who carries a Gravatar URL: `gravatar` **0**, email-shaped string
+  **0**, 32-hex (an MD5) **0**, literal `@` **5** — every one of them a CSS
+  at-rule (`@layer mui`, two `@media`) or React's `$@b` flight marker, none
+  anywhere near an address. Signed in, the same page carries `gravatar` once,
+  which is expected and fine. Mutation-tested both guards: removing
+  `/members/(.*)` from `proxy.ts` turns `proxy.test.ts` red, and passing
+  `member.image` unconditionally turns the served-HTML assertion in
+  `e2e/members.spec.ts` red. 🔴 The scratch member that test seeds carries a
+  **Gravatar-shaped** avatar on purpose — a member with a null image renders
+  initials whatever the page does, so a test against one could not go red.
 
 ### Recording the decisions
 
