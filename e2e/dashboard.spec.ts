@@ -205,14 +205,29 @@ test.describe('dashboard', () => {
     await page.goto('/');
 
     const wall = page.getByTestId('hero-films');
-    await expect(wall).toHaveAttribute('aria-hidden', 'true');
-    // 🔴 Decorative by decision: as links these put eight tab stops and eight
-    // read-aloud titles between the headline and the action the page exists
-    // for. The same films are linked from the leaderboard directly below.
+
+    // 🔴 No tab stops, and that is still the decision: as links these would put
+    // ten stops between the headline and the action the page exists for. What
+    // changed is that the wall is no longer `aria-hidden` — the posters carry
+    // sr-only captions naming each film and its total, so a screen reader gets
+    // the season's leaders while the eye gets the artwork.
     expect(await wall.locator('a, button, [tabindex]').count()).toBe(0);
+    await expect(wall).not.toHaveAttribute('aria-hidden', 'true');
+
     const images = wall.locator('img');
-    expect(await images.count()).toBe(8);
+    expect(await images.count()).toBe(10);
     expect(await wall.locator('img:not([alt=""])').count()).toBe(0);
+
+    // Four columns holding 1, 2, 3 and 4 — the cascade, and every column ends
+    // level because each width is the lead's divided by its own count.
+    const columns = await wall.locator('> div').evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        posters: node.childElementCount,
+        bottom: Math.round(node.getBoundingClientRect().bottom),
+      })),
+    );
+    expect(columns.map((column) => column.posters)).toEqual([1, 2, 3, 4]);
+    expect(new Set(columns.map((column) => column.bottom)).size).toBe(1);
   });
 
   test('and the hero is gone the moment they are signed in', async ({ page }) => {
@@ -527,19 +542,26 @@ test.describe('dashboard', () => {
       // rule was ever compiled — a name is just a reference. Only the
       // keyframes themselves distinguish a stamp from a seal that was always
       // simply there.
-      const stamp = await sealed.first().evaluate((el) => {
-        const anim = el.getAnimations()[0] as CSSAnimation | undefined;
-        // `getKeyframes` lives on KeyframeEffect, not the AnimationEffect base
-        // the DOM lib types `effect` as.
-        const effect = anim?.effect as KeyframeEffect | undefined;
-        const frames = effect?.getKeyframes() ?? [];
-        return {
-          name: anim?.animationName ?? null,
-          iterations: effect?.getTiming().iterations ?? null,
-          fill: effect?.getTiming().fill ?? null,
-          from: frames[0] ?? null,
-        };
-      });
+      // 🔴 The animation is on the drawn mark, not on the labelled wrapper.
+      // `WinnerSeal` is an <svg> inside a <span> that carries the accessible
+      // name, so `getAnimations()` on the span returns nothing at all — which
+      // reads as "the seal never stamps" rather than as a moved selector.
+      const stamp = await sealed
+        .first()
+        .locator('svg')
+        .evaluate((el) => {
+          const anim = el.getAnimations()[0] as CSSAnimation | undefined;
+          // `getKeyframes` lives on KeyframeEffect, not the AnimationEffect base
+          // the DOM lib types `effect` as.
+          const effect = anim?.effect as KeyframeEffect | undefined;
+          const frames = effect?.getKeyframes() ?? [];
+          return {
+            name: anim?.animationName ?? null,
+            iterations: effect?.getTiming().iterations ?? null,
+            fill: effect?.getTiming().fill ?? null,
+            from: frames[0] ?? null,
+          };
+        });
 
       expect(stamp.name).toBe('stamp');
       // It is a mark, not a notification: one run, then still.

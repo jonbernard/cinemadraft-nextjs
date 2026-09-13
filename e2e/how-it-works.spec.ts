@@ -239,20 +239,18 @@ test.describe('how it works', () => {
     expect(penalty.map((level) => level.tiers[0])).toContain(toNumber(cost));
   });
 
-  test("the season's best and worst ledgers are the ones the scoring rule produces", async ({
+  test("the season's best ledger is the one the scoring rule produces", async ({
     page,
   }) => {
     const extremes = await extremesFromDatabase();
     await page.goto('/how-it-works');
 
     const hero = page.getByTestId('hero-ledger');
-    const casualty = page.getByRole('heading', { name: 'And somebody drafted this' });
 
     if (!extremes) {
-      // No season with anything to score: the page drops both ledgers rather
+      // No season with anything to score: the page drops the ledger rather
       // than printing a zero. This is the CI database.
       await expect(hero).toHaveCount(0);
-      await expect(casualty).toHaveCount(0);
       return;
     }
 
@@ -261,15 +259,18 @@ test.describe('how it works', () => {
       extremes.best,
     );
 
-    // The casualty is shown only when the season's lowest scorer is actually
-    // on a minus — a film on +5 is not a cautionary tale.
-    if (extremes.worst >= 0) {
-      await expect(casualty).toHaveCount(0);
-      return;
+    // 🔴 One ledger, not two. The season's worst pick used to get a second
+    // full table of its own; the owner cut it, because the Razzie inversion is
+    // minor arithmetic — the worst pick costs a fraction of what the best one
+    // earns — and a table weighted a footnote like a headline. It survives as
+    // a clause beside the scoring rules, carrying the same real figure, so
+    // that figure is still asserted against the database here.
+    await expect(page.getByTestId('worked-example-total')).toHaveCount(1);
+    if (extremes.worst < 0) {
+      await expect(page.getByTestId('scoring-rules')).toContainText(
+        String(Math.abs(extremes.worst)),
+      );
     }
-    await expect(casualty).toBeVisible();
-    const totals = await page.getByTestId('worked-example-total').allInnerTexts();
-    expect(totals.map(toNumber)).toEqual([extremes.best, extremes.worst]);
   });
 
   test('the visible ledger lines and the stated remainder add up to the printed total', async ({
