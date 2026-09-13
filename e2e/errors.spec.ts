@@ -1,4 +1,33 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
+
+import { signInAs } from './support/session';
+
+/**
+ * 🔴 The in-shell 404 is a **member's** 404, and these tests have to sign in to
+ * see it.
+ *
+ * An unmatched URL is protected — the first test below is the one that says so,
+ * and it is deliberate (D45). Before the `createRouteMatcher` migration
+ * `proxy.ts` installed a pass-through under `E2E_TEST_AUTH`, so these four ran
+ * signed out and got the 404 anyway; the protection they were exempt from is
+ * now on the page, so they get the login form instead.
+ *
+ * 🔴 Two of them passed anyway when it first moved, which is the real reason
+ * this note is long. The login form has no `ClerkProvider` in this build, so it
+ * throws, so the root boundary renders an `ErrorPanel` — with the same testid
+ * the 404 panel carries. Both layout assertions went on measuring, happily, a
+ * different page. A selector that matches on the wrong page is not a failure
+ * anybody sees.
+ *
+ * The rows are removed in `e2e/global-teardown.ts`, not here: an `afterAll`
+ * runs per worker and would delete an account another worker is still using.
+ */
+async function asMember(page: Page, tag: string): Promise<void> {
+  await signInAs(page, {
+    email: `e2e-clerk-404-${tag}@example.test`,
+    firstName: 'Member',
+  });
+}
 
 /**
  * 🔴 The app had no error boundary at all until Phase 10: an unhandled error
@@ -13,21 +42,17 @@ test.describe('failure surfaces', () => {
   test('an unmatched URL sends a logged-out visitor to log in, by design', async ({
     page,
   }) => {
-    // 🔴 Skipped whenever the suite's own server is the one under test. Under
-    // `E2E_TEST_AUTH` (D82/D84) `proxy.ts` installs a pass-through with no
-    // route protection at all, so there is no redirect to observe — the
-    // behaviour below is a property of the real proxy, and asserting it
-    // against the test-session build would only prove the build is not it.
-    // The secret is set by `playwright.config.mts` for exactly those runs.
-    test.skip(
-      Boolean(process.env.E2E_TEST_AUTH_SECRET),
-      'the app under test runs a pass-through proxy (D84)',
-    );
+    // 🔴 This used to be skipped under `E2E_TEST_AUTH` (D82/D84), because
+    // protection lived in `proxy.ts` and that file installed a pass-through
+    // with no route protection at all — there was no redirect to observe. Since
+    // the `createRouteMatcher` migration the check is on the resource
+    // (`app/(app)/[...notFound]/page.tsx`), which both branches reach, so this
+    // now runs on every suite instead of none of them.
 
-    // Not a 404, and deliberately so. The proxy enumerates PUBLIC routes and
-    // protects everything else (D45), so a path matching no page is protected
-    // like any other unknown path — which is what makes forgetting to list a
-    // new page harmless instead of a leak.
+    // Not a 404, and deliberately so. `test/route-protection.ts` enumerates
+    // PUBLIC routes and everything else is protected (D45), so a path matching
+    // no page is protected like any other unknown path — which is what makes
+    // forgetting to list a new page harmless instead of a leak.
     //
     // The cost is that a typo'd URL shows a logged-out visitor a login page
     // rather than "not here". Recorded rather than papered over: the fix would
@@ -88,6 +113,7 @@ test.describe('failure surfaces', () => {
     // not-found — a bare page with no rail, no tab bar and no strip, and one
     // link back out of the product. The status was already 404 then, so the
     // status alone proves nothing here; the rail is what discriminates.
+    await asMember(page, 'shell');
     await page.setViewportSize({ width: 1440, height: 900 });
 
     for (const url of ['/members', '/live', '/nonsense/deep/path']) {
@@ -110,6 +136,7 @@ test.describe('failure surfaces', () => {
   test('the 404 panel does not repaint the ground inside the shell', async ({ page }) => {
     // ErrorPanel painted `bg-bg-base` — the *ground* — while sitting inside
     // AppShell's `bg-bg-surface` content panel, which punched a hole in it.
+    await asMember(page, 'ground');
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/members');
 
@@ -134,6 +161,7 @@ test.describe('failure surfaces', () => {
     // centred by `mx-auto` before this task, and `justify-center` replaces it.
     // It is here so a later edit cannot quietly left-align the panel inside the
     // shell — which is what the 2026-09-12 review reported seeing.
+    await asMember(page, 'centred');
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/members');
 
@@ -152,6 +180,7 @@ test.describe('failure surfaces', () => {
   });
 
   test('the 404 still works on a phone', async ({ page }) => {
+    await asMember(page, 'phone');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/members');
 

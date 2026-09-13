@@ -10,7 +10,7 @@ import { Panel } from '@/components/ui/Panel';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { StatusChip } from '@/components/ui/StatusChip';
-import { requireUser } from '@/lib/auth';
+import { requirePageUser } from '@/lib/auth';
 import { NOINDEX } from '@/lib/seo';
 import { getActiveYear } from '@/lib/services/season';
 import {
@@ -95,7 +95,7 @@ export default async function WatchlistPage({ searchParams }: PageProps<'/watchl
   const direction = toDirection(searchParam(params.dir), sort);
   const page = toPage(searchParam(params.page));
 
-  const user = await requireUser();
+  const user = await requirePageUser();
   const year = await getActiveYear();
 
   const watched =

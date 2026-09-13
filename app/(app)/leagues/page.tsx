@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SectionHead } from '@/components/ui/SectionHead';
-import { requireUser } from '@/lib/auth';
+import { requirePageUser } from '@/lib/auth';
 import { getMyLeagues } from '@/lib/services/my-leagues';
 
 /**
@@ -19,7 +19,7 @@ import { getMyLeagues } from '@/lib/services/my-leagues';
  * shareable; the list of leagues *you* are in is about you.
  */
 export default async function LeaguesPage() {
-  const user = await requireUser();
+  const user = await requirePageUser();
   const leagues = await getMyLeagues(user.id);
 
   return (

@@ -1,12 +1,12 @@
 import { BroadcastPanel } from '@/components/admin/BroadcastPanel';
 import { SectionHead } from '@/components/ui/SectionHead';
-import { requireAdmin } from '@/lib/auth';
+import { requirePageAdmin } from '@/lib/auth';
 import { userRepository } from '@/lib/repositories/users';
 
 /**
  * Admin broadcast (T45).
  *
- * `requireAdmin()` gates the page independently of `broadcastNotification`
+ * `requirePageAdmin()` gates the page independently of `broadcastNotification`
  * gating the action itself — a Server Action's id ships in the client bundle
  * regardless of whether this page exists, so the page gate alone would not be
  * gating (same reasoning as the relink page).
@@ -15,7 +15,7 @@ import { userRepository } from '@/lib/repositories/users';
  * `BroadcastPanel` names a real number rather than a guess.
  */
 export default async function AdminBroadcastPage() {
-  await requireAdmin();
+  await requirePageAdmin();
 
   const recipientCount = (await userRepository.findAllIds()).length;
 

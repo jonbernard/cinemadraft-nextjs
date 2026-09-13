@@ -70,6 +70,9 @@ export default async function globalTeardown(): Promise<void> {
     // `afterAll`, which runs per worker and deleted users other workers were
     // still signed in as.
     await client.query("delete from users where email like 'e2e-p17-%@example.test'");
+    // `e2e/errors.spec.ts`'s members, who exist only to be shown a 404. Same
+    // reasoning: per-worker cleanup deletes an account another worker is using.
+    await client.query("delete from users where email like 'e2e-clerk-%@example.test'");
   } finally {
     await client.end();
   }

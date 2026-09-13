@@ -2,8 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const requireAdmin = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/auth', () => ({ requireAdmin }));
+const requirePageAdmin = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/auth', () => ({ requirePageAdmin }));
 
 const findAll = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/repositories/available-years', () => ({
@@ -22,7 +22,7 @@ import AdminSeasonPage from './page';
  * 🔴 The page-level gate, independent of the one on `setActiveYear` itself.
  *
  * A Server Action's id ships in the client bundle whether or not this page
- * exists, so the action's own `requireAdmin()` call is what actually stops a
+ * exists, so the action's own `requirePageAdmin()` call is what actually stops a
  * non-admin from moving the season — but the page is reached by URL, and a
  * page that renders admin controls to anyone who is not one is a bug in its
  * own right, independent of whether the write beneath it holds.
@@ -33,7 +33,7 @@ describe('AdminSeasonPage', () => {
   });
 
   it('refuses to render for a non-admin', async () => {
-    requireAdmin.mockRejectedValue(new ForbiddenError('admin only'));
+    requirePageAdmin.mockRejectedValue(new ForbiddenError('admin only'));
 
     await expect(AdminSeasonPage()).rejects.toThrow('admin only');
     expect(findAll).not.toHaveBeenCalled();
@@ -41,7 +41,7 @@ describe('AdminSeasonPage', () => {
   });
 
   it('renders for an admin', async () => {
-    requireAdmin.mockResolvedValue({ id: 1, role: 'admin' });
+    requirePageAdmin.mockResolvedValue({ id: 1, role: 'admin' });
     findAll.mockResolvedValue([
       { id: 1, year: 2025, isActive: false },
       { id: 2, year: 2026, isActive: true },
@@ -57,7 +57,7 @@ describe('AdminSeasonPage', () => {
     // — the same reason `/admin/broadcast` reads its recipient count here
     // (P17.T28). Asserted on the prop rather than on rendered text, because the
     // count only reaches the browser through this one channel.
-    requireAdmin.mockResolvedValue({ id: 1, role: 'admin' });
+    requirePageAdmin.mockResolvedValue({ id: 1, role: 'admin' });
     findAll.mockResolvedValue([{ id: 2, year: 2026, isActive: true }]);
     findAllIds.mockResolvedValue([1, 2, 3, 4, 5, 6, 7]);
 

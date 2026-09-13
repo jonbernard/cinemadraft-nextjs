@@ -1,13 +1,13 @@
 import { SeasonControl } from '@/components/admin/SeasonControl';
 import { SectionHead } from '@/components/ui/SectionHead';
-import { requireAdmin } from '@/lib/auth';
+import { requirePageAdmin } from '@/lib/auth';
 import { availableYearRepository } from '@/lib/repositories/available-years';
 import { userRepository } from '@/lib/repositories/users';
 
 /**
  * The active-season control (T48, D22).
  *
- * `requireAdmin()` gates the page independently of `setActiveYear` gating the
+ * `requirePageAdmin()` gates the page independently of `setActiveYear` gating the
  * action itself — a Server Action's id ships in the client bundle, so it is
  * reachable without ever loading this page, and page-level gating alone would
  * not be gating at all.
@@ -19,7 +19,7 @@ import { userRepository } from '@/lib/repositories/users';
  * Desktop-first, the stated exception (D49): this is pressed once a year.
  */
 export default async function AdminSeasonPage() {
-  await requireAdmin();
+  await requirePageAdmin();
 
   const [seasons, memberIds] = await Promise.all([
     availableYearRepository.findAll(),

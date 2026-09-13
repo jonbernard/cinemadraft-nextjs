@@ -2,8 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const requireAdmin = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/auth', () => ({ requireAdmin }));
+const requirePageAdmin = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/auth', () => ({ requirePageAdmin }));
 
 const findAllIds = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/repositories/users', () => ({
@@ -24,14 +24,14 @@ describe('AdminBroadcastPage', () => {
   });
 
   it('refuses to render for a non-admin', async () => {
-    requireAdmin.mockRejectedValue(new ForbiddenError('admin only'));
+    requirePageAdmin.mockRejectedValue(new ForbiddenError('admin only'));
 
     await expect(AdminBroadcastPage()).rejects.toThrow('admin only');
     expect(findAllIds).not.toHaveBeenCalled();
   });
 
   it('renders for an admin', async () => {
-    requireAdmin.mockResolvedValue({ id: 1, role: 'admin' });
+    requirePageAdmin.mockResolvedValue({ id: 1, role: 'admin' });
     findAllIds.mockResolvedValue([1, 2, 3]);
 
     const element = await AdminBroadcastPage();

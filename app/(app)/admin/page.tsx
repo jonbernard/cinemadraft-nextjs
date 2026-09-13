@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Panel } from '@/components/ui/Panel';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { StatusChip } from '@/components/ui/StatusChip';
-import { requireAdmin } from '@/lib/auth';
+import { requirePageAdmin } from '@/lib/auth';
 import { NOINDEX } from '@/lib/seo';
 
 /**
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
-  await requireAdmin();
+  await requirePageAdmin();
 
   return (
     <div className="text-text-primary mx-auto flex max-w-3xl flex-col gap-10">

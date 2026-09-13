@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server';
 
+import { requirePageUser } from '@/lib/auth';
 import { eventRepository } from '@/lib/repositories/events';
 import { buildCalendarFeed } from '@/lib/services/ical';
 
@@ -7,10 +8,20 @@ import { buildCalendarFeed } from '@/lib/services/ical';
  * The ceremony-dates calendar feed (T25) — one of D8's three permitted
  * `/api` routes, alongside the Clerk webhook and the live stream.
  *
- * 🔴 Public, with no session. It must only ever say what the public
- * award-show pages already say: show names and dates. This route reads
- * exactly one repository (`eventRepository`), which carries no user, league
- * or member column at all — there is nothing here to accidentally join in.
+ * 🔴 **Documented as public; it is not, and never has been.** The docstring
+ * below this line said "Public, with no session" from the day it was written,
+ * and `proxy.ts` never carried an entry for `/api/ical` — so the proxy
+ * protected it by default and every calendar client, which sends no session,
+ * got a 307 to the login page. The feed has been dead for its only audience
+ * the whole time.
+ *
+ * The gate here is parity: this migration moves the boundary, it does not get
+ * to move a route across it. `requirePageUser()` reproduces exactly what the
+ * proxy answered, 307 and all. 🔴 **It should almost certainly be deleted and
+ * `/api/ical/[...slug]` added to the public list** — the route reads exactly
+ * one repository (`eventRepository`), which carries no user, league or member
+ * column at all, and says only what the public award-show pages already say.
+ * That is an owner's call, not this migration's.
  *
  * `[...slug]`: the source route (`GET /events/calendar.ics`) took no
  * parameters and served every show in one feed. That is still the honest
@@ -24,6 +35,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string[] }> },
 ) {
+  await requirePageUser();
+
   const { slug } = await params;
 
   if (slug.length > 1) {
