@@ -17,6 +17,12 @@ import { type ColorScheme, flatPalette, palettes } from './tokens';
 /** WCAG AA. */
 const TEXT = 4.5;
 
+/**
+ * WCAG 2.1 AA for non-text contrast (1.4.11). A focus ring has to be
+ * perceivable against whatever it is drawn on; nobody reads it.
+ */
+const NON_TEXT = 3;
+
 describe('known values', () => {
   it.each([
     ['#FFFFFF', 1],
@@ -141,6 +147,13 @@ describe.each(['dark', 'light'] as const)(
   (scheme) => {
     const v = clerkAppearance.variables;
     const linkColor = clerkAppearance.elements?.footerActionLink;
+    const elements = clerkAppearance.elements as unknown as Record<
+      string,
+      Record<string, string>
+    >;
+    // Read back out of the map rather than restated here: a row that names its
+    // own colour proves the arithmetic and nothing about what ships.
+    const socialBackground = elements.socialButtonsBlockButton.background;
 
     it.each([
       // 🔴 The pair that shipped at 2.45:1 in light and 4.44:1 in dark. Clerk
@@ -151,6 +164,12 @@ describe.each(['dark', 'light'] as const)(
       ['muted text on the card', v.colorMutedForeground, v.colorBackground],
       ['field text on the field', v.colorInputForeground, v.colorInput],
       ['error text on the card', v.colorDanger, v.colorBackground],
+      // "Continue with Google" sits on `bg-surface` rather than on the card,
+      // the same step the email field takes — Clerk's own edge for this button
+      // is its neutral at 7%, which is black at 7% on the dark ground and drew
+      // nothing at all. A surface step is how this system separates (D67), and
+      // this is the pair that step creates.
+      ['the social button label on its surface', v.colorForeground, socialBackground],
     ])('%s', (_label, fg, bg) => {
       expect(
         contrastRatio(resolve(fg, scheme), resolve(bg, scheme)),
@@ -175,6 +194,35 @@ describe.each(['dark', 'light'] as const)(
         contrastRatio(resolve((linkColor as { color: string }).color, scheme), bg),
       ).toBeGreaterThanOrEqual(TEXT);
     });
+
+    /**
+     * 🔴 The focus ring, on all three grounds it can land on.
+     *
+     * Tabbed through the real card in both schemes: the Clerk controls drew
+     * their own ring from `colorRing` — the neutral at 15%, i.e. black at 15%
+     * on a near-black card — and "Register" drew none at all and fell through
+     * to Chrome's default, measured `outline-style: auto` in rgb(153, 200, 255)
+     * dark and rgb(0, 95, 204) light. The ring is carmine now, and a 2px
+     * outline at a 2px offset is drawn on the panel for a control inside the
+     * card, on the surface where it overlaps a field, and on the ground for the
+     * lockup link above the panel.
+     *
+     * Dark on surface is the tight one at 3.18:1. If a palette moves and this
+     * row goes red, the ring needs a token of its own — not a lower threshold.
+     */
+    it.each(['ground', 'panel', 'surface'] as const)(
+      'the focus ring is perceivable on the %s',
+      (surface) => {
+        const outline = elements.formButtonPrimary['&:focus-visible'] as unknown as {
+          outline: string;
+        };
+        const token = /var\(--color-[a-z-]+\)/.exec(outline.outline)?.[0];
+        expect(token).toBeDefined();
+        expect(
+          contrastRatio(resolve(token as string, scheme), palettes[scheme].bg[surface]),
+        ).toBeGreaterThanOrEqual(NON_TEXT);
+      },
+    );
   },
 );
 

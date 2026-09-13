@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import { SectionHead } from '@/components/ui/SectionHead';
 import { NOINDEX } from '@/lib/seo';
+import { authCardAppearance } from '@/theme/clerk';
 
 /**
  * Logging in, for members who have already claimed their account.
@@ -37,7 +38,7 @@ export default function LoginPage() {
         points are waiting on it and will follow you in.
       </p>
 
-      <SignIn />
+      <SignIn appearance={authCardAppearance} />
     </div>
   );
 }
