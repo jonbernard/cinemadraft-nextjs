@@ -212,8 +212,18 @@ test.describe('journey 5 — the member’s own lists', () => {
     });
 
     await beat(page, 'And the new order came back from the server', async () => {
+      // 🔴 Wait for the write, THEN reload — not the other way round.
+      // `onReorder` is a server action the drag fires and does not await, so
+      // the assertion above is of the optimistic order; on a loaded machine
+      // the reload outruns the commit, the server renders the OLD order, and
+      // the DOM assertion below then never recovers because nothing else is
+      // coming. That is exactly how this flaked on CI (2026-09-13): the
+      // database had the new order, the page had the old one, and the two
+      // assertions disagreed in the same beat.
+      await expect
+        .poll(async () => (await listRows()).map((row) => row.title)[0])
+        .toBe(FILMS[1]);
       await page.reload();
-      expect((await listRows()).map((row) => row.title)[0]).toBe(FILMS[1]);
       await expect(rows.first()).toContainText(FILMS[1] as string);
     });
 

@@ -767,9 +767,15 @@ test.describe('live show', () => {
        * product P14 replaced. So: every main-frame navigation is counted, and
        * a value is stashed on `window` that only a fresh document loses.
        */
-      let navigations = 0;
-      viewer.on('framenavigated', (frame) => {
-        if (frame === viewer.mainFrame()) navigations += 1;
+      // 🔴 Documents, not navigations. `framenavigated` also fires for a
+      // SAME-document history entry — the App Router writes one while it
+      // hydrates — so counting those raced hydration and flaked on CI
+      // (2026-09-13: expected 1, received 2) while the document had plainly
+      // survived, as the reveal-mark assertion below proves. `load` fires once
+      // per real document, which is the thing this test is actually about.
+      let documents = 0;
+      viewer.on('load', () => {
+        documents += 1;
       });
 
       await viewer.goto(`/live/${abbreviation}?year=${YEAR}&league=${leagueId}`);
@@ -782,7 +788,7 @@ test.describe('live show', () => {
       await viewer.evaluate(() => {
         (window as unknown as { __gateDocument?: string }).__gateDocument = 'the first';
       });
-      const settled = navigations;
+      const settled = documents;
 
       // Backstage. The second category is open and both films are up in it;
       // Alpha already won the first, so its row there reads "Clear winner" and
@@ -827,7 +833,7 @@ test.describe('live show', () => {
       await expect(viewer.getByText('28', { exact: true }).first()).toBeVisible();
       await expect(viewer.getByText('21', { exact: true })).toHaveCount(0);
 
-      expect(navigations).toBe(settled);
+      expect(documents).toBe(settled);
       expect(
         await viewer.evaluate(
           () => (window as unknown as { __gateDocument?: string }).__gateDocument,
