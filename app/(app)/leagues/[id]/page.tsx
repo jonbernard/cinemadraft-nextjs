@@ -3,15 +3,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
-import { DraftBoard } from '@/components/draft/DraftBoard';
 import { InviteAction } from '@/components/leagues/InviteAction';
-import { RosterStrip } from '@/components/leagues/RosterStrip';
-import { StandingsPanel } from '@/components/leagues/StandingsPanel';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { LeagueBoardRoom } from '@/components/leagues/LeagueBoardRoom';
 import { SectionHead } from '@/components/ui/SectionHead';
-import { StatusChip } from '@/components/ui/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
-import { SIGN_IN_URL } from '@/lib/auth-routes';
 import { NotFoundError } from '@/lib/errors';
 import { NOINDEX } from '@/lib/seo';
 import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
@@ -145,8 +140,12 @@ export default async function LeaguePage({
   }
 
   const canManage = canManageLeague(view, user?.id);
-  const viewerSeatId = view.viewerSeatId;
   const isPending = view.isPending;
+
+  // 🔴 Built from the page's own `?year=`, so the stream renders the view the
+  // first paint already showed. A stream asked for different parameters is a
+  // second, disagreeing page (the note on `LiveRoom`'s `streamUrl`).
+  const streamUrl = `/api/leagues/${view.leagueId}/board/stream?year=${view.year}`;
 
   // Hoisted out of the JSX: `inviteBase()` used to be awaited inside a
   // conditional JSX expression, which is now inside two conditionals.
@@ -247,129 +246,15 @@ export default async function LeaguePage({
         ) : null}
       </header>
 
-      {/* P10.T10: standings for whoever has this link, signed in or not —
-            the deficiency being closed is that the source only showed this on
-            the dashboard, to a signed-in member. One view, not a total/event
-            toggle: the source's own `:type` segment was ignored by both routes
-            it named (PARITY.md source bug 9), so a distinction it never
-            actually made is not one to port.
-
-            🔴 The reader's own roster sits beside it (P17.T31). The standings
-            table is `max-w-sm`, so at 1440px it used about 45% of the content
-            column and left the rest empty — while the reader's own picks were
-            inside the board, thousands of pixels down the page. Nothing new is
-            queried. Roster first in DOM order, so a phone reads the reader's
-            own team before the table.
-
-            🔴 There is no "own roster" for a stranger, and the league page is
-            public (D44/D45), so the ordinary case on a shared link is that this
-            slot has nothing of the reader's to show. It is then a deliberate
-            statement of what the slot is for — the link, and what signing in
-            adds — rather than a hole the standings float beside. */}
-      {view.standings.length > 0 ? (
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
-          <section className="flex min-w-0 flex-1 flex-col gap-3">
-            <SectionHead as="h2" eyebrow="Yours">
-              Your roster
-            </SectionHead>
-            {view.viewerRoster.length > 0 ? (
-              <RosterStrip films={view.viewerRoster} />
-            ) : view.viewerSeated ? (
-              // 🔴 A seat with no picks is still a seat. This branch used to
-              // test `viewerRoster.length` and fall through to "you do not
-              // hold a seat this season" — told to a member whose name was
-              // listed in the standings table directly beside it. Found by
-              // P19.T2's journey on its final frame, where the league owner
-              // is seated and has not drafted.
-              <EmptyState title="Your seat is empty until the draft">
-                You hold a seat this season. Your picks and what each one has scored
-                appear here as the draft runs.
-              </EmptyState>
-            ) : user == null ? (
-              <EmptyState
-                title="Sign in to see your own roster here"
-                action={{ label: 'Sign in', href: SIGN_IN_URL }}
-              >
-                The board and the standings below are the whole season, and they are open
-                to whoever has this link. Your own picks and what each one has scored sit
-                here once you are in.
-              </EmptyState>
-            ) : (
-              <EmptyState title="You do not hold a seat this season">
-                This is somebody else's league, or a season you sat out — the standings
-                and the board are still the whole story.
-              </EmptyState>
-            )}
-          </section>
-
-          <section className="flex w-full flex-col gap-3 lg:max-w-sm">
-            <SectionHead as="h2">Standings</SectionHead>
-            <StandingsPanel rows={view.standings} />
-          </section>
-        </div>
-      ) : null}
-
-      {view.groups.length === 0 ? (
-        <p className="text-text-secondary text-sm">
-          No seats in this league for {view.year}.
-        </p>
-      ) : (
-        view.groups.map((group) => (
-          <section key={group.group} className="flex flex-col gap-4">
-            {/* A heading and a running-order position are content, so
-                  `secondary`, not `dim` (P17.T34). */}
-            <h2 className="text-text-secondary text-xs font-normal">
-              Group {group.group}
-            </h2>
-
-            {isPending ? (
-              /* Before a draft starts there is nothing to put on a board, and
-                   an empty grid would read as a draft in progress that nobody
-                   has picked in. What exists at this point is the running
-                   order, which is what the source app showed. */
-              <ol className="flex flex-col">
-                {group.seats.map((seat) => (
-                  <li
-                    key={seat.draftId}
-                    aria-current={seat.draftId === viewerSeatId ? true : undefined}
-                    className="border-border-rule flex items-baseline gap-3 border-b px-2 py-2"
-                  >
-                    <span className="text-text-secondary tabular w-6 font-mono text-xs">
-                      {String(seat.order).padStart(2, '0')}
-                    </span>
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="text-text-primary text-sm">
-                        {seat.uuid ? (
-                          <Link
-                            href={`/members/${seat.uuid}`}
-                            className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
-                          >
-                            {seat.name}
-                          </Link>
-                        ) : (
-                          seat.name
-                        )}
-                        {seat.draftId === viewerSeatId ? (
-                          <span className="text-accent-text"> · You</span>
-                        ) : null}
-                      </span>
-                      {seat.isDummy ? (
-                        <StatusChip tone="neutral">Unclaimed</StatusChip>
-                      ) : null}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <DraftBoard
-                rounds={group.rounds}
-                viewerSeatId={viewerSeatId}
-                seats={group.seats}
-              />
-            )}
-          </section>
-        ))
-      )}
+      <LeagueBoardRoom
+        // 🔴 Keyed on the stream URL, so switching season reconciles into a new
+        // connection rather than leaving one open to the old one.
+        key={streamUrl}
+        initial={view}
+        streamUrl={streamUrl}
+        signedIn={user != null}
+        viewerSeatId={view.viewerSeatId}
+      />
     </div>
   );
 }
