@@ -336,6 +336,17 @@ export default async function LeaguePage({
               </SectionHead>
               {viewerRoster.length > 0 ? (
                 <RosterStrip films={viewerRoster} />
+              ) : viewerSeat != null ? (
+                // 🔴 A seat with no picks is still a seat. This branch used to
+                // test `viewerRoster.length` and fall through to "you do not
+                // hold a seat this season" — told to a member whose name was
+                // listed in the standings table directly beside it. Found by
+                // P19.T2's journey on its final frame, where the league owner
+                // is seated and has not drafted.
+                <EmptyState title="Your seat is empty until the draft">
+                  You hold a seat this season. Your picks and what each one has scored
+                  appear here as the draft runs.
+                </EmptyState>
               ) : user == null ? (
                 <EmptyState
                   title="Sign in to see your own roster here"

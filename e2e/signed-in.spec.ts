@@ -493,6 +493,32 @@ test.describe('the league page', () => {
     expect(width).toBeLessThanOrEqual(390);
   });
 
+  test('a seated member who has not drafted is not told they have no seat', async ({
+    page,
+  }) => {
+    // 🔴 The page branched on how many picks the reader had, not on whether
+    // they held a seat, so a member seated in a league that has not drafted
+    // read "You do not hold a seat this season" — while the standings table
+    // beside it listed them by name. Found on the final frame of P19.T2's
+    // journey, where the league's own owner is in exactly this state.
+    const userId = await signInAs(page, {
+      email: `${TAG}-seat-empty@example.test`,
+      firstName: 'Seated',
+    });
+    const leagueId = await scratchLeague(userId, {
+      name: 'seat-no-picks',
+      status: 'pending',
+      picks: 0,
+    });
+
+    await page.goto(`/leagues/${leagueId}`);
+
+    await expect(page.getByText('You do not hold a seat this season')).toHaveCount(0);
+    await expect(
+      page.getByRole('heading', { name: 'Your seat is empty until the draft' }),
+    ).toBeVisible();
+  });
+
   test("the reader's own roster sits beside the standings, not 5,000px below", async ({
     page,
   }) => {

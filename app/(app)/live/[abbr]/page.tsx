@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-
 import { EmptyState } from '@/components/EmptyState';
 import { LiveAward } from '@/components/LiveAward';
 import { LiveBoard } from '@/components/LiveBoard';
@@ -12,6 +11,7 @@ import { ShowLogo } from '@/components/ShowLogo';
 import { StandingsPanel } from '@/components/StandingsPanel';
 import { StatusChip } from '@/components/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
+import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import { NotFoundError } from '@/lib/errors';
 import { eventRepository } from '@/lib/repositories/events';
 import { canonical } from '@/lib/seo';
@@ -213,13 +213,16 @@ export default async function LivePage({
                a login page wearing a league's name. They get the same
                invitation `/` gives a stranger, in the same words, for the same
                reason (D44). */
+            // 🔴 The pitch comes from `lib/copy.ts`, the same string the
+            // signed-out home and `/how-it-works` render. It used to be a
+            // fourth hand-typed copy of the same argument, and the copy here
+            // had already drifted from the other three.
             <EmptyState
-              title="Play the season"
+              title={PITCH_HEADLINE}
               action={{ label: 'Register', href: '/auth/register' }}
             >
-              Draft a team of films before awards season and score points as they pick up
-              nominations and wins. Played before? Register with the same email and your
-              leagues, drafts and points come with you.
+              {PITCH} Played before? Register with the same email and your leagues, drafts
+              and points come with you.
             </EmptyState>
           ) : (
             <EmptyState
