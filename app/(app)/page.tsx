@@ -67,6 +67,17 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
 
   return (
     <div className="text-text-primary mx-auto flex max-w-6xl flex-col gap-10">
+      {/* 🔴 Signed in, the reader's own state comes first (P17.T29). Before
+          this, a member with two leagues opened `/` to the same two screens a
+          stranger sees — the season stepper, the shelf and the full season
+          leaderboard — with their own league name, standing and roster fourth,
+          1,499px down at 1440px. The season rail and the shelf are supporting
+          material on a member's home page, not the page itself.
+
+          Signed out the order is unchanged: the season *is* the page, which is
+          deliberate and matches the source app (D44). */}
+      {user != null ? <YourLeagues leagues={view.leagues} /> : null}
+
       <section className="flex flex-col gap-4">
         <SectionHead
           as="h1"
@@ -146,65 +157,8 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
           nominations and wins. Played before? Register with the same email and your
           leagues, drafts and points come with you.
         </EmptyState>
-      ) : view.leagues.length === 0 ? (
-        <EmptyState
-          title="No leagues yet"
-          action={{ label: 'Find a league', href: '/leagues' }}
-        >
-          Join a league to draft a team of films and play the season.
-        </EmptyState>
       ) : (
-        <>
-          {view.leagues.map((league) => (
-            <section key={league.id} className="flex flex-col gap-4">
-              <SectionHead
-                as="h2"
-                name
-                // Position is stated rather than left to be inferred from the
-                // row's place in the table below: on a narrow screen the
-                // standings sit far beneath the roster.
-                eyebrow={standingLabel(league)}
-                right={
-                  <span className="flex items-baseline gap-2">
-                    <span className="font-sans">Your points</span>
-                    <span className="tabular font-mono">{league.total}</span>
-                  </span>
-                }
-              >
-                {league.name ?? 'League'}
-              </SectionHead>
-
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
-                <div className="min-w-0 flex-1">
-                  {league.roster.length === 0 ? (
-                    <EmptyState title="Draft not started">
-                      You have not drafted for this season yet. Your roster appears here
-                      once the draft opens.
-                    </EmptyState>
-                  ) : (
-                    <RosterStrip
-                      films={league.roster.map((entry) => ({
-                        id: entry.movie.id,
-                        title: entry.movie.title ?? 'Untitled',
-                        posterUrl: entry.posterUrl,
-                        round: entry.round,
-                        points: entry.points,
-                        share: entry.share,
-                        status: entry.status,
-                      }))}
-                    />
-                  )}
-                </div>
-
-                <div className="w-full lg:max-w-sm">
-                  <StandingsPanel rows={league.standings} />
-                </div>
-              </div>
-            </section>
-          ))}
-
-          <LowerFold leagues={view.leagues} />
-        </>
+        <LowerFold leagues={view.leagues} />
       )}
     </div>
   );
@@ -262,6 +216,107 @@ function NowPlayingShelf({ films }: { films: DashboardView['nowPlaying'] }) {
         </li>
       ))}
     </Shelf>
+  );
+}
+
+/**
+ * The signed-in member's own state, at the top of their home page (P17.T29).
+ *
+ * 🔴 League names are `h2`, and the page's `h1` stays the season — tranche 1's
+ * T1 owns the heading sizes and order on this page, so this must not introduce
+ * a second `h1`. The consequence is that, signed in, the outline now opens on
+ * an `h2` rather than the `h1`; the signed-out outline is untouched.
+ *
+ * 🔴 The "next action" is deliberately the league itself, not a state-specific
+ * act. "Run the draft" here would need `draftingStatus`, which `LeagueView`
+ * does not carry, and adding it means editing the dashboard service for one
+ * link — while `/leagues/{id}` already carries the state-specific controls as
+ * of P17.T30. The one exception is a member with no roster yet, for whom the
+ * available act is the draft list, and that is derivable from `roster.length`
+ * alone. That is a ceiling, not an oversight.
+ */
+function YourLeagues({ leagues }: { leagues: DashboardView['leagues'] }) {
+  if (leagues.length === 0) {
+    return (
+      <EmptyState
+        title="No leagues yet"
+        action={{ label: 'Find a league', href: '/leagues' }}
+      >
+        Join a league to draft a team of films and play the season.
+      </EmptyState>
+    );
+  }
+
+  return (
+    <>
+      {leagues.map((league) => (
+        <section key={league.id} className="flex flex-col gap-4">
+          <SectionHead
+            as="h2"
+            name
+            // Position is stated rather than left to be inferred from the
+            // row's place in the table below: on a narrow screen the
+            // standings sit far beneath the roster.
+            eyebrow={standingLabel(league)}
+            right={
+              <span className="flex items-baseline gap-2">
+                <span className="font-sans">Your points</span>
+                <span className="tabular font-mono">{league.total}</span>
+              </span>
+            }
+          >
+            {league.name ?? 'League'}
+          </SectionHead>
+
+          {/* The same two lockups as the league page's own actions (P17.T30):
+              `accent.fill` with white for the act the state calls for, a
+              ruled secondary for the rest. Links, because both navigate. */}
+          <div className="flex flex-wrap items-center gap-3">
+            {league.roster.length === 0 ? (
+              <Link
+                href="/list"
+                className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                Build your draft list
+              </Link>
+            ) : null}
+            <Link
+              href={`/leagues/${league.id}`}
+              className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm border px-4 text-sm focus-visible:outline-2"
+            >
+              Open the league
+            </Link>
+          </div>
+
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
+            <div className="min-w-0 flex-1">
+              {league.roster.length === 0 ? (
+                <EmptyState title="Draft not started">
+                  You have not drafted for this season yet. Your roster appears here once
+                  the draft opens.
+                </EmptyState>
+              ) : (
+                <RosterStrip
+                  films={league.roster.map((entry) => ({
+                    id: entry.movie.id,
+                    title: entry.movie.title ?? 'Untitled',
+                    posterUrl: entry.posterUrl,
+                    round: entry.round,
+                    points: entry.points,
+                    share: entry.share,
+                    status: entry.status,
+                  }))}
+                />
+              )}
+            </div>
+
+            <div className="w-full lg:max-w-sm">
+              <StandingsPanel rows={league.standings} />
+            </div>
+          </div>
+        </section>
+      ))}
+    </>
   );
 }
 
