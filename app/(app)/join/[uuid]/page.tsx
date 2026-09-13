@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { JoinLeagueButton } from '@/components/JoinLeagueButton';
-import { SectionHead } from '@/components/SectionHead';
+import { JoinLeagueButton } from '@/components/leagues/JoinLeagueButton';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';

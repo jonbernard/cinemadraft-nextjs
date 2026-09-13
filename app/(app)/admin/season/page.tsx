@@ -1,5 +1,5 @@
-import { SeasonControl } from '@/components/SeasonControl';
-import { SectionHead } from '@/components/SectionHead';
+import { SeasonControl } from '@/components/admin/SeasonControl';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { requireAdmin } from '@/lib/auth';
 import { availableYearRepository } from '@/lib/repositories/available-years';
 import { userRepository } from '@/lib/repositories/users';

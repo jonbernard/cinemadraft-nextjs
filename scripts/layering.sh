@@ -58,7 +58,7 @@ check "no raw hex outside the token system" \
 # Vercel invoice or a broken image does the noticing instead.
 check "no next/image import outside RemoteImage" \
   "$(grep -rlE "from ['\"]next/image['\"]" app lib actions components 2>/dev/null \
-     | grep -v -e '^components/RemoteImage\.tsx$' -e '\.test\.tsx?$' || true)"
+     | grep -v -e '^components/ui/RemoteImage\.tsx$' -e '\.test\.tsx?$' || true)"
 
 # 🔴 Pacing is a knob, and a knob has exactly one place it is turned.
 # `e2e/journeys/support/pace.ts` owns the only `waitForTimeout` in the suite: a
@@ -98,9 +98,9 @@ check "only the journey pacing helper waits on a clock" \
 check "text sizes come from the scale" \
   "$(grep -rnE "text-\[[0-9.]+(px|rem|em)\]" components app .storybook \
      --include='*.tsx' --include='*.ts' --include='*.mdx' 2>/dev/null \
-     | grep -v -e '^components/Eyebrow\.tsx:' -e '^components/SectionHead\.tsx:' \
-               -e '^components/Wordmark\.tsx:' -e '^components/TabBar\.tsx:' \
-               -e '^components/EmptyState\.tsx:' \
+     | grep -v -e '^components/ui/Eyebrow\.tsx:' -e '^components/ui/SectionHead\.tsx:' \
+               -e '^components/ui/Wordmark\.tsx:' -e '^components/shell/TabBar\.tsx:' \
+               -e '^components/ui/EmptyState\.tsx:' \
                -e '\.test\.tsx\?:' -e '\.stories\.tsx\?:' \
      || true)"
 
@@ -142,7 +142,7 @@ check "spacing sits on the 4px grid" \
 check "radius comes from the scale" \
   "$(grep -rnE "rounded-(md|lg)\b|rounded-\[[0-9.]+(px|rem|%)\]" \
      components app .storybook --include='*.tsx' --include='*.mdx' 2>/dev/null \
-     | grep -v -e '^components/SearchOverlay\.tsx:' -e '\.test\.tsx\?:' || true)"
+     | grep -v -e '^components/shell/SearchOverlay\.tsx:' -e '\.test\.tsx\?:' || true)"
 
 # P17.T22. The retired surface names do not come back.
 #

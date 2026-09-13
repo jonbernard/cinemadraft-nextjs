@@ -14,7 +14,7 @@ vi.mock('@/lib/repositories/notifications', () => ({
   notificationRepository: { findByUser, countUnreadByUser },
 }));
 
-vi.mock('@/components/AppShell', () => ({
+vi.mock('@/components/shell/AppShell', () => ({
   AppShell: () => null,
 }));
 

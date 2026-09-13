@@ -1,4 +1,4 @@
-import { ErrorPanel } from '@/components/ErrorPanel';
+import { ErrorPanel } from '@/components/ui/ErrorPanel';
 
 /**
  * The 404 for pages inside the app shell.

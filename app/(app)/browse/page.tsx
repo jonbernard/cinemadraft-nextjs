@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { BrowseList } from '@/components/BrowseList';
-import { EmptyState } from '@/components/EmptyState';
-import { RemoteImage } from '@/components/RemoteImage';
-import { SectionHead } from '@/components/SectionHead';
-import { StatusChip } from '@/components/StatusChip';
+import { BrowseList } from '@/components/films/BrowseList';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { RemoteImage } from '@/components/ui/RemoteImage';
+import { SectionHead } from '@/components/ui/SectionHead';
+import { StatusChip } from '@/components/ui/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import type { BrowseWhen } from '@/lib/external/tmdb-discover';
 import { canonical } from '@/lib/seo';

@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-import { OgMark } from '@/components/OgMark';
+import { OgMark } from '@/components/ui/OgMark';
 import { CARD, CARD_SIZE } from '@/lib/og';
 import { loadFilmPage } from '@/lib/services/film';
 

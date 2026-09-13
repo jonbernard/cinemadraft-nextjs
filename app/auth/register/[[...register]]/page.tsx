@@ -1,7 +1,7 @@
 import { SignUp } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 
-import { SectionHead } from '@/components/SectionHead';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { NOINDEX } from '@/lib/seo';
 
 /**

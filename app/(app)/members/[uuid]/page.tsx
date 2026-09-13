@@ -3,12 +3,12 @@ import { notFound } from 'next/navigation';
 
 import { deleteFeedItem } from '@/actions/profile/delete-feed-item';
 import { postFeedItem } from '@/actions/profile/post-feed-item';
-import { EmptyState } from '@/components/EmptyState';
-import { FeedComposer } from '@/components/FeedComposer';
-import { FeedPost } from '@/components/FeedPost';
-import { Panel } from '@/components/Panel';
-import { RemoteImage } from '@/components/RemoteImage';
-import { SectionHead } from '@/components/SectionHead';
+import { FeedComposer } from '@/components/profile/FeedComposer';
+import { FeedPost } from '@/components/profile/FeedPost';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Panel } from '@/components/ui/Panel';
+import { RemoteImage } from '@/components/ui/RemoteImage';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { loadMemberProfile, loadProfileMember } from '@/lib/services/profile';
 import { formatDay } from '@/lib/utils/format';

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ScoringTable } from '@/components/ScoringTable';
-import { SectionHead } from '@/components/SectionHead';
-import { WorkedExample } from '@/components/WorkedExample';
+import { ScoringTable } from '@/components/awards/ScoringTable';
+import { WorkedExample } from '@/components/awards/WorkedExample';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import { pointRepository } from '@/lib/repositories/points';
 import { canonical } from '@/lib/seo';

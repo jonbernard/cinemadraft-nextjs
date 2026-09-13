@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import { Panel } from '@/components/Panel';
-import { SectionHead } from '@/components/SectionHead';
-import { StatusChip } from '@/components/StatusChip';
+import { Panel } from '@/components/ui/Panel';
+import { SectionHead } from '@/components/ui/SectionHead';
+import { StatusChip } from '@/components/ui/StatusChip';
 import { requireAdmin } from '@/lib/auth';
 import { NOINDEX } from '@/lib/seo';
 

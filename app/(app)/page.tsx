@@ -1,15 +1,14 @@
 import Link from 'next/link';
-
-import { EmptyState } from '@/components/EmptyState';
-import { LeaderboardTable } from '@/components/LeaderboardTable';
-import { PosterFrame } from '@/components/PosterFrame';
-import { RemoteImage } from '@/components/RemoteImage';
-import { RosterStrip } from '@/components/RosterStrip';
-import { SeasonPicker } from '@/components/SeasonPicker';
-import { SeasonStepper } from '@/components/SeasonStepper';
-import { SectionHead } from '@/components/SectionHead';
-import { Shelf } from '@/components/Shelf';
-import { StandingsPanel } from '@/components/StandingsPanel';
+import { LeaderboardTable } from '@/components/leagues/LeaderboardTable';
+import { RosterStrip } from '@/components/leagues/RosterStrip';
+import { SeasonStepper } from '@/components/leagues/SeasonStepper';
+import { StandingsPanel } from '@/components/leagues/StandingsPanel';
+import { SeasonPicker } from '@/components/shell/SeasonPicker';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { PosterFrame } from '@/components/ui/PosterFrame';
+import { RemoteImage } from '@/components/ui/RemoteImage';
+import { SectionHead } from '@/components/ui/SectionHead';
+import { Shelf } from '@/components/ui/Shelf';
 import { getCurrentUser } from '@/lib/auth';
 import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import { recentPicks, type ShelfView, topScorers } from '@/lib/dashboard/shelves';

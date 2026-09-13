@@ -1,5 +1,5 @@
-import { BroadcastPanel } from '@/components/BroadcastPanel';
-import { SectionHead } from '@/components/SectionHead';
+import { BroadcastPanel } from '@/components/admin/BroadcastPanel';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { requireAdmin } from '@/lib/auth';
 import { userRepository } from '@/lib/repositories/users';
 

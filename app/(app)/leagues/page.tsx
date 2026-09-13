@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-import { EmptyState } from '@/components/EmptyState';
-import { SectionHead } from '@/components/SectionHead';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { requireUser } from '@/lib/auth';
 import { getMyLeagues } from '@/lib/services/my-leagues';
 

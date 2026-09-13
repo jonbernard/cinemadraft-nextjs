@@ -1,5 +1,5 @@
-import { CreateLeagueForm } from '@/components/CreateLeagueForm';
-import { SectionHead } from '@/components/SectionHead';
+import { CreateLeagueForm } from '@/components/leagues/CreateLeagueForm';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { requireUser } from '@/lib/auth';
 
 /**

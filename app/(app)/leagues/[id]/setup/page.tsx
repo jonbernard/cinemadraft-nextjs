@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { SeasonSetup } from '@/components/SeasonSetup';
-import { SectionHead } from '@/components/SectionHead';
+import { SeasonSetup } from '@/components/leagues/SeasonSetup';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { canManageLeague } from '@/lib/services/league-access';

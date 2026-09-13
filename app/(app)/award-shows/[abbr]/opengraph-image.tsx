@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-import { OgMark } from '@/components/OgMark';
+import { OgMark } from '@/components/ui/OgMark';
 import { CARD, CARD_SIZE } from '@/lib/og';
 import { getAwardShow } from '@/lib/services/award-show';
 import { getActiveYear } from '@/lib/services/season';

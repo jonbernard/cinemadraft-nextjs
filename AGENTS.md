@@ -25,6 +25,17 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
 
 ## Other conventions
 
+- **`components/` is grouped by domain**: `ui/` (the Phase 3.5 primitives and
+  anything with no domain), `shell/`, `draft/`, `leagues/`, `awards/`,
+  `films/`, `admin/`, `profile/`. A component's test and story sit beside it.
+  Import through the alias — `@/components/ui/Button` — and the folder is part
+  of the path, so a move is a rename everything else has to follow. 🔴 Three
+  guards in `scripts/layering.sh` name specific files as exemptions (`ui/
+  RemoteImage`, `ui/Eyebrow`, `ui/SectionHead`, `ui/Wordmark`, `ui/EmptyState`,
+  `shell/TabBar`, `shell/SearchOverlay`); moving one of those between folders
+  silently disarms its guard unless the script and `.github/workflows/ci.yml`
+  are updated together.
+
 - **Biome**, not ESLint or Prettier. `npm run lint` covers linting, formatting, and import order. Biome does not typecheck — `npm run typecheck` is separate.
 - **MUI for components, Tailwind for custom styling.** They coexist through CSS cascade layers ordered `theme, base, mui, components, utilities`. Never reach for `!important` to make a Tailwind class beat MUI; if that seems necessary the layer order is wrong. Three Playwright tests in `e2e/smoke.spec.ts` pin this — do not relax them.
 - **All local databases run in Docker** (`npm run db:up`, which starts both). There is no native Postgres server on the dev machine, and the local Postgres binaries are clients only.

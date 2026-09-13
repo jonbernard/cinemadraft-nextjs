@@ -1,0 +1,274 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const usePathname = vi.hoisted(() => vi.fn(() => '/'));
+const push = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation', () => ({ usePathname, useRouter: () => ({ push }) }));
+vi.mock('@clerk/nextjs', () => ({
+  UserButton: () => <button type="button">Account</button>,
+}));
+
+import { AppShell } from '@/components/shell/AppShell';
+import { NAV_LINKS } from '@/lib/nav/links';
+
+/**
+ * The shell that makes everything else reachable.
+ *
+ * Both presentations — the desktop rail/strip and the phone tabs/sheet —
+ * render at once in jsdom; no CSS decides which is visible. Assertions scope
+ * to a named navigation the same way `AppNav`'s own test scoped to its header
+ * vs. its drawer (D49's pattern, carried forward).
+ */
+const rail = () => screen.getByRole('navigation', { name: 'Main' });
+const tabs = () => screen.getByRole('navigation', { name: 'Primary, mobile' });
+const sheet = () => screen.getByLabelText('More');
+
+/**
+ * Destinations whose pages exist today; `NavRail` only shows these.
+ *
+ * Every ready link, not just the primary ones — the rail renders both groups,
+ * and `yours` stopped being empty when `/list` shipped.
+ */
+const READY_LINKS = NAV_LINKS.filter((link) => link.ready).map((link) => link.label);
+
+/**
+ * Open the sheet before reading it.
+ *
+ * A closed `<dialog>` hides its contents from the accessibility tree —
+ * correct behaviour, and the reason a query for its links finds nothing until
+ * it is opened.
+ */
+async function openMore() {
+  await userEvent.setup().click(screen.getByRole('button', { name: 'More' }));
+  return sheet();
+}
+
+// 🔴 `AccountControl` renders Clerk's `UserButton` only when a publishable key
+// is present (D84), so these tests state which world they are in rather than
+// inherit it from whichever .env.local the machine running them happens to
+// have. Without this the suite would behave differently on CI, where no Clerk
+// key exists, than on a developer's laptop, where one does.
+beforeEach(() => vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', 'pk_test_shell'));
+afterEach(() => vi.unstubAllEnvs());
+
+describe('AppShell', () => {
+  it('renders the children inside the content panel', () => {
+    render(
+      <AppShell isSignedIn={false}>
+        <p>Board</p>
+      </AppShell>,
+    );
+    expect(screen.getByText('Board')).toBeInTheDocument();
+  });
+
+  it('renders exactly one main landmark', () => {
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+    expect(screen.getAllByRole('main')).toHaveLength(1);
+  });
+
+  // Both navigations exist in the DOM at once; CSS decides which is visible.
+  // Two elements with the same accessible name would make the landmark list
+  // ambiguous for a screen reader, so they are named apart.
+  it('names its two navigations distinctly', () => {
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+    expect(screen.getByRole('navigation', { name: 'Main' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('navigation', { name: 'Primary, mobile' }),
+    ).toBeInTheDocument();
+  });
+
+  it('links only to pages that exist', () => {
+    // A nav entry pointing at a 404 is worse than a missing one.
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+
+    const labels = within(rail())
+      .getAllByRole('link')
+      .map((link) => link.textContent?.trim())
+      .filter((label) => label !== 'Cinemadraft');
+
+    expect(labels).toEqual(READY_LINKS);
+  });
+
+  it('the More trigger reports whether the sheet is open', async () => {
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+    const trigger = screen.getByRole('button', { name: 'More' });
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await openMore();
+
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('closes the sheet after a navigation', async () => {
+    // A sheet left open across a navigation would cover the page it just
+    // reached. Unlike AppNav's old drawer, MoreSheet's links carry no
+    // onClick-to-close — closing is driven by the pathname changing
+    // underneath it, ported verbatim from AppNav's useEffect.
+    usePathname.mockReturnValue('/');
+    const { rerender } = render(<AppShell isSignedIn={false}>content</AppShell>);
+    await openMore();
+    expect(sheet()).toHaveAttribute('open');
+
+    usePathname.mockReturnValue('/leagues');
+    rerender(<AppShell isSignedIn={false}>content</AppShell>);
+
+    expect(sheet()).not.toHaveAttribute('open');
+  });
+
+  it('the phone sheet is a native dialog, so Escape and focus are the platform’s job', () => {
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+
+    expect(sheet().tagName).toBe('DIALOG');
+  });
+
+  it('marks the current page for assistive technology, not by colour alone', () => {
+    usePathname.mockReturnValue('/leagues/1');
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    const current = within(rail())
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('aria-current') === 'page');
+
+    expect(current).toHaveLength(1);
+    expect(current[0]?.textContent).toContain('Leagues');
+  });
+
+  it('treats Home as current only on the dashboard itself', () => {
+    // `startsWith` would make "/" match every page in the app.
+    usePathname.mockReturnValue('/leagues');
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    const current = within(rail())
+      .getAllByRole('link')
+      .find((link) => link.getAttribute('aria-current') === 'page');
+
+    expect(current?.textContent).toContain('Leagues');
+  });
+
+  it('every target clears the 44px minimum', async () => {
+    // Tailwind's min-h-11 is 2.75rem = 44px. Asserted on the class because
+    // jsdom computes no layout — the point is that the rule is present and
+    // cannot be dropped silently.
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    for (const link of within(rail()).getAllByRole('link')) {
+      if (link.textContent?.trim() === 'Cinemadraft') continue;
+      expect(link.className).toMatch(/min-h-(11|14)/);
+    }
+    for (const link of within(tabs()).getAllByRole('link')) {
+      expect(link.className).toMatch(/min-h-(11|12|14)/);
+    }
+  });
+
+  it('every destination carries a visible label beside its icon', () => {
+    // Icon-only navigation harms discoverability, and most members open this
+    // app once a year.
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    for (const link of within(rail()).getAllByRole('link')) {
+      if (link.textContent?.trim() === 'Cinemadraft') continue;
+      expect(link.textContent?.trim().length).toBeGreaterThan(0);
+    }
+    for (const link of within(tabs()).getAllByRole('link')) {
+      expect(link.textContent?.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('search opens the panel rather than linking to the release calendar', () => {
+    // `/browse` is ordered by date and cannot answer "where is *Sinners*",
+    // which is the one question the icon promises (P15.T3).
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+
+    const trigger = screen.getAllByRole('button', { name: 'Search' })[0];
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(screen.queryByRole('link', { name: 'Search' })).toBeNull();
+    expect(screen.getByLabelText('Search films').tagName).toBe('DIALOG');
+  });
+
+  it('shows the account menu when signed in', () => {
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    expect(screen.getAllByRole('button', { name: 'Account' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+  });
+
+  it('offers a plain log-out control when Clerk is not configured', () => {
+    // What makes the e2e run boot at all (D84): `UserButton` throws outside a
+    // `<ClerkProvider>`, and under the test session there is none to mount.
+    vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', '');
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    expect(screen.getAllByRole('button', { name: 'Log out' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Account' })).toBeNull();
+  });
+
+  it('shows a logged-out visitor the whole nav, plus a way in', () => {
+    // The dashboard and league boards are public (D44) — a visitor on a
+    // shared link must be able to move around, not be stranded on one page.
+    usePathname.mockReturnValue('/');
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+
+    expect(screen.getAllByRole('link', { name: 'Log in' }).length).toBeGreaterThan(0);
+    expect(within(rail()).getAllByRole('link').length).toBeGreaterThan(1);
+  });
+
+  it('the skip link is the first focusable element, and it points at <main>', () => {
+    // Structural, not positional: whatever P17.T2 does to the shell's layout,
+    // this link has to stay first in DOM order and `<main>` has to stay its
+    // target. If this goes red in someone else's task, that is this test
+    // working.
+    const { container } = render(
+      <AppShell isSignedIn={false}>
+        <p>Board</p>
+      </AppShell>,
+    );
+
+    const focusable = container.querySelectorAll<HTMLElement>(
+      'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    const first = focusable[0];
+
+    expect(first).toHaveAccessibleName('Skip to content');
+    expect(first).toHaveAttribute('href', '#content');
+
+    const main = screen.getByRole('main');
+    expect(main).toHaveAttribute('id', 'content');
+    // Focusable by script so focus actually moves, never by Tab.
+    expect(main).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('names the create action the same as every other place it appears', () => {
+    // "Create league" in the strip and "Start a league" on /leagues are the
+    // same action, ~700px apart at 1440px. One label (P17.T32).
+    render(<AppShell isSignedIn>content</AppShell>);
+
+    expect(screen.getByRole('link', { name: 'Start a league' })).toHaveAttribute(
+      'href',
+      '/leagues/new',
+    );
+    expect(screen.queryByRole('link', { name: 'Create league' })).toBeNull();
+  });
+
+  it('sends a signed-out reader to register rather than to a protected route', () => {
+    // 🔴 The strip renders for everybody, and `/leagues/new` is protected, so
+    // this control used to bounce a signed-out visitor to a login page that
+    // could not say what they had been trying to do. The label stays the same
+    // because the act is the same: registering is the first step of starting
+    // a league.
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+
+    expect(screen.getByRole('link', { name: 'Start a league' })).toHaveAttribute(
+      'href',
+      '/auth/register',
+    );
+  });
+});

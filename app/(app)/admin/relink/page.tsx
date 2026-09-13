@@ -1,5 +1,5 @@
-import { RelinkPanel } from '@/components/RelinkPanel';
-import { SectionHead } from '@/components/SectionHead';
+import { RelinkPanel } from '@/components/admin/RelinkPanel';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { requireAdmin } from '@/lib/auth';
 
 /**

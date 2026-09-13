@@ -5,8 +5,11 @@ import { removeFilmFromList } from '@/actions/draft-list/remove-film';
 import { reorderList } from '@/actions/draft-list/reorder-list';
 import { setListStatus } from '@/actions/draft-list/set-status';
 import { findFilmsAction } from '@/actions/search/find-films';
-import { DraftListEditor, type DraftListStatus } from '@/components/DraftListEditor';
-import { SectionHead } from '@/components/SectionHead';
+import {
+  DraftListEditor,
+  type DraftListStatus,
+} from '@/components/draft/DraftListEditor';
+import { SectionHead } from '@/components/ui/SectionHead';
 import { requireUser } from '@/lib/auth';
 import { NOINDEX } from '@/lib/seo';
 import { getDraftList } from '@/lib/services/draft-list';

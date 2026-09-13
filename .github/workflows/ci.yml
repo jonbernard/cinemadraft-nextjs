@@ -267,9 +267,9 @@ jobs:
           # fetch that should have been billed) with nobody noticing until a
           # Vercel invoice or a broken image does the noticing instead.
           offenders=$(grep -rlE "from ['\"]next/image['\"]" app lib actions components 2>/dev/null \
-            | grep -v -e '^components/RemoteImage\.tsx$' -e '\.test\.tsx?$' || true)
+            | grep -v -e '^components/ui/RemoteImage\.tsx$' -e '\.test\.tsx?$' || true)
           if [ -n "$offenders" ]; then
-            echo "::error::only components/RemoteImage.tsx may import next/image directly"
+            echo "::error::only components/ui/RemoteImage.tsx may import next/image directly"
             echo "$offenders"
             exit 1
           fi
@@ -294,9 +294,9 @@ jobs:
           # assertions about those files, not new call sites.
           offenders=$(grep -rnE "text-\[[0-9.]+(px|rem|em)\]" components app .storybook \
             --include='*.tsx' --include='*.ts' --include='*.mdx' 2>/dev/null \
-            | grep -v -e '^components/Eyebrow\.tsx:' -e '^components/SectionHead\.tsx:' \
-                      -e '^components/Wordmark\.tsx:' -e '^components/TabBar\.tsx:' \
-                      -e '^components/EmptyState\.tsx:' \
+            | grep -v -e '^components/ui/Eyebrow\.tsx:' -e '^components/ui/SectionHead\.tsx:' \
+                      -e '^components/ui/Wordmark\.tsx:' -e '^components/shell/TabBar\.tsx:' \
+                      -e '^components/ui/EmptyState\.tsx:' \
                       -e '\.test\.tsx\?:' -e '\.stories\.tsx\?:' \
             || true)
           if [ -n "$offenders" ]; then
@@ -349,7 +349,7 @@ jobs:
           # treatment. Neither is `poster-radius`, the proportional clamp.
           offenders=$(grep -rnE "rounded-(md|lg)\b|rounded-\[[0-9.]+(px|rem|%)\]" \
             components app .storybook --include='*.tsx' --include='*.mdx' 2>/dev/null \
-            | grep -v -e '^components/SearchOverlay\.tsx:' -e '\.test\.tsx\?:' || true)
+            | grep -v -e '^components/shell/SearchOverlay\.tsx:' -e '\.test\.tsx\?:' || true)
           if [ -n "$offenders" ]; then
             echo "::error::radius outside D73's scale; rounded-sm is the 6px default"
             echo "$offenders"

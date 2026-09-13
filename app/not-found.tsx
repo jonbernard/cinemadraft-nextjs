@@ -1,4 +1,4 @@
-import { ErrorPanel } from '@/components/ErrorPanel';
+import { ErrorPanel } from '@/components/ui/ErrorPanel';
 
 /**
  * The last-resort 404: a URL that matched no route at all, outside the app

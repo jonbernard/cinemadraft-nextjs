@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-import { type ErrorKind, ErrorPanel } from '@/components/ErrorPanel';
+import { type ErrorKind, ErrorPanel } from '@/components/ui/ErrorPanel';
 
 /**
  * The error boundary for pages inside the app shell.

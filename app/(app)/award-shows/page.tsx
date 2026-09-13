@@ -1,11 +1,10 @@
 import Link from 'next/link';
-
-import { Eyebrow } from '@/components/Eyebrow';
-import { InviteLink } from '@/components/InviteLink';
-import { Panel } from '@/components/Panel';
-import { SectionHead } from '@/components/SectionHead';
-import { ShowLogo } from '@/components/ShowLogo';
-import { StatusChip } from '@/components/StatusChip';
+import { ShowLogo } from '@/components/awards/ShowLogo';
+import { InviteLink } from '@/components/leagues/InviteLink';
+import { Eyebrow } from '@/components/ui/Eyebrow';
+import { Panel } from '@/components/ui/Panel';
+import { SectionHead } from '@/components/ui/SectionHead';
+import { StatusChip } from '@/components/ui/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { getAwardShows } from '@/lib/services/award-show';
 import { getActiveYear } from '@/lib/services/season';

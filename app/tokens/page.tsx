@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { Button } from '@/components/Button';
+import { Button } from '@/components/ui/Button';
 import { NOINDEX } from '@/lib/seo';
 
 /**

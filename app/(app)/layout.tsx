@@ -1,4 +1,4 @@
-import { AppShell } from '@/components/AppShell';
+import { AppShell } from '@/components/shell/AppShell';
 import { AccountLinkError, getCurrentUser } from '@/lib/auth';
 import { notificationRepository } from '@/lib/repositories/notifications';
 
