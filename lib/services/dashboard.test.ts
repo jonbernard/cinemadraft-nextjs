@@ -5,6 +5,7 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { db } from '@/lib/db';
 import { clearCacheForTests } from '@/lib/external/cache';
 import { draftRepository } from '@/lib/repositories/drafts';
+import { type Event, eventRepository } from '@/lib/repositories/events';
 import { getDashboard } from './dashboard';
 import { pointsForMovieIds } from './scoring';
 
@@ -325,5 +326,78 @@ describe('the now-playing shelf', () => {
         posterUrl: expect.stringContaining('/42.jpg'),
       },
     ]);
+  });
+});
+
+/**
+ * The dashboard's route into a ceremony (P10.T3).
+ *
+ * 🔴 `eventRepository.findActive` is spied rather than arranged in the
+ * database. The rest of this file reads the restored production data, and the
+ * two cases here need the live flags set *differently* — arranging them for
+ * real means writing `awards_active` on a row of sixty real people's season.
+ * The rule under test is the filter, not the query, so the spy is the honest
+ * boundary.
+ */
+describe('the live banner', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function anEvent(overrides: Partial<Event>): Event {
+    return {
+      id: 1,
+      fbId: null,
+      name: 'Academy Awards',
+      abbreviation: 'oscars',
+      image: null,
+      liveResults: true,
+      nomActive: false,
+      nomDate: null,
+      nomTime: null,
+      nomDuration: null,
+      awardsActive: false,
+      awardsDate: null,
+      awardsTime: null,
+      awardsDuration: null,
+      createdAt: null,
+      updatedAt: null,
+      ...overrides,
+    };
+  }
+
+  it('names the show that is handing out awards right now', async () => {
+    vi.spyOn(eventRepository, 'findActive').mockResolvedValue([
+      anEvent({ awardsActive: true }),
+    ]);
+
+    const view = await getDashboard(null);
+
+    expect(view.liveNow).toEqual({
+      abbreviation: 'oscars',
+      name: 'Academy Awards',
+      year: view.year,
+    });
+  });
+
+  it('ignores a show that is only announcing nominations', async () => {
+    // 🔴 Deliberate deviation from the source, which showed this one too and
+    // linked to a live page whose stream answers 204 (D110). A banner into a
+    // dead end is worse than no banner.
+    vi.spyOn(eventRepository, 'findActive').mockResolvedValue([
+      anEvent({ nomActive: true, awardsActive: false }),
+    ]);
+
+    const view = await getDashboard(null);
+
+    expect(view.liveNow).toBeNull();
+  });
+
+  it('is null when nothing is on air', async () => {
+    vi.spyOn(eventRepository, 'findActive').mockResolvedValue([]);
+
+    const view = await getDashboard(null);
+
+    expect(view.liveNow).toBeNull();
   });
 });

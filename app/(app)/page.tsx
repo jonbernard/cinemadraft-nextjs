@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { LiveBanner } from '@/components/awards/LiveBanner';
 import { LeaderboardTable } from '@/components/leagues/LeaderboardTable';
 import { RosterStrip } from '@/components/leagues/RosterStrip';
 import { SeasonStepper } from '@/components/leagues/SeasonStepper';
@@ -85,6 +86,19 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
 
   return (
     <div className="text-text-primary mx-auto flex max-w-6xl flex-col gap-16 my-16">
+      {/* 🔴 First, above the hero and above the season, and for a signed-out
+          reader as well: `/` is public (D44) and so is `/live/[abbr]`
+          (P17.T16), and this was the one page in the product that said nothing
+          while a ceremony was on air (P10.T3). The container's own `gap-16`
+          spaces it; no margin of its own. */}
+      {view.liveNow ? (
+        <LiveBanner
+          abbreviation={view.liveNow.abbreviation}
+          name={view.liveNow.name}
+          year={view.liveNow.year}
+        />
+      ) : null}
+
       {/* The hero, and only for a stranger: it is the whole pitch, above the
           season it is arguing about (P18.T10). */}
       {user == null ? <SignedOutHero facts={facts} /> : null}

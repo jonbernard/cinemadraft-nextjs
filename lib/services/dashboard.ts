@@ -98,6 +98,24 @@ export type NowPlayingFilm = {
   posterUrl: string | null;
 };
 
+/**
+ * The show handing out awards at this moment, or null — the dashboard's one
+ * route into a ceremony (P10.T3).
+ *
+ * 🔴 `awardsActive` only, **not** the source's `nomActive || awardsActive`.
+ * `LiveCTA` showed a banner reading "the results are coming in now" for a show
+ * that was merely announcing nominations, linking to a live page whose stream
+ * answers 204 off air (D110) — an invitation into a dead end. A nominations
+ * announcement is a different event and, if it is ever worth a banner, it is
+ * worth different words.
+ *
+ * The first, if two shows are somehow live at once. `findActive` orders by
+ * name, so the choice is stable rather than arbitrary; two simultaneous
+ * ceremonies has never happened and a banner listing both would be a design
+ * for a case that does not occur.
+ */
+export type LiveNow = { abbreviation: string; name: string; year: number };
+
 export type DashboardView = {
   year: number;
   leagues: LeagueView[];
@@ -109,6 +127,8 @@ export type DashboardView = {
    * because a preview deploy has no TMDB key.
    */
   nowPlaying: NowPlayingFilm[];
+  /** The ceremony on air right now, or null for most of the year. */
+  liveNow: LiveNow | null;
 };
 
 /**
@@ -143,14 +163,18 @@ function displayName(user: {
 export async function getDashboard(userId: number | null): Promise<DashboardView> {
   const year = await getActiveYear();
 
-  const [leagueIds, events, nowPlaying] = await Promise.all([
+  const [leagueIds, events, nowPlaying, active] = await Promise.all([
     // A signed-out visitor has no leagues by definition. Skipping the query
     // rather than passing a sentinel id keeps it impossible for the public
     // page to accidentally resolve somebody else's leagues (D44).
     userId == null ? Promise.resolve([]) : draftRepository.findLeagueIdsByUserId(userId),
     eventRepository.findAll(),
     getNowPlaying(),
+    // Batched, not awaited in sequence: the banner must not cost the dashboard
+    // a serial round trip for a row that is empty most of the year.
+    eventRepository.findActive(),
   ]);
+  const onAir = active.filter((event) => event.awardsActive === true);
 
   const leagues =
     userId == null
@@ -170,6 +194,10 @@ export async function getDashboard(userId: number | null): Promise<DashboardView
       title: film.title,
       posterUrl: posterUrl(film.posterPath, 'w342'),
     })),
+    liveNow:
+      onAir[0] == null
+        ? null
+        : { abbreviation: onAir[0].abbreviation, name: onAir[0].name, year },
   };
 }
 
