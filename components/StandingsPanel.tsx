@@ -61,20 +61,25 @@ export function StandingsPanel({
           and a season rail, "table" with no name tells a screen-reader user
           nothing about which one they have landed in. */}
       <caption className="sr-only">League standings, by position</caption>
+      {/* Column headers are how a table's cells are read — content, so
+          `secondary`, not `dim` (P17.T34). */}
       <thead>
         <tr className="border-border-rule border-b">
           <th
             scope="col"
-            className="text-text-dim w-10 py-2 pr-3 text-right text-xs font-normal"
+            className="text-text-secondary w-10 py-2 pr-3 text-right text-xs font-normal"
           >
             Pos
           </th>
-          <th scope="col" className="text-text-dim py-2 text-left text-xs font-normal">
+          <th
+            scope="col"
+            className="text-text-secondary py-2 text-left text-xs font-normal"
+          >
             Member
           </th>
           <th
             scope="col"
-            className="text-text-dim py-2 pl-3 text-right text-xs font-normal"
+            className="text-text-secondary py-2 pl-3 text-right text-xs font-normal"
           >
             Points
           </th>

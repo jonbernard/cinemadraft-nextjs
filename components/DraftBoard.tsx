@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import type { ReactNode } from 'react';
+
 import { PickCell } from '@/components/PickCell';
 import type { LedgerRow } from '@/components/PointsLedger';
 import { Shelf } from '@/components/Shelf';
@@ -8,6 +11,9 @@ export type BoardSeat = {
   draftId: number;
   name: string;
   isDummy: boolean;
+  /** The member's uuid, for `/members/[uuid]`. Null for a placeholder seat,
+   *  which has no member and so no page. */
+  uuid?: string | null;
   total: number;
   /** The seat's position in the running order. Only known once a league has
    *  been arranged (P10.T14–T17); omitted for a stale caller, in which case
@@ -23,6 +29,28 @@ export type BoardSeat = {
     ledger?: readonly LedgerRow[];
   }[];
 };
+
+/**
+ * A seat's name, linked to its member's page when there is a member (P17.T38).
+ *
+ * The league page is the member index (owner's decision, 2026-09-12): you
+ * reach a member from a seat name in a league. The running order linked them
+ * but this board did not, so once a draft started there was no route from a
+ * league to a member at all. Both layouts render it, and only one is ever
+ * displayed — the other is `display: none`, out of the tab order and the
+ * accessibility tree — so a seat is one tab stop, not two.
+ */
+function SeatName({ seat }: { seat: BoardSeat }): ReactNode {
+  if (!seat.uuid) return seat.name;
+  return (
+    <Link
+      href={`/members/${seat.uuid}`}
+      className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
+    >
+      {seat.name}
+    </Link>
+  );
+}
 
 /**
  * One group's draft.
@@ -104,7 +132,9 @@ export function DraftBoard({
                 }
                 heading={
                   <>
-                    <span className="font-serif font-normal">{seat.name}</span>
+                    <span className="font-serif font-normal">
+                      <SeatName seat={seat} />
+                    </span>
                     {isViewer ? (
                       <span className="text-accent-text ml-2 font-sans text-sm font-normal">
                         You
@@ -151,11 +181,14 @@ export function DraftBoard({
           <caption className="sr-only">
             Draft board: one row per seat, one column per round
           </caption>
+          {/* A table's column headers are how its cells are read, so they are
+              content and `secondary` (P17.T34). Loop-multiplied: one class
+              here is `rounds + 1` elements per group. */}
           <thead>
             <tr className="border-border-rule border-b">
               <th
                 scope="col"
-                className="text-text-dim w-40 py-2 pr-4 text-left text-xs font-normal"
+                className="text-text-secondary w-40 py-2 pr-4 text-left text-xs font-normal"
               >
                 Seat
               </th>
@@ -163,7 +196,7 @@ export function DraftBoard({
                 <th
                   key={round}
                   scope="col"
-                  className="text-text-dim tabular w-24 px-1 py-2 text-left font-mono text-xs font-normal"
+                  className="text-text-secondary tabular w-24 px-1 py-2 text-left font-mono text-xs font-normal"
                 >
                   {String(round).padStart(2, '0')}
                 </th>
@@ -187,7 +220,7 @@ export function DraftBoard({
                 >
                   <th scope="row" className="py-3 pr-4 text-left font-normal">
                     <span className="text-text-primary flex flex-wrap items-center gap-2 text-sm">
-                      {seat.name}
+                      <SeatName seat={seat} />
                       {seat.isDummy ? (
                         <StatusChip tone="neutral">Unclaimed</StatusChip>
                       ) : null}

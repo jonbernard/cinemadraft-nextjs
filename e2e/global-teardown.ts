@@ -66,6 +66,10 @@ export default async function globalTeardown(): Promise<void> {
   await client.connect();
   try {
     await client.query("delete from users where email like '%+clerk_test@%'");
+    // `e2e/signed-in.spec.ts`'s accounts. Here rather than in that file's own
+    // `afterAll`, which runs per worker and deleted users other workers were
+    // still signed in as.
+    await client.query("delete from users where email like 'e2e-p17-%@example.test'");
   } finally {
     await client.end();
   }

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { skipWithoutRestoredCorpus } from './support/corpus';
 import { signInAs } from './support/session';
 
 const TAG = 'e2e-p17';
@@ -11,6 +12,8 @@ const TAG = 'e2e-p17';
  * alone; the users are cleaned once, at the end, by the file-level hook.
  */
 const LEAGUE_TAG = 'e2e-p17-league';
+/** The one category the ledger fixture nominates for (P17.T34). */
+const AWARD = `${LEAGUE_TAG} Best Picture`;
 
 /**
  * The signed-in surfaces (P17.T27–T36).
@@ -73,6 +76,8 @@ async function scratchLeague(
     status: 'pending' | 'active' | 'complete';
     seats?: boolean;
     picks?: number;
+    /** Nominate every pick once for {@link AWARD}, so each carries a ledger line. */
+    ledger?: boolean;
   },
 ): Promise<number> {
   const year = await activeYear();
@@ -98,6 +103,29 @@ async function scratchLeague(
       );
       const mine = drafts.find((draft) => draft.order === 1);
 
+      // A show, a points tier and one category of their own (P17.T34), the
+      // shape `awards-lifecycle.spec.ts` seeds: `awards.points` is a foreign
+      // key into `points` (D41), not a value.
+      let awardId: number | undefined;
+      if (options.ledger) {
+        const { rows: events } = await query<{ id: number }>(
+          `insert into events (name, abbreviation, created_at, updated_at)
+             values ($1, $1, now(), now()) returning id`,
+          [`${LEAGUE_TAG}-${options.name}`],
+        );
+        const { rows: points } = await query<{ id: number }>(
+          `insert into points (level, tier, points, created_at, updated_at)
+             values ($1, 3, 7, now(), now()) returning id`,
+          [`${LEAGUE_TAG}-${options.name}`],
+        );
+        const { rows: awards } = await query<{ id: number }>(
+          `insert into awards (name, event_id, points, created_at, updated_at)
+             values ($1, $2, $3, now(), now()) returning id`,
+          [AWARD, events[0]?.id, points[0]?.id],
+        );
+        awardId = awards[0]?.id;
+      }
+
       for (let index = 0; index < (options.picks ?? 0); index += 1) {
         const { rows: movies } = await query<{ id: number }>(
           `insert into movies (title, sort_title, created_at, updated_at)
@@ -109,6 +137,13 @@ async function scratchLeague(
              values ($1, $2, $3, now(), now())`,
           [mine?.id, movies[0]?.id, index + 1],
         );
+        if (awardId != null) {
+          await query(
+            `insert into nominations (movie_id, award_id, year, created_at, updated_at)
+               values ($1, $2, $3, now(), now())`,
+            [movies[0]?.id, awardId, year],
+          );
+        }
       }
     }
 
@@ -124,6 +159,13 @@ async function scratchLeague(
  */
 async function cleanupLeagues() {
   await withDb(async (query) => {
+    // The ledger fixture's show, category and nominations (P17.T34) first.
+    const show = `(select a.id from awards a join events e on e.id = a.event_id
+                    where e.abbreviation like $1)`;
+    await query(`delete from nominations where award_id in ${show}`, [`${LEAGUE_TAG}%`]);
+    await query(`delete from awards where id in ${show}`, [`${LEAGUE_TAG}%`]);
+    await query('delete from events where abbreviation like $1', [`${LEAGUE_TAG}%`]);
+    await query('delete from points where level like $1', [`${LEAGUE_TAG}%`]);
     await query(
       `delete from draft_picks where draft_id in
          (select d.id from drafts d join leagues l on l.id = d.league_id
@@ -145,25 +187,30 @@ async function cleanupLeagues() {
  * test failed as `the corpus has only one season` — it only ever passed on the
  * restored copy. Inactive, so `available_years_one_active` is untouched.
  *
- * 🔴 Removed by the test itself, not `afterAll` — every worker runs the file's
- * `afterAll`, and one could delete the row mid-test in another. And only while
- * inactive: if a regression ever let the switch commit, the row survives and
- * `lib/db.test.ts`'s ten-season count goes red — loud — rather than this
+ * 🔴 Removed by the test itself, not `afterAll` — every worker runs a
+ * file-level hook, and one could delete the row mid-test in another. And only
+ * while inactive: if a regression ever let the switch commit, the row survives
+ * and `lib/db.test.ts`'s ten-season count goes red — loud — rather than this
  * delete leaving the database with no active season at all.
  */
 const SCRATCH_YEAR = 2992;
 
-test.afterAll(async () => {
-  await withDb(async (query) => {
-    await query(`delete from users where email like $1`, [`${TAG}-%@example.test`]);
-  });
-});
+/*
+ * 🔴 No file-level `afterAll` deleting this file's users — the same hazard the
+ * scratch season above dodges, and here it bit. With `fullyParallel` a
+ * file-level hook runs once *per worker*, so the worker that finished the
+ * parallel tests above deleted every `e2e-p17-*` user while another worker was
+ * still inside the serial league tests — whose page then rendered signed out,
+ * and a roster test timed out waiting for a roster. One such timeout in every
+ * run of this file with `dashboard.spec.ts` at four workers, on main as well.
+ * `e2e/global-teardown.ts` removes them after every worker is done.
+ */
 
 test.describe('signed-in surfaces', () => {
   test('the active season cannot be changed without confirming', async ({ page }) => {
     // 🔴 This test never accepts the confirmation, so it never writes. The
     // scratch account is promoted to admin rather than skipping — a skipped
-    // safety test is not a safety test — and deleted in afterAll.
+    // safety test is not a safety test — and removed by the global teardown.
     const id = await signInAs(page, {
       email: `${TAG}-admin@example.test`,
       firstName: 'Admin',
@@ -238,6 +285,31 @@ test.describe('signed-in surfaces', () => {
         ]),
       );
     }
+  });
+
+  test('on the real board, the de-emphasis token does not outnumber the subject', async ({
+    page,
+  }) => {
+    // P17.T34, the aggregate. Read-only on league 1, because the multiplier
+    // only exists at real size: two `dim` spans per ledger line, per pick, per
+    // layout, over a sixteen-seat board. Measured on the 5434 clone the way
+    // the plan's step 1 counts (elements carrying the class, both layouts):
+    // dim 6,119 / secondary 1,314 / primary 1,550 before, 668 / 6,765 / 1,550
+    // after. 🔴 A scratch league cannot hold this: at three picks dim was
+    // already under primary before the change (62 against 68), so the same
+    // assertion there passed against the defect.
+    await skipWithoutRestoredCorpus();
+    await signInAs(page, { email: `${TAG}-dimcount@example.test` });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/leagues/1');
+    await expect(page.getByRole('table', { name: /Draft board/ }).first()).toBeVisible();
+
+    const counts = await page.evaluate(() => ({
+      dim: document.querySelectorAll('[class*="text-text-dim"]').length,
+      primary: document.querySelectorAll('[class*="text-text-primary"]').length,
+    }));
+
+    expect(counts.dim).toBeLessThanOrEqual(counts.primary);
   });
 
   test('a single-column page has one left edge, not three', async ({ page }) => {
@@ -476,6 +548,183 @@ test.describe('the league page', () => {
     expect(roster.y).toBeLessThan(standings.y);
   });
 
+  test('no signed-in text renders below the 11px floor', async ({ page }) => {
+    // P17.T33. 11px is `Eyebrow`'s floor, the smallest size the product
+    // sanctions (D74). Before T18 the board's round badge was `text-[0.65rem]`
+    // — 10.4px, 112 rendered on `/leagues/1` alone — and an arbitrary value is
+    // invisible to a sweep that matches `text-sm`/`text-xs`. `layering.sh`
+    // stops the literal; this stops the *rendered* size, whatever produced it.
+    //
+    // 🔴 An active league with picks, or the board — where the badge lives —
+    // never renders and this passes against the defect.
+    const userId = await signInAs(page, {
+      email: `${TAG}-floor@example.test`,
+      firstName: 'Floor',
+    });
+    const leagueId = await scratchLeague(userId, {
+      name: 'floor',
+      status: 'active',
+      picks: 3,
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    for (const url of ['/', `/leagues/${leagueId}`, '/leagues', '/list']) {
+      await page.goto(url);
+      if (url === `/leagues/${leagueId}`) {
+        // The board, with a badge on it, actually rendered.
+        await expect(page.getByRole('table', { name: /Draft board/ })).toBeVisible();
+      }
+
+      // Every leaf element with text, including the layout CSS hides at this
+      // width: a hidden phone board still ships its badges to the phone.
+      const tooSmall = await page.evaluate(() =>
+        [...document.body.querySelectorAll('*')]
+          .filter((node) => (node.textContent ?? '').trim().length > 0)
+          .filter((node) => node.children.length === 0)
+          .map((node) => Number.parseFloat(getComputedStyle(node).fontSize))
+          .filter((size) => size > 0 && size < 11),
+      );
+
+      expect(tooSmall, `${url} renders text below 11px`).toEqual([]);
+    }
+  });
+
+  test('content on the league page is `secondary`, not `dim`', async ({ page }) => {
+    // P17.T34's rule: `dim` is for text a reader never needs to read —
+    // decoration, disclosure marks, placeholders. Column headers, a group's
+    // heading, a running-order position and a ledger line are how the page is
+    // read, so they are `secondary`. One assertion per site, so a regression
+    // names the site rather than nudging a total.
+    const userId = await signInAs(page, {
+      email: `${TAG}-dim@example.test`,
+      firstName: 'Dim',
+    });
+    const active = await scratchLeague(userId, {
+      name: 'dim',
+      status: 'active',
+      picks: 3,
+      ledger: true,
+    });
+    const pending = await scratchLeague(userId, {
+      name: 'dimpending',
+      status: 'pending',
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/leagues/${active}`);
+
+    // 🔴 The token resolved the way the page resolves it. `globals.css` holds a
+    // hex and `getComputedStyle` answers `rgb()`, so comparing against the
+    // custom property's text could never be equal — and could never fail.
+    const token = (name: string) =>
+      page.evaluate((key) => {
+        const probe = document.createElement('span');
+        probe.style.color = `var(--color-text-${key})`;
+        document.body.append(probe);
+        const value = getComputedStyle(probe).color;
+        probe.remove();
+        return value;
+      }, name);
+    const secondary = await token('secondary');
+    // The two must be tellable apart at all, or every line below is vacuous.
+    expect(secondary).not.toBe(await token('dim'));
+
+    const standings = page.getByRole('table', { name: /League standings/ });
+    const board = page.getByRole('table', { name: /Draft board/ });
+    await board.locator('summary').first().click();
+    const line = board
+      .locator('li li', { hasText: AWARD })
+      .first()
+      .locator(':scope > span');
+    await expect(line.first()).toBeVisible();
+
+    const sites = {
+      'standings Pos': standings.getByRole('columnheader', { name: 'Pos' }),
+      'standings Member': standings.getByRole('columnheader', { name: 'Member' }),
+      'standings Points': standings.getByRole('columnheader', { name: 'Points' }),
+      'board Seat': board.getByRole('columnheader', { name: 'Seat' }),
+      'board round': board.getByRole('columnheader', { name: '01' }),
+      'group heading': page.getByRole('heading', { name: 'Group 1' }),
+      'ledger award name': line.nth(0),
+      'ledger points earned': line.nth(1),
+    };
+    const found: Record<string, string> = {};
+    for (const [site, locator] of Object.entries(sites)) {
+      found[site] = await locator.evaluate((node) => getComputedStyle(node).color);
+    }
+
+    // The running order, which only a pending league renders.
+    await page.goto(`/leagues/${pending}`);
+    found['seat order'] = await page
+      .locator('main ol')
+      .getByText('01', { exact: true })
+      .evaluate((node) => getComputedStyle(node).color);
+
+    expect(found).toEqual(
+      Object.fromEntries(Object.keys(found).map((key) => [key, secondary])),
+    );
+  });
+
+  test('on a running draft, each seat name still leads to its member', async ({
+    page,
+  }) => {
+    // The league page is the member index (owner's decision, 2026-09-12). It
+    // only linked seats on a pending season; once the draft started the board
+    // printed names as plain text, and there was no route to a member at all.
+    const userId = await signInAs(page, {
+      email: `${TAG}-index@example.test`,
+      firstName: 'Index',
+      lastName: 'Member',
+    });
+    const leagueId = await scratchLeague(userId, {
+      name: 'index',
+      status: 'active',
+      picks: 1,
+    });
+    const uuid = await withDb(async (query) => {
+      const { rows } = await query<{ uuid: string }>(
+        'select uuid from users where id = $1',
+        [userId],
+      );
+      return rows[0]?.uuid;
+    });
+    if (!uuid) throw new Error('the scratch member has no uuid');
+
+    // 🔴 Both widths, because the board is two layouts and CSS shows one: the
+    // phone list is `md:hidden`, the table `hidden md:block`. Scoped to the
+    // group's section, so the standings — which print the same two names — do
+    // not answer for the board.
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/leagues/${leagueId}`);
+      const board = page.locator('section', {
+        has: page.getByRole('heading', { name: 'Group 1' }),
+      });
+
+      // Both seats are on the board, in both of its layouts — without this the
+      // "no link" assertion below could pass on a board that rendered no
+      // placeholder seat at all.
+      await expect(board.getByText('Index Member')).toHaveCount(2);
+      await expect(board.getByText(`${LEAGUE_TAG} Placeholder`)).toHaveCount(2);
+
+      // One reachable link per seat, not two — the hidden layout is out of the
+      // accessibility tree — and it is the displayed layout's.
+      const member = board.getByRole('link', { name: 'Index Member' });
+      await expect(member).toHaveCount(1);
+      expect(
+        await member.evaluate((node) => node.closest('table') != null),
+        `at ${width}px the link is in the ${width >= 768 ? 'table' : 'phone list'}`,
+      ).toBe(width >= 768);
+      // The placeholder seat has no member, so no page and no link.
+      await expect(
+        board.getByRole('link', { name: `${LEAGUE_TAG} Placeholder` }),
+      ).toHaveCount(0);
+
+      await member.click();
+      await expect(page).toHaveURL(new RegExp(`/members/${uuid}$`));
+      await expect(page.getByRole('heading', { level: 1 })).toContainText('Index Member');
+    }
+  });
+
   test('a stranger gets a stated empty state in that column, not a hole', async ({
     page,
   }) => {
@@ -486,12 +735,10 @@ test.describe('the league page', () => {
       email: `${TAG}-owner-public@example.test`,
       firstName: 'Owner',
     });
-    // 🔴 `pending`, not `active`, and that is a finding rather than a
-    // convenience: the seat names link to `/members/<uuid>` **only** on the
-    // pending branch (the running-order list). Once a draft is under way the
-    // page renders `DraftBoard`, which prints seat names as plain text with no
-    // link at all — so the "league page is the member index" decision is only
-    // half-built, and this test pins the half that exists.
+    // `pending`, so this pins the running-order list's seat links. The other
+    // half — `DraftBoard`'s, on an active or complete season — was missing
+    // until P17.T38 and is pinned by "on a running draft, each seat name still
+    // leads to its member" above.
     const leagueId = await scratchLeague(userId, {
       name: 'public',
       status: 'pending',
