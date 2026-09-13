@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import type { ReactNode } from 'react';
+
 import { PickCell } from '@/components/PickCell';
 import type { LedgerRow } from '@/components/PointsLedger';
 import { Shelf } from '@/components/Shelf';
@@ -8,6 +11,9 @@ export type BoardSeat = {
   draftId: number;
   name: string;
   isDummy: boolean;
+  /** The member's uuid, for `/members/[uuid]`. Null for a placeholder seat,
+   *  which has no member and so no page. */
+  uuid?: string | null;
   total: number;
   /** The seat's position in the running order. Only known once a league has
    *  been arranged (P10.T14–T17); omitted for a stale caller, in which case
@@ -23,6 +29,28 @@ export type BoardSeat = {
     ledger?: readonly LedgerRow[];
   }[];
 };
+
+/**
+ * A seat's name, linked to its member's page when there is a member (P17.T38).
+ *
+ * The league page is the member index (owner's decision, 2026-09-12): you
+ * reach a member from a seat name in a league. The running order linked them
+ * but this board did not, so once a draft started there was no route from a
+ * league to a member at all. Both layouts render it, and only one is ever
+ * displayed — the other is `display: none`, out of the tab order and the
+ * accessibility tree — so a seat is one tab stop, not two.
+ */
+function SeatName({ seat }: { seat: BoardSeat }): ReactNode {
+  if (!seat.uuid) return seat.name;
+  return (
+    <Link
+      href={`/members/${seat.uuid}`}
+      className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
+    >
+      {seat.name}
+    </Link>
+  );
+}
 
 /**
  * One group's draft.
@@ -104,7 +132,9 @@ export function DraftBoard({
                 }
                 heading={
                   <>
-                    <span className="font-serif font-normal">{seat.name}</span>
+                    <span className="font-serif font-normal">
+                      <SeatName seat={seat} />
+                    </span>
                     {isViewer ? (
                       <span className="text-accent-text ml-2 font-sans text-sm font-normal">
                         You
@@ -190,7 +220,7 @@ export function DraftBoard({
                 >
                   <th scope="row" className="py-3 pr-4 text-left font-normal">
                     <span className="text-text-primary flex flex-wrap items-center gap-2 text-sm">
-                      {seat.name}
+                      <SeatName seat={seat} />
                       {seat.isDummy ? (
                         <StatusChip tone="neutral">Unclaimed</StatusChip>
                       ) : null}

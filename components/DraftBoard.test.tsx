@@ -138,6 +138,37 @@ describe('DraftBoard', () => {
     expect(phone().getByText('Seat 01 · Rounds 1–7')).toBeInTheDocument();
   });
 
+  it('links a seat name to that member’s page, in both layouts', () => {
+    // The league page is the member index. Before this the board printed
+    // names as plain text, so an active or complete season had no route from
+    // a league to a member at all.
+    render(
+      <DraftBoard
+        rounds={1}
+        seats={[seat({ draftId: 1, name: 'Ada', uuid: 'u-ada' })]}
+      />,
+    );
+
+    for (const layout of [desktop(), phone()]) {
+      expect(layout.getByRole('link', { name: 'Ada' })).toHaveAttribute(
+        'href',
+        '/members/u-ada',
+      );
+    }
+  });
+
+  it('leaves a placeholder seat as plain text — it has no member page', () => {
+    render(
+      <DraftBoard
+        rounds={1}
+        seats={[seat({ draftId: 1, name: 'Ghost', isDummy: true, uuid: null })]}
+      />,
+    );
+
+    expect(screen.getAllByText('Ghost')).toHaveLength(2);
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
   it('drops the seat number from the eyebrow when the caller has none to give', () => {
     // `order` is optional: a caller that has not threaded it through still
     // gets a sensible eyebrow rather than "Seat undefined".

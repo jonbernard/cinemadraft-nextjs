@@ -181,11 +181,15 @@ async function cleanupLeagues() {
   });
 }
 
-test.afterAll(async () => {
-  await withDb(async (query) => {
-    await query(`delete from users where email like $1`, [`${TAG}-%@example.test`]);
-  });
-});
+/*
+ * 🔴 No file-level `afterAll` deleting this file's users. With `fullyParallel`
+ * a file-level hook runs once *per worker*, so the worker that finished the
+ * parallel tests above deleted every `e2e-p17-*` user while another worker was
+ * still inside the serial league tests — whose page then rendered signed out,
+ * and a roster test timed out waiting for a roster. One such timeout in every
+ * run of this file with `dashboard.spec.ts` at four workers, on main as well.
+ * `e2e/global-teardown.ts` removes them after every worker is done.
+ */
 
 test.describe('signed-in surfaces', () => {
   test('🔴 the active season cannot be changed without confirming', async ({ page }) => {
@@ -632,6 +636,67 @@ test.describe('the league page', () => {
     );
   });
 
+  test('on a running draft, each seat name still leads to its member', async ({
+    page,
+  }) => {
+    // The league page is the member index (owner's decision, 2026-09-12). It
+    // only linked seats on a pending season; once the draft started the board
+    // printed names as plain text, and there was no route to a member at all.
+    const userId = await signInAs(page, {
+      email: `${TAG}-index@example.test`,
+      firstName: 'Index',
+      lastName: 'Member',
+    });
+    const leagueId = await scratchLeague(userId, {
+      name: 'index',
+      status: 'active',
+      picks: 1,
+    });
+    const uuid = await withDb(async (query) => {
+      const { rows } = await query<{ uuid: string }>(
+        'select uuid from users where id = $1',
+        [userId],
+      );
+      return rows[0]?.uuid;
+    });
+    if (!uuid) throw new Error('the scratch member has no uuid');
+
+    // 🔴 Both widths, because the board is two layouts and CSS shows one: the
+    // phone list is `md:hidden`, the table `hidden md:block`. Scoped to the
+    // group's section, so the standings — which print the same two names — do
+    // not answer for the board.
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/leagues/${leagueId}`);
+      const board = page.locator('section', {
+        has: page.getByRole('heading', { name: 'Group 1' }),
+      });
+
+      // Both seats are on the board, in both of its layouts — without this the
+      // "no link" assertion below could pass on a board that rendered no
+      // placeholder seat at all.
+      await expect(board.getByText('Index Member')).toHaveCount(2);
+      await expect(board.getByText(`${LEAGUE_TAG} Placeholder`)).toHaveCount(2);
+
+      // One reachable link per seat, not two — the hidden layout is out of the
+      // accessibility tree — and it is the displayed layout's.
+      const member = board.getByRole('link', { name: 'Index Member' });
+      await expect(member).toHaveCount(1);
+      expect(
+        await member.evaluate((node) => node.closest('table') != null),
+        `at ${width}px the link is in the ${width >= 768 ? 'table' : 'phone list'}`,
+      ).toBe(width >= 768);
+      // The placeholder seat has no member, so no page and no link.
+      await expect(
+        board.getByRole('link', { name: `${LEAGUE_TAG} Placeholder` }),
+      ).toHaveCount(0);
+
+      await member.click();
+      await expect(page).toHaveURL(new RegExp(`/members/${uuid}$`));
+      await expect(page.getByRole('heading', { level: 1 })).toContainText('Index Member');
+    }
+  });
+
   test('🔴 a stranger gets a stated empty state in that column, not a hole', async ({
     page,
   }) => {
@@ -642,12 +707,10 @@ test.describe('the league page', () => {
       email: `${TAG}-owner-public@example.test`,
       firstName: 'Owner',
     });
-    // 🔴 `pending`, not `active`, and that is a finding rather than a
-    // convenience: the seat names link to `/members/<uuid>` **only** on the
-    // pending branch (the running-order list). Once a draft is under way the
-    // page renders `DraftBoard`, which prints seat names as plain text with no
-    // link at all — so the "league page is the member index" decision is only
-    // half-built, and this test pins the half that exists.
+    // `pending`, so this pins the running-order list's seat links. The other
+    // half — `DraftBoard`'s, on an active or complete season — was missing
+    // until P17.T38 and is pinned by "on a running draft, each seat name still
+    // leads to its member" above.
     const leagueId = await scratchLeague(userId, {
       name: 'public',
       status: 'pending',

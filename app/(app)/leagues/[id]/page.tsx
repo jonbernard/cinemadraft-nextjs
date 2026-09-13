@@ -419,6 +419,7 @@ export default async function LeaguePage({
                     draftId: seat.draftId,
                     name: seat.name,
                     isDummy: seat.isDummy,
+                    uuid: seat.uuid,
                     total: seat.total,
                     order: seat.order,
                     picks: seat.picks.map((pick) => ({
