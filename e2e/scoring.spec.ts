@@ -17,9 +17,9 @@ import { skipWithoutRestoredCorpus } from './support/corpus';
  * 🔴 Which is also why it cannot run on CI, where the database is the schema
  * and nothing else. It skips there, visibly, rather than being handed a
  * scratch league to read — see `support/corpus.ts`. The same arithmetic on
- * scratch rows is already proven by `awards-lifecycle.spec.ts`, which does run
- * on CI; what this file adds is the real board, and there is no CI version of
- * that worth having.
+ * scratch rows is already proven by `journeys/03-a-ceremony-night.spec.ts`,
+ * which does run on CI; what this file adds is the real board, and there is no
+ * CI version of that worth having.
  */
 const LEAGUE = 1;
 const YEAR = 2025;
