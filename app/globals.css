@@ -140,6 +140,14 @@
    * Runs exactly once and stops on the existing static seal — a win is a mark,
    * not a notification, and anything that loops reads as "pending". */
   --animate-stamp: stamp 260ms cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+
+  /* The ceremony reveal (P14.T5). Three parts of one 1.9s beat, and the
+   * durations are shared so they stay in step if any of them is tuned. */
+  --animate-reveal-mark: reveal-mark 1900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-reveal-frame: reveal-frame 1900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-reveal-recede: reveal-recede 1900ms ease-out both;
+  --animate-reveal-wash: reveal-wash 1900ms ease-out both;
+  --animate-reveal-word: reveal-word 1900ms ease-out both;
 }
 
 @keyframes deal-in {
@@ -156,6 +164,104 @@
   from {
     opacity: 0;
     transform: scale(2.2) rotate(-14deg);
+  }
+}
+
+/* 🔴 The ceremony reveal, and its shape is inherited rather than invented.
+ * The source app held a green check at 9x over the poster for 1.3s, then flew
+ * it into the bottom-right corner while the title faded in. That timing is
+ * good television and it is kept; what changes is the mark and the reasoning.
+ *
+ * The mark is a brass disc with a star punched out of it — brass because a win
+ * is an award outcome (D99), a star because it means "won" at 30px in a corner
+ * and at 3.6x over a poster. 🔴 The corner *fold* this replaced could not:
+ * a folded page-corner is a shape with nothing to grow into, and scaled up it
+ * was simply a brass wedge across the artwork.
+ *
+ * 🔴 The mark travels by `top`/`left`, not by a percentage `translate`. A
+ * percentage translate resolves against the MARK's own box, so "move to the
+ * middle of the poster" could only ever be a guess at the poster's size — and
+ * it landed left of centre. Percentage offsets resolve against the frame.
+ */
+@keyframes reveal-mark {
+  0% {
+    opacity: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  12% {
+    opacity: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(3.6);
+  }
+  62% {
+    opacity: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(3.6);
+  }
+  100% {
+    opacity: 1;
+    top: 6px;
+    left: calc(100% - 36px);
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+/* The poster floods brass under the mark and clears as it settles — the beat
+ * the owner picked from four. Never opaque: the film stays visible through it,
+ * because the point is which film won, not that something happened. */
+@keyframes reveal-wash {
+  0%,
+  8% {
+    opacity: 0;
+  }
+  20%,
+  55% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The frame lifts while the mark is held, then settles. Scale, not size, so
+ * the row's layout never reflows mid-ceremony. */
+@keyframes reveal-frame {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  12%,
+  62% {
+    transform: scale(1.06);
+  }
+}
+
+/* The other nominees step back as the mark settles, not before: until the
+ * reveal resolves they are all still in the running. */
+@keyframes reveal-recede {
+  0%,
+  62% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.45;
+  }
+}
+
+/* The word and the heading arrive with the settling mark, never before it. */
+@keyframes reveal-word {
+  0%,
+  62% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
   }
 }
 

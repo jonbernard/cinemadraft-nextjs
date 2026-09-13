@@ -87,3 +87,11 @@ export const NoArtwork: StoryObj<typeof meta> = {
 export const NothingEnteredYet: StoryObj<typeof meta> = {
   args: { name: 'Casting', points: 10, nominees: [] },
 };
+
+/**
+ * The ceremony reveal: the seal arrives over the poster, holds while the room
+ * looks up, then stamps itself into the corner it will live in.
+ */
+export const WinnerRevealed: StoryObj<typeof meta> = {
+  args: { name: 'Best Picture', points: 20, nominees, reveal: true },
+};

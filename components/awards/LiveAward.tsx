@@ -1,5 +1,7 @@
 import { PosterFrame } from '@/components/ui/PosterFrame';
 import { SectionHead } from '@/components/ui/SectionHead';
+import { WinnerSeal } from '@/components/ui/WinnerSeal';
+import { cn } from '@/lib/utils/cn';
 
 /**
  * Structurally what `lib/services/live.ts` produces, declared here rather than
@@ -35,21 +37,64 @@ export type LiveAwardNominee = {
  *
  * Only the winner carries a `status`. Every poster here is a nomination, so
  * `PosterFrame`'s nomination hairline would distinguish nothing (the same
- * reasoning `NomineeGrid` records), and the seal is the one mark that says
- * which of them took it.
+ * reasoning `NomineeGrid` records).
+ *
+ * 🔴 **The seal alone is not the winner treatment on this screen.** It is a
+ * 24px corner triangle, which is the right weight on a roster read from a desk
+ * and invisible on a television across a room — the owner's call, and the
+ * arithmetic agrees: at 3m that triangle subtends under 0.3°, below what the
+ * eye resolves as a shape at a glance. So a decided category states it four
+ * ways, and only one of them is colour:
+ *
+ *   1. the winning poster is the only one at full opacity — the rest recede
+ *      to 45%, which is the strongest signal at distance because it changes
+ *      the whole row rather than one corner;
+ *   2. it carries a brass rule under it with the word **Winner**, in words
+ *      rather than a mark, so it survives a monochrome screen and a screen
+ *      reader;
+ *   3. the category's own heading changes from its point value to the name of
+ *      the film that took it;
+ *   4. the seal, which stays, because it is what the rest of the product uses.
+ *
+ * 🔴 **Dimming is not disabling.** The losing nominees stay legible at 45% —
+ * they are still the nominees, and a reader arriving late needs to see who was
+ * in the running. Anything lower reads as an error state.
  */
 export function LiveAward({
   name,
   points,
   nominees,
+  reveal = false,
 }: {
   name: string;
   points: number;
   nominees: readonly LiveAwardNominee[];
+  /**
+   * Play the reveal rather than showing the settled result.
+   *
+   * 🔴 Off by default, and that is the important half. A reload of a finished
+   * ceremony would otherwise replay twenty-four reveals at once, which is the
+   * failure mode of every animation tied to render rather than to an event.
+   * The client sets it for the one category whose winner arrived while the
+   * page was open (P14.T4); everything else renders already-won.
+   */
+  reveal?: boolean;
 }) {
+  const winner = nominees.find((nominee) => nominee.isWinner) ?? null;
+
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <SectionHead as="h3" right={`${points} pts`} className="pb-0">
+      <SectionHead
+        as="h3"
+        right={
+          winner ? (
+            <span className="text-brass-text font-sans text-sm">{winner.title}</span>
+          ) : (
+            `${points} pts`
+          )
+        }
+        className="pb-0"
+      >
         {name}
       </SectionHead>
 
@@ -58,12 +103,69 @@ export function LiveAward({
       ) : (
         <ul className="snap-x scroll-px-1 flex gap-3 overflow-x-auto pb-2 [&>li]:snap-start [&>li]:shrink-0">
           {nominees.map((nominee) => (
-            <li key={nominee.nominationId} className="flex w-40 flex-col gap-1 2xl:w-56">
-              <PosterFrame
-                title={nominee.title}
-                posterUrl={nominee.posterUrl}
-                status={nominee.isWinner ? 'won' : 'none'}
-              />
+            <li
+              key={nominee.nominationId}
+              data-testid={nominee.isWinner ? 'live-winner' : undefined}
+              className={cn(
+                'flex w-40 flex-col gap-1 2xl:w-56',
+                winner &&
+                  !nominee.isWinner &&
+                  (reveal
+                    ? 'animate-reveal-recede motion-reduce:animate-none motion-reduce:opacity-45'
+                    : 'opacity-45'),
+              )}
+            >
+              <div
+                className={cn(
+                  'relative',
+                  nominee.isWinner &&
+                    reveal &&
+                    'animate-reveal-frame motion-reduce:animate-none',
+                )}
+              >
+                <PosterFrame
+                  title={nominee.title}
+                  posterUrl={nominee.posterUrl}
+                  // 🔴 The frame's own corner seal is suppressed on this
+                  // screen entirely, reveal or not: `WinnerSeal` is the mark
+                  // here, and two seals in one corner is one too many. The
+                  // roster elsewhere keeps the frame's.
+                  status="none"
+                />
+
+                {/* The brass wash. Under the mark, over the poster, never
+                    opaque — the point is which film won, not that something
+                    happened. Only during a reveal: a settled result is not a
+                    tinted poster. */}
+                {nominee.isWinner && reveal ? (
+                  <span
+                    aria-hidden="true"
+                    className="bg-brass-fill animate-reveal-wash motion-reduce:animate-none poster-radius pointer-events-none absolute inset-0 opacity-0"
+                  />
+                ) : null}
+
+                {nominee.isWinner ? (
+                  <WinnerSeal
+                    className={cn(
+                      'absolute h-8 w-8',
+                      reveal
+                        ? 'animate-reveal-mark motion-reduce:animate-none motion-reduce:left-auto motion-reduce:right-1.5 motion-reduce:top-1.5'
+                        : 'right-1.5 top-1.5',
+                    )}
+                  />
+                ) : null}
+              </div>
+
+              {nominee.isWinner ? (
+                <span
+                  className={cn(
+                    'bg-brass-fill text-brass-contrast rounded-sm px-2 py-1 text-center text-xs font-semibold',
+                    reveal && 'animate-reveal-word motion-reduce:animate-none',
+                  )}
+                >
+                  Winner
+                </span>
+              ) : null}
               {nominee.detailName ? (
                 <span className="text-text-secondary text-xs leading-tight">
                   {nominee.detailName}

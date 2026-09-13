@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { LiveAward } from './LiveAward';
@@ -33,18 +33,23 @@ describe('LiveAward', () => {
     const items = screen.getAllByRole('listitem');
     expect(items).toHaveLength(3);
     expect(items.map((item) => item.textContent)).toEqual([
-      'Sinners',
+      'SinnersWinner',
       'Anora',
       'NINickel Boys',
     ]);
   });
 
   it('seals the winner and nothing else', () => {
-    render(<LiveAward name="Best Picture" points={20} nominees={nominees} />);
-    const seals = screen.getAllByRole('img', { name: 'Winner' });
+    const { container } = render(
+      <LiveAward name="Best Picture" points={20} nominees={nominees} />,
+    );
+
+    // 🔴 The mark is `WinnerSeal` — a brass disc with a star — and it is
+    // `aria-hidden`, because the word "Winner" beside it already says the
+    // fact. Counted through the DOM for exactly that reason.
+    const seals = container.querySelectorAll('svg[aria-hidden="true"]');
     expect(seals).toHaveLength(1);
-    // The seal is on the winner's own frame, not merely somewhere on the row.
-    expect(seals[0]?.closest('li')?.textContent).toBe('Sinners');
+    expect(seals[0]?.closest('li')?.textContent).toBe('SinnersWinner');
   });
 
   it('keeps a film with no artwork in the row, named', () => {
@@ -65,8 +70,59 @@ describe('LiveAward', () => {
   it('resolves the point value it was given, beside the category', () => {
     // The foreign-key trap (D41) lives in the service, but this is the element
     // that prints it, so a component that dropped the prop would be silent.
-    render(<LiveAward name="Best Picture" points={20} nominees={nominees} />);
+    // 🔴 Only while the category is open. Once it is decided the heading's
+    // right-hand slot names the film that took it, which is the more useful
+    // fact at that point and is one of the four signals a decided category
+    // carries.
+    render(
+      <LiveAward
+        name="Best Picture"
+        points={20}
+        nominees={nominees.map((nominee) => ({ ...nominee, isWinner: false }))}
+      />,
+    );
     expect(screen.getByText('20 pts')).toBeInTheDocument();
+  });
+
+  it('states a decided category four ways, only one of them colour', () => {
+    // 🔴 The seal alone is a 24px corner triangle — right on a roster read
+    // from a desk, invisible on a television across a room, which is what the
+    // owner saw. At 3m it subtends under 0.3°.
+    render(<LiveAward name="Best Picture" points={20} nominees={nominees} />);
+
+    const won = screen.getByTestId('live-winner');
+
+    // 1. the word, which survives monochrome and a screen reader
+    expect(within(won).getByText('Winner')).toBeVisible();
+    // 2. the mark: a brass star seal, drawn, decorative beside the word
+    expect(won.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
+    // 3. the heading names the film instead of its point value
+    const slot = document.querySelector('.text-brass-text');
+    expect(slot?.textContent).toBe('Sinners');
+    expect(screen.queryByText('20 pts')).toBeNull();
+    // 4. every other nominee recedes — the signal that changes the whole row
+    const others = screen.getAllByRole('listitem').filter((item) => item !== won);
+    expect(others).toHaveLength(2);
+    for (const item of others) {
+      expect(item.className).toMatch(/opacity-45/);
+    }
+    expect(won.className).not.toMatch(/opacity-45/);
+  });
+
+  it('leaves every nominee at full strength while the category is open', () => {
+    // Dimming means "this one lost", so nothing may be dimmed before a
+    // winner exists.
+    render(
+      <LiveAward
+        name="Best Picture"
+        points={20}
+        nominees={nominees.map((nominee) => ({ ...nominee, isWinner: false }))}
+      />,
+    );
+
+    for (const item of screen.getAllByRole('listitem')) {
+      expect(item.className).not.toMatch(/opacity-45/);
+    }
   });
 
   it('names the person where the category nominates one', () => {
@@ -89,5 +145,32 @@ describe('LiveAward', () => {
     );
     expect(screen.getByText('Delroy Lindo')).toBeInTheDocument();
     expect(screen.getByText('Miles Caton')).toBeInTheDocument();
+  });
+
+  it('plays the reveal only when asked, and lands where it rests', () => {
+    // 🔴 Off by default is the load-bearing half. Tied to render, a reload of
+    // a finished ceremony would fire twenty-four reveals at once; the client
+    // turns it on for the one category whose winner arrived while the page
+    // was open.
+    const { container, unmount } = render(
+      <LiveAward name="Best Picture" points={20} nominees={nominees} />,
+    );
+    const settled = container.querySelector('svg[aria-hidden="true"]');
+    expect(settled?.getAttribute('class')).toContain('right-1.5');
+    expect(settled?.getAttribute('class')).not.toContain('animate-reveal-mark');
+    expect(container.querySelector('.animate-reveal-wash')).toBeNull();
+    unmount();
+
+    const withReveal = render(
+      <LiveAward name="Best Picture" points={20} nominees={nominees} reveal />,
+    );
+    const marks = withReveal.container.querySelector('svg[aria-hidden="true"]');
+    expect(marks?.getAttribute('class')).toContain('animate-reveal-mark');
+    // The wash rides under the mark, and only during a reveal.
+    expect(withReveal.container.querySelector('.animate-reveal-wash')).not.toBeNull();
+    // 🔴 And it must land where the settled mark lives, or the beat ends with
+    // a jump: the reduced-motion classes pin the same corner the resting mark
+    // uses, which is the same corner the last keyframe moves to.
+    expect(marks?.getAttribute('class')).toContain('motion-reduce:right-1.5');
   });
 });
