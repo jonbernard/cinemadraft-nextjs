@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 
 import { SectionHead } from '@/components/ui/SectionHead';
 import { NOINDEX } from '@/lib/seo';
+import { authCardAppearance } from '@/theme/clerk';
 
 /**
  * 🔴 The most important copy in the migration.
@@ -38,7 +39,7 @@ export default function RegisterPage() {
         you. There is no password to remember — we send a code.
       </p>
 
-      <SignUp />
+      <SignUp appearance={authCardAppearance} />
     </div>
   );
 }
