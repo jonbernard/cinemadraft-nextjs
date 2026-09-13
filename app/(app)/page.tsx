@@ -255,14 +255,19 @@ function SignedOutHero({ facts }: { facts: LandingFacts | null }) {
               13px — because a caption the size of its poster is what makes the
               nearest film feel nearest.
 
-              🔴 **The narrow columns carry no title, and that is the point of
-              the shape rather than a shortcut.** At 83px and 64px a film name
-              truncates to "The Secret A…" and "Sentimental V…", which is worse
-              than silence: the reader cannot identify the film and the ragged
-              ellipses read as breakage. So the third column keeps only its
-              score — a number always fits — and the fourth is artwork alone.
-              The two wide columns name their films, which is where a reader
-              looks first anyway.
+              🔴 **The widths are 12 / 6 / 4 / 3, and that is arithmetic
+              rather than taste.** A poster is 2:3, so a column of `n` posters
+              is `n × 1.5 × width` tall; for every column to finish at the same
+              height, each width has to be the lead's divided by its own count
+              — 1, ½, ⅓, ¼. At the previous ratios the third column was taller
+              than the lead poster and rose above it, which is what the owner
+              saw.
+
+              🔴 **Only the lead film is named.** At 83px and 64px a title
+              truncated to "The Secret A…", which is worse than silence, and
+              captions under the short columns broke the equal-height
+              arithmetic above by adding a line the geometry does not account
+              for. Every poster still announces its film to a screen reader.
 
               🔴 Each column is `[from, to, width, titleSize, caption]`, and the
               slices run 1, 2, 3, 4. `slice` past the end is empty rather than
@@ -270,10 +275,10 @@ function SignedOutHero({ facts }: { facts: LandingFacts | null }) {
               shortens the cascade instead of leaving a hole. */}
           {(
             [
-              [0, 1, 'flex-[4]', 'text-xl', 'both'],
-              [1, 3, 'flex-[1.7]', 'text-base', 'both'],
-              [3, 6, 'flex-[1.3]', 'text-sm', 'score'],
-              [6, 10, 'flex-[1]', 'text-xs', 'none'],
+              [0, 1, 'flex-[12]', 'text-xl', 'both'],
+              [1, 3, 'flex-[6]', 'text-base', 'none'],
+              [3, 6, 'flex-[4]', 'text-sm', 'none'],
+              [6, 10, 'flex-[3]', 'text-xs', 'none'],
             ] as const
           ).map(([from, to, width, titleSize, caption], column) => (
             <div key={from} className={cn('flex min-w-0 flex-col gap-2 sm:gap-3', width)}>
@@ -293,9 +298,9 @@ function SignedOutHero({ facts }: { facts: LandingFacts | null }) {
                       />
                     ) : null}
                   </div>
-                  {caption === 'none' ? null : (
-                    <figcaption className="flex flex-col">
-                      {caption === 'both' ? (
+                  <figcaption className="flex flex-col">
+                    {caption === 'both' ? (
+                      <>
                         <span
                           className={cn(
                             'text-text-primary font-serif leading-tight',
@@ -304,17 +309,20 @@ function SignedOutHero({ facts }: { facts: LandingFacts | null }) {
                         >
                           {film.title}
                         </span>
-                      ) : (
-                        // The name is still announced, just not drawn: a
-                        // screen reader gets the film, a sighted reader gets
-                        // the artwork and the number.
-                        <span className="sr-only">{film.title}</span>
-                      )}
-                      <span className="text-text-dim tabular font-mono text-xs">
-                        {film.total}
+                        <span className="text-text-dim tabular font-mono text-xs">
+                          {film.total}
+                        </span>
+                      </>
+                    ) : (
+                      // 🔴 Drawn for nobody, announced to everybody who needs
+                      // it. An earlier version returned no caption at all for
+                      // these columns while its own comment claimed the name
+                      // was still announced; the test caught the lie.
+                      <span className="sr-only">
+                        {film.title}, {film.total} points
                       </span>
-                    </figcaption>
-                  )}
+                    )}
+                  </figcaption>
                 </figure>
               ))}
             </div>

@@ -127,8 +127,17 @@ describe('the signed-out dashboard', () => {
     expect(within(wall).queryAllByRole('link')).toHaveLength(0);
     expect(wall.querySelectorAll('a, button, [tabindex]')).toHaveLength(0);
 
+    // The lead film is named and scored; the rest are artwork, because a
+    // caption under an 81px column truncates and breaks the height
+    // arithmetic the columns depend on.
     expect(within(wall).getByText(films[0].title)).toBeInTheDocument();
     expect(within(wall).getByText(String(films[0].total))).toBeInTheDocument();
+    expect(within(wall).queryByText(String(films[4].total))).not.toBeInTheDocument();
+    // 🔴 Still announced, just not drawn: every film keeps its name for a
+    // screen reader.
+    expect(
+      within(wall).getByText(`${films[4].title}, ${films[4].total} points`),
+    ).toHaveClass('sr-only');
 
     // Four columns holding 1, 2, 3 and 4 — the staircase, not a block.
     expect(wall.children).toHaveLength(4);
