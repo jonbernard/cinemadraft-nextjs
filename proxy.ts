@@ -84,6 +84,19 @@ const isPublic = createRouteMatcher([
   // this file (next/dist/docs/01-app/02-guides/redirecting.md:293), so the
   // stale URL never reaches the proxy at all.
   '/how-it-works',
+  // 🔴 The page's own share card, which needs its own entry: this list matches
+  // exact paths, and `/how-it-works` is one. `/films/(.*)` and
+  // `/award-shows/(.*)` cover their cards by accident of being subtrees; this
+  // route is not, so without this line a crawler building a link preview for
+  // the product's front door is handed a 307 to the sign-in page. Named rather
+  // than widened to `/how-it-works/(.*)`, so a future page under this path is
+  // still protected by default.
+  //
+  // 🔴 The trailing `(.*)` is not decoration. Next emits this route at
+  // `/how-it-works/opengraph-image-<hash>` — the build output names it — and
+  // the hash changes whenever the card's code does, so a literal path here
+  // matches for exactly as long as nobody edits the card.
+  '/how-it-works/opengraph-image(.*)',
   // 🔴 The live surface, public by the owner's ruling (P17.T16). A stranger
   // handed the link during a ceremony has to be able to watch — that is the
   // whole reason the route exists, and a sign-in wall at the product's second
