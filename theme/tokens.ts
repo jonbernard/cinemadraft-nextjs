@@ -26,6 +26,17 @@ export type Palette = {
    * token means no component ever reads the mode to decide.
    */
   brass: { fill: string; text: string; contrast: string };
+  /**
+   * The projector beam: scheduled, counting down, or live — never urgent
+   * (carmine) and never an award (brass). Spent by P17.T20 as
+   * `<StatusChip tone="beam">` on the season rail's next chip, and by the live
+   * surface's countdown (`components/LiveCountdown.tsx`). Wired into MUI as
+   * `info.main`.
+   *
+   * 🔴 Ink, not a fill. contrast.test.ts proves it as text against every
+   * surface; there is no measured on-beam contrast colour, so a fill would need
+   * a `beam.contrast` token and its own rows there first.
+   */
   beam: string;
   /**
    * Critic-score colours, for the ratings chip on a film page.

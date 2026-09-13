@@ -17,4 +17,15 @@ describe('StatusChip', () => {
     rerender(<StatusChip tone="carmine">On the clock</StatusChip>);
     expect(container.firstElementChild?.className).toMatch(/accent/);
   });
+
+  it('carries a beam tone for what is scheduled and not yet (D69, P17.T20)', () => {
+    render(<StatusChip tone="beam">Next · date TBA</StatusChip>);
+
+    const chip = screen.getByText('Next · date TBA');
+    // 🔴 Beam is ink here, not a fill. `theme/contrast.test.ts` proves beam
+    // readable AS TEXT on the app's surfaces in both schemes; a fill would need
+    // a beam-contrast token and new rows in that file, for one chip.
+    expect(chip.className).toContain('text-beam');
+    expect(chip.className).not.toContain('bg-beam');
+  });
 });

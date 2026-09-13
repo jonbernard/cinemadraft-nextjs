@@ -311,36 +311,54 @@ describe('SeasonStepper', () => {
     expect(others.some((li) => within(li).queryByText('Date TBA') != null)).toBe(true);
   });
 
+  /** A dated incomplete phase alongside an undated one — the dated one is next. */
+  function datedNextSeason(): SeasonPhase[] {
+    return [
+      {
+        key: '1-ceremony',
+        eventId: 1,
+        phase: 'ceremony',
+        name: 'BAFTA',
+        abbreviation: 'bafta',
+        date: Date.now() + 5 * DAY,
+        complete: false,
+      },
+      {
+        key: '2-ceremony',
+        eventId: 2,
+        phase: 'ceremony',
+        name: 'Academy Awards',
+        abbreviation: 'oscars',
+        date: null,
+        complete: false,
+      },
+    ];
+  }
+
   it('a dated incomplete phase still wins over an undated one', () => {
-    const soon = Date.now() + 5 * DAY;
-    render(
-      <SeasonStepper
-        phases={[
-          {
-            key: '1-ceremony',
-            eventId: 1,
-            phase: 'ceremony',
-            name: 'BAFTA',
-            abbreviation: 'bafta',
-            date: soon,
-            complete: false,
-          },
-          {
-            key: '2-ceremony',
-            eventId: 2,
-            phase: 'ceremony',
-            name: 'Academy Awards',
-            abbreviation: 'oscars',
-            date: null,
-            complete: false,
-          },
-        ]}
-      />,
-    );
+    render(<SeasonStepper phases={datedNextSeason()} />);
 
     const current = screen.getByRole('listitem', { current: 'step' });
     expect(within(current).getByText('BAFTA')).toBeInTheDocument();
     expect(within(current).getByText('in 5 days')).toBeInTheDocument();
+  });
+
+  it('paints the next chip beam, dated or not (P17.T20)', () => {
+    // One state, one colour: "next" does not become a different thing because
+    // the ceremony calendar has not been published. Both shapes, because a
+    // `date == null`-only spend would pass the undated half of this on its own.
+    for (const season of [unscheduledSeason(), datedNextSeason()]) {
+      const { unmount } = render(<SeasonStepper phases={season} />);
+      const chip = within(screen.getByRole('listitem', { current: 'step' })).getByText(
+        /^Next/,
+      );
+      // Ink, not a fill: `theme/contrast.test.ts` proves beam readable as text
+      // on `panel`, and proves nothing about white or black on top of beam.
+      expect(chip.className).toContain('text-beam');
+      expect(chip.className).not.toContain('bg-beam');
+      expect(chip.className).not.toMatch(/accent/);
+      unmount();
+    }
   });
 
   it('opens on the next show rather than on the end of the array', () => {

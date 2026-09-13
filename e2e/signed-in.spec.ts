@@ -363,7 +363,9 @@ test.describe('signed-in surfaces', () => {
 });
 
 /**
- * The league page's hierarchy (P17.T30) and its second column (P17.T31).
+ * The league page's hierarchy (P17.T30), its second column (P17.T31), and the
+ * home page that points at it (P17.T29) — here rather than in a describe of its
+ * own because it seeds the same `LEAGUE_TAG` rows this block clears wholesale.
  *
  * 🔴 Serial, and on `LEAGUE_TAG` alone: every test seeds a league matching one
  * tag and the teardown clears the tag wholesale, so run side by side one test's
@@ -767,5 +769,83 @@ test.describe('the league page', () => {
     } finally {
       await anonymous.close();
     }
+  });
+
+  test("signed in, home opens with the reader's own state", async ({ page }) => {
+    const userId = await signInAs(page, {
+      email: `${TAG}-home@example.test`,
+      firstName: 'Home',
+    });
+    // Two leagues, because the finding was a member with two, and because
+    // the one branch on this section — no roster yet — needs one of each to be
+    // able to fail in either direction.
+    const drafted = await scratchLeague(userId, {
+      name: 'home-drafted',
+      status: 'active',
+      picks: 3,
+    });
+    const undrafted = await scratchLeague(userId, {
+      name: 'home-undrafted',
+      status: 'pending',
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    const heading = (name: string) => page.getByRole('heading', { name, exact: true });
+    const league = await heading(`${LEAGUE_TAG}-home-drafted`).boundingBox();
+    const season = await heading('Season').boundingBox();
+    if (!league || !season) throw new Error('no layout');
+
+    // The member's own league comes before the season rail, not 1,499px
+    // after it — and on the first screen, which is the whole point.
+    expect(league.y).toBeLessThan(season.y);
+    expect(league.y).toBeLessThan(900);
+
+    // Name, standing, points, roster, standings and a next action. One of
+    // one: the scratch league's second seat is a placeholder, and standings
+    // count people.
+    const section = (name: string) =>
+      page.locator('section').filter({ has: heading(`${LEAGUE_TAG}-${name}`) });
+    const mine = section('home-drafted');
+    await expect(mine.getByText('Position 1 of 1', { exact: true })).toBeVisible();
+    await expect(mine.getByText('Your points')).toBeVisible();
+    await expect(
+      mine.getByRole('list', { name: 'Drafted films, in draft order' }),
+    ).toBeVisible();
+    await expect(mine.getByRole('table')).toBeVisible();
+    await expect(mine.getByRole('link', { name: 'Open the league' })).toHaveAttribute(
+      'href',
+      `/leagues/${drafted}`,
+    );
+    // 🔴 A roster means the draft list is behind them, so it is not offered.
+    await expect(mine.getByRole('link', { name: 'Build your draft list' })).toHaveCount(
+      0,
+    );
+
+    // No roster yet: the draft list is the act available, and it leads.
+    const pending = section('home-undrafted');
+    await expect(
+      pending.getByRole('link', { name: 'Build your draft list' }),
+    ).toHaveAttribute('href', '/list');
+    await expect(pending.getByRole('link', { name: 'Open the league' })).toHaveAttribute(
+      'href',
+      `/leagues/${undrafted}`,
+    );
+  });
+
+  test('signed out, home is still the season', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+
+    // 🔴 The document's first heading, not merely "Season is near the top": a
+    // stray signed-in block rendered for a stranger (the "No leagues yet"
+    // empty state is an h3) would push Season down a couple of hundred pixels
+    // and still pass a y-bound.
+    const first = page.locator('main :is(h1, h2, h3, h4)').first();
+    await expect(first).toHaveText('Season');
+    await expect(first).toHaveJSProperty('tagName', 'H1');
+    await expect(page.getByText('No leagues yet')).toHaveCount(0);
+    await expect(page.getByTestId('signed-out-lede')).toBeVisible();
   });
 });

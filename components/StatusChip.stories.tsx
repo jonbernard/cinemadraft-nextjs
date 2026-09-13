@@ -25,6 +25,15 @@ export const OnTheClock: StoryObj<typeof meta> = {
   },
 };
 
+// Beam is scheduled and not yet — ink, not a fill. Labelled with the season
+// rail's next chip, which is where it renders first (P17.T20).
+export const NextDateTba: StoryObj<typeof meta> = {
+  args: {
+    tone: 'beam',
+    children: 'Next · date TBA',
+  },
+};
+
 // Neutral is for states that are neither an award nor urgent.
 export const Unclaimed: StoryObj<typeof meta> = {
   args: {
