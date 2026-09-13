@@ -235,7 +235,13 @@ function Strip({
       </button>
 
       <Link
-        href="/leagues/new"
+        // 🔴 A signed-out reader cannot start a league: `/leagues/new` is
+        // protected, so this control bounced them to a login page that does
+        // not say what they were trying to do. Found by P18.T9 while scoping
+        // its locator around it. Registering **is** the first step of starting
+        // a league, which is why the label does not change — the act is the
+        // same one, and `/auth/register` carries them onward.
+        href={isSignedIn ? '/leagues/new' : '/auth/register'}
         className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill flex min-h-11 items-center gap-2 border px-4 text-sm focus-visible:outline-2"
       >
         <PlusIcon />

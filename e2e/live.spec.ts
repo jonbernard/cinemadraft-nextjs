@@ -372,7 +372,11 @@ test.describe('live show', () => {
     // `exact`, because the section above is headed "Your seats" and a
     // substring match resolves to both.
     await expect(page.getByText('Your seat', { exact: true })).toBeVisible();
-    await expect(page.getByText('21')).toHaveCount(3);
+    // 🔴 `exact`, and the reason is a clock. `getByText('21')` is a substring
+    // match, so it also caught the live countdown — "29d 21:53:39" contains
+    // 21 — and this test failed for the minutes of every hour whose digits
+    // happened to line up. It had nothing to do with the roster it is about.
+    await expect(page.getByText('21', { exact: true })).toHaveCount(3);
     await expect(page.getByRole('img', { name: 'Winner' })).toBeVisible();
   });
 
@@ -404,7 +408,9 @@ test.describe('live show', () => {
     await expect(page.getByText(`${TAG} Placeholder`)).toHaveCount(0);
     await expect(page.getByText('Your seat', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Your seats' })).toHaveCount(0);
-    await expect(page.getByText('21')).toHaveCount(0);
+    // `exact` for the same reason as the roster test above: the countdown's
+    // digits are not this test's subject, and a substring match made them so.
+    await expect(page.getByText('21', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Register' })).toBeVisible();
   });
 

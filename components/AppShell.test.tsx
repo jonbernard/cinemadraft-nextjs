@@ -257,4 +257,18 @@ describe('AppShell', () => {
     );
     expect(screen.queryByRole('link', { name: 'Create league' })).toBeNull();
   });
+
+  it('sends a signed-out reader to register rather than to a protected route', () => {
+    // 🔴 The strip renders for everybody, and `/leagues/new` is protected, so
+    // this control used to bounce a signed-out visitor to a login page that
+    // could not say what they had been trying to do. The label stays the same
+    // because the act is the same: registering is the first step of starting
+    // a league.
+    render(<AppShell isSignedIn={false}>content</AppShell>);
+
+    expect(screen.getByRole('link', { name: 'Start a league' })).toHaveAttribute(
+      'href',
+      '/auth/register',
+    );
+  });
 });
