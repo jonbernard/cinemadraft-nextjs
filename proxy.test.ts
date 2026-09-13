@@ -70,7 +70,7 @@ describe('proxy', () => {
       '/films/(.*)',
       '/browse',
       '/join/(.*)',
-      '/rules-and-scoring',
+      '/how-it-works',
       // 🔴 Public by the owner's ruling, which narrowly amends D40 (P17.T16).
       // The mechanism is unchanged — this list still enumerates the public and a
       // page under `(app)` is still protected by default.

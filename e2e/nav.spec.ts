@@ -386,9 +386,9 @@ test.describe('navigation', () => {
       'href',
       '/watchlist',
     );
-    await expect(sheet.getByRole('link', { name: 'Rules & scoring' })).toHaveAttribute(
+    await expect(sheet.getByRole('link', { name: 'How it works' })).toHaveAttribute(
       'href',
-      '/rules-and-scoring',
+      '/how-it-works',
     );
 
     // The three destinations and the account control; the theme toggle is a

@@ -34,8 +34,8 @@ const readyYours: NavLink[] = [
     group: 'yours',
   },
   {
-    href: '/rules-and-scoring',
-    label: 'Rules & scoring',
+    href: '/how-it-works',
+    label: 'How it works',
     ready: true,
     path: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 8v5M12 16h.01',
     group: 'yours',
@@ -80,7 +80,7 @@ describe('MoreSheet', () => {
         yours={readyYours}
       />,
     );
-    for (const label of ['Watchlist', 'Draft list', 'Rules & scoring']) {
+    for (const label of ['Watchlist', 'Draft list', 'How it works']) {
       expect(screen.getByRole('link', { hidden: true, name: label })).toBeInTheDocument();
     }
   });
@@ -99,7 +99,7 @@ describe('MoreSheet', () => {
       />,
     );
     expect(screen.queryByText('Yours')).toBeNull();
-    for (const label of ['Watchlist', 'Draft list', 'Rules & scoring']) {
+    for (const label of ['Watchlist', 'Draft list', 'How it works']) {
       expect(screen.queryByRole('link', { hidden: true, name: label })).toBeNull();
     }
     // The theme toggle and account control are unconditional — only the

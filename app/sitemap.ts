@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: canonical('/'), changeFrequency: 'daily', priority: 1 },
     { url: canonical('/browse'), changeFrequency: 'daily', priority: 0.8 },
     { url: canonical('/award-shows'), changeFrequency: 'weekly', priority: 0.7 },
-    { url: canonical('/rules-and-scoring'), changeFrequency: 'yearly', priority: 0.3 },
+    { url: canonical('/how-it-works'), changeFrequency: 'yearly', priority: 0.3 },
   ];
 
   const showPages: MetadataRoute.Sitemap = events

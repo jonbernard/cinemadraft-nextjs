@@ -7,7 +7,7 @@ vi.mock('@/lib/repositories/points', () => ({
 }));
 
 import type { Point } from '@/lib/repositories/points';
-import RulesAndScoringPage from './page';
+import HowItWorksPage from './page';
 
 function point(over: Partial<Point>): Point {
   return {
@@ -36,7 +36,7 @@ const points: Point[] = [
   point({ id: 6, level: 'Alphabet', tier: 3, points: 5 }),
 ];
 
-describe('RulesAndScoringPage', () => {
+describe('HowItWorksPage', () => {
   afterEach(() => {
     vi.resetAllMocks();
   });
@@ -44,7 +44,7 @@ describe('RulesAndScoringPage', () => {
   it('renders the rulebook table with each level as its own row, ordered by value', async () => {
     findAll.mockResolvedValue(points);
 
-    render(await RulesAndScoringPage());
+    render(await HowItWorksPage());
 
     const rows = screen.getAllByRole('row');
     // Header row plus one row per level.
@@ -62,7 +62,7 @@ describe('RulesAndScoringPage', () => {
   it('states the win rule in prose, matching lib/services/scoring.ts (a win is 2P)', async () => {
     findAll.mockResolvedValue(points);
 
-    render(await RulesAndScoringPage());
+    render(await HowItWorksPage());
 
     expect(screen.getByText(/A win earns it a second time/)).toBeInTheDocument();
   });

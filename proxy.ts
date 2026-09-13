@@ -76,14 +76,14 @@ const isPublic = createRouteMatcher([
   // were invited to.
   '/join/(.*)',
   // The page that explains the game, and the one a new reader is most likely
-  // to be sent. It reads the `points` table and writes nothing, so there is
-  // nothing behind it to protect.
+  // to be sent. It reads the `points` table and the season's nominations and
+  // writes nothing, so there is nothing behind it to protect.
   //
-  // 🔴 Superseded in scope by Phase 18, which replaces this page with a public
-  // `/how-it-works` and permanently redirects this route to it (P18.T0). Listed
-  // here anyway: until that lands, a redirect source that is protected and a
-  // redirect target that is public is the worst of both.
-  '/rules-and-scoring',
+  // 🔴 `/rules-and-scoring` is NOT listed any more, and does not need to be:
+  // `next.config.ts` redirects it permanently, and `redirects` runs before
+  // this file (next/dist/docs/01-app/02-guides/redirecting.md:293), so the
+  // stale URL never reaches the proxy at all.
+  '/how-it-works',
   // 🔴 The live surface, public by the owner's ruling (P17.T16). A stranger
   // handed the link during a ceremony has to be able to watch — that is the
   // whole reason the route exists, and a sign-in wall at the product's second

@@ -52,8 +52,8 @@ const readyYours: NavLink[] = [
     group: 'yours',
   },
   {
-    href: '/rules-and-scoring',
-    label: 'Rules & scoring',
+    href: '/how-it-works',
+    label: 'How it works',
     ready: true,
     path: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 8v5M12 16h.01',
     group: 'yours',

@@ -64,6 +64,26 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  /**
+   * The old rules page, permanently (P18.T0, D101).
+   *
+   * 🔴 `permanent: true` is a 308, and a 308 is cached by browsers and
+   * intermediaries essentially forever — correct here, and a trap anywhere the
+   * destination might move again. A year of league chat holds
+   * `/rules-and-scoring` links and they have to keep opening.
+   *
+   * Here rather than as a surviving page or an entry in `proxy.ts` because
+   * `redirects` runs *before* Proxy
+   * (next/dist/docs/01-app/02-guides/redirecting.md:293), so the stale URL
+   * resolves without auth ever seeing it and without a function invocation.
+   * That is also why `/rules-and-scoring` no longer needs an `isPublic` entry.
+   */
+  async redirects() {
+    return [
+      { source: '/rules-and-scoring', destination: '/how-it-works', permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
