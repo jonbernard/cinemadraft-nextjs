@@ -200,8 +200,11 @@ test.describe('navigation', () => {
     await expect(page.getByRole('link', { name: 'Cinemadraft, home' })).toBeVisible();
     // Unqualified on purpose: the strip's copies are `xl:flex` and the More
     // sheet's are inside a closed `<dialog>`, so neither is in the
-    // accessibility tree here. One match each means the bar's is the one on
-    // screen, which is the whole claim.
+    // accessibility tree here. One match each means the visible one is the one
+    // this width gets, which is the whole claim. Since P14.T16 the wordmark's
+    // single match is `TopBar`'s rather than the tab bar's — the identity moved
+    // rows, and "a reader can tell which app they are in at 1024px" is what is
+    // actually being asserted, which is unchanged.
     await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
 
@@ -253,14 +256,31 @@ test.describe('navigation', () => {
       ),
     ).toHaveCount(5);
 
-    // At 390px the chrome is in the DOM and displayed nowhere: the row has no
-    // slack for it. Search and the account control are in the More sheet,
-    // which is where D75 put them and where they stayed.
-    await expect(page.getByRole('link', { name: 'Cinemadraft, home' })).toBeHidden();
+    // At 390px the bar's own chrome is in the DOM and displayed nowhere: the
+    // row has no slack for it. Search and the account control are in the More
+    // sheet, which is where D75 put them and where they stayed.
+    await expect(page.getByRole('button', { name: 'Search' })).toBeHidden();
 
-    // At 1024 it is on the bar — and even there it never claims to be the
-    // current page, on `/` or anywhere else. Current-ness is a destination
-    // property.
+    // 🔴 The wordmark is the exception, and P14.T16 is why this assertion
+    // inverted rather than being deleted. It used to read `toBeHidden()` — a
+    // phone had no wordmark anywhere in the application, which the owner
+    // reported as a defect. It is visible now because it is no longer on this
+    // row at all: it is `TopBar`'s, a second strip that costs the five tab
+    // slots nothing. So the claim here is stronger than before, not weaker —
+    // the mark is on screen AND it is not the tab bar's.
+    const phoneMark = page.getByRole('link', { name: 'Cinemadraft, home' });
+    await expect(phoneMark).toBeVisible();
+    expect(
+      await phoneMark.evaluate((el) =>
+        Boolean(el.closest('nav[aria-label="Primary, mobile"]')?.parentElement),
+      ),
+    ).toBe(false);
+    // Top of the viewport, not the bottom: the tab bar is the last 48.5px of a
+    // 844px phone, so anything under 100px cannot be sitting in it.
+    expect((await phoneMark.boundingBox())?.y ?? 999).toBeLessThan(100);
+
+    // At 1024 it is still the only one — and it never claims to be the current
+    // page, on `/` or anywhere else. Current-ness is a destination property.
     await page.setViewportSize(DEAD_ZONE);
     const mark = page.getByRole('link', { name: 'Cinemadraft, home' });
     await expect(mark).toBeVisible();

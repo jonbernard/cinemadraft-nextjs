@@ -246,6 +246,25 @@ describe('AppShell', () => {
     expect(main).toHaveAttribute('tabindex', '-1');
   });
 
+  // 🔴 P14.T16. Two links home exist in the DOM at once — the rail's lockup and
+  // the top bar's — and CSS is the only thing keeping them apart, the same
+  // arrangement as the two navigations above. If both ever rendered together a
+  // phone would show the wordmark twice, so the complementary breakpoints are
+  // the assertion, not the count on its own.
+  it('carries exactly one wordmark at any width', () => {
+    usePathname.mockReturnValue('/');
+    const { container } = render(<AppShell isSignedIn={false}>content</AppShell>);
+
+    const homeLinks = screen.getAllByRole('link', { name: 'Cinemadraft, home' });
+    expect(homeLinks).toHaveLength(2);
+
+    // The rail's, hidden below `xl`; the top bar's, hidden from `xl`.
+    expect(container.querySelector('.hidden.xl\\:block')).toContainElement(homeLinks[0]);
+    expect(homeLinks[1].closest('[data-app-chrome]')?.className).toContain('xl:hidden');
+
+    // That the bottom bar is not one of the two is `TabBar.test.tsx`'s job.
+  });
+
   it('names the create action the same as every other place it appears', () => {
     // "Create league" in the strip and "Start a league" on /leagues are the
     // same action, ~700px apart at 1440px. One label (P17.T32).

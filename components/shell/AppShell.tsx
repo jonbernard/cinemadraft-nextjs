@@ -12,6 +12,7 @@ import { NavRail } from './NavRail';
 import { NotificationBell, type NotificationItem } from './NotificationBell';
 import { SearchOverlay } from './SearchOverlay';
 import { SearchIcon, TabBar } from './TabBar';
+import { TopBar } from './TopBar';
 
 /**
  * The application shell (D67, D75): a floating rail plus a content panel on
@@ -151,6 +152,11 @@ export function AppShell({
       </div>
 
       <div className="min-w-0 flex-1 xl:flex xl:flex-col xl:gap-2">
+        {/* 🔴 Below the skip link, not above it: the skip link has to stay the
+            first focusable element by DOM order. Above the strip, because the
+            two never render at once — the strip is `xl`-only and this is
+            `xl:hidden` — and this is the row a phone sees first. */}
+        <TopBar />
         <Strip
           isSignedIn={isSignedIn}
           isAdmin={isAdmin}

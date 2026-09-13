@@ -45,7 +45,11 @@ export const MoreOpen: StoryObj<typeof meta> = {
  * that label and take the bar from 48.5px to 65px. So the chrome is
  * `hidden sm:flex` and this story is what that looks like — the bar a phone
  * gets, unchanged, with search and the account control in the More sheet. Every
- * other story here is the `sm`+ shape, with the mark, search and the way in.
+ * other story here is the `sm`+ shape, with search and the way in.
+ *
+ * The mark used to be a third square in that group. P14.T16 moved it to
+ * `TopBar`, because `hidden sm:flex` meant this width had no wordmark anywhere
+ * in the app — see `TopBar.stories.tsx`'s `Phone`, which is the row above.
  *
  * 🔴 No signed-in story: `AccountControl` renders Clerk's `UserButton` when a
  * publishable key is present, and that throws outside a `<ClerkProvider>` —
