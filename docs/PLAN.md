@@ -494,6 +494,9 @@ impression.
 
 ### Phase 18 — How it works
 
+✅ **Complete 2026-09-12** — eleven tasks (T0–T10), decisions recorded as
+D105–D108. Per-task detail in `docs/PROGRESS.md` § Phase 18.
+
 🔴 **Runs where it sits here, before the go-live phases.** See the numbering
 note on Phase 17: the number is an identifier, not a position.
 
