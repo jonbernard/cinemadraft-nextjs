@@ -232,6 +232,17 @@ export const PUBLIC_ROUTES = [
   // reaches a stranger through the stream that the page withholds. Its own
   // `route.test.ts` pins that, in both directions.
   '/api/live/[abbr]/stream',
+  // 🔴 The board's stream, the same ruling one door further in (P14.T10/D48).
+  // `/leagues/[id]` is public (D44/D45) and `config.matcher` covers
+  // `/(api|trpc)(.*)`, so without this line the stream a stranger's browser
+  // opens on a league link is bounced and the public page they were handed
+  // simply never updates during the draft — which is the whole feature.
+  //
+  // It grants exactly what the page grants: the handler resolves the reader
+  // with `getCurrentUser()` and passes `user?.id ?? null` to the same
+  // `getLeagueBoardView` the page calls, so a signed-out reader gets no seat of
+  // their own and no `isViewer` row. Its own `route.test.ts` pins that.
+  '/api/leagues/[id]/board/stream',
   // 🔴 Member profiles, by the owner's ruling (P17.T37). The league page is the
   // member index — every seat on it links to `/members/<uuid>` — and league
   // pages are public, so without this every name on a shared league page
