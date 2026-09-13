@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { EmptyState } from '@/components/EmptyState';
 import { LeaderboardTable } from '@/components/LeaderboardTable';
 import { PosterFrame } from '@/components/PosterFrame';
+import { RemoteImage } from '@/components/RemoteImage';
 import { RosterStrip } from '@/components/RosterStrip';
 import { SeasonPicker } from '@/components/SeasonPicker';
 import { SeasonStepper } from '@/components/SeasonStepper';
@@ -10,9 +11,19 @@ import { SectionHead } from '@/components/SectionHead';
 import { Shelf } from '@/components/Shelf';
 import { StandingsPanel } from '@/components/StandingsPanel';
 import { getCurrentUser } from '@/lib/auth';
+import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import { recentPicks, type ShelfView, topScorers } from '@/lib/dashboard/shelves';
 import { type DashboardView, getDashboard } from '@/lib/services/dashboard';
+import { getLandingFacts, type LandingFacts } from '@/lib/services/how-it-works';
 import { availableSeasons, getLeaderboard } from '@/lib/services/leaderboard';
+
+/**
+ * Posters in the hero's wall, and the number `getLandingFacts` is asked for.
+ *
+ * Eight fills a four-column grid exactly twice over. A ragged final row is the
+ * only thing this number can get wrong, so it is a multiple of four.
+ */
+const WALL = 8;
 
 /**
  * The dashboard, with a public variant (D44).
@@ -21,11 +32,12 @@ import { availableSeasons, getLeaderboard } from '@/lib/services/leaderboard';
  * things they actually open the site to learn: where they stand, what their
  * films have scored, and which show is next.
  *
- * Signed out, it is the season itself — the rail of award shows, and an
- * invitation to register. That is deliberate and matches the source app, where
- * `/` was never guarded: an awards league is worth looking at before you have
- * an account, and a login wall on the front page is the worst possible first
- * impression during awards season.
+ * Signed out, it opens on a hero — the claim, the season's own poster wall
+ * and the way in (P18.T10) — and then it is the season itself, the rail of
+ * award shows directly beneath. That is deliberate and matches the source app,
+ * where `/` was never guarded: an awards league is worth looking at before you
+ * have an account, and a login wall on the front page is the worst possible
+ * first impression during awards season.
  *
  * The signed-out path renders no user-scoped data at all. `getDashboard(null)`
  * does not query leagues rather than querying with a sentinel, so there is no
@@ -52,9 +64,14 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
   const [user, seasons] = await Promise.all([getCurrentUser(), availableSeasons()]);
   const year = toYear(typeof yearParam === 'string' ? yearParam : undefined, seasons);
 
-  const [view, leaderboard] = await Promise.all([
+  const [view, leaderboard, facts] = await Promise.all([
     getDashboard(user?.id ?? null),
     getLeaderboard(year),
+    // 🔴 Signed in this is a plain `null`, not a query: a member has already
+    // been persuaded, and the hero that needs these facts does not render for
+    // them. `Promise.all` takes the value as-is, so the signed-in page issues
+    // exactly the queries it issued before this task.
+    user == null ? getLandingFacts(WALL) : null,
   ]);
 
   // `view.events` is one entry per show *phase* (D81), so the eyebrow counts
@@ -67,6 +84,10 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
 
   return (
     <div className="text-text-primary mx-auto flex max-w-6xl flex-col gap-10">
+      {/* The hero, and only for a stranger: it is the whole pitch, above the
+          season it is arguing about (P18.T10). */}
+      {user == null ? <SignedOutHero facts={facts} /> : null}
+
       {/* 🔴 Signed in, the reader's own state comes first (P17.T29). Before
           this, a member with two leagues opened `/` to the same two screens a
           stranger sees — the season stepper, the shelf and the full season
@@ -74,13 +95,19 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
           1,499px down at 1440px. The season rail and the shelf are supporting
           material on a member's home page, not the page itself.
 
-          Signed out the order is unchanged: the season *is* the page, which is
-          deliberate and matches the source app (D44). */}
+          Signed out the season still leads the page's own content, under the
+          hero and nothing else, which is deliberate and matches the source app
+          (D44). */}
       {user != null ? <YourLeagues leagues={view.leagues} /> : null}
 
       <section className="flex flex-col gap-4">
         <SectionHead
-          as="h1"
+          // 🔴 Signed out the hero above owns the `h1`, so this is the second
+          // heading and must say so — two `h1`s, or a jump to `h2` with no
+          // `h1` before it, are both broken outlines and both are asserted
+          // against in `e2e/dashboard.spec.ts`. Signed in there is no hero and
+          // the season is still the page's own subject, unchanged (P17.T29).
+          as={user == null ? 'h2' : 'h1'}
           // Real metadata, which is the whole test for an eyebrow: how far
           // through the season the league is. Omitted rather than rendered as
           // "0 of 0" for a year seeded before its calendar is published.
@@ -89,37 +116,6 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
         >
           Season
         </SectionHead>
-
-        {/* 🔴 The front door, for the only reader who needs one (P17.T5).
-            `/` is public during awards season and opened with an h1 reading
-            "Season" and a rail of dates — nothing that says what the product
-            is, and no way in until four sections further down. One line and
-            one action, and it is gone for a member, who does not need to be
-            told what the app they are logged into does.
-
-            Below the `SectionHead` rather than above it: content before the
-            document's first heading breaks the outline P17.T1 just fixed.
-
-            The action is the same `<Link>` lockup `EmptyState` uses for its
-            own — `accent.fill` with white on it, 6.58:1, `rounded-sm` for
-            D73's 6px — rather than a second primary-action pattern. */}
-        {user == null ? (
-          <div
-            data-testid="signed-out-lede"
-            className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between"
-          >
-            <p className="text-text-secondary max-w-prose text-sm leading-relaxed">
-              Draft a team of films before awards season, and score every nomination and
-              win they pick up.
-            </p>
-            <Link
-              href="/auth/register"
-              className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 shrink-0 items-center rounded-sm px-4 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
-            >
-              Register
-            </Link>
-          </div>
-        ) : null}
 
         {/* Renders nothing when the season has no shows yet, so the heading
             above it is unconditional and the page always has an h1. */}
@@ -145,21 +141,7 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
         <LeaderboardTable leaderboard={leaderboard} />
       </section>
 
-      {user == null ? (
-        /* No action here any more: the lede at the top of the page carries it
-           (P17.T5), and two identical Register buttons 2,000px apart is a
-           choice a reader has to make twice. What stays is the half the lede
-           cannot carry — the returning member's reassurance that their history
-           follows their email — which belongs at the end of a page somebody has
-           read rather than in a one-line opener. */
-        <EmptyState title="Play the season">
-          Draft a team of films before awards season and score points as they pick up
-          nominations and wins. Played before? Register with the same email and your
-          leagues, drafts and points come with you.
-        </EmptyState>
-      ) : (
-        <LowerFold leagues={view.leagues} />
-      )}
+      {user != null ? <LowerFold leagues={view.leagues} /> : null}
     </div>
   );
 }
@@ -177,6 +159,114 @@ function toYear(raw: string | undefined, seasons: readonly number[]): number {
   const parsed = Number(raw);
   if (Number.isSafeInteger(parsed) && seasons.includes(parsed)) return parsed;
   return seasons[0] ?? new Date().getUTCFullYear();
+}
+
+/**
+ * The signed-out hero (P18.T10).
+ *
+ * Replaces two half-heroes: a one-line lede under the season heading, and an
+ * `EmptyState` at the foot of the page repeating it 2,000px later. A stranger
+ * read the same argument twice and met the season rail in between with nothing
+ * to frame it.
+ *
+ * 🔴 **The claim is not written here.** `PITCH_HEADLINE` and `PITCH` are
+ * `lib/copy.ts`'s, shared with `/how-it-works`, because two surfaces arguing
+ * the same thing in two files is two things to edit and one of them will be
+ * missed. The Razzie clause rides in `PITCH` for the same reason it does
+ * there — it is the inversion that makes the game funny, and it belongs above
+ * the fold.
+ *
+ * 🔴 The returning member's reassurance sits beside the action, not in a
+ * footer. It is the only sentence the deleted block carried that the lede did
+ * not, and it answers a question somebody asks *while deciding*, which is here.
+ *
+ * The season rail follows this section directly: a live season is the
+ * product's own evidence (D44), and the hero is sized so it is still on the
+ * fold at 1440×900.
+ */
+function SignedOutHero({ facts }: { facts: LandingFacts | null }) {
+  return (
+    <section
+      data-testid="signed-out-hero"
+      className="flex flex-col gap-8 lg:flex-row lg:items-center lg:gap-12"
+    >
+      <div className="flex min-w-0 flex-1 flex-col gap-6">
+        <h1 className="text-text-primary max-w-[18ch] font-sans text-display font-semibold">
+          {PITCH_HEADLINE}
+        </h1>
+        <p className="text-text-secondary max-w-prose text-sm leading-relaxed">{PITCH}</p>
+
+        <div className="flex flex-col items-start gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* The same two lockups the rest of the app uses for a primary act
+                and a quiet one: `accent.fill` with white on it, and an
+                underlined link. Not a second button pattern. */}
+            <Link
+              href="/auth/register"
+              className="bg-accent-fill focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm px-5 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Start a league
+            </Link>
+            <Link
+              href="/how-it-works"
+              className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill flex min-h-11 items-center px-1 text-sm underline underline-offset-4 focus-visible:outline-2"
+            >
+              How it works
+            </Link>
+          </div>
+          <p className="text-text-dim max-w-prose text-xs">
+            Played before? Register with the same email and your leagues, drafts and
+            points come with you.
+          </p>
+        </div>
+      </div>
+
+      {facts && facts.films.length > 0 ? (
+        /* A wall of the season's real posters, not an illustration: these are
+            the highest scorers of the season being shown, in order, so the
+            hero is a picture of the game actually being played and every title
+            in it is one somebody drafted.
+
+            🔴 Decorative, and that is a decision rather than laziness. As links
+            these are eight tab stops between the headline and "Start a league"
+            — the action this page exists for — and a screen reader would read
+            eight film titles before the sentence explaining what the product
+            is. The same films are reachable, titled and linked, from the
+            season leaderboard directly below. So: `aria-hidden`, no tab stops,
+            no accessible names, every `alt` empty.
+
+            Eight in a four-column grid, so the wall is a full rectangle at
+            every width rather than a ragged final row — and short enough that
+            the season rail is still on the fold at 1440×900. */
+        <div
+          data-testid="hero-films"
+          aria-hidden="true"
+          className="grid w-full shrink-0 grid-cols-4 gap-2 lg:w-[26rem]"
+        >
+          {facts.films.map((film, index) => (
+            <div
+              key={film.movieId}
+              className="poster-radius bg-bg-surface relative aspect-[2/3] overflow-hidden"
+            >
+              {film.posterUrl ? (
+                <RemoteImage
+                  src={film.posterUrl}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 7rem, 25vw"
+                  className="object-cover"
+                  // One preload, not eight: the wall is the largest thing in
+                  // the first viewport, and `NowPlayingShelf` below already
+                  // spends two on frames that now sit lower down the page.
+                  priority={index === 0}
+                />
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 /**

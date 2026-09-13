@@ -838,14 +838,20 @@ test.describe('the league page', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
 
-    // 🔴 The document's first heading, not merely "Season is near the top": a
-    // stray signed-in block rendered for a stranger (the "No leagues yet"
-    // empty state is an h3) would push Season down a couple of hundred pixels
-    // and still pass a y-bound.
-    const first = page.locator('main :is(h1, h2, h3, h4)').first();
-    await expect(first).toHaveText('Season');
-    await expect(first).toHaveJSProperty('tagName', 'H1');
+    // 🔴 The document's first two headings, not merely "Season is near the
+    // top": a stray signed-in block rendered for a stranger (the "No leagues
+    // yet" empty state is an h3) would push Season down a couple of hundred
+    // pixels and still pass a y-bound.
+    //
+    // Signed out the hero owns the `h1` and the season follows it as the `h2`
+    // (P18.T10); signed in the season keeps the `h1`, which the tests above
+    // this one assert.
+    const headings = page.locator('main :is(h1, h2, h3, h4)');
+    await expect(headings.first()).toHaveText(/Draft a team of films/);
+    await expect(headings.first()).toHaveJSProperty('tagName', 'H1');
+    await expect(headings.nth(1)).toHaveText('Season');
+    await expect(headings.nth(1)).toHaveJSProperty('tagName', 'H2');
     await expect(page.getByText('No leagues yet')).toHaveCount(0);
-    await expect(page.getByTestId('signed-out-lede')).toBeVisible();
+    await expect(page.getByTestId('signed-out-hero')).toBeVisible();
   });
 });

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ScoringTable } from '@/components/ScoringTable';
 import { SectionHead } from '@/components/SectionHead';
 import { WorkedExample } from '@/components/WorkedExample';
+import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import { pointRepository } from '@/lib/repositories/points';
 import {
   getLandingFacts,
@@ -109,11 +110,10 @@ export default async function HowItWorksPage() {
       >
         <div className="flex min-w-0 flex-1 flex-col gap-6">
           <h1 className="text-text-primary max-w-[16ch] font-sans text-display font-semibold">
-            Draft a team of films. Let the awards keep score.
+            {PITCH_HEADLINE}
           </h1>
           <p className="text-text-secondary max-w-prose text-sm leading-relaxed sm:text-base">
-            Pick before the nominations land &mdash; then every nomination pays, every win
-            pays twice, and every Razzie takes points back.
+            {PITCH}
           </p>
           {facts ? (
             <dl

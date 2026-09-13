@@ -27,7 +27,9 @@ vi.mock('@/lib/repositories/awards', () => ({
   awardRepository: { findAll: awardsFindAll },
 }));
 
-const { getWorkedExample, getShowGroups, getLandingFacts } = await import('./how-it-works');
+const { getWorkedExample, getShowGroups, getLandingFacts } = await import(
+  './how-it-works'
+);
 
 /** A board row as `getLeaderboard` shapes one. */
 function row(movieId: number, title: string, total: number) {

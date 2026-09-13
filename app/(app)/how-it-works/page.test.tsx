@@ -17,6 +17,7 @@ vi.mock('@/lib/services/how-it-works', () => ({
 }));
 vi.mock('@/lib/services/season', () => ({ getSeasonPhases }));
 
+import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
 import type { Point } from '@/lib/repositories/points';
 import HowItWorksPage from './page';
 
