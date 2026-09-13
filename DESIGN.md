@@ -234,7 +234,7 @@ what ships, not as what was drawn.
 - **SectionHead** — the only heading component; `as` sets both the tag and the size, so hierarchy cannot drift from semantics.
 - **Eyebrow** — the only place uppercase is allowed, at 11px with 0.085em tracking.
 - **StatusChip** — `brass | carmine | beam | neutral`. Brass is an outcome, carmine urgency, beam scheduled-not-yet. Never colour alone: the chip always carries a word.
-- **PosterFrame / RemoteImage** — 2:3 posters with declared aspect ratios so grids do not reflow as images arrive; a won film carries the brass seal.
+- **PosterFrame / RemoteImage** — 2:3 posters with declared aspect ratios so grids do not reflow as images arrive. 🔴 **The winner seal is carmine, not brass** — `bg-accent-fill`, shipped that way in Phase 3.5 with the reasoning "one signal per fact: a win is a carmine corner seal, a live nomination is a top hairline". This documentation said brass, which was wrong about the code. It is also the one place the palette argues with itself: D99 says brass means an award outcome, and a win is an award outcome. Recorded as it ships, and flagged rather than quietly reconciled — changing it is a visual decision, not a documentation one.
 - **Dialogs are native `<dialog>` opened with `showModal()`** — the focus trap, Escape, the inert background and the backdrop are the platform's job.
 
 ## Do's and Don'ts
