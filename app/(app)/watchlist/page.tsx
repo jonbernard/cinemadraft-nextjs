@@ -326,7 +326,7 @@ function Shows({ shows, year }: { shows: ShowProgress[]; year: number }) {
     // other candidate and is worse: CSS multi-column reflows its items between
     // columns as one grows, so opening a show makes *other* shows jump from
     // one column to the other.
-    <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
+    <div className="grid gap-3 lg:grid-cols-1 lg:items-start">
       {shows.map((show) => (
         // A native <details>: it opens with a keyboard, before hydration, and
         // without a line of JavaScript. Closed by default because the summary
@@ -354,7 +354,7 @@ function Shows({ shows, year }: { shows: ShowProgress[]; year: number }) {
                   {award.nominees.map((nominee) => (
                     <li
                       key={nominee.nominationId}
-                      className="flex items-center justify-between gap-3"
+                      className="flex items-center justify-between gap-3 hover:bg-accent-fill/5"
                     >
                       <FilmTitle film={nominee} />
                       <NomineeToggle film={nominee} />

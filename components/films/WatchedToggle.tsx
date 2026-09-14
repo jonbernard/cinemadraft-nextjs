@@ -153,7 +153,7 @@ export function WatchedToggle({
       // states an end state rather than flipping one.
       aria-busy={isPending || undefined}
       className={cn(
-        'focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center gap-2 focus-visible:outline-2',
+        'focus-visible:outline-accent-fill flex min-h-11 min-w-11 items-center justify-center gap-2 focus-visible:outline-2 cursor-pointer',
         className,
       )}
     >
