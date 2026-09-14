@@ -46,8 +46,8 @@ const LEAGUE = 1;
 const YEAR = 2026;
 
 describe('the running order is one order, everywhere', () => {
-  it('🔴 the fixture disagrees with every other plausible sort', async () => {
-    // The vacuity guard. Without it, everything below could pass against four
+  it('the fixture disagrees with every other plausible sort', async () => {
+    // 🔴 The vacuity guard. Without it, everything below could pass against four
     // surfaces that all sorted by id and never looked at `order` at all.
     const board = await getLeagueBoard(LEAGUE, YEAR);
     const group = board.groups[0];
