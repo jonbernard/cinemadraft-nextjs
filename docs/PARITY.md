@@ -3,9 +3,15 @@
 **What the source app does, and whether the port does it.** Cutover is blocked
 while any row is open.
 
+🔴 **As of 2026-09-13 no row is open.** Phase 14 tranche 2 closed the last four
+(P10.T3, T21, T31, T32), so **parity no longer blocks the cutover** — Phase 12's
+manual parallel-run pass starts from zero known gaps rather than from a list to
+work around. What remains against the source is the **dropped** column, which is
+fifteen deliberate refusals, each carrying its reason.
+
 | | |
 |---|---|
-| Audited | 2026-08-15 |
+| Audited | 2026-08-15; verdicts current at 2026-09-13 (Phase 14 tranche 2) |
 | Source | `cinemadraft` @ `caa1e7f` (2023-12-12), read-only |
 | Port | `cinemadraft-nextjs` @ end of Phase 6 |
 | Source surface | 19 route files · **71 endpoints** · 17 controller modules · **81 exported functions** · 24 client routes · 9 sub-views · 80 page files |
@@ -15,14 +21,25 @@ while any row is open.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 65 |
-| **deficient** | 4 |
+| **ported** | 69 |
+| **deficient** | 0 |
 | **dropped** | 15 |
 | **total capabilities** | 84 |
 
 🔴 **Recompute these from the table; never increment them.** The counts drifted
 by one during Phase 10 and went unnoticed for four batches, because each task
 adjusted the header by its own delta rather than recounting.
+
+🔴 **And recount the capability rows only.** The obvious command —
+`grep -c '| \*\*ported\*\* |' docs/PARITY.md` — also matches the table
+directly above, which spells its own verdicts the same way, so every figure it
+returns is one too many. P14.T14 was handed that command and it reported
+66 / 5 / 16 = 87 against a file whose header said 84 and was right. Count rows
+with five cells instead:
+
+```bash
+awk -F'|' 'NF==7' docs/PARITY.md | awk -F'|' '{print $3}' | sort | uniq -c
+```
 
 _Audited at the end of Phase 6 (18 ported). Phase 8 closed seven rows: film
 search and the whole award-show surface, including both admin writes the source
@@ -37,15 +54,18 @@ data behind it, and the three profile rows: a member's page, and posting to and
 deleting from your own feed. Batch G closed the four admin surfaces: editing a
 show's dates and live flags, adding or deleting a category (refusing rather
 than orphaning nominations), the active-season control, and the account
-relink page — each gated independently at the action and at the page._
+relink page — each gated independently at the action and at the page.
+Phase 14 closed the last four, in two tranches: tranche 1 built the transport
+and the live room (P10.T31), tranche 2 the dashboard's route into it (P10.T3),
+the board moving while the draft runs (P10.T21) and the admin's selection
+reaching every watcher (P10.T32)._
 
-🔴 **Read this the right way round.** The port has the harder half done — auth,
-the data layer for every table, scoring, the draft — and the *broad* half
-outstanding. The 43 open rows are not 43 phases of work: most already have
-their repository and need only a page; the rest need a repository written
-first, and those are almost all *writes*, which is where the time goes.
-The split is in the **Data** column, and it is the honest measure of what is
-left.
+🔴 **Read this the right way round.** It said, through Phase 10, that the port
+had the harder half done and the *broad* half outstanding, and that the open
+rows were mostly a page away from a repository that already existed. That turned
+out to be the correct reading: the count went 43 open to 4 in one phase and to
+**0** in Phase 14. What is left against the source is the dropped column, and
+dropping is a decision rather than a debt.
 
 ## How to read a row
 
@@ -88,7 +108,7 @@ which is why so many rows are cheap and a few are not.
 | See your roster and league standings at a glance | **ported** | — (source put this on the league page only) | `lib/services/dashboard.ts` — a betterment, not parity | ✓ |
 | Signed-out visitors see the season | **ported** | Dashboard was public (`src/routes/index.js:66`) | `app/(app)/page.tsx`, `getDashboard(null)` (D44) | ✓ |
 | Films in cinemas now | **ported** | `NowShowing` carousel, `GET /movie/now-playing` | `lib/external/tmdb-now-playing.ts` + the "In cinemas now" shelf on `app/(app)/page.tsx`. Renders nothing — not an error — when TMDB is unconfigured or the request fails | — |
-| "Watch live" banner during a ceremony | **deficient** | `dashboard/components/LiveCTA.js:35-63` | **P10.T3** — the only route into the live page | ✓ |
+| "Watch live" banner during a ceremony | **ported** | `dashboard/components/LiveCTA.js:35-63` | `components/awards/LiveBanner.tsx` + `liveNow` on `lib/services/dashboard.ts`, rendered by `app/(app)/page.tsx`. 🔴 **Narrower than the source on purpose**: `LiveCTA` took `activeEvents[0]` from a list populated by `nom_active` **or** `awards_active`, so a show merely announcing nominations produced a banner reading "the results are coming in" and a link to a page with nothing live on it. This filters to `awards_active` only — the flag `/api/live/[abbr]/stream` answers 204 without (D118) | ✓ |
 | Season leaderboard by year | **ported** | `MovieResultsByLeague`, `GET /points/year/:year` | `lib/services/leaderboard.ts` — one row per nominated film, one column per award show, zero-filled where the source's `defaultEvents` was; scored through `ledgerForMovies`, not a second rule (D41). `?year=` (D65) on `app/(app)/page.tsx` | ✓ |
 | Welcome callout card | **dropped** | `HeadCallout` | MUI Minimal template chrome, not a feature (D3) | |
 
@@ -133,7 +153,7 @@ which is why so many rows are cheap and a few are not.
 | Posters on the board | **ported** | pick strips | `components/PickCell.tsx` + `lib/utils/poster.ts` | ✓ |
 | Per-pick point totals on the board | **ported** | `POST /points/ids` | `lib/services/draft.ts` via `pointsForMovieIds` (D41) | ✓ |
 | **A private ranked pre-draft list** — add films, drag to rank, mark taken or unavailable | **ported** | `/list`, `GET/POST /lists/:year`, `/order`, `/status`, `/delete` | `app/(app)/list/page.tsx` + `components/DraftListEditor.tsx` on the shared `components/ReorderableList.tsx`, `lib/services/draft-list.ts`, `actions/draft-list/*`, writes in `lib/repositories/lists.ts`. The year is validated against `available_years` (closing bug 10), and every write is scoped to the caller's own rows — the source's `/lists/delete/:id` had no owner clause at all | ✓ |
-| Live board updates while the draft runs | **deficient** | polling | **P10.T21** — Phase 14 with the live page (D48) | ✓ |
+| Live board updates while the draft runs | **ported** | polling | `components/leagues/LeagueBoardRoom.tsx` over `app/api/leagues/[id]/board/stream` — SSE on the Node runtime, complete state per frame (D48/D102/D110). 🔴 **While the league is `active`, and only then**: every other status answers 204, which is a deliberate budget line rather than an omission (D116) | ✓ |
 
 ## Award shows
 
@@ -153,8 +173,8 @@ which is why so many rows are cheap and a few are not.
 
 | Capability | Verdict | Source | Port / task | Data |
 |---|---|---|---|---|
-| **Watch results land in real time, with league standings beside them** | **deficient** | `/live/:abbr`, socket.io `subscribeToLiveEvent` | **P10.T31** — Phase 14 (D13/D23/D48) | ✓ |
-| The admin's selection drives every watcher's screen | **deficient** | `sendSelectedAward` / `newWinner` | **P10.T32** | ✓ |
+| **Watch results land in real time, with league standings beside them** | **ported** | `/live/:abbr`, socket.io `subscribeToLiveEvent` | `app/(app)/live/[abbr]/page.tsx` + `components/awards/LiveRoom.tsx` over `app/api/live/[abbr]/stream`. Closed by Phase 14 tranche 1 (P14.T1–T7, gate `016449a`); the matrix was simply not updated at the time, and P14.T14 does it | ✓ |
+| The admin's selection drives every watcher's screen | **ported** | `sendSelectedAward` / `newWinner` | `actions/awards/focus-award.ts` writing `events.focused_award_id`, read by `lib/services/live.ts` and marked by `components/awards/LiveAward.tsx`. 🔴 A persisted column, not a message: there is no broker, so the selection has to be somewhere a reconnecting client can read it (D117) | ✓ |
 
 ## Watchlist
 

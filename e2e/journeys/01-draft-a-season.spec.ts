@@ -269,7 +269,12 @@ test.describe('journey 1 — a season, from nothing to a finished draft', () => 
     // up rather than jumping from two seats to thirteen.
     for (const name of PLACEHOLDERS) {
       await beat(page, `${name} is given a seat`, async () => {
-        await page.getByLabel(/without an account/i).fill(name);
+        // 🔴 Not "without an account": P14.T18 split the one mechanism in two
+        // and relabelled this field, and `e2e/season-setup.spec.ts` was
+        // updated while this file was not — so the journey timed out for three
+        // minutes on a locator matching nothing. A typed-in name is a real
+        // person who has not registered; the characters are the other button.
+        await page.getByLabel(/hasn’t registered/i).fill(name);
         await page.getByRole('button', { name: 'Add seat' }).click();
         await expect(page.getByText(`${name} seated`)).toBeVisible();
       });

@@ -658,9 +658,11 @@ last one is deliberately plain and self-contained, because the providers and
 theme are exactly what may have failed.
 
 **Batches E, F, G and H done — Phase 10's parity work is complete.**
-`PARITY.md` reads **65 ported / 4 deficient / 15 dropped = 84**, and the four
-deficient rows are all Phase 14 deferrals: T3 (the live banner, which is the
-only route into the live page), T21, T31 and T32.
+`PARITY.md` read **65 ported / 4 deficient / 15 dropped = 84**, and the four
+deficient rows were all Phase 14 deferrals: T3 (the live banner, which is the
+only route into the live page), T21, T31 and T32. 🔴 **All four are now
+closed** (Phase 14, both tranches) and the matrix reads **69 ported / 0
+deficient / 15 dropped = 84**.
 
 - Batch E closed the personal surfaces (draft list, watchlist, reviews,
   profiles and feeds), F the season surfaces (cinemas, the season leaderboard,
@@ -821,11 +823,11 @@ Remaining, grouped as the plan batches them:
 | **F** — season surfaces     | T2, T3, T4, T10   | Films in cinemas, the live banner, the season leaderboard, league standings                                |
 | **G** — admin and reference | T26, T27, T43–T49 | Show and category admin, notifications, the rules and scoring pages, the active-season and relink controls |
 | **H** — the calendar feed   | T25               | `/api/ical/[...slug]`                                                                                      |
-| **Phase 14**                | T21, T31, T32     | Realtime. Deferred by D23 and not on the cutover path                                                      |
+| **Phase 14**                | T21, T31, T32     | Realtime. Deferred by D23 — all three closed in Phase 14 (T21 by P14.T10/T11, T31 by tranche 1, T32 by P14.T12/T13) |
 
 - [x] **P10.T1** Join a league from an invite link — _batch B_
 - [x] **P10.T2** Films in cinemas now — _batch F_
-- [ ] **P10.T3** "Watch live" banner during a ceremony — _deficient; deferred to phase 14 with the live page (D48)_
+- [x] **P10.T3** "Watch live" banner during a ceremony — _closed by P14.T8 (`f51b4ee`), `components/awards/LiveBanner.tsx`. `awards_active` only, deviating from the source (D118)_
 - [x] **P10.T4** Season leaderboard by year — _batch F_
 - [x] **P10.T5** A film's page — synopsis, cast, crew, trailers, images, ratings, box office — _batch D_
 - [x] **P10.T6** A film's points by award show, and its average draft position — _batch D_
@@ -843,7 +845,7 @@ Remaining, grouped as the plan batches them:
 - [x] **P10.T18** Stage next season's draft — _batch C_
 - [x] **P10.T19** League settings — _batch C_
 - [x] **P10.T20** A private ranked pre-draft list — add films, drag to rank, mark taken or unavailable — _batch E_
-- [ ] **P10.T21** Live board updates while the draft runs — _deferred to phase 14 (D23)_
+- [x] **P10.T21** Live board updates while the draft runs — _closed by P14.T10 (`e73836e`) and P14.T11 (`91560e3`), gated by P14.T14. While the league is `active` (D116)_
 - [x] **P10.T22** Every award show — _phase 8_
 - [x] **P10.T23** One show: its categories, point values, nominees and winners — _phase 8_
 - [x] **P10.T24** Past seasons of a show — _phase 8_
@@ -853,8 +855,8 @@ Remaining, grouped as the plan batches them:
 - [x] **P10.T28** Admin: enter nominations — _phase 8_
 - [x] **P10.T29** Admin: pick winners during the ceremony — _phase 8_
 - [x] **P10.T30** Admin: which shows still need entering — _phase 8_
-- [ ] **P10.T31** Watch results land in real time, with league standings beside them — _deferred to phase 14 (D23)_
-- [ ] **P10.T32** The admin's selection drives every watcher's screen — _deferred to phase 14 (D23)_
+- [x] **P10.T31** Watch results land in real time, with league standings beside them — _closed by Phase 14 tranche 1 (gate `016449a`); the matrix was not updated at the time and P14.T14 did it_
+- [x] **P10.T32** The admin's selection drives every watcher's screen — _closed by P14.T12 (`b6d9dd3`) and P14.T13 (`b53eb22`), gated by P14.T14. A persisted column, not a message (D117)_
 - [x] **P10.T33** Your watched films, paged and sorted — _batch E_
 - [x] **P10.T34** Mark a film watched, or unmark it — _batch D_
 - [x] **P10.T35** Progress against this year's nominees, by show — _batch E_
@@ -873,7 +875,7 @@ Remaining, grouped as the plan batches them:
 - [x] **P10.T48** Admin: set the active season — _batch G_
 - [x] **P10.T49** Admin: relink an account — _batch G_
 - [x] **P10.T50** A 500 page — _batch A_
-- [x] **Phase 10 complete.** Every row closed except the four Phase 14 deferrals — T3, T21, T31 and T32. `PARITY.md` reads **65 ported / 4 deficient / 15 dropped = 84**.
+- [x] **Phase 10 complete.** Every row closed except the four Phase 14 deferrals — T3, T21, T31 and T32. `PARITY.md` read **65 ported / 4 deficient / 15 dropped = 84** at the time; Phase 14 has since closed all four and it now reads **69 ported / 0 deficient / 15 dropped = 84**.
 
 ---
 
@@ -2188,6 +2190,16 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 ### Phase 12 notes
 
+- 🔴 **The parity matrix is clean as of 2026-09-13, so T2's manual pass starts
+  from zero known gaps.** Phase 14's two tranches closed the last four rows
+  (P10.T3, T21, T31, T32) and `docs/PARITY.md` reads **69 ported / 0 deficient
+  / 15 dropped = 84**. The parallel run is therefore comparing two applications
+  that are meant to do the same things, rather than working around a list of
+  four that were known not to — and anything the manual pass turns up is a new
+  finding, not a carried-forward deferral. What is still *deliberately*
+  different is the fifteen dropped rows, each with its reason in the matrix;
+  read those before filing a parity bug against one of them.
+
 - 🔴 **`e2e/award-shows.spec.ts`'s "a show wears its mark, served from Blob" test
   reads production-copy data** — it navigates to `/award-shows/oscars` and
   asserts the real Oscars row carries a Blob-hosted logo, rather than seeding
@@ -2205,7 +2217,9 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 ## Phase 14 — Realtime
 
-✅ **Phase complete.** The gate is met: two concurrent clients, a winner crossing between them live, 1920 in both schemes in TV mode, 1440 and 390, and the stream closing when nobody is looking. Full e2e suite green (186 passed / 53 skipped, the skips pre-existing `VISUAL=1` and Clerk-key opt-outs).
+✅ **Tranche 1 complete.** The gate is met: two concurrent clients, a winner crossing between them live, 1920 in both schemes in TV mode, 1440 and 390, and the stream closing when nobody is looking. Full e2e suite green (186 passed / 53 skipped, the skips pre-existing `VISUAL=1` and Clerk-key opt-outs).
+
+✅ **Tranche 2 complete (2026-09-13), and with it the phase.** The last three parity rows are closed — the dashboard's route into a ceremony, the board moving while the draft runs, and the admin's selection reaching every watcher — plus four owner-reported items. `docs/PARITY.md` now reads **69 ported / 0 deficient / 15 dropped = 84**, so **parity no longer blocks the cutover**. The gate numbers are under the tranche 2 task list below.
 
 - ✅ **T0 is answered (2026-09-12): SSE, the server polling Postgres, no broker
   and no vendor.** Spec: `docs/superpowers/specs/2026-09-12-realtime-transport.md`.
@@ -2243,6 +2257,38 @@ Plan: `docs/superpowers/plans/2026-09-13-phase-14-the-live-room.md`
 - [x] P14.T4 — the client, its reconnect, and its stop conditions — `c792554`. `LiveRoom`, a client component holding the grid and the rosters; the header stays server-rendered because nothing in it moves during a ceremony. The server's frame is the initial value, so the first paint is still the server's and a crawler sees the whole room. **Measured, not estimated**: a hidden tab opens **0** connections over 10 minutes, which is the number the free tier rests on and is falsifiable — a connection left open would have reconnected. The visible-tab figure was measured as **3 in 10 minutes** at the 290s lifetime and is now arithmetic rather than a second measurement: at D115's 50s lifetime the cadence is ~53s, so a watched idle tab reconnects roughly **11 times in 10 minutes**. A winner reached a second window **1,295 ms** after the row was written, with no navigation. 🔴 Eight mutations were run and **one survived**: dropping the `document.hidden` check at mount left a tab that starts hidden — a restored browser, a background-opened tab — holding a stream nobody is looking at, with no `visibilitychange` ever to close it. A test was added, the mutation then went red
 - [x] P14.T6 — TV mode is chrome only — `739bc53`. `?tv=1` in the URL rather than component state, so the link is shareable, survives a reload three hours into a ceremony, and lets the **server** render the mode into the first paint — no chrome flashing on before something hides it. The control is a plain link in the page's own header, identically placed in both directions, and it stays on screen in TV mode because a reader on a television has a remote, not an Escape key. See **D112** for why the mechanism is one unlayered CSS rule and not `useSearchParams()`. Measured at 1920 in a production build: +216px of width, −60px of top, **height identical to the decimal** and `scrollWidth` 1920 in both modes
 - [x] P14.T7 — the gate — `016449a`. Six tests: two contexts on one database, an admin marking a winner in one and the viewer's page moving 1 of 2 → 2 of 2 in the other with **no navigation** (asserted three ways — the frame's navigation count, a token planted on `window` surviving, and exactly one reveal mark, so a reload would fail it); the signed-out stream read **off the wire** rather than from the DOM, pinned and unpinned; the hidden tab; the three widths with no sideways scroll; 1920 in both schemes with a vacuity guard that the two grounds actually differ. Six mutations, all red — deleting the service's signed-out guard brought back a frame naming three real leagues. 🔴 The hidden-tab window was **not** waited out; see **D113**
+
+Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-parity-rows.md`
+
+- [x] P14.T8 — the dashboard's route into a live ceremony — `f51b4ee`. `components/awards/LiveBanner.tsx` and `liveNow` on `lib/services/dashboard.ts`. 🔴 `awards_active` **only**, deviating from the source, which banner'd on `nom_active` too and linked to a page with nothing live on it (**D118**). Closes **P10.T3**
+- [x] P14.T9 — one definition of what the league page shows — `432575d`. `lib/services/league-view.ts`, a pure move out of `app/(app)/leagues/[id]/page.tsx`, so the page and the stream cannot disagree about arithmetic a member reads as truth
+- [x] P14.T10 — the board as a stream — `e73836e`. `app/api/leagues/[id]/board/stream`, structurally the live route: Node runtime, `maxDuration = 60`, 2s poll, 50s self-close, complete state per frame, 204 off draft
+- [x] P14.T11 — the board moves while the draft runs — `91560e3`. `components/leagues/LeagueBoardRoom.tsx`, one `EventSource`, four stop conditions. Closes **P10.T21**
+- [x] P14.T12 — the admin's choice has somewhere to live — `b6d9dd3`. `events.focused_award_id` plus `actions/awards/focus-award.ts` and the "Put on screen" control. A column, not a message (**D117**)
+- [x] P14.T13 — the focused category on every watcher's screen — `b53eb22`. A carmine "On screen now" chip and a scroll-into-view that excludes the first render. Closes **P10.T32**
+- [x] P14.T14 — the gate, and the matrix — this commit. `e2e/league-board-live.spec.ts` (3 tests) and one case added to `e2e/live.spec.ts`
+- [x] P14.T15 — the invite goes in a dialog — `6d9c71e`, merged at `e6b595e`. Owner-reported: a `<details>` in a flex row of 44px controls pushed its siblings around when opened. Native `<dialog>` + `showModal()`, reversing P17.T30 (**D119**)
+- [x] P14.T16 — a top bar on a phone, carrying the wordmark — `348aa0c`, merged at `9713efe`. Owner's call; the full lockup in a 44px sticky strip below `xl`, and the mark removed from `TabBar` rather than hidden (**D120**)
+- [x] P14.T17 — the auth form's focus ring is clipped — `8325cd3`. `overflow: visible` on Clerk's `cardBox`; the clip was horizontal only, and the plan's second edit was a no-op. 🔴 The e2e case it specified lives in a file that is **skipped in every default run**, so it is split — the geometry in `e2e/auth.spec.ts` (skipped, and says so), the token in `theme/clerk.test.ts` (runs every commit)
+- [x] P14.T18 — characters to round out the groups — `7406146`. 49 names from the old app; one press seats one character, by the owner's explicit instruction. Character-vs-person is list membership, not a column, and the cutover reason is written down (**D121**)
+
+**Tranche 2 gate — met.** Measured 2026-09-13 against executor-1 (5433) on port 3011, in a production build:
+
+- `e2e/league-board-live.spec.ts`, **3 passed**, run three times sequentially — 3/3, 3/3, 3/3, with `retries: 0`, so nothing here passed on a retry. The gate test (owner drafts in the console, a **signed-out** watcher's board moves) completed in **2.8s, 2.8s, 2.8s** — seed, two contexts, the pick and the assertion inside three seconds, so the frame's own latency is well under that. No navigation, asserted twice: `page.on('load')` count unchanged and a token planted on `window` still there.
+- `e2e/live.spec.ts`, **25 passed** including the new "the admin's selection moves every watcher's screen" (**4.5s**), run three times sequentially — 25/25, 25/25, 25/25. The mark arrives in the second context and *leaves* again when the admin presses the control a second time, both without a document load.
+- Four mutations, all red, each at the assertion it was aimed at: a spliced `viewer.reload()` → the document-count assertion; `LeagueBoardRoom`'s effect returning before it opens → the 20s board expectation, and separately the budget test's request count; the route's 204 condition forced false → the budget test's `status === 204`; `LiveRoom` passing `onScreen={false}` → the focus case, with the other 24 tests in the file still green.
+- Full unit suite, `E2E_TEST_AUTH` unset: **174 files, 2057 tests, 0 failed**. Full e2e: **191 passed / 54 skipped / 0 failed** (3.3m), taken at `147cb08`.
+- `docs/PARITY.md` recounted from the table: **69 ported / 0 deficient / 15 dropped = 84**.
+
+🔴 **The plan's third mutation, as written, could not fail.** "Change the route's 204 condition to always stream" was aimed at "a watcher of a finished league opens no stream" — but the client never asks: `LeagueBoardRoom` returns before constructing an `EventSource` when the server's own frame says the league is not drafting, so widening the *route* leaves a request-counting test perfectly green. Two independent guards, and the plan's test only covered one. The test now asserts both, and each mutation reddens its own half (**D116**).
+
+🔴 **The tranche's own specs could not share `e2e/live.spec.ts`'s scaffolding, and the plan asked them to.** Those helpers are module-local and keyed on one `TAG` whose teardown deletes everything matching it, while `playwright.config.mts` is `fullyParallel` at four workers — so a shared tag would have the new file's `afterEach` delete the live spec's show mid-flow. The new file carries its own `TAG`/`YEAR` and its own copies, which is what every other spec here does.
+
+🔴 **The plan's recount command overcounts by one per verdict.** `grep -c '| **ported** |' docs/PARITY.md` also matches the "Where it stands" table, which spells its own verdicts the same way; it reported 66 / 5 / 16 = 87 against a file that said 84 and was right. `PARITY.md` now carries the five-cell `awk` recount instead.
+
+🔴 **`e2e/journeys/01-draft-a-season.spec.ts` was left behind by P14.T18** and is fixed here. T18 relabelled the placeholder field ("someone without an account" → "Add a player who hasn't registered") and updated `e2e/season-setup.spec.ts`, which its commit message records finding; the journey uses the same control and was not in either file list, so it spent **180 seconds timing out** on a locator matching nothing in every full run. One locator.
+
+🔴 **The checkout was not exclusive while this ran, and an uncommitted diff was lost to it.** Six commits (`3288dd5` through `812ee31`), a second worktree on `p14-confirm`, and a `git reset --hard HEAD~1` in the main checkout all landed between 20:30 and 21:15 while P14.T14 was measuring and writing. The reset discarded this task's unstaged edits to `docs/PARITY.md`, `docs/DECISIONS.md`, `docs/PROGRESS.md`, `e2e/live.spec.ts` and `e2e/journeys/01-draft-a-season.spec.ts`; only the untracked new spec survived, and everything was re-applied from context. It is the same hazard AGENTS.md already records for the index and the stash, at one more level: **`reset --hard` is a property of the checkout, not of a task**. Nothing here is a criticism of the recovery, which was reported immediately — the lesson written down is the one that would have prevented the loss: commit each coherent piece as soon as it exists rather than carrying a large uncommitted diff through a long measurement.
 
 ### Phase 14 notes
 

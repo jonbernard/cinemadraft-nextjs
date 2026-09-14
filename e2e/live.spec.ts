@@ -844,6 +844,96 @@ test.describe('live show', () => {
     }
   });
 
+  test('the admin’s selection moves every watcher’s screen', async ({
+    page,
+    browser,
+  }) => {
+    /**
+     * 🔴 The P14 tranche-2 gate for **P10.T32**. The source app pushed
+     * `sendSelectedAward` down a socket; there is no broker here, so the
+     * selection is a persisted column on the event (P14.T12, D117) and it
+     * travels on the same stream every other frame does. What this proves is
+     * that it arrives — on a screen in another browser context, with no
+     * navigation — and that taking it down travels too, which is the half an
+     * "it appeared" test would leave unguarded.
+     */
+    test.setTimeout(60_000);
+
+    const { abbreviation } = await seedShow();
+    // One identity, promoted: this test is about two *clients*, and a second
+    // seeded account would only add a thing to clean up.
+    const userId = await signInAsMember(page);
+    await withDb(async (query) => {
+      await query("update users set role = 'admin' where id = $1", [userId]);
+    });
+
+    const audience = await browser.newContext();
+    const viewer = await audience.newPage();
+    try {
+      // 🔴 Documents, not navigations — `framenavigated` also fires for the
+      // same-document history entry the App Router writes while it hydrates.
+      let documents = 0;
+      viewer.on('load', () => {
+        documents += 1;
+      });
+
+      await viewer.goto(`/live/${abbreviation}?year=${YEAR}`);
+      const sound = viewer.getByRole('listitem').filter({ hasText: `${TAG} Best Sound` });
+      await expect(sound).toHaveCount(1);
+      // Not vacuous: nothing is up when the reader arrives, so the chip has to
+      // actually arrive rather than having been there all along.
+      await expect(viewer.getByText('On screen now')).toHaveCount(0);
+      const settled = documents;
+
+      // Backstage. Both categories carry the control; this picks the second, so
+      // an implementation that marked the first category unconditionally fails.
+      await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+      const control = page
+        .locator('section')
+        .filter({
+          has: page.getByRole('heading', { name: `${TAG} Best Sound`, exact: true }),
+        })
+        .getByRole('button', { name: /on screen/i });
+      await control.click();
+
+      // The column is actually written before anything is claimed about the
+      // other screen: the row, not the button's own optimistic state.
+      await expect
+        .poll(() =>
+          withDb(async (query) => {
+            const rows = (await query(
+              `select e.focused_award_id = a.id as focused
+                 from events e
+                 join awards a on a.event_id = e.id
+                where e.abbreviation = $1 and a.name = $2`,
+              [abbreviation, `${TAG} Best Sound`],
+            )) as { focused: boolean | null }[];
+            return rows[0]?.focused ?? false;
+          }),
+        )
+        .toBe(true);
+
+      // And the other client carries it. The poll waits on the stream's 2s
+      // tick, which is the only thing that can deliver this. 20s rather than
+      // the 10 the plan sketched: a frame can land just after a reconnect, and
+      // the gate above already proves the latency is ~1.3s.
+      await expect(sound.getByText('On screen now')).toBeVisible({ timeout: 20_000 });
+      await expect(viewer.getByText('On screen now')).toHaveCount(1);
+
+      // Pressing the one that is already up takes it down — "nothing on screen"
+      // is the state between announcements, and it has to travel too.
+      await expect(control).toHaveText('On screen');
+      await control.click();
+      await expect(viewer.getByText('On screen now')).toHaveCount(0, {
+        timeout: 20_000,
+      });
+
+      expect(documents).toBe(settled);
+    } finally {
+      await audience.close();
+    }
+  });
+
   test('the signed-out stream carries no seat names, and the pinned one does', async ({
     page,
     browser,

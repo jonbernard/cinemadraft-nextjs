@@ -114,7 +114,7 @@ T8 is independent and small — do it first so there is a green commit before th
 
 🔴 **The banner is for signed-out readers too.** `/` is public (D44) and so is `/live/[abbr]` (P17.T16). It reads nothing about the reader, so there is nothing to withhold.
 
-- [ ] **Step 1: Write the failing service test**
+- [x] **Step 1: Write the failing service test**
 
 Add to `lib/services/dashboard.test.ts`, following the mocking style already in that file:
 
@@ -135,7 +135,7 @@ it('ignores a show that is only announcing nominations', async () => {
 
 Set the fixture up so the first case has an event with `awardsActive: true` and the second has one with `nomActive: true, awardsActive: false`. Read the top of `dashboard.test.ts` first and match how it stands the repositories up — do not invent a second mocking idiom in a file that already has one.
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```bash
 npx vitest run lib/services/dashboard.test.ts
@@ -143,7 +143,7 @@ npx vitest run lib/services/dashboard.test.ts
 
 Expected: FAIL — `liveNow` is `undefined`, not an object / not null.
 
-- [ ] **Step 3: Add `liveNow` to the service**
+- [x] **Step 3: Add `liveNow` to the service**
 
 In `lib/services/dashboard.ts`, beside `NowPlayingFilm`:
 
@@ -179,7 +179,7 @@ const liveNow =
 
 Import `eventRepository` from `@/lib/repositories/events`.
 
-- [ ] **Step 4: Run the service test and watch it pass**
+- [x] **Step 4: Run the service test and watch it pass**
 
 ```bash
 npx vitest run lib/services/dashboard.test.ts
@@ -187,7 +187,7 @@ npx vitest run lib/services/dashboard.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Write the failing component test**
+- [x] **Step 5: Write the failing component test**
 
 `components/awards/LiveBanner.test.tsx`:
 
@@ -215,7 +215,7 @@ describe('LiveBanner', () => {
 });
 ```
 
-- [ ] **Step 6: Run it and watch it fail**
+- [x] **Step 6: Run it and watch it fail**
 
 ```bash
 npx vitest run components/awards/LiveBanner.test.tsx
@@ -223,7 +223,7 @@ npx vitest run components/awards/LiveBanner.test.tsx
 
 Expected: FAIL — module not found.
 
-- [ ] **Step 7: Write the component**
+- [x] **Step 7: Write the component**
 
 `components/awards/LiveBanner.tsx`:
 
@@ -278,7 +278,7 @@ export function LiveBanner({
 }
 ```
 
-- [ ] **Step 8: Run the component test and watch it pass**
+- [x] **Step 8: Run the component test and watch it pass**
 
 ```bash
 npx vitest run components/awards/LiveBanner.test.tsx
@@ -286,11 +286,11 @@ npx vitest run components/awards/LiveBanner.test.tsx
 
 Expected: PASS.
 
-- [ ] **Step 9: Write the story**
+- [x] **Step 9: Write the story**
 
 `components/awards/LiveBanner.stories.tsx`, matching the format of `components/awards/LiveCountdown.stories.tsx` exactly (read it first). One story, `OnAir`, with the Oscars at 2026.
 
-- [ ] **Step 10: Render it on the dashboard**
+- [x] **Step 10: Render it on the dashboard**
 
 In `app/(app)/page.tsx`, import `LiveBanner` and place it as the **first** thing inside the page's top-level container, above the existing header:
 
@@ -306,7 +306,7 @@ In `app/(app)/page.tsx`, import `LiveBanner` and place it as the **first** thing
 
 Read the page's existing container and heading structure before inserting, and match its gap rhythm rather than adding a margin.
 
-- [ ] **Step 11: Mutate, and watch a test go red**
+- [x] **Step 11: Mutate, and watch a test go red**
 
 Change the filter in `dashboard.ts` from `event.awardsActive` to `event.nomActive || event.awardsActive` — the source's rule. Run `npx vitest run lib/services/dashboard.test.ts`. Expected: the "ignores a show that is only announcing nominations" case FAILS. Restore.
 
@@ -314,7 +314,7 @@ Then change the link's `href` to drop `?year=`. Run `npx vitest run components/a
 
 If either mutation does **not** go red, the test is not testing what it claims — fix the test, not the mutation, and say so in the commit message.
 
-- [ ] **Step 12: Full local verification**
+- [x] **Step 12: Full local verification**
 
 ```bash
 npm run lint && npm run typecheck && npx vitest run lib components app
@@ -322,7 +322,7 @@ npm run lint && npm run typecheck && npx vitest run lib components app
 
 Expected: clean, and no new failures.
 
-- [ ] **Step 13: Commit**
+- [x] **Step 13: Commit**
 
 ```bash
 git add components/awards/LiveBanner.tsx components/awards/LiveBanner.test.tsx \
@@ -418,7 +418,7 @@ export async function getLeagueBoardView(
 
 🔴 **`viewerSeated` is a separate field from `viewerRoster.length`, deliberately.** The page has a branch for a member who holds a seat with no picks (`page.tsx:340-348`), added because P19.T2 caught the page telling a seated owner "you do not hold a seat this season" while their name was in the standings table beside it. Collapsing the two fields reintroduces exactly that bug.
 
-- [ ] **Step 1: Write the failing service test**
+- [x] **Step 1: Write the failing service test**
 
 `lib/services/league-view.test.ts`. Mock `getLeagueBoard` and assert the derivation, not the database:
 
@@ -462,7 +462,7 @@ it('is drafting only while the league says active', async () => {
 
 Give the mock a board with: seat 1 (user 42, picks 30 and 10, total 40), seat 2 (user 43, no picks, total 0), seat 3 (dummy, `userId: null`, `draftId: 9`, total 40), and `status: 'active'`.
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```bash
 npx vitest run lib/services/league-view.test.ts
@@ -470,7 +470,7 @@ npx vitest run lib/services/league-view.test.ts
 
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Write the service by moving the code**
+- [x] **Step 3: Write the service by moving the code**
 
 Create `lib/services/league-view.ts` with the types above and:
 
@@ -571,7 +571,7 @@ export async function getLeagueBoardView(
 
 🔴 Read `app/(app)/leagues/[id]/page.tsx:100-215` and `:400-440` before writing this and carry the **existing** `viewerSeatId` resolution across verbatim — the page may resolve it differently from the naive version above (it handles the group-scoped case). If the page's version differs, the page's version is correct and this step is to move it, not to replace it.
 
-- [ ] **Step 4: Run the service test and watch it pass**
+- [x] **Step 4: Run the service test and watch it pass**
 
 ```bash
 npx vitest run lib/services/league-view.test.ts
@@ -579,13 +579,13 @@ npx vitest run lib/services/league-view.test.ts
 
 Expected: PASS.
 
-- [ ] **Step 5: Repoint the page**
+- [x] **Step 5: Repoint the page**
 
 In `app/(app)/leagues/[id]/page.tsx`, replace the `getLeagueBoard` call and the four inline derivations with one `getLeagueBoardView(leagueId, season, user?.id ?? null)`, and rename the local references (`board.groups` → `view.groups`, `standings` → `view.standings`, and so on). `getLeagueSeasons`, `canManageLeague`, `inviteBase` and the metadata function stay exactly as they are.
 
 `canManageLeague(view, user?.id)` takes something with `ownerIds` — `LeagueBoardView` has it, so the call is unchanged. Verify by typecheck rather than by reading.
 
-- [ ] **Step 6: Prove nothing changed**
+- [x] **Step 6: Prove nothing changed**
 
 ```bash
 npm run typecheck && npx vitest run lib app components
@@ -594,13 +594,13 @@ npm run test:e2e -- e2e/journeys/02-*.spec.ts
 
 Expected: all green. The journey suite renders this page against real rows; if the refactor changed anything a reader sees, it fails here. If you cannot map a journey file to this page, run the whole e2e suite instead — `npm run test:e2e` — and compare the summary line to the last known-good run.
 
-- [ ] **Step 7: Mutate, and watch a test go red**
+- [x] **Step 7: Mutate, and watch a test go red**
 
 Change `share` to `pick.points / viewerSeat.total` with no zero guard. Run `npx vitest run lib/services/league-view.test.ts`. Expected: the NaN case FAILS. Restore.
 
 Change `isViewer` to `seat.userId === userId` without the null guard. Expected: the dummy-seat case FAILS. Restore.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add lib/services/league-view.ts lib/services/league-view.test.ts \
@@ -637,7 +637,7 @@ Message starts `P14.T9: one definition of what the league page shows`. Say in th
 
 `ponytail:` the frame is the whole board including every pick's ledger — around 100KB for a sixteen-seat league. Fine for a league-sized audience at one write per pick; if a ceremony-sized audience ever reads a board, diff on a cheap digest before serialising.
 
-- [ ] **Step 1: Write the failing route test**
+- [x] **Step 1: Write the failing route test**
 
 `app/api/leagues/[id]/board/stream/route.test.ts`. Read `app/api/live/[abbr]/stream/route.test.ts` first and reuse its `collect()`, `settle()` and fake-timer scaffolding verbatim — including `// @vitest-environment node` on line 1. Mock `@/lib/auth` and `@/lib/services/league-view`. The cases:
 
@@ -668,7 +668,7 @@ it('answers 404 for a league id that is not a positive integer', async () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```bash
 npx vitest run "app/api/leagues/[id]/board/stream/route.test.ts"
@@ -676,7 +676,7 @@ npx vitest run "app/api/leagues/[id]/board/stream/route.test.ts"
 
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Write the route**
+- [x] **Step 3: Write the route**
 
 Copy `app/api/live/[abbr]/stream/route.ts` to the new path and make the four changes. Keep `runtime`, `maxDuration`, `POLL_MS`, `HEARTBEAT_BEATS` and `LIFETIME_MS` at exactly the same values, and keep their docstrings — those comments are D110's and D115's reasoning and it applies here identically.
 
@@ -706,7 +706,7 @@ The 204:
 if (!view.isDrafting) return new Response(null, { status: 204 });
 ```
 
-- [ ] **Step 4: Run the route test and watch it pass**
+- [x] **Step 4: Run the route test and watch it pass**
 
 ```bash
 npx vitest run "app/api/leagues/[id]/board/stream/route.test.ts"
@@ -714,7 +714,7 @@ npx vitest run "app/api/leagues/[id]/board/stream/route.test.ts"
 
 Expected: PASS.
 
-- [ ] **Step 5: Open the door in the proxy**
+- [x] **Step 5: Open the door in the proxy**
 
 `test/route-protection.ts` enumerates **public** routes; everything else is protected, and its own enumeration test goes red demanding a decision for a route that is on neither list. Add, beside the `/api/live/[abbr]/stream` entry:
 
@@ -732,7 +732,7 @@ Expected: PASS.
   '/api/leagues/[id]/board/stream',
 ```
 
-- [ ] **Step 6: Run the protection test**
+- [x] **Step 6: Run the protection test**
 
 ```bash
 npx vitest run test/route-protection.test.ts
@@ -740,7 +740,7 @@ npx vitest run test/route-protection.test.ts
 
 Expected: PASS. If it was already red before this step, that is the mechanism working — it demanded a decision for the new route.
 
-- [ ] **Step 7: Mutate, and watch tests go red**
+- [x] **Step 7: Mutate, and watch tests go red**
 
 Change the 204 condition to `if (false)`. Run the route test. Expected: the "not drafting" case FAILS. Restore.
 
@@ -748,7 +748,7 @@ Delete the `'/api/leagues/[id]/board/stream'` entry. Run `npx vitest run test/ro
 
 Delete `clearInterval(poll)` from `stop()`. Run the route test. Expected: the disconnect case FAILS on the polling-count assertion. Restore. 🔴 If it does **not** fail, the leak test is not testing the leak — fix it before committing, because that assertion is the one standing between this feature and the free tier.
 
-- [ ] **Step 8: Guard and full verification**
+- [x] **Step 8: Guard and full verification**
 
 ```bash
 bash scripts/layering.sh && npm run lint && npm run typecheck && npx vitest run
@@ -756,7 +756,7 @@ bash scripts/layering.sh && npm run lint && npm run typecheck && npx vitest run
 
 Expected: clean. `layering.sh` includes the `maxDuration > 60` guard (D115) and must pass.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add "app/api/leagues/[id]/board/stream/route.ts" \
@@ -786,7 +786,7 @@ Message starts `P14.T10: the board as a stream`. Record the `isDrafting`-only bu
 
 🔴 **The header, the season nav and the invite link stay server-rendered.** Nothing in them moves during a draft, and pulling them into a client component would mean `inviteBase()`'s `headers()` read has to cross the boundary. Only the board, the standings and the roster go inside.
 
-- [ ] **Step 1: Write the failing component test**
+- [x] **Step 1: Write the failing component test**
 
 `components/leagues/LeagueBoardRoom.test.tsx`. Read `components/awards/LiveRoom.test.tsx` first and reuse its fake-`EventSource` harness verbatim. Cases — each is one of D111's stop conditions plus the happy path:
 
@@ -818,7 +818,7 @@ it('closes when a frame says the draft has finished', () => {
 it('opens exactly one connection under StrictMode double-invocation', () => {});
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```bash
 npx vitest run components/leagues/LeagueBoardRoom.test.tsx
@@ -826,7 +826,7 @@ npx vitest run components/leagues/LeagueBoardRoom.test.tsx
 
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Write the component**
+- [x] **Step 3: Write the component**
 
 Copy the `useEffect` body of `components/awards/LiveRoom.tsx:161-221` **verbatim** — the `done` latch, the `source !== null` StrictMode guard, the `document.hidden` check inside `open()`, the `readyState` split in `onerror`, the `visibilitychange` listener and its cleanup. Change exactly two things: the gate is `initial.isDrafting` instead of `initial.onAir`, and the mid-stream stop reads `next.isDrafting`. The dependency array is `[streamUrl, initial.isDrafting]`.
 
@@ -836,7 +836,7 @@ There is no `justDecided` equivalent and no reveal: a pick landing on a board is
 
 Render: the roster/standings row and the groups, exactly as `page.tsx:320-440` renders them today, moved across. Keep every comment; they carry P17.T31's and P19.T2's findings.
 
-- [ ] **Step 4: Run the component test and watch it pass**
+- [x] **Step 4: Run the component test and watch it pass**
 
 ```bash
 npx vitest run components/leagues/LeagueBoardRoom.test.tsx
@@ -844,7 +844,7 @@ npx vitest run components/leagues/LeagueBoardRoom.test.tsx
 
 Expected: PASS.
 
-- [ ] **Step 5: Wire the page**
+- [x] **Step 5: Wire the page**
 
 In `app/(app)/leagues/[id]/page.tsx`, replace the roster/standings/groups JSX with:
 
@@ -869,7 +869,7 @@ with, above the return:
 const streamUrl = `/api/leagues/${view.leagueId}/board/stream?year=${view.year}`;
 ```
 
-- [ ] **Step 6: Mutate, and watch tests go red**
+- [x] **Step 6: Mutate, and watch tests go red**
 
 Remove the `document.hidden` check from `open()`. Run the component test. Expected: the already-hidden case FAILS. Restore. 🔴 This is the mutation that survived in tranche 1 — if it does not fail here, the test is wrong.
 
@@ -877,13 +877,13 @@ Change the dependency array to `[streamUrl, view.isDrafting]`. Expected: a test 
 
 Change the `onerror` handler to reopen on `CLOSED`. Expected: "does not reopen after a refusal" FAILS. Restore.
 
-- [ ] **Step 7: Full local verification**
+- [x] **Step 7: Full local verification**
 
 ```bash
 npm run lint && npm run typecheck && npx vitest run && bash scripts/layering.sh
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add components/leagues/LeagueBoardRoom.tsx components/leagues/LeagueBoardRoom.test.tsx \
@@ -910,7 +910,7 @@ Message starts `P14.T11: the board moves while the draft runs`. Say it closes P1
 
 🔴 **Cutover hazard, and it must be written into Phase 13.** `PLAN.md`'s Phase 13 T2 is a final `pg_dump` from Heroku into Neon. That dump has no `focused_award_id`, exactly as it has no Blob URLs in `events.image` — which is why T3 exists. Add a sibling note to Phase 13 in this task (see step 9): after the final restore, the migrations must be re-applied before the app is pointed at it, or this column is gone and every read of it fails. This is the same class of defect T3 records, found the same way, and it is cheaper to write down now than to find during a cutover.
 
-- [ ] **Step 1: Write the migration**
+- [x] **Step 1: Write the migration**
 
 `prisma/migrations/20260913120000_event_focused_award/migration.sql`:
 
@@ -938,7 +938,7 @@ Add to `prisma/schema.prisma`, in `model Event` after `awardsDuration`:
   focusedAwardId Int?      @map("focused_award_id")
 ```
 
-- [ ] **Step 2: Apply it and regenerate**
+- [x] **Step 2: Apply it and regenerate**
 
 ```bash
 npx prisma migrate deploy && npx prisma generate
@@ -946,7 +946,7 @@ npx prisma migrate deploy && npx prisma generate
 
 Expected: one migration applied, client regenerated. 🔴 Against your **local** database only — `DATABASE_URL` must point at 5433 or 5434. Never Neon from a local run.
 
-- [ ] **Step 3: Write the failing repository and action tests**
+- [x] **Step 3: Write the failing repository and action tests**
 
 In `lib/repositories/events.test.ts`, add a case asserting `findByAbbreviation` returns `focusedAwardId` and that `setFocusedAward` round-trips a value and a null.
 
@@ -960,7 +960,7 @@ it('rejects an award id that is not a positive integer', async () => { /* INVALI
 it('revalidates the show page so the admin sees their own control move', async () => {});
 ```
 
-- [ ] **Step 4: Run them and watch them fail**
+- [x] **Step 4: Run them and watch them fail**
 
 ```bash
 npx vitest run lib/repositories/events.test.ts actions/awards/focus-award.test.ts
@@ -968,7 +968,7 @@ npx vitest run lib/repositories/events.test.ts actions/awards/focus-award.test.t
 
 Expected: FAIL.
 
-- [ ] **Step 5: Carry the column through the repository**
+- [x] **Step 5: Carry the column through the repository**
 
 In `lib/repositories/events.ts`: add `focusedAwardId` to the `Event` type, to `SELECT`, and to `toEvent`. Add:
 
@@ -987,7 +987,7 @@ async setFocusedAward(eventId: number, awardId: number | null): Promise<void> {
 
 🔴 Do **not** add `focusedAwardId` to `EventUpdate`. `actions/admin/update-event.ts` is an explicit field whitelist that closed the source's mass assignment; the live selection is a different act with a different control and it gets its own action.
 
-- [ ] **Step 6: Write the action**
+- [x] **Step 6: Write the action**
 
 `actions/awards/focus-award.ts`:
 
@@ -1037,7 +1037,7 @@ export async function focusAward(input: FocusAwardInput): Promise<ActionResult> 
 }
 ```
 
-- [ ] **Step 7: Carry it into the view**
+- [x] **Step 7: Carry it into the view**
 
 In `lib/services/live.ts`: add to `LiveShowView`
 
@@ -1056,7 +1056,7 @@ and in the returned object: `focusedAwardId: event.focusedAwardId,`. The stream 
 
 Add a case to `lib/services/live.test.ts` asserting the field survives, and to `app/api/live/[abbr]/stream/route.test.ts` asserting a frame carries it.
 
-- [ ] **Step 8: The admin's control**
+- [x] **Step 8: The admin's control**
 
 In `components/admin/CategoryAdmin.tsx`, add an `onScreen: boolean` prop and one control beside the winner buttons:
 
@@ -1078,7 +1078,7 @@ Match the file's existing `useTransition` idiom rather than introducing a second
 
 Add a test to `components/admin/CategoryAdmin.test.tsx` for both label states and `aria-pressed`.
 
-- [ ] **Step 9: Write the cutover note into Phase 13**
+- [x] **Step 9: Write the cutover note into Phase 13**
 
 In `docs/PLAN.md`, in the Phase 13 list, immediately after T3 (the award-logo restore), add:
 
@@ -1098,7 +1098,7 @@ In `docs/PLAN.md`, in the Phase 13 list, immediately after T3 (the award-logo re
 
 🔴 Check the existing `is_active` and `clerk_id` columns against the dump before writing that list — if any of them is already handled somewhere in Phase 13, say so rather than duplicating it, and if the list is longer than the four named, name them all.
 
-- [ ] **Step 10: Run everything and mutate**
+- [x] **Step 10: Run everything and mutate**
 
 ```bash
 npx vitest run lib actions components app
@@ -1110,7 +1110,7 @@ Mutate: change `parsed.data.on ? award.id : null` to `award.id` unconditionally.
 
 Mutate: remove the `requireAdmin` path by changing `authorizeAward(parsed.data.awardId)` to a direct `eventRepository` read. Expected: the non-admin case FAILS. Restore.
 
-- [ ] **Step 11: Verify against a CI-shaped database**
+- [x] **Step 11: Verify against a CI-shaped database**
 
 The new column is in a migration, so a fresh CI database gets it — but prove that rather than assume it:
 
@@ -1125,7 +1125,7 @@ unset DATABASE_URL
 
 Expected: green. 🔴 `npm run test:ci` passing against your own 5433 does not mean CI passes — it holds the restored production copy. This step is the one that reproduces CI.
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add prisma/schema.prisma prisma/migrations/20260913120000_event_focused_award \
@@ -1157,7 +1157,7 @@ Message starts `P14.T12: the admin's choice has somewhere to live`. Record why i
 
 🔴 **The marker is not only colour.** The live page is read from three metres (the 10-foot arithmetic in `LiveAward`'s docstring). A border tint alone subtends nothing at that distance. The category states it in words — an "On screen now" chip in the heading — as well as in colour, which is also what makes it survive a monochrome panel and a screen reader.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `components/awards/LiveAward.test.tsx`:
 
@@ -1200,7 +1200,7 @@ it('scrolls the focused category into view when the selection changes, and not o
 });
 ```
 
-- [ ] **Step 2: Run them and watch them fail**
+- [x] **Step 2: Run them and watch them fail**
 
 ```bash
 npx vitest run components/awards/LiveAward.test.tsx components/awards/LiveRoom.test.tsx
@@ -1208,7 +1208,7 @@ npx vitest run components/awards/LiveAward.test.tsx components/awards/LiveRoom.t
 
 Expected: FAIL.
 
-- [ ] **Step 3: The chip in `LiveAward`**
+- [x] **Step 3: The chip in `LiveAward`**
 
 Add the prop with a docstring saying what it means and why it is carmine, and render, in the category heading beside the point value:
 
@@ -1218,7 +1218,7 @@ Add the prop with a docstring saying what it means and why it is carmine, and re
 
 Import `StatusChip` from `@/components/ui/StatusChip`.
 
-- [ ] **Step 4: The selection in `LiveRoom`**
+- [x] **Step 4: The selection in `LiveRoom`**
 
 Add `focusedAwardId: number | null` to `LiveRoomView`. Pass `onScreen={category.awardId === view.focusedAwardId}` where the categories are mapped. Add, beside the existing effect:
 
@@ -1246,15 +1246,15 @@ useEffect(() => {
 
 Give each category's wrapper `id={`award-${category.awardId}`}`.
 
-- [ ] **Step 5: Pass it through the page**
+- [x] **Step 5: Pass it through the page**
 
 In `app/(app)/live/[abbr]/page.tsx`, include `focusedAwardId: show.focusedAwardId` in the object handed to `LiveRoom`. The page holds both types, so a mismatch is a compile error — which is the drift guard.
 
-- [ ] **Step 6: Story**
+- [x] **Step 6: Story**
 
 Add an `OnScreen` story to `components/awards/LiveAward.stories.tsx`, matching the file's existing format.
 
-- [ ] **Step 7: Run and mutate**
+- [x] **Step 7: Run and mutate**
 
 ```bash
 npx vitest run components app
@@ -1266,7 +1266,7 @@ Mutate: change `onScreen={category.awardId === view.focusedAwardId}` to `onScree
 
 Mutate: seed `scrolled` with `null` instead of `initial.focusedAwardId`. Expected: the "not on first render" case FAILS. Restore. 🔴 If it does not, that assertion is decorative — make it real before committing.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add components/awards/LiveAward.tsx components/awards/LiveAward.test.tsx \
@@ -1292,7 +1292,7 @@ Message starts `P14.T13: the focused category on every watcher's screen`. Say it
 
 🔴 **Two contexts, one database, and the assertion is that the second one never reloaded.** Tranche 1 learned this the expensive way twice: `framenavigated` also fires for the same-document History entries the App Router writes during hydration, so it races hydration and is not a navigation counter — count `page.on('load')`, which fires once per real document. And a test that only proves "the number changed" cannot tell a live update from a reload, which is why the count is asserted.
 
-- [ ] **Step 1: Write the board gate**
+- [x] **Step 1: Write the board gate**
 
 `e2e/league-board-live.spec.ts`:
 
@@ -1324,7 +1324,7 @@ test('a signed-out watcher gets the board and no seat of their own', async ({ br
 });
 ```
 
-- [ ] **Step 2: Add the focus case to `e2e/live.spec.ts`**
+- [x] **Step 2: Add the focus case to `e2e/live.spec.ts`**
 
 ```ts
 test('the admin’s selection moves every watcher’s screen', async ({ browser }) => {
@@ -1336,7 +1336,7 @@ test('the admin’s selection moves every watcher’s screen', async ({ browser 
 });
 ```
 
-- [ ] **Step 3: Run the gate**
+- [x] **Step 3: Run the gate**
 
 ```bash
 npm run test:e2e -- e2e/league-board-live.spec.ts e2e/live.spec.ts
@@ -1344,7 +1344,7 @@ npm run test:e2e -- e2e/league-board-live.spec.ts e2e/live.spec.ts
 
 Expected: all pass. 🔴 Run each file three times **sequentially** — not `--repeat-each`, which collides scratch fixtures across repeats and produces strict-mode violations that look like real failures. A test that passes on Playwright's retry is a race, not a flake, and must be fixed at the cause before this task is done.
 
-- [ ] **Step 4: Mutate, and watch the gate go red**
+- [x] **Step 4: Mutate, and watch the gate go red**
 
 Splice `await viewer.reload();` in before the board assertion. Expected: the document-count assertion FAILS. Remove.
 
@@ -1354,7 +1354,7 @@ Change the route's 204 condition to always stream. Expected: "a watcher of a fin
 
 Record each in the commit message, including any mutation that was caught by an earlier assertion than the one it was aimed at — that makes the later assertion a redundancy rather than the primary guard, and saying so is the point.
 
-- [ ] **Step 5: Full suite**
+- [x] **Step 5: Full suite**
 
 ```bash
 npm run lint && npm run typecheck && npx vitest run && bash scripts/layering.sh
@@ -1363,7 +1363,7 @@ npm run test:e2e
 
 Expected: green, with `E2E_TEST_AUTH` unset for the unit run. Report the actual summary lines, not a summary of them.
 
-- [ ] **Step 6: Update `docs/PARITY.md`**
+- [x] **Step 6: Update `docs/PARITY.md`**
 
 Four rows change verdict to **ported**, each citing the file that closes it:
 
@@ -1384,7 +1384,7 @@ and make the header say what those say. Expected after this task: deficient **0*
 
 Update the "Audited" line and the "Where it stands" prose to say the cutover is no longer blocked on parity.
 
-- [ ] **Step 7: Record the decisions**
+- [x] **Step 7: Record the decisions**
 
 Append to `docs/DECISIONS.md` — 🔴 grep for `'\n| D116 |'` (the row form, with the leading pipe and newline) before appending, not the bare string `D116`, which matches inside other rows' prose and has silently skipped an append before:
 
@@ -1392,11 +1392,11 @@ Append to `docs/DECISIONS.md` — 🔴 grep for `'\n| D116 |'` (the row form, wi
 - **D117** — the admin's selection is a persisted column, not a message; no foreign key; and the cutover consequence (Phase 13 T3b).
 - **D118** — the dashboard banner is `awardsActive` only, deviating from the source, because the stream answers 204 without it.
 
-- [ ] **Step 8: Update `docs/PROGRESS.md`**
+- [x] **Step 8: Update `docs/PROGRESS.md`**
 
 Tick P14.T8–T14, tick the four P10 rows in the Phase 10 section with their closing commits, and add a tranche 2 banner under Phase 14 stating the gate result in the numbers actually observed. Note in the Phase 12 section that the parity matrix is now clean, so T2's manual pass starts from zero known gaps.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add e2e/league-board-live.spec.ts e2e/live.spec.ts \
@@ -1432,7 +1432,7 @@ Message starts `P14.T14: the gate, and the matrix`. Include the real suite summa
 
 🔴 **The credential warning goes inside the dialog**, not next to the trigger. "Anyone with this link can take a seat" is the sentence a person needs when they are about to copy the link, not while they are looking at a button — and leaving it outside is what made the closed control three rows tall.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `components/leagues/InviteDialog.test.tsx`:
 
@@ -1498,7 +1498,7 @@ describe('InviteDialog', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```bash
 npx vitest run components/leagues/InviteDialog.test.tsx
@@ -1506,7 +1506,7 @@ npx vitest run components/leagues/InviteDialog.test.tsx
 
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Write the component**
+- [x] **Step 3: Write the component**
 
 `components/leagues/InviteDialog.tsx`:
 
@@ -1601,7 +1601,7 @@ export function InviteDialog({ url, className }: { url: string; className?: stri
 }
 ```
 
-- [ ] **Step 4: Run the test and watch it pass**
+- [x] **Step 4: Run the test and watch it pass**
 
 ```bash
 npx vitest run components/leagues/InviteDialog.test.tsx
@@ -1609,7 +1609,7 @@ npx vitest run components/leagues/InviteDialog.test.tsx
 
 Expected: PASS.
 
-- [ ] **Step 5: Swap it in and delete the old one**
+- [x] **Step 5: Swap it in and delete the old one**
 
 In `app/(app)/leagues/[id]/page.tsx`, change the import and the one usage from `InviteAction` to `InviteDialog`. Keep the surrounding comment — its reasoning about owners-only and a finished season is unchanged — and add one line to it saying the control is now a dialog and why.
 
@@ -1620,11 +1620,11 @@ ls components/leagues/InviteAction.* 2>/dev/null   # remove any test/story too
 
 🔴 `git rm`, and check for siblings — a deleted component whose story survives breaks the Storybook build, and its test would go on passing against a file nothing renders.
 
-- [ ] **Step 6: Write the story**
+- [x] **Step 6: Write the story**
 
 `components/leagues/InviteDialog.stories.tsx`, matching `components/leagues/InviteLink.stories.tsx`'s format if it exists, otherwise `components/awards/LiveCountdown.stories.tsx`. One story, `Closed`, with a fake uuid — 🔴 a made-up one, never a real league's.
 
-- [ ] **Step 7: Measure the fix in a production build**
+- [x] **Step 7: Measure the fix in a production build**
 
 🔴 **Not `next dev`.** A dev server answers 403 for every `_next/static` chunk on `127.0.0.1`, so a measurement there is of an unstyled page, and the dev-tools indicator has been mistaken for a page element before.
 
@@ -1641,13 +1641,13 @@ const row = document.querySelector('[data-action-row]') ?? /* the flex row holdi
 
 Expected: every child the same height, 44. Open the dialog and read the row's heights again — **identical**, because the dialog is in the top layer. That equality before-and-after is the assertion the report was about; record the actual numbers in the commit message, not the word "fixed".
 
-- [ ] **Step 8: Mutate, and watch a test go red**
+- [x] **Step 8: Mutate, and watch a test go red**
 
 Change `showModal()` to `show()` — the non-modal form. Run the test. Expected: nothing fails, because both open the dialog. 🔴 That means the test does **not** cover the modal-ness, which is the accessibility half. Either add an assertion that does (assert `showModal` was the method called, using the spy the `beforeAll` already installs) or state plainly in the commit message that modal behaviour rests on the manual check in step 7. Do not leave it implied.
 
 Then remove `min-h-11` from the trigger. Expected: the height test FAILS. Restore.
 
-- [ ] **Step 9: Full verification**
+- [x] **Step 9: Full verification**
 
 ```bash
 npm run lint && npm run typecheck && npx vitest run && npm run build
@@ -1656,7 +1656,7 @@ npm run test:e2e -- e2e/journeys/02-*.spec.ts
 
 🔴 Run the e2e journey that seats somebody through an invite, if there is one — `grep -rln "join/" e2e/` finds it. A changed invite control that breaks the join flow is the only way this task can do real damage.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add components/leagues/InviteDialog.tsx components/leagues/InviteDialog.test.tsx         components/leagues/InviteDialog.stories.tsx "app/(app)/leagues/[id]/page.tsx"
@@ -1693,7 +1693,7 @@ Message starts `P14.T15: the invite goes in a dialog`. Record the reversal of P1
 
 🔴 **The full lockup, not `markOnly`.** The complaint is that the mark alone in the bottom bar is not good enough. A top bar is a full-width row, so it holds `<Wordmark size="sm" />` — mark and name — which is what makes it identity rather than a favicon.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `components/shell/TopBar.test.tsx`:
 
@@ -1746,7 +1746,7 @@ describe('TopBar', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and watch it fail**
+- [x] **Step 2: Run it and watch it fail**
 
 ```bash
 npx vitest run components/shell/TopBar.test.tsx
@@ -1754,7 +1754,7 @@ npx vitest run components/shell/TopBar.test.tsx
 
 Expected: FAIL — module not found.
 
-- [ ] **Step 3: Write the component**
+- [x] **Step 3: Write the component**
 
 `components/shell/TopBar.tsx`:
 
@@ -1813,7 +1813,7 @@ export function TopBar() {
 }
 ```
 
-- [ ] **Step 4: Run the test and watch it pass**
+- [x] **Step 4: Run the test and watch it pass**
 
 ```bash
 npx vitest run components/shell/TopBar.test.tsx
@@ -1821,7 +1821,7 @@ npx vitest run components/shell/TopBar.test.tsx
 
 Expected: PASS.
 
-- [ ] **Step 5: Render it in the shell**
+- [x] **Step 5: Render it in the shell**
 
 In `components/shell/AppShell.tsx`, import `TopBar` and render it as the **first child of the content column** — the `<div className="min-w-0 flex-1 …">`, immediately above `<Strip …/>`:
 
@@ -1833,13 +1833,13 @@ In `components/shell/AppShell.tsx`, import `TopBar` and render it as the **first
 
 🔴 For `sticky top-0` to stick, no ancestor may have `overflow: hidden` or a transform. Verify in the browser at step 8, not by reading — this is the single most common reason a sticky element silently behaves as static.
 
-- [ ] **Step 6: Take the mark out of the bottom bar**
+- [x] **Step 6: Take the mark out of the bottom bar**
 
 In `components/shell/TabBar.tsx`, delete the `<Link href="/" aria-label="Cinemadraft, home">` block at `:80-89` and the `Wordmark` import. Rewrite the docstring paragraph at `:26-34`: the measurement stays (it is still why *search and the account control* start at `sm`) but it must now say the identity moved to `TopBar` rather than that it is hidden below `sm`, and that the chrome group is two squares now rather than three.
 
 Update `components/shell/TabBar.test.tsx` — any case asserting the wordmark is in the bar now asserts it is **not**, with a comment pointing at `TopBar`. 🔴 Do not simply delete the case: an assertion that the mark is no longer here is what stops it being added back in two places.
 
-- [ ] **Step 7: Update the TV-mode seam guard**
+- [x] **Step 7: Update the TV-mode seam guard**
 
 `components/awards/TvModeLink.test.tsx:68-79` asserts `data-app-chrome` appears exactly twice in `AppShell.tsx`. It will now appear three times. Change `toHaveLength(2)` to `toHaveLength(3)` and rewrite the comment above it to name **four** elements: the rail wrapper, the utility strip, the top bar, and the phone tab bar.
 
@@ -1849,7 +1849,7 @@ Update `components/shell/TabBar.test.tsx` — any case asserting the wordmark is
 npx vitest run components/awards/TvModeLink.test.tsx
 ```
 
-- [ ] **Step 8: Story, and measure in a production build**
+- [x] **Step 8: Story, and measure in a production build**
 
 Write `components/shell/TopBar.stories.tsx` matching `components/shell/TabBar.stories.tsx`'s format. Check `components/shell/AppShell.stories.tsx` still renders.
 
@@ -1875,7 +1875,7 @@ Then at **1440px**: the top bar has `xl:hidden`, so `getComputedStyle(top).displ
 
 Record the real numbers in the commit message. "Looks right" is not a measurement.
 
-- [ ] **Step 9: Mutate, and watch tests go red**
+- [x] **Step 9: Mutate, and watch tests go red**
 
 Remove `data-app-chrome` from `TopBar`. Run `npx vitest run components/shell/TopBar.test.tsx components/awards/TvModeLink.test.tsx`. Expected: both FAIL. Restore.
 
@@ -1883,7 +1883,7 @@ Change `sticky` to `fixed`. Expected: the "reserves its own height" case FAILS. 
 
 Remove `xl:hidden`. Expected: the "phone and tablet bar only" case FAILS. Restore.
 
-- [ ] **Step 10: Full verification**
+- [x] **Step 10: Full verification**
 
 ```bash
 npm run lint && npm run typecheck && npx vitest run && bash scripts/layering.sh
@@ -1894,7 +1894,7 @@ npm run test:e2e
 
 🔴 The e2e suite includes `e2e/smoke.spec.ts`'s three cascade-layer tests and TV mode's browser assertions at 1920. Do not relax any of them to make this pass. A red one means the chrome hook or the layer order actually moved.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add components/shell/TopBar.tsx components/shell/TopBar.test.tsx         components/shell/TopBar.stories.tsx components/shell/AppShell.tsx         components/shell/AppShell.test.tsx components/shell/TabBar.tsx         components/shell/TabBar.test.tsx components/awards/TvModeLink.test.tsx
@@ -1917,7 +1917,7 @@ Message starts `P14.T16: a top bar on a phone, carrying the wordmark`. Record th
 - Modify: `theme/clerk.ts`
 - Test: `e2e/auth.spec.ts` (a case; read the file first to see what it already covers)
 
-- [ ] **Step 1: Confirm the cause in a browser before changing anything**
+- [x] **Step 1: Confirm the cause in a browser before changing anything**
 
 🔴 The diagnosis above is from reading, not from measuring — do not trust it. 🔴 And measure in a **production build**, never `next dev`: a dev server answers 403 for every `_next/static` chunk on `127.0.0.1`, so a dev measurement is of an unstyled page.
 
@@ -1936,7 +1936,7 @@ input.getBoundingClientRect();            // and the card's, to see the 4px over
 
 If `overflow` is **not** hidden anywhere up the chain, the diagnosis is wrong: find the real cause and rewrite this task before implementing it. Say so in your report either way.
 
-- [ ] **Step 2: Write the failing browser assertion**
+- [x] **Step 2: Write the failing browser assertion**
 
 In `e2e/auth.spec.ts`, a case that focuses the email field and asserts the ring is not clipped — by geometry, not by a screenshot:
 
@@ -1968,7 +1968,7 @@ test('the focus ring on the email field is not clipped', async ({ page }) => {
 });
 ```
 
-- [ ] **Step 3: Run it and watch it fail**
+- [x] **Step 3: Run it and watch it fail**
 
 ```bash
 npm run test:e2e -- e2e/auth.spec.ts
@@ -1976,7 +1976,7 @@ npm run test:e2e -- e2e/auth.spec.ts
 
 Expected: the new case FAILS with `clipped` true. 🔴 If it passes before the fix, it is not testing the defect the owner photographed — fix the test before touching `theme/clerk.ts`.
 
-- [ ] **Step 4: The fix**
+- [x] **Step 4: The fix**
 
 In `theme/clerk.ts`, on the `elements` block:
 
@@ -1996,7 +1996,7 @@ In `theme/clerk.ts`, on the `elements` block:
 
 Keep every existing property; add `overflow` to the two. If step 1 found the clipping box to be something else, put it there instead and say which.
 
-- [ ] **Step 5: Run it and watch it pass**
+- [x] **Step 5: Run it and watch it pass**
 
 ```bash
 npm run build && npm run test:e2e -- e2e/auth.spec.ts
@@ -2004,13 +2004,13 @@ npm run build && npm run test:e2e -- e2e/auth.spec.ts
 
 Expected: PASS, and no other case in that file regresses.
 
-- [ ] **Step 6: Mutate, and watch it go red**
+- [x] **Step 6: Mutate, and watch it go red**
 
 Remove `overflow: 'visible'` from `cardBox`. Expected: the new case FAILS. Restore.
 
 Then check the other direction: nothing that used to be clipped *should* be visible now. Look at the card at 390px and at 1440px in the running build and confirm no content escapes the rounded corner — `overflow: visible` is exactly the kind of fix that trades one visual defect for another. Record what you saw.
 
-- [ ] **Step 7: Full verification and commit**
+- [x] **Step 7: Full verification and commit**
 
 ```bash
 npm run lint && npm run typecheck && npx vitest run && npm run test:e2e
@@ -2047,7 +2047,7 @@ Message starts `P14.T17: the focus ring on the auth form is clipped`. Record the
 - Produces: `export const CHARACTERS: readonly string[]` from `lib/leagues/characters.ts`.
 - Produces: `export function seatsToEvenGroups(seatCount: number, groupCount: number): number` — how many more seats make every group the same size.
 
-- [ ] **Step 1: The list, verbatim**
+- [x] **Step 1: The list, verbatim**
 
 `lib/leagues/characters.ts`. 🔴 These are the owner's names, in the owner's order — do not sort, dedupe, "fix" spelling, or add to them.
 
@@ -2110,7 +2110,7 @@ export function nextCharacter(
 }
 ```
 
-- [ ] **Step 2: Write the failing tests for the list**
+- [x] **Step 2: Write the failing tests for the list**
 
 `lib/leagues/characters.test.ts`:
 
@@ -2140,7 +2140,7 @@ it('tells a character apart from a real person who has not registered', () => {
 
 Run: `npx vitest run lib/leagues/characters.test.ts`. Expected: FAIL, module not found. Then implement and expect PASS.
 
-- [ ] **Step 3: The shortfall arithmetic, with its failing test first**
+- [x] **Step 3: The shortfall arithmetic, with its failing test first**
 
 Add to `lib/services/group-assignment.ts` — it already owns `suggestGroupCount` and `dealIntoGroups`, and this is the third question about the same shape:
 
@@ -2188,7 +2188,7 @@ it('does not return NaN for a zero or negative group count', () => {
 });
 ```
 
-- [ ] **Step 4: The button, beside the existing field**
+- [x] **Step 4: The button, beside the existing field**
 
 In `components/leagues/SeasonSetup.tsx`, inside the `isPending` block that holds the add-seat form (`:177-197`). It is a second control, **not** a second form — the text field submits, this one just acts:
 
@@ -2217,7 +2217,7 @@ const character = nextCharacter(seats.map((seat) => seat.name));
 
 🔴 Read the file's existing `run(...)` helper and `pending` state and use them; do not introduce a second transition idiom in a component that already has one.
 
-- [ ] **Step 5: Stop calling real people placeholders**
+- [x] **Step 5: Stop calling real people placeholders**
 
 At `:333` the seat list renders `· placeholder` for every `isDummy` seat. Split it:
 
@@ -2233,7 +2233,7 @@ and relabel the text field from "Add someone without an account" to **"Add a pla
 
 🔴 **Why membership of the list and not a database column.** A column would be truer, but it is a migration, and Phase 13's final restore drops every column this port added (see T12's T3b note) — so it buys correctness at the cost of one more thing to re-apply during a cutover. The list is fixed and known, and the failure mode of the cheap version is that a member genuinely named "Neo" is labelled a character. Say so in a comment rather than leaving it for someone to discover. If the owner would rather have the column, it is `drafts.is_character` and a sibling of T12's migration.
 
-- [ ] **Step 6: The count, beside the groups input**
+- [x] **Step 6: The count, beside the groups input**
 
 In the Groups section (`:203-215`), after the number input's `<label>`:
 
@@ -2251,7 +2251,7 @@ with `const shortfall = seatsToEvenGroups(seats.length, groupCount);`.
 
 🔴 It must recompute when the owner changes the group count — `groupCount` is already `useState`, so read it directly rather than caching. And it must recompute when a seat is added, which is what makes the button and this line one feature rather than two.
 
-- [ ] **Step 7: Component tests**
+- [x] **Step 7: Component tests**
 
 In `components/leagues/SeasonSetup.test.tsx`:
 
@@ -2281,14 +2281,14 @@ it('calls a typed-in name a player, not a placeholder', () => {
 });
 ```
 
-- [ ] **Step 8: Mutate, and watch tests go red**
+- [x] **Step 8: Mutate, and watch tests go red**
 
 1. Drop the outer `% groupCount` from `seatsToEvenGroups`. Expected: "never asks for a whole extra group" and "asks for nothing when the groups already divide evenly" FAIL. Restore.
 2. Make the button seat the whole shortfall in a loop. Expected: "seats one character per press" FAILS. Restore.
 3. Make `nextCharacter` ignore `taken`. Expected: "never offers a character already seated" FAILS — in both the unit and the component test. Restore.
 4. Compute `shortfall` once at mount instead of per render. Expected: "recomputes when the owner changes the group count" FAILS. Restore. 🔴 If it does not, that test is decorative — fix it before committing.
 
-- [ ] **Step 9: Verify and commit**
+- [x] **Step 9: Verify and commit**
 
 ```bash
 export DATABASE_URL=postgresql://cinemadraft:local@localhost:5433/cinemadraft
