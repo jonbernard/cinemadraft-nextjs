@@ -230,20 +230,17 @@ test.describe('journey 1 — a season, from nothing to a finished draft', () => 
       expect(await seatCount(leagueId)).toBe(1);
     });
 
-    const invite = await beat(
-      page,
-      'The invite link is behind a disclosure',
-      async () => {
-        // 🔴 The uuid is the join credential, so it is not on screen until an
-        // owner asks for it (P17.T30). Opening it is part of the journey.
-        await page.locator('summary', { hasText: 'Invite' }).click();
-        const code = page.locator('code', { hasText: '/join/' });
-        await expect(code).toBeVisible();
-        const url = (await code.innerText()).trim();
-        expect(url).toMatch(/\/join\/[0-9a-f-]{36}$/i);
-        return url;
-      },
-    );
+    const invite = await beat(page, 'The invite link is behind a dialog', async () => {
+      // 🔴 The uuid is the join credential, so it is not on screen until an
+      // owner asks for it (P17.T30). Opening it is part of the journey.
+      // A modal dialog since P14.T15, hence a button rather than a summary.
+      await page.getByRole('button', { name: 'Invite', exact: true }).click();
+      const code = page.locator('code', { hasText: '/join/' });
+      await expect(code).toBeVisible();
+      const url = (await code.innerText()).trim();
+      expect(url).toMatch(/\/join\/[0-9a-f-]{36}$/i);
+      return url;
+    });
 
     await beat(page, 'A second person follows the link and joins', async () => {
       const other = await browser.newContext();
@@ -394,7 +391,12 @@ test.describe('journey 1 — a season, from nothing to a finished draft', () => 
       expect(await statusOf(leagueId)).toBe('complete');
       // A finished season has nobody left to invite, so the standing join
       // credential is gone with it.
-      await expect(page.locator('summary', { hasText: 'Invite' })).toHaveCount(0);
+      // 🔴 By role and exact name. `locator('summary', …)` was what this said,
+      // and after P14.T15 removed the `<details>` it would have matched nothing
+      // anywhere in the app — a zero that no longer proves the invite is gone.
+      await expect(page.getByRole('button', { name: 'Invite', exact: true })).toHaveCount(
+        0,
+      );
     });
   });
 });
