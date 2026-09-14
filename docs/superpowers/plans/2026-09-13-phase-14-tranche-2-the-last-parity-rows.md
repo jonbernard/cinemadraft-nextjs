@@ -49,6 +49,7 @@ Every task's requirements implicitly include all of this.
 | P14.T16 | — | A top bar on a phone, carrying the wordmark (owner's call) |
 | P14.T17 | — | The auth form's focus ring is clipped (owner-reported) |
 | P14.T18 | — | Characters to round out the groups (owner's request) |
+| P14.T19 | — | A TV view for the draft board (owner's request) |
 
 T15 and T16 are the owner's two requests of 2026-09-13 and are independent of the parity work; T15 is ordered after T11 because both edit `app/(app)/leagues/[id]/page.tsx`.
 
@@ -2306,6 +2307,128 @@ git commit
 Message starts `P14.T18: characters to round out the groups`. Record the one-press-one-character constraint as the owner's explicit instruction, the list-membership-not-a-column trade and its known failure mode, and every mutation result.
 
 ---
+
+### Task P14.T19: TV view for the draft board
+
+**The owner's request:** "We need a 'tv view' for this page as well during the live draft. The picks for every player in the group needs to be visible at once so the players can know what's been chosen. We should hide the chrome for this too."
+
+**Surface:** `/leagues/[id]` — the board the league watches while the owner runs the call (D49). It already moves live during the draft (P14.T11).
+
+🔴 **Hiding the chrome is free, and do not write CSS for it.** D112's rule in `app/globals.css` is `body:has([data-tv-mode]) [data-app-chrome] { display: none; }` — keyed on the attribute, not on the live page. The league page sets `data-tv-mode` on its root and the rail, the strip, the phone top bar and the tab bar all vanish. If you find yourself adding a selector, stop: you have missed the existing one.
+
+**The real work is density, and it is smaller than it looks.** Measured against production on 2026-09-13: **no group in any league in any season has ever had more than 4 seats**, and rounds top out at 7 (2026) and 9 (2025). So the target is 4 seats × ~10 rounds.
+
+At 1920×1080 the binding constraint is **height, not width**. Arithmetic to check rather than trust: ~1000px of usable height for 4 rows is ~250px a row; minus a caption that leaves a poster ~215px tall, which at 2:3 is ~143px wide; 10 × 143 + a 160px seat column is ~1590, comfortably inside 1920. So it fits — but the current grid does not, because `DraftBoard`'s desktop table uses fixed `w-24` (96px) round columns inside `overflow-x-auto`, and a TV cannot scroll.
+
+**Files:**
+- Modify: `app/(app)/leagues/[id]/page.tsx`, `components/draft/DraftBoard.tsx` (+ test, + stories), `components/leagues/LeagueBoardRoom.tsx` (+ test)
+- Move: `components/awards/TvModeLink.tsx` → `components/ui/TvModeLink.tsx` (+ its test and story)
+- Test: `e2e/league-board-live.spec.ts` (T14 created it)
+
+**Interfaces:**
+- `DraftBoard` gains `tv?: boolean` (default `false`) — the TV sizing, nothing else.
+- `LeagueBoardRoom` gains `tvMode: boolean` and `group: number | null`.
+
+- [ ] **Step 1: Move `TvModeLink` out of `awards/`**
+
+It is used by two domains now, and `components/` is grouped by domain with `ui/` for anything that has none (AGENTS.md). TV mode has no domain.
+
+🔴 **Check `scripts/layering.sh` first.** Three of its guards name specific files as exemptions and moving one between folders silently disarms it. `TvModeLink` is believed not to be among them (the list is `ui/RemoteImage`, `ui/Eyebrow`, `ui/SectionHead`, `ui/Wordmark`, `ui/EmptyState`, `shell/TabBar`, `shell/SearchOverlay`) — **verify that, do not take this sentence's word for it**, and if it is named, update the script and `.github/workflows/ci.yml` together.
+
+`git mv` the component, its test and its story. Update the import in `app/(app)/live/[abbr]/page.tsx`. The test reads `AppShell.tsx`, `TopBar.tsx` and `globals.css` by path from `process.cwd()`, so it moves unchanged.
+
+- [ ] **Step 2: Write the failing sizing test**
+
+In `components/draft/DraftBoard.test.tsx`:
+
+```tsx
+it('gives every round column the same width in ordinary mode', () => {
+  // w-24 on each round column, the current behaviour, so the TV branch is
+  // provably a change rather than the default renamed.
+});
+
+it('sizes the board to the viewport in tv mode, with no horizontal scroll container', () => {
+  // 🔴 The defect being fixed: the desktop grid lives in `overflow-x-auto`,
+  // and a television cannot scroll. In tv mode that wrapper must not be an
+  // `overflow-x-auto`, and the columns must be proportional rather than a
+  // fixed 96px.
+});
+
+it('still renders every seat and every round in tv mode', () => {
+  // 4 seats x 10 rounds: 40 cells plus the empties. "Fits" must never be
+  // achieved by dropping content — the owner's requirement is that every
+  // pick is visible AT ONCE.
+});
+```
+
+- [ ] **Step 3: The TV sizing in `DraftBoard`**
+
+Add `tv?: boolean`. In the desktop grid:
+
+- wrapper: `tv ? '' : 'overflow-x-auto'`
+- seat column: keep `w-40`
+- round columns: `tv ? 'w-auto' : 'w-24'` and put `table-fixed` on the `<table>` in tv mode so the browser divides the remaining width evenly across `rounds` columns
+- give `PickCell` the room to shrink: the poster is `aspect-[2/3]`, so constraining the row height is what constrains the width
+
+🔴 Do not add a second rendering path. The mobile stack and the desktop grid already render from the same `seats` and `rounds` (`DraftBoard:71`); a third would be a third thing to keep in step.
+
+- [ ] **Step 4: One group on screen, and a way to change it**
+
+The page renders every group stacked. On a television during a draft, one group is the subject.
+
+- `?group=<n>`, validated the way the draft console validates its own (`app/(app)/leagues/[id]/draft/page.tsx`), defaulting to the first group.
+- In TV mode render **only** that group. Outside TV mode nothing changes — all groups still stack.
+- The group nav stays **on screen in TV mode**, because a reader on a television has a remote and no address bar (D112).
+
+🔴 **Every link in TV mode must carry `tv=1`.** This is D114, verbatim: the live room's league picker shipped dropping `?tv=1`, taking the reader out of full screen with no way back, and the gate caught it rather than the task that built it. The group nav here is the same control in the same trap.
+
+- [ ] **Step 5: The toggle must not drop the stream**
+
+`LeagueBoardRoom` is keyed on `streamUrl` in the page (P14.T11). 🔴 **`tv` must NOT appear in `streamUrl`**, or every toggle remounts the room, drops the `EventSource` and reconnects — in the middle of a live draft. D114 records exactly this for the live room; `components/awards/TvModeLink.test.tsx` has an assertion pinning it for `/live`, and this page needs its own.
+
+Add to `LeagueBoardRoom.test.tsx`:
+
+```tsx
+it('does not carry tv mode in the stream url', () => {
+  // A remount mid-draft is a dropped connection and a reconnect. The mode is
+  // chrome; the stream is data.
+});
+```
+
+- [ ] **Step 6: Measure in a production build**
+
+🔴 `npm run build && npm run start`, never `next dev` — a dev server answers 403 for every `_next/static` chunk on `127.0.0.1`, so a dev measurement is of an unstyled page.
+
+On a league with a 4-seat group and its real round count, at **1920×1080**:
+
+```js
+document.documentElement.scrollWidth   // must be 1920 — no sideways scroll
+document.documentElement.scrollHeight  // must be <= 1080 — the whole point
+document.querySelectorAll('[data-app-chrome]').length   // present in the DOM
+[...document.querySelectorAll('[data-app-chrome]')].every(el => getComputedStyle(el).display === 'none')  // true
+document.querySelectorAll('table tbody tr').length      // 4 — every seat
+document.querySelectorAll('table tbody td').length      // seats x rounds — every cell
+```
+
+Report the real numbers. Also check 1280×720, the other common panel: if it does not fit there, say so plainly rather than quietly targeting only 1920.
+
+- [ ] **Step 7: Mutate, and watch tests go red**
+
+1. Drop `tv` from `DraftBoard`'s props and always use `w-24`. Expected: the tv sizing test FAILS.
+2. Put `tv=1` into `streamUrl`. Expected: the step 5 test FAILS. 🔴 If it does not, that test is decorative — make it real.
+3. Drop `tv=1` from the group nav links. Expected: a test FAILS. If none does, add one — this is D114's exact defect and it escaped its own task once already.
+4. Render only the first 5 rounds in tv mode. Expected: "still renders every seat and every round" FAILS.
+
+- [ ] **Step 8: e2e**
+
+Add to `e2e/league-board-live.spec.ts`: at 1920, a league mid-draft with `?tv=1` shows no chrome, no sideways scroll, every seat and every cell of the chosen group, and a pick entered in another context still lands live — TV mode must not cost the stream.
+
+- [ ] **Step 9: Record and commit**
+
+`docs/DECISIONS.md`: TV mode is now a property of a page rather than of `/live`, and `TvModeLink` moved to `ui/` because of it. Note that the density target is 4 seats — a production fact, not a guess — and what would have to change if a league ever drafts a bigger group.
+
+Commit message starts `P14.T19: a TV view for the draft board`.
+
 
 ## Notes carried into this tranche
 
