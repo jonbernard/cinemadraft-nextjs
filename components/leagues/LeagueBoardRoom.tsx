@@ -92,6 +92,8 @@ export function LeagueBoardRoom({
   streamUrl,
   signedIn,
   viewerSeatId,
+  tvMode = false,
+  group = null,
 }: {
   initial: LeagueBoardRoomView;
   /**
@@ -104,6 +106,20 @@ export function LeagueBoardRoom({
   signedIn: boolean;
   /** The signed-in reader's own seat this season, or null for a visitor. */
   viewerSeatId: number | null;
+  /**
+   * TV mode (P14.T19). 🔴 Deliberately NOT part of `streamUrl`, which the page
+   * keys this component on — a toggle would remount the room and drop the
+   * `EventSource` in the middle of a live draft (D114).
+   *
+   * What it changes here is what is on the screen and nothing about the data:
+   * one group instead of every group, and the board sized for a television.
+   * The standings and the reader's own roster step aside, because 4 seats of
+   * poster is already the whole of 1080 and the owner's requirement is that
+   * every pick in the group is visible **at once**.
+   */
+  tvMode?: boolean;
+  /** The group TV mode is showing, validated by the page. */
+  group?: number | null;
 }) {
   const [view, setView] = useState(initial);
 
@@ -164,6 +180,18 @@ export function LeagueBoardRoom({
     };
   }, [streamUrl, initial.isDrafting]);
 
+  /**
+   * 🔴 One group on a television, every group otherwise. During a draft call
+   * one group is the subject, and stacking the others below it is what makes
+   * the one on screen too small to read from a sofa.
+   *
+   * The fallback is the first group rather than nothing: `?group=` is a number
+   * a remote can land on, and a board that answered an unknown one with an
+   * empty screen would be worse than one that answered it with a board.
+   */
+  const chosen = view.groups.find((entry) => entry.group === group) ?? view.groups[0];
+  const groups = tvMode ? (chosen ? [chosen] : []) : view.groups;
+
   return (
     <>
       {/* P10.T10: standings for whoever has this link, signed in or not —
@@ -185,7 +213,7 @@ export function LeagueBoardRoom({
             slot has nothing of the reader's to show. It is then a deliberate
             statement of what the slot is for — the link, and what signing in
             adds — rather than a hole the standings float beside. */}
-      {view.standings.length > 0 ? (
+      {!tvMode && view.standings.length > 0 ? (
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
           <section className="flex min-w-0 flex-1 flex-col gap-3">
             <SectionHead as="h2" eyebrow="Yours">
@@ -228,12 +256,12 @@ export function LeagueBoardRoom({
         </div>
       ) : null}
 
-      {view.groups.length === 0 ? (
+      {groups.length === 0 ? (
         <p className="text-text-secondary text-sm">
           No seats in this league for {view.year}.
         </p>
       ) : (
-        view.groups.map((group) => (
+        groups.map((group) => (
           <section key={group.group} className="flex flex-col gap-4">
             {/* A heading and a running-order position are content, so
                   `secondary`, not `dim` (P17.T34). */}
@@ -284,6 +312,7 @@ export function LeagueBoardRoom({
                 rounds={group.rounds}
                 viewerSeatId={viewerSeatId}
                 seats={group.seats}
+                tv={tvMode}
               />
             )}
           </section>

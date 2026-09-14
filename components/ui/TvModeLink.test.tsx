@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { TvModeLink } from '@/components/awards/TvModeLink';
+import { TvModeLink } from '@/components/ui/TvModeLink';
 
 /**
  * TV mode (P14.T6) is two halves that have to keep agreeing with each other:

@@ -183,6 +183,23 @@ async function seedLeague(
 }
 
 /**
+ * A second group on an existing league, so "only one group is on the
+ * television" is a claim with two candidates and the group nav has somewhere
+ * to go.
+ */
+async function seedSecondGroup(leagueId: number): Promise<void> {
+  await withDb(async (query) => {
+    await query(
+      `insert into drafts (league_id, year, user_id, "group", "order", dummy, dummy_name,
+                           created_at, updated_at)
+         values ($1, $2, null, 2, 1, true, $3, now(), now()),
+                ($1, $2, null, 2, 2, true, $4, now(), now())`,
+      [leagueId, YEAR, `${TAG} Second A`, `${TAG} Second B`],
+    );
+  });
+}
+
+/**
  * The first frame of an SSE connection, read as bytes — `e2e/live.spec.ts`'s
  * helper, for the same reason it exists there.
  *
@@ -390,6 +407,117 @@ test.describe('the league board, live', () => {
         `/api/leagues/${finished}/board/stream?year=${YEAR}`,
       );
       expect(status).toBe(204);
+    } finally {
+      await audience.close();
+    }
+  });
+
+  test('TV mode puts one whole group on a television without costing the stream', async ({
+    page,
+    browser,
+  }) => {
+    /**
+     * 🔴 P14.T19, and the owner's requirement verbatim: "the picks for every
+     * player in the group needs to be visible at once", with the chrome gone.
+     * Four claims in one flow, because they are one feature: no chrome, no
+     * sideways scroll, every seat and every cell of the chosen group, and a
+     * pick entered elsewhere still landing live. The last is the one TV mode
+     * could quietly break — a reader who casts the board and then watches a
+     * still picture has lost the whole thing.
+     */
+    test.setTimeout(60_000);
+
+    await seedShow();
+    const { leagueId } = await seedLeague(page);
+    await seedSecondGroup(leagueId);
+
+    // One pick before the watcher arrives: `rounds` is the longest seat in the
+    // group, so an undrafted group has no columns at all and "every cell" would
+    // be a claim about zero of them.
+    await page.goto(`/leagues/${leagueId}/draft?year=${YEAR}`);
+    await page.getByRole('searchbox').fill('Alph');
+    await page.getByRole('button', { name: new RegExp(FILMS[0] as string) }).click();
+    await expect
+      .poll(() =>
+        withDb(async (query) => {
+          const rows = (await query(
+            `select count(*)::int as n from draft_picks dp
+               join drafts d on d.id = dp.draft_id
+              where d.league_id = $1`,
+            [leagueId],
+          )) as { n: number }[];
+          return rows[0]?.n;
+        }),
+      )
+      .toBe(1);
+
+    const audience = await browser.newContext({
+      viewport: { width: 1920, height: 1080 },
+    });
+    const viewer = await audience.newPage();
+    try {
+      await viewer.goto(`/leagues/${leagueId}?year=${YEAR}&tv=1`);
+
+      // 🔴 Still in the DOM and not on screen, which is what tells "hidden"
+      // from "never rendered" — and 1920 is the only width where the rail is
+      // on screen at all. No CSS was written for this page: the rule in
+      // globals.css is keyed on `data-tv-mode`, which the page now sets.
+      const rail = viewer.locator('nav[aria-label="Main"]');
+      await expect(rail).toHaveCount(1);
+      await expect(rail).toBeHidden();
+
+      // A television cannot scroll, in either direction. The height is the
+      // binding constraint and is measured in the task's own production run;
+      // what a test can hold forever is that nothing runs off the side.
+      expect(await viewer.evaluate(() => document.documentElement.scrollWidth)).toBe(
+        1920,
+      );
+
+      // One group, not both stacked — and all of it.
+      const board = viewer.getByRole('table', {
+        name: 'Draft board: one row per seat, one column per round',
+      });
+      await expect(board).toHaveCount(1);
+      await expect(viewer.getByRole('heading', { name: 'Group 1' })).toBeVisible();
+      const rounds = (await board.locator('thead th').count()) - 1;
+      expect(rounds).toBeGreaterThan(0);
+      await expect(board.locator('tbody tr')).toHaveCount(2);
+      await expect(board.locator('tbody td')).toHaveCount(2 * rounds);
+
+      // 🔴 D114, exactly: the live room's league picker shipped dropping
+      // `?tv=1` and stranded a reader who had a remote and no address bar. The
+      // group nav is the same control in the same trap.
+      await viewer
+        .getByRole('navigation', { name: 'Groups' })
+        .getByRole('link', { name: 'Group 2' })
+        .click();
+      await expect(viewer).toHaveURL(/group=2/);
+      await expect(viewer).toHaveURL(/tv=1/);
+      await expect(rail).toBeHidden();
+      await expect(viewer.getByRole('heading', { name: 'Group 2' })).toBeVisible();
+      // And the way out is still on the screen TV mode left behind.
+      await expect(viewer.getByRole('link', { name: 'Leave TV mode' })).toBeVisible();
+
+      await viewer.goto(`/leagues/${leagueId}?year=${YEAR}&group=1&tv=1`);
+      await expect(board.getByText(FILMS[0] as string).first()).toBeVisible();
+      await expect(board.getByText(FILMS[1] as string)).toHaveCount(0);
+
+      let documents = 0;
+      viewer.on('load', () => {
+        documents += 1;
+      });
+
+      // The owner drafts the second film. It has to arrive on the television
+      // with nobody touching it — TV mode must not cost the stream.
+      await page.goto(`/leagues/${leagueId}/draft?year=${YEAR}`);
+      await page.getByRole('searchbox').fill('Brav');
+      await page.getByRole('button', { name: new RegExp(FILMS[1] as string) }).click();
+
+      await expect(board.getByText(FILMS[1] as string).first()).toBeVisible({
+        timeout: 20_000,
+      });
+      expect(documents).toBe(0);
+      await expect(rail).toBeHidden();
     } finally {
       await audience.close();
     }
