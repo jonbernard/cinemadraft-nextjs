@@ -656,6 +656,37 @@ audit, and it is still the last thing that happens.
   Idempotent: running this against a database that already has these values
   is a no-op, so re-running it by mistake is harmless. Needs neither the Blob
   write token (deleted) nor a checkout of the app being retired.
+- T3b: **Re-apply the migrations after T2's restore.** `npx prisma migrate deploy`
+  against Neon before anything reads from it. The Heroku dump carries the
+  **source app's** schema — `prisma/migrations/0_init` is that schema — so
+  every change the four later migrations made is absent from it, and a restore
+  with `--clean` reverts them. Checked against `prisma/migrations/` on
+  2026-09-13; it is six things, not four, and two of them are not columns:
+
+  | Migration | What the dump does not have |
+  |---|---|
+  | `20260814130000_app_columns` | `available_years.is_active` **and** the `available_years_one_active` partial unique index (D22 — without it two years can be active at once and nothing complains) |
+  | `20260814130000_app_columns` | `movies.accent_hex` |
+  | `20260814130000_app_columns` | `users.clerk_id` and its `users_clerk_id_key` unique index — sign-in resolves the session through this column, so its absence is a total outage, not a degraded page |
+  | `20260815160000_movie_title_search` | the `pg_trgm` extension and the `movies_title_trgm` GIN index — the film typeahead's `ILIKE '%…%'` and `word_similarity` both lose their index; the search still answers, slowly and only after a sequential scan |
+  | `20260816120000_nominations_year_integer` | `nominations.year` as `integer`. 🔴 **The worst of the six**, because it is not a missing column: the restore puts the column back as `TEXT`, and a `TEXT` year compared against an `integer` is the silent-empty-result failure that migration's own comment says cost three wrong answers during the port. A film scores nothing and no page says why. |
+  | `20260913120000_event_focused_award` | `events.focused_award_id` (P14.T12) |
+
+  This is the same class of defect as T3: a full restore is a **schema** event
+  as well as a data one, and it silently reverts everything the port added.
+  Verify before T4's verification pass, in `psql`:
+
+  ```
+  \d events            -- focused_award_id
+  \d available_years   -- is_active, and available_years_one_active
+  \d users             -- clerk_id, and users_clerk_id_key
+  \d movies            -- accent_hex, and movies_title_trgm
+  \d nominations       -- year must be integer, not text
+  ```
+
+  The app fails on the first read of a missing column, which during a cutover
+  looks like a deployment failure rather than a restore one — and the
+  `nominations.year` revert does not fail at all, which is worse.
 - T4: Add `cinemadraft.com` to the Vercel project and point its DNS at Vercel; add or repoint the Clerk webhook to the apex
 - T5: Verify production sign-in, draft, and scoring — plus the award-show logos, which T3 restores
 - T6: Monitor for 48 hours

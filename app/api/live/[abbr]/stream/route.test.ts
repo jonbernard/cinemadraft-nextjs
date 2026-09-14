@@ -43,6 +43,7 @@ const BASE: LiveShowView = {
   startsAt: null,
   startsOn: null,
   onAir: true,
+  focusedAwardId: null,
   resolved: 0,
   total: 1,
   categories: [
@@ -255,6 +256,19 @@ describe('GET /api/live/[abbr]/stream', () => {
     const view = JSON.parse(stream.frames[0].slice('data: '.length)) as LiveShowView;
     expect(view.league?.id).toBe(7);
     expect(view.league?.seats[0].name).toBe('Ada Lovelace');
+  });
+
+  it('carries the category the admin has on screen in every frame', async () => {
+    // 🔴 The whole reason it is a column and not a socket message (P14.T12):
+    // a watcher who opens the page mid-ceremony gets the current selection in
+    // their very first frame, which a broadcast-only design could not do.
+    mocks.getLiveShow.mockResolvedValue({ ...BASE, focusedAwardId: 10 });
+
+    const stream = collect(await GET(request('?year=2026'), params));
+    await settle();
+
+    const view = JSON.parse(stream.frames[0].slice('data: '.length)) as LiveShowView;
+    expect(view.focusedAwardId).toBe(10);
   });
 
   it('ignores a pin that is not a league id', async () => {

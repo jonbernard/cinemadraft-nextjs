@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { db } from '@/lib/db';
 import { NotFoundError } from '@/lib/errors';
+import { eventRepository } from '@/lib/repositories/events';
 import { getLeagueBoard } from './draft';
 import { getLiveShow } from './live';
 
@@ -64,6 +65,29 @@ describe('getLiveShow', () => {
     // `onAir: true` would put a carmine "Live" chip on every show, all year.
     const view = await getLiveShow('oscars', 2025, null);
     expect(view.onAir).toBe(false);
+  });
+
+  it('carries the category the admin has on screen, read from the row', async () => {
+    // 🔴 Round-tripped through the column, not asserted as "null today": a
+    // service that hardcoded null would pass that. The value is restored in
+    // `finally`, because leaving a pointer behind would put a category on
+    // every watcher's screen (P14.T12).
+    const before = await eventRepository.findByAbbreviation('oscars');
+    if (!before) throw new Error('the restored data has no Oscars row');
+    const original = before.focusedAwardId;
+    const category = (await getLiveShow('oscars', 2025, null)).categories[0];
+    if (!category) throw new Error('the restored Oscars season has no categories');
+
+    try {
+      await eventRepository.setFocusedAward(before.id, category.awardId);
+      const view = await getLiveShow('oscars', 2025, null);
+      expect(view.focusedAwardId).toBe(category.awardId);
+
+      await eventRepository.setFocusedAward(before.id, null);
+      expect((await getLiveShow('oscars', 2025, null)).focusedAwardId).toBeNull();
+    } finally {
+      await eventRepository.setFocusedAward(before.id, original);
+    }
   });
 
   it('resolves the point value, never the foreign key (D41)', async () => {

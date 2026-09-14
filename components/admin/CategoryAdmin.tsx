@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition } from 'react';
 
 import { attachNominee } from '@/actions/awards/attach-nominee';
 import { deleteCategory } from '@/actions/awards/delete-category';
+import { focusAward } from '@/actions/awards/focus-award';
 import { removeNominee } from '@/actions/awards/remove-nominee';
 import { setWinner } from '@/actions/awards/set-winner';
 import { findFilmsAction } from '@/actions/search/find-films';
@@ -41,6 +42,7 @@ export function CategoryAdmin({
   year,
   nominees,
   requiresNomineeName,
+  onScreen,
   className,
 }: {
   awardId: number;
@@ -49,6 +51,8 @@ export function CategoryAdmin({
   year: number;
   nominees: readonly AdminNominee[];
   requiresNomineeName: boolean;
+  /** This is the category every watcher's screen is currently showing (P10.T32). */
+  onScreen: boolean;
   className?: string;
 }) {
   const [message, setMessage] = useState<string | null>(null);
@@ -113,6 +117,17 @@ export function CategoryAdmin({
     },
     [awardId, year],
   );
+
+  const putOnScreen = useCallback(() => {
+    // Pressing the one that is already up takes it down — there is one
+    // selection per show, and "nothing on screen" is a state an admin needs
+    // between announcements.
+    setMessage(null);
+    startTransition(async () => {
+      const result = await focusAward({ awardId, on: !onScreen });
+      if (!result.ok) setMessage(result.message);
+    });
+  }, [awardId, onScreen]);
 
   const remove = useCallback((nominee: AdminNominee) => {
     setMessage(null);
@@ -183,6 +198,25 @@ export function CategoryAdmin({
           ))}
         </ul>
       ) : null}
+
+      {/* 🔴 Carmine, not brass. Brass is an award outcome (D85/D99); this is
+          "live / now", and it changes no scoring input at all. Named in words
+          as well as coloured, and `aria-pressed` carries the state to a
+          reader who is not looking at the colour. */}
+      <button
+        type="button"
+        onClick={putOnScreen}
+        disabled={pending}
+        aria-pressed={onScreen}
+        className={cn(
+          'focus-visible:outline-accent-fill min-h-11 w-fit rounded-sm px-3 text-sm disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2',
+          onScreen
+            ? 'bg-accent-fill font-medium text-white'
+            : 'border-border-rule text-text-primary border',
+        )}
+      >
+        {onScreen ? 'On screen' : 'Put on screen'}
+      </button>
 
       <button
         type="button"

@@ -83,7 +83,14 @@ describe('the DTO matches the captured contract', () => {
 
     const event = await eventRepository.findById(expected.id);
 
-    expect(Object.keys(event).sort()).toEqual(Object.keys(expected).sort());
+    // 🔴 Plus `focusedAwardId`, which the source API never returned because
+    // the source had no such column — the selection was a socket.io message
+    // and lived nowhere (P14.T12). Named here rather than the assertion being
+    // loosened, so the next column added still has to be argued for, the way
+    // `movies.accentHex` is named in `movies.test.ts`.
+    expect(Object.keys(event).sort()).toEqual(
+      [...Object.keys(expected), 'focusedAwardId'].sort(),
+    );
   });
 
   it('does not carry the awards the by-abbreviation endpoint nested', async () => {
@@ -170,6 +177,63 @@ describe('the DTO matches the captured contract', () => {
   it('returns no Prisma internals', async () => {
     const event = await eventRepository.findById(oscars.id);
     expect(Object.getPrototypeOf(event)).toBe(Object.prototype);
+  });
+});
+
+describe('eventRepository.setFocusedAward', () => {
+  /**
+   * Round-tripped against a throwaway row, not one of the twelve restored
+   * shows: this is the one test in this file that writes, and a ceremony
+   * pointer left behind on the real Oscars row would put a category on every
+   * watcher's screen.
+   */
+  async function withTemporaryEvent<T>(run: (id: number) => Promise<T>): Promise<T> {
+    const now = new Date();
+    const event = await db.event.create({
+      data: {
+        name: 'events-repo focus test',
+        abbreviation: `events-repo-focus-${Date.now()}`,
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: { id: true },
+    });
+    try {
+      return await run(event.id);
+    } finally {
+      await db.event.delete({ where: { id: event.id } });
+    }
+  }
+
+  it('is null until an admin puts something on screen', async () => {
+    await withTemporaryEvent(async (id) => {
+      expect((await eventRepository.findById(id)).focusedAwardId).toBeNull();
+    });
+  });
+
+  it('round-trips a category id and clears it again', async () => {
+    await withTemporaryEvent(async (id) => {
+      await eventRepository.setFocusedAward(id, 4242);
+      expect((await eventRepository.findById(id)).focusedAwardId).toBe(4242);
+
+      // Null is the "nothing on screen" state, not an absence of a write —
+      // taking a category off screen has to be readable by every watcher.
+      await eventRepository.setFocusedAward(id, null);
+      expect((await eventRepository.findById(id)).focusedAwardId).toBeNull();
+    });
+  });
+
+  it('is carried by findByAbbreviation, which is what the show page reads', async () => {
+    await withTemporaryEvent(async (id) => {
+      const created = await db.event.findUniqueOrThrow({
+        where: { id },
+        select: { abbreviation: true },
+      });
+      await eventRepository.setFocusedAward(id, 99);
+
+      const event = await eventRepository.findByAbbreviation(created.abbreviation);
+      expect(event?.focusedAwardId).toBe(99);
+    });
   });
 });
 

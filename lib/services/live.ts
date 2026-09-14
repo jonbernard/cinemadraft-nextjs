@@ -171,6 +171,14 @@ export type LiveShowView = {
   startsOn: number | null;
   /** The source's own `awards_active` flag: the broadcast window is open. */
   onAir: boolean;
+  /**
+   * The category the admin has on screen, or null (P10.T32).
+   *
+   * 🔴 Compared, never joined. A stale id — the admin put a category on screen
+   * and then deleted it — matches nothing and renders as no selection, which
+   * is why the column carries no foreign key.
+   */
+  focusedAwardId: number | null;
   resolved: number;
   total: number;
   categories: LiveCategory[];
@@ -285,6 +293,7 @@ export async function getLiveShow(
       event.awardsDate == null ? null : event.awardsDate + (event.awardsTime ?? 0),
     startsOn: event.awardsDate,
     onAir: event.awardsActive === true,
+    focusedAwardId: event.focusedAwardId,
     // 🔴 From `hasWinner`, not from `winner != null`. A `winners` row whose
     // film has no `nominations` row for the season leaves `isWinner` unset on
     // every nominee, so `winner` is null while the category is genuinely

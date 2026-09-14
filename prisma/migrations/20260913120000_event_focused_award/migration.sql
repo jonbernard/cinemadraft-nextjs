@@ -1,0 +1,15 @@
+-- The category the admin currently has on screen, or NULL for none (P10.T32).
+--
+-- The source app carried this only as a socket.io message (`sendSelectedAward`
+-- in src/pages/events/list.js:67), so it existed nowhere: a watcher who joined
+-- late, or whose connection dropped, saw no selection at all. D102 removed the
+-- broker and made the database the bus, so this is where it lives now — and
+-- persisting it is what lets a full frame carry the current selection to a
+-- reader arriving mid-ceremony, which the source could not do.
+--
+-- Deliberately NOT a foreign key to `awards`. A category the admin has on
+-- screen and then deletes would refuse the delete or cascade a write into
+-- `events` during a ceremony; a stale id simply matches no category and
+-- renders as no selection, which is the correct behaviour and needs no
+-- cleanup. `lib/services/live.ts` reads it by comparison, never by join.
+ALTER TABLE "events" ADD COLUMN "focused_award_id" INTEGER;

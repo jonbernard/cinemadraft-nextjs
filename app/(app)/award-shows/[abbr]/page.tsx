@@ -216,6 +216,11 @@ export default async function AwardShowPage({
                 categoryName={category.name}
                 year={show.year}
                 requiresNomineeName={category.requiresNomineeName}
+                // The pointer lives on the event row, so "is this the one on
+                // screen" is a comparison, never a join — a category that was
+                // put up and then deleted leaves an id that matches nothing
+                // (P14.T12).
+                onScreen={event?.focusedAwardId === category.awardId}
                 nominees={category.nominees.map((nominee) => ({
                   nominationId: nominee.nominationId,
                   movieId: nominee.movieId,

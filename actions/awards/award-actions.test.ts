@@ -12,6 +12,7 @@ vi.mock('next/cache', () => ({ revalidatePath }));
 import { db } from '@/lib/db';
 import { pointsForMovieIds } from '@/lib/services/scoring';
 import { attachNominee } from './attach-nominee';
+import { focusAward } from './focus-award';
 import { removeNominee } from './remove-nominee';
 import { setWinner } from './set-winner';
 
@@ -567,5 +568,116 @@ describe('the phase gate — a correction leaves no stale points', () => {
     const after = await pointsForMovieIds([alpha?.id as number], YEAR);
 
     expect(after.get(alpha?.id as number)).toBe(fixture.points.points);
+  });
+});
+
+/**
+ * The ceremony pointer (P14.T12).
+ *
+ * 🔴 It writes no scoring input, so nothing here moves a standing — but it
+ * goes through the same `authorizeAward` gate as the winner writes, because
+ * the thing it does change is what every watcher's television is showing.
+ * Each refusal asserts the **column is untouched**, not merely that the call
+ * came back unhappy.
+ */
+async function focusedAwardOf(eventId: number): Promise<number | null> {
+  const row = await db.event.findUniqueOrThrow({
+    where: { id: eventId },
+    select: { focusedAwardId: true },
+  });
+  return row.focusedAwardId;
+}
+
+describe('focusAward', () => {
+  it('refuses a caller who is not an admin and writes nothing', async () => {
+    signInAs(fixture.member);
+
+    const result = await focusAward({ awardId: fixture.category.id, on: true });
+
+    expect(result.ok).toBe(false);
+    expect(await focusedAwardOf(fixture.event.id)).toBeNull();
+  });
+
+  it('refuses a signed-out caller and writes nothing', async () => {
+    signInAs(null);
+
+    const result = await focusAward({ awardId: fixture.category.id, on: true });
+
+    expect(result.ok).toBe(false);
+    expect(await focusedAwardOf(fixture.event.id)).toBeNull();
+  });
+
+  it('puts a category on screen', async () => {
+    signInAs(fixture.admin);
+
+    const result = await focusAward({ awardId: fixture.category.id, on: true });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(await focusedAwardOf(fixture.event.id)).toBe(fixture.category.id);
+  });
+
+  it('takes it off again', async () => {
+    signInAs(fixture.admin);
+    await focusAward({ awardId: fixture.category.id, on: true });
+
+    const result = await focusAward({ awardId: fixture.category.id, on: false });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(await focusedAwardOf(fixture.event.id)).toBeNull();
+  });
+
+  it('moves the pointer when a second category goes on screen', async () => {
+    // One selection per show, which is why it lives on the event row. The
+    // second write replaces the first rather than adding to it.
+    signInAs(fixture.admin);
+    await focusAward({ awardId: fixture.category.id, on: true });
+
+    await focusAward({ awardId: fixture.actingCategory.id, on: true });
+
+    expect(await focusedAwardOf(fixture.event.id)).toBe(fixture.actingCategory.id);
+  });
+
+  it('writes the show derived from the award, never one the caller named', async () => {
+    // `authorizeAward` resolves the event from the category, so the two facts
+    // in one untrusted payload cannot disagree. The payload has no event id
+    // at all — this pins that it stays that way.
+    signInAs(fixture.admin);
+
+    await focusAward({ awardId: fixture.actingCategory.id, on: true });
+
+    expect(await focusedAwardOf(fixture.event.id)).toBe(fixture.actingCategory.id);
+  });
+
+  it('rejects an award id that is not a positive integer', async () => {
+    signInAs(fixture.admin);
+
+    expect(await focusAward({ awardId: 0, on: true })).toMatchObject({
+      ok: false,
+      code: 'INVALID',
+    });
+    expect(await focusedAwardOf(fixture.event.id)).toBeNull();
+  });
+
+  it('rejects a category that does not exist', async () => {
+    signInAs(fixture.admin);
+
+    expect(await focusAward({ awardId: 999_999_999, on: true })).toMatchObject({
+      ok: false,
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('revalidates the show page so the admin sees their own control move', async () => {
+    // The watchers do not need it — the stream re-reads within one poll
+    // (D102). This is for the admin's own page.
+    signInAs(fixture.admin);
+    revalidatePath.mockClear();
+
+    await focusAward({ awardId: fixture.category.id, on: true });
+
+    expect(revalidatePath).toHaveBeenCalledWith(
+      `/award-shows/${fixture.event.abbreviation}`,
+      'layout',
+    );
   });
 });

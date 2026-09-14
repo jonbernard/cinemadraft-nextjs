@@ -33,6 +33,7 @@ export type Event = Omit<
     | 'awardsDate'
     | 'awardsTime'
     | 'awardsDuration'
+    | 'focusedAwardId'
     | 'createdAt'
     | 'updatedAt'
   >,
@@ -72,6 +73,7 @@ const SELECT = {
   awardsDate: true,
   awardsTime: true,
   awardsDuration: true,
+  focusedAwardId: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -192,6 +194,25 @@ export const eventRepository = {
       orderBy: { name: 'asc' },
     });
     return events.map(toEvent);
+  },
+
+  /**
+   * Put one category on every watcher's screen, or clear it (P10.T32).
+   *
+   * Written to the **event**, not to the award: there is one selection per
+   * show, and storing it on the category would make "which one is on screen"
+   * a scan of every category rather than one field. Null clears it.
+   *
+   * 🔴 Deliberately absent from `EventUpdate`. `actions/admin/update-event.ts`
+   * is an explicit field whitelist that closed the source's mass assignment;
+   * the live selection is a different act with a different control, and it
+   * gets its own action rather than widening that one.
+   */
+  async setFocusedAward(eventId: number, awardId: number | null): Promise<void> {
+    await db.event.update({
+      where: { id: eventId },
+      data: { focusedAwardId: awardId },
+    });
   },
 
   /**
