@@ -118,15 +118,27 @@ export function DraftBoard({
    *
    *   row    = (100vh - TV_CHROME) / seats
    *   poster = row - TV_CAPTION      — a height
-   *   column = poster * 2/3          — its width, from `aspect-[2/3]`
+   *   column = poster * 3/4 + 0.5rem — its width, from `aspect-[3/4]`, plus
+   *                                    the cell's own `px-1`
    *
    * and the board is capped at `seat column + rounds * column`, which
    * `table-fixed` then divides between the columns. The two constants are a
    * calibration knob measured in a production build: `TV_CHROME` is everything
-   * above and below this board on the page, `TV_CAPTION` the title and points
-   * line under each poster.
+   * above and below this board on the page, `TV_CAPTION` the title-and-points
+   * line under each poster plus the cell's own `py-1`.
+   *
+   * 🔴 **D124 re-cut both constants, and they are most of the change.**
+   * They were `21rem` and `3.25rem` — 336px of page furniture and 52px of
+   * caption — and 336px was real: an `<h1>`, the TV toggle, a group heading and
+   * 40px of gap all sat above this board. None of them do now (the toggle and
+   * the group nav float), so the furniture is the shell's own padding and this
+   * table's own header row, and the caption is one line instead of three.
+   *
+   * 🔴 The seat column stays `10rem`. Shrinking it is the obvious move and it
+   * buys **nothing**: width here is derived from height, so a narrower seat
+   * column makes the whole board narrower rather than the posters wider.
    */
-  const tvWidth = `calc(10rem + ${rounds} * ((100vh - 21rem) / ${seats.length} - 3.25rem) * 2 / 3)`;
+  const tvWidth = `calc(10rem + ${rounds} * (((100vh - 5.5rem) / ${seats.length} - 2.25rem) * 3 / 4 + 0.5rem))`;
 
   return (
     <div className={className}>
@@ -276,6 +288,7 @@ export function DraftBoard({
                       <td key={round} className={cn('px-1', tv ? 'py-1' : 'py-3')}>
                         <PickCell
                           round={round}
+                          tv={tv}
                           film={
                             pick
                               ? {

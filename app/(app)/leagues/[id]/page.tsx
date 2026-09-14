@@ -197,11 +197,24 @@ export default async function LeaguePage({
     //
     // 🔴 No `max-w-6xl` on a television. 1152px centred inside 1920 is a third
     // of the screen thrown away, and the board is sized from what is left.
+    //
+    // 🔴 And no `gap-10` either (D124). On a television the board is the
+    // only child in flow — the heading is `sr-only` and the controls are
+    // `fixed` — so a 40px gap would be 40px of poster spent on nothing.
     <div
-      className={cn('mx-auto flex flex-col gap-10', !tvMode && 'max-w-6xl')}
+      className={cn('mx-auto flex flex-col', tvMode ? 'gap-0' : 'max-w-6xl gap-10')}
       data-tv-mode={tvMode ? '' : undefined}
     >
-      <header className="flex flex-col gap-4">
+      {/* 🔴 The heading survives on a television; only its pixels do not
+          (D124). The owner's ask was that the posters take most of the
+          screen, and an `<h1>`, its eyebrow and the gap under it were 165px of
+          the 1080 — but a page with no `h1` is a document with no name, and the
+          `Group N` heading below it is an `h2` that would then start the
+          outline at 2. `sr-only` keeps the name and the heading order, and
+          costs no layout: it is
+          `position: absolute`, so it is not a flex item and the gap above does
+          not apply to it either. */}
+      <header className={cn('flex flex-col gap-4', tvMode && 'sr-only')}>
         <SectionHead
           as="h1"
           name
@@ -297,14 +310,37 @@ export default async function LeaguePage({
           </nav>
         ) : null}
 
-        {/* 🔴 The way out stays on the screen TV mode leaves behind, and the
-              group nav stays with it — a reader on a television has a remote
-              and no address bar, so a control that goes away with the chrome
-              it turned on is a trap (D112). Both hrefs come from `pageUrl`,
-              which is what carries `tv=1` through (D114). */}
-        <div className="flex flex-wrap items-center gap-3">
-          {tvMode && view.groups.length > 1 ? (
-            <nav aria-label="Groups" className="flex flex-wrap gap-3 text-sm">
+        {/* The way in, and only the way in. The way *out* is the floating
+              stack below, which is the only one of the two that a reader with
+              a remote and no address bar can ever need. */}
+        {tvMode ? null : (
+          <div className="flex flex-wrap items-center gap-3">
+            <TvModeLink href={pageUrl({ group: activeGroup, tv: true })} active={false} />
+          </div>
+        )}
+      </header>
+
+      {/* 🔴 The controls float, and they never go away (D124, D112).
+          A reader on a television has a remote, no address bar and no Escape
+          key, so the way out of TV mode may not be behind a hover, a keypress
+          or a scroll position — every one of those is a pointer affordance a
+          television does not have. This is a plain `fixed` stack in the corner
+          the board's own centring leaves empty at every group shape league 1
+          has ever had, painted on the panel colour so it still reads if a
+          wider board ever runs under it.
+
+          🔴 Every href comes from `pageUrl({ tv: true })`. D114, verbatim: the
+          live room's league picker shipped dropping `?tv=1` and stranded a
+          reader. The group nav is the same control in the same trap, and it is
+          the reason this block is built from one function rather than by hand
+          twice. */}
+      {tvMode ? (
+        <div
+          data-tv-controls
+          className="border-border-rule bg-bg-panel/95 fixed bottom-2 right-2 z-50 flex flex-col items-end gap-2 rounded-sm border p-2"
+        >
+          {view.groups.length > 1 ? (
+            <nav aria-label="Groups" className="flex flex-col items-end gap-1 text-sm">
               {view.groups.map((entry) => (
                 <Link
                   key={entry.group}
@@ -312,8 +348,8 @@ export default async function LeaguePage({
                   aria-current={entry.group === activeGroup ? 'page' : undefined}
                   className={
                     entry.group === activeGroup
-                      ? 'text-accent-text flex min-h-11 items-center'
-                      : 'text-text-secondary flex min-h-11 items-center underline'
+                      ? 'text-accent-text flex min-h-11 items-center px-4'
+                      : 'text-text-secondary flex min-h-11 items-center px-4 underline'
                   }
                 >
                   Group {entry.group}
@@ -321,12 +357,9 @@ export default async function LeaguePage({
               ))}
             </nav>
           ) : null}
-          <TvModeLink
-            href={pageUrl({ group: activeGroup, tv: !tvMode })}
-            active={tvMode}
-          />
+          <TvModeLink href={pageUrl({ group: activeGroup, tv: false })} active />
         </div>
-      </header>
+      ) : null}
 
       <LeagueBoardRoom
         // 🔴 Keyed on the stream URL, so switching season reconciles into a new

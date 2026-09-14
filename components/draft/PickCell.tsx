@@ -33,17 +33,37 @@ export type PickCellFilm = {
 export function PickCell({
   film,
   round,
+  tv = false,
   className,
 }: {
   film?: PickCellFilm;
   round: number;
+  /**
+   * TV sizing (D124). Three things change and nothing else:
+   *
+   * 🔴 **The box is `3/4`, not `2/3`** — a deliberate 12.5% squat. The board's
+   * binding constraint is height (four seats down 1080), so the poster's height
+   * is fixed by arithmetic no matter what; the only thing a ratio buys is
+   * *width*, and 3:4 buys 12.5% of it for an 11% centre crop under
+   * `object-cover`. The owner asked for exactly this trade: "if you need to
+   * scale things down vertically, scale down the posters."
+   *
+   * 🔴 **The caption is one line, on one row.** Two 12px lines plus a points
+   * line cost 50px of every row — 200px of the 1080, taken off the posters.
+   *
+   * 🔴 **No disclosure.** `PointsLedger` opens a panel in flow; a row sized to
+   * the pixel would be blown apart by one, and a remote has no good way to shut
+   * it again. The total still shows — see the call below.
+   */
+  tv?: boolean;
   className?: string;
 }) {
   if (!film) {
     return (
       <div
         className={cn(
-          'poster-radius bg-bg-ground/40 light:border-border-rule flex aspect-[2/3] items-center justify-center light:border light:border-dashed',
+          'poster-radius bg-bg-ground/40 light:border-border-rule flex items-center justify-center light:border light:border-dashed',
+          tv ? 'aspect-[3/4]' : 'aspect-[2/3]',
           className,
         )}
       >
@@ -57,13 +77,20 @@ export function PickCell({
 
   return (
     <figure className={cn('flex flex-col gap-1', className)}>
-      <div className="poster-radius bg-bg-surface light:border-border-rule relative aspect-[2/3] overflow-hidden light:border">
+      <div
+        className={cn(
+          'poster-radius bg-bg-surface light:border-border-rule relative overflow-hidden light:border',
+          tv ? 'aspect-[3/4]' : 'aspect-[2/3]',
+        )}
+      >
         {film.posterUrl ? (
           <RemoteImage
             src={film.posterUrl}
             alt=""
             fill
-            sizes="96px"
+            // A television renders these two to three times the size a desktop
+            // board does; asking for the 96px source there is a blurred poster.
+            sizes={tv ? '256px' : '96px'}
             className="object-cover"
           />
         ) : (
@@ -76,14 +103,38 @@ export function PickCell({
         </span>
       </div>
 
-      <figcaption className="flex flex-col">
-        <span className="text-text-primary line-clamp-2 text-xs leading-tight">
+      <figcaption
+        className={cn('flex', tv ? 'items-baseline justify-between gap-2' : 'flex-col')}
+      >
+        <span
+          // 🔴 `leading-tight` rides along inside each branch rather than
+          // sitting in the shared prefix. `cn` is `twMerge`, and twMerge treats
+          // a font size as conflicting with a line height — a later `text-xs`
+          // deletes an earlier `leading-tight`. Hoisting it silently added 1px
+          // a line to every caption on the ORDINARY board, which is how this
+          // was caught: 5728px of page became 5780.
+          className={cn(
+            'text-text-primary',
+            tv
+              ? 'line-clamp-1 text-sm leading-tight'
+              : 'line-clamp-2 text-xs leading-tight',
+          )}
+        >
           {film.title}
         </span>
         {/* The number explains itself in place (§6.7): the board stays
             scannable, and the answer to "why" is one interaction away rather
-            than on another page. */}
-        <PointsLedger total={film.points} lines={film.ledger ?? []} label={film.title} />
+            than on another page.
+
+            🔴 On a television there are no lines to give it, which is how the
+            disclosure is turned off — `PointsLedger` with no lines renders the
+            bare total, which is the whole of what a room across the sofa can
+            read anyway. */}
+        <PointsLedger
+          total={film.points}
+          lines={tv ? [] : (film.ledger ?? [])}
+          label={film.title}
+        />
       </figcaption>
     </figure>
   );

@@ -200,6 +200,30 @@ async function seedSecondGroup(leagueId: number): Promise<void> {
 }
 
 /**
+ * Two more placeholder seats in group 1, so the television test runs against
+ * the shape a television actually shows.
+ *
+ * 🔴 Not decoration. Every group in league 1, in every season it has, is FOUR
+ * seats, and the poster arithmetic divides the screen's height by the seat
+ * count — so a two-seat fixture makes posters twice the height a real one gets
+ * and "the board takes most of the screen" passes for shapes where it does not.
+ * D124's own before-state proves it: at four seats the shipped board filled
+ * 71.9% of 1080 and would fail the gate below, and at two seats it filled 76%
+ * and would pass it. The gate is only a gate at four.
+ */
+async function seedExtraSeats(leagueId: number): Promise<void> {
+  await withDb(async (query) => {
+    await query(
+      `insert into drafts (league_id, year, user_id, "group", "order", dummy, dummy_name,
+                           created_at, updated_at)
+         values ($1, $2, null, 1, 3, true, $3, now(), now()),
+                ($1, $2, null, 1, 4, true, $4, now(), now())`,
+      [leagueId, YEAR, `${TAG} Third`, `${TAG} Fourth`],
+    );
+  });
+}
+
+/**
  * The first frame of an SSE connection, read as bytes — `e2e/live.spec.ts`'s
  * helper, for the same reason it exists there.
  *
@@ -430,6 +454,7 @@ test.describe('the league board, live', () => {
     await seedShow();
     const { leagueId } = await seedLeague(page);
     await seedSecondGroup(leagueId);
+    await seedExtraSeats(leagueId);
 
     // One pick before the watcher arrives: `rounds` is the longest seat in the
     // group, so an undrafted group has no columns at all and "every cell" would
@@ -466,23 +491,95 @@ test.describe('the league board, live', () => {
       await expect(rail).toHaveCount(1);
       await expect(rail).toBeHidden();
 
-      // A television cannot scroll, in either direction. The height is the
-      // binding constraint and is measured in the task's own production run;
-      // what a test can hold forever is that nothing runs off the side.
-      expect(await viewer.evaluate(() => document.documentElement.scrollWidth)).toBe(
-        1920,
-      );
+      // A television cannot scroll, in either direction — and height is the
+      // binding constraint, so it is the one that has to be pinned here rather
+      // than only measured once in a task's production run.
+      expect(
+        await viewer.evaluate(() => ({
+          width: document.documentElement.scrollWidth,
+          height: document.documentElement.scrollHeight,
+        })),
+      ).toEqual({ width: 1920, height: 1080 });
 
       // One group, not both stacked — and all of it.
       const board = viewer.getByRole('table', {
         name: 'Draft board: one row per seat, one column per round',
       });
       await expect(board).toHaveCount(1);
-      await expect(viewer.getByRole('heading', { name: 'Group 1' })).toBeVisible();
+      // 🔴 The `Group N` heading is `sr-only` on a television (D124) — 32px
+      // of the 1080 that the posters now have — so which group is on screen is
+      // read off the floating nav's `aria-current`, and the heading is checked
+      // for existence rather than for pixels. `toBeVisible()` would have been
+      // the decorative version: `sr-only` is a 1x1 box and Playwright calls
+      // that visible, so the assertion would have survived the change it was
+      // supposed to be about.
+      await expect(viewer.getByRole('heading', { name: 'Group 1' })).toHaveCount(1);
+      await expect(
+        viewer.getByRole('navigation', { name: 'Groups' }).getByRole('link', {
+          name: 'Group 1',
+        }),
+      ).toHaveAttribute('aria-current', 'page');
       const rounds = (await board.locator('thead th').count()) - 1;
       expect(rounds).toBeGreaterThan(0);
-      await expect(board.locator('tbody tr')).toHaveCount(2);
-      await expect(board.locator('tbody td')).toHaveCount(2 * rounds);
+      await expect(board.locator('tbody tr')).toHaveCount(4);
+      await expect(board.locator('tbody td')).toHaveCount(4 * rounds);
+
+      /**
+       * 🔴 D124, the owner's ask: "I want the section with all the posters
+       * to take up most of the screen." Three numbers, and each one is aimed at
+       * a different way of losing it again:
+       *
+       *   - **the grid is at least 75% of the viewport's height** — the target,
+       *     stated as a number. The shipped P14.T19 board was 71.9% at this
+       *     shape and fails it.
+       *   - **the grid starts within 24px of the top of the screen** — which is
+       *     the *reason* it can be. The furniture that used to sit above it (an
+       *     `h1`, its eyebrow, the TV toggle, a group heading, 40px of gap) was
+       *     250px, and this is the assertion that goes red if any of it comes
+       *     back. A percentage on its own would not: it is a ratio of the
+       *     grid to the viewport, not to the page.
+       *   - **the poster box is 3:4, not 2:3** — the deliberate squat. Height
+       *     is fixed by the seat count either way, so the ratio is the only
+       *     thing that buys width, and a revert to `aspect-[2/3]` would take
+       *     12.5% of every poster's width back without changing either number
+       *     above.
+       */
+      const shape = await viewer.evaluate(() => {
+        const table = document.querySelector('table') as HTMLElement;
+        const grid = table.parentElement as HTMLElement;
+        const poster = table.querySelector('tbody td div') as HTMLElement;
+        const box = grid.getBoundingClientRect();
+        const art = poster.getBoundingClientRect();
+        return { top: box.top, height: box.height, ratio: art.height / art.width };
+      });
+      expect(shape.height).toBeGreaterThanOrEqual(0.75 * 1080);
+      expect(shape.top).toBeLessThanOrEqual(24);
+      expect(shape.ratio).toBeGreaterThan(1.31);
+      expect(shape.ratio).toBeLessThan(1.36);
+
+      /**
+       * 🔴 The controls float, and D112 is why they must: a reader on a
+       * television has a remote, no address bar and no Escape key, so the way
+       * out of TV mode may never be off-screen, behind a hover or behind a
+       * scroll. `position: fixed` plus "its box is inside the viewport" is that
+       * claim; `toBeVisible()` alone would pass for a control parked 3000px
+       * down a page nobody can scroll.
+       */
+      const controls = viewer.locator('[data-tv-controls]');
+      await expect(controls).toBeVisible();
+      const placement = await controls.evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        return {
+          position: getComputedStyle(node).position,
+          inside:
+            box.top >= 0 &&
+            box.left >= 0 &&
+            box.bottom <= window.innerHeight &&
+            box.right <= window.innerWidth,
+        };
+      });
+      expect(placement).toEqual({ position: 'fixed', inside: true });
+      await expect(controls.getByRole('link', { name: 'Leave TV mode' })).toBeVisible();
 
       // 🔴 D114, exactly: the live room's league picker shipped dropping
       // `?tv=1` and stranded a reader who had a remote and no address bar. The
@@ -494,7 +591,12 @@ test.describe('the league board, live', () => {
       await expect(viewer).toHaveURL(/group=2/);
       await expect(viewer).toHaveURL(/tv=1/);
       await expect(rail).toBeHidden();
-      await expect(viewer.getByRole('heading', { name: 'Group 2' })).toBeVisible();
+      await expect(viewer.getByRole('heading', { name: 'Group 2' })).toHaveCount(1);
+      await expect(
+        viewer.getByRole('navigation', { name: 'Groups' }).getByRole('link', {
+          name: 'Group 2',
+        }),
+      ).toHaveAttribute('aria-current', 'page');
       // And the way out is still on the screen TV mode left behind.
       await expect(viewer.getByRole('link', { name: 'Leave TV mode' })).toBeVisible();
 
