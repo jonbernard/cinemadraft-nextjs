@@ -62,6 +62,28 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
   and accounts. `lib/db.test.ts` refuses any port but 5433/5434, which catches a
   unit run but only after it has finished.
 
+  🔴 **A migration has to be applied to all three, by hand.** There is no
+  hook that fans one out. An agent runs `prisma migrate deploy` against its own
+  executor, the other two stay behind, and the first symptom is the owner's dev
+  server throwing `The column ... does not exist in the current database` on a
+  page that has nothing to do with the change — which is exactly what happened
+  within an hour of the split, on 2026-09-13. After adding a migration:
+
+  ```bash
+  for P in 5432 5433 5434; do
+    DATABASE_URL=postgresql://cinemadraft:local@localhost:$P/cinemadraft \
+      npx prisma migrate deploy
+  done
+  ```
+
+  Safe to re-run: `migrate deploy` applies only what is pending and touches no
+  rows. Verify with `\d events` or an `information_schema.columns` count on each
+  port rather than trusting the command's own output.
+
+  🔴 **`npx prisma generate` belongs in the main checkout only.** A worktree
+  hardlinks `generated/`, so running it there writes the main checkout's files
+  underneath whoever is working in it.
+
   **Why three.** They used to be two, and 5433 was both the test baseline and
   what `next dev` read. On 2026-09-13 the owner signed in to verify the Clerk
   flow and made a league while clicking around — ordinary use — and nine tests
