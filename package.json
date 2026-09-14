@@ -28,7 +28,10 @@
     "test:ci": "vitest run --config vitest.ci.config.mts",
     "verify": "npm run lint && npm run typecheck && npm run layering && npm run test && npm run test:ci && npm run build",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "agent:up": "bash scripts/agent-up.sh",
+    "agent:down": "bash scripts/agent-down.sh",
+    "agent:baseline": "bash scripts/agent-baseline.sh"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.5",

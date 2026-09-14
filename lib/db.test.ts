@@ -16,14 +16,27 @@ describe('db', () => {
     // A test that reaches Neon is a bug: Neon holds the only restored copy of
     // production data, and the suite would be mutating it.
     //
-    // 🔴 Either local port. 5433 is the primary restored copy; 5434 is its
-    // clone, which exists so two agents can run suites at once — the DB-backed
-    // project is serial by design, so two runs against one database race the
-    // active-year index. Pinning 5433 here made the second database fail this
-    // test and nothing else, which reads as "the clone is broken" rather than
-    // "the assertion is narrower than the rule it states".
-    expect(process.env.DATABASE_URL).toMatch(/localhost:543[34]\b/);
-    expect(process.env.DATABASE_URL).not.toContain('neon.tech');
+    // 🔴 **Any local agent port, and explicitly NOT 5432.**
+    //
+    // This used to read `543[34]`, naming the two shared databases agents took
+    // turns on. That made the ceiling of two a property of a TEST rather than
+    // of the machine: provisioning a third was not enough, because this
+    // assertion failed on it and the failure read as "the new database is
+    // broken". `scripts/agent-up.sh` now gives every agent its own on the
+    // first free port from 5440, so the rule is stated as the rule — a local
+    // Docker database that is neither the owner's nor Neon.
+    //
+    // 5432 is `cinemadraft-postgres`, which `next dev` reads through
+    // `.env.local` and which holds leagues the owner made by hand and a real
+    // Clerk claim. A suite pointed there mutates what they are looking at, and
+    // their ordinary use of the product turns exact row counts red — which
+    // cost a full suite run to diagnose on 2026-09-13 and is why the databases
+    // were separated at all. `playwright.config.mts` refuses it too, at config
+    // load, because the browser specs write before this test ever runs.
+    const url = process.env.DATABASE_URL ?? '';
+    expect(url).toMatch(/localhost:(543[3-9]|54[4-9]\d|5[5-9]\d\d)\b/);
+    expect(url).not.toMatch(/localhost:5432\b/);
+    expect(url).not.toContain('neon.tech');
   });
 
   it('reads the restored production data', async () => {

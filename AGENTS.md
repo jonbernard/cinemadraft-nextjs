@@ -99,7 +99,26 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
   - Re-clone it whenever it drifts: `pg_dump -h localhost -p 5433 … -Fc` piped into `pg_restore -h localhost -p 5434 … --clean --if-exists`. Both must sit at the baseline counts above, or `lib/db.test.ts` fails on whichever one a run happens to use.
 - **Two agents at once means two worktrees and two databases.** One checkout cannot hold two builds: `npm run build` writes a shared `.next/`, so two production builds race each other silently and each measures a directory the other is overwriting. The git index is shared too — staging a file someone else is mid-edit sweeps their work into your commit, which has happened here.
 
-  Recipe, with the two traps that cost time:
+  🔴 **Use `npm run agent:up <name>` rather than the recipe below.** It creates
+  the worktree, hardlinks `node_modules` and `generated`, starts a Postgres of
+  its own on the first free port from 5440, restores `.local/baseline.dump`,
+  brings the schema current with `prisma migrate deploy`, and prints the
+  `export` lines to `eval`. `npm run agent:down <name> --env-only` is what the
+  AGENT runs when it finishes — it removes that database and frees the ports but
+  keeps the worktree and branch, which still hold the work; the plain form is
+  what the orchestrator runs after merging, and it refuses while the branch has
+  commits `dev` does not.
+
+  That removes the ceiling of two. `lib/db.test.ts` used to pin ports 5433/5434,
+  so a third database failed its assertion and the failure read as "the new
+  database is broken"; it now accepts any local port from 5433 up and refuses
+  5432 and Neon. 🔴 The baseline is a **data** fixture only — `agent:up` runs
+  migrations after restoring, so a schema change does NOT require recapturing
+  it. Refresh it with `npm run agent:baseline <port>` only when the rows should
+  change; it refuses a source that has drifted from 60/13/1355/156 or that is
+  the owner's 5432.
+
+  The manual recipe, for reference, with the two traps that cost time:
 
   ```bash
   git worktree add -b <task-branch> /Users/jonbernard/Development/.cd-wt-<name> main
@@ -110,6 +129,21 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
   🔴 **Hardlink `node_modules`; never symlink it.** Turbopack rejects a symlink outright — `Symlink [project]/node_modules is invalid, it points out of the filesystem root` — and the build fails with no useful hint. 🔴 **`generated/` must be copied too**: Prisma's client is gitignored, so a fresh worktree has none, typecheck silently collapses Prisma types to `any`, and the DB-backed tests fail to import.
 
   Each worktree exports its own `DATABASE_URL` (5433 or 5434) and starts its own server on its own port. Commit on the task branch and merge; two worktrees cannot both check out `main`.
+
+  🔴 **Never `git reset --hard` (or `checkout --`, `restore`, `clean`) in a
+  checkout another agent is working in.** Run `git status --porcelain` first and
+  read it; if anything modified is not yours, do not run the command. Unstaged
+  changes never enter git's object store, so there is nothing to recover them
+  from afterwards — this destroyed a subagent's in-progress edits to five files
+  on 2026-09-13, and the agent had to re-apply them from its own context.
+
+  To undo a commit, `git revert`. To back out a merge with a dirty tree,
+  `git reset --merge` or `git reset --keep`, both of which **refuse** rather
+  than discard. `--hard` is never the way to tidy up.
+
+  This is a worse hazard than the stash below, not a milder one: the stash needs
+  two agents to both reach for it, while `reset --hard` needs only one agent and
+  takes everyone's work in that checkout.
 
   🔴 **Never `git stash` while two worktrees are live.** The stash stack is a
   property of the **repository**, not of the worktree — `git stash` in one and
