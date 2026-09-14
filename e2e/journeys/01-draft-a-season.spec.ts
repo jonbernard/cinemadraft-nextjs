@@ -296,14 +296,21 @@ test.describe('journey 1 — a season, from nothing to a finished draft', () => 
     });
 
     await beat(page, 'The draft is opened — groups are fixed from here', async () => {
-      page.once('dialog', (dialog) => dialog.accept());
       await page.getByRole('button', { name: 'Start the draft' }).click();
-      await expect(page.getByText('The draft is open')).toBeVisible();
+      // 🔴 In-app confirmation (P14). Scoped to the dialog: the trigger
+      // underneath shares its accessible name.
+      const confirmStart = page.getByRole('dialog');
+      await expect(confirmStart).toBeVisible();
+      await confirmStart.getByRole('button', { name: 'Start the draft' }).click();
     });
 
-    await beat(page, 'The owner opens the draft console', async () => {
-      await page.goto(`/leagues/${leagueId}`);
-      await page.getByRole('link', { name: 'Run the draft' }).click();
+    await beat(page, 'And that drops them straight into the console', async () => {
+      // 🔴 Opening the draft NAVIGATES now (P14, the owner's request). This
+      // beat used to go back to the league page and click "Run the draft" —
+      // a link that no longer exists on a pending league and, once started,
+      // is a step the owner does not have to take. The journey is shorter
+      // because the product is.
+      await page.waitForURL(`**/leagues/${leagueId}/draft**`);
       await expect(page).toHaveURL(/\/leagues\/\d+\/draft/);
       // Four groups, so the console offers a way between them.
       await expect(page.getByRole('navigation', { name: 'Groups' })).toBeVisible();
@@ -382,8 +389,12 @@ test.describe('journey 1 — a season, from nothing to a finished draft', () => 
       // 🔴 P19.T1. Until this phase there was no way to reach this state at
       // all: `completeDraft` existed and nothing called it.
       await page.goto(`/leagues/${leagueId}/setup`);
-      page.once('dialog', (dialog) => dialog.accept());
       await page.getByRole('button', { name: 'Finish the draft' }).click();
+      // 🔴 In-app confirmation (P14). Scoped to the dialog: the trigger
+      // underneath shares its accessible name.
+      const confirmFinish = page.getByRole('dialog');
+      await expect(confirmFinish).toBeVisible();
+      await confirmFinish.getByRole('button', { name: 'Finish the draft' }).click();
       await expect(page.getByText('The draft is finished')).toBeVisible();
     });
 

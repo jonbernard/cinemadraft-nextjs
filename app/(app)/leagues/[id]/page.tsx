@@ -177,28 +177,24 @@ export default async function LeaguePage({
               the board, and both step back. */}
         {canManage ? (
           <div className="flex flex-wrap items-center gap-3">
-            {view.groups.length === 0 ? (
-              <>
-                <PrimaryAction href={`/leagues/${view.leagueId}/setup?year=${view.year}`}>
-                  Set up the season
-                </PrimaryAction>
-                <SecondaryAction
-                  href={`/leagues/${view.leagueId}/draft?year=${view.year}`}
-                >
-                  Run the draft
-                </SecondaryAction>
-              </>
-            ) : isPending ? (
-              <>
-                <PrimaryAction href={`/leagues/${view.leagueId}/draft?year=${view.year}`}>
-                  Run the draft
-                </PrimaryAction>
-                <SecondaryAction
-                  href={`/leagues/${view.leagueId}/setup?year=${view.year}`}
-                >
-                  Set up the season
-                </SecondaryAction>
-              </>
+            {view.groups.length === 0 || isPending ? (
+              /* 🔴 One action while the season is not running, and it is NOT
+                 "Run the draft".
+
+                 With no groups, `getDraftConsole` throws `NotFoundError` and
+                 the console is a 404. With groups but `pending`, the draft has
+                 not been started and every pick is refused
+                 (`actions/draft/guard.ts`) — so the console is a screen that
+                 says no to everything. This used to offer "Run the draft" as
+                 the loud carmine primary on exactly those states; the owner
+                 reported it against a league of theirs reading "2026 ·
+                 PENDING".
+
+                 The way in is setup, which is where "Start the draft" lives —
+                 and pressing it now lands on the console directly. */
+              <PrimaryAction href={`/leagues/${view.leagueId}/setup?year=${view.year}`}>
+                Set up the season
+              </PrimaryAction>
             ) : (
               <>
                 <SecondaryAction

@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState, useTransition } from 'react';
 import { completeDraft, startDraft } from '@/actions/leagues/manage-league';
 import {
@@ -545,6 +546,7 @@ function StartDraftButton({
 }) {
   const [pending, startTransition] = useTransition();
   const { confirm, dialog } = useConfirm();
+  const router = useRouter();
 
   const start = useCallback(async () => {
     if (
@@ -557,9 +559,25 @@ function StartDraftButton({
     }
     startTransition(async () => {
       const result = await startDraft({ leagueId, year });
-      onDone(result.ok ? 'The draft is open' : result.message);
+      if (!result.ok) {
+        onDone(result.message);
+        return;
+      }
+      // 🔴 Straight to the console. Starting the draft is the moment the
+      // owner stops arranging and starts running it — on a call, with the
+      // league watching — and the only thing they can do next is enter picks.
+      // Leaving them on the setup page meant reading a success message and
+      // then going looking for the way in, which is the least convenient
+      // possible half-second.
+      //
+      // It is also now the ONLY way in: the league page stopped offering "Run
+      // the draft" on a pending league, because picks are refused before the
+      // start (`actions/draft/guard.ts`) and that button led to a console that
+      // would refuse every one of them.
+      onDone('The draft is open');
+      router.push(`/leagues/${leagueId}/draft?year=${year}`);
     });
-  }, [leagueId, year, onDone, confirm]);
+  }, [leagueId, year, onDone, confirm, router]);
 
   return (
     <>

@@ -255,19 +255,25 @@ test.describe('signed-in surfaces', () => {
       );
       if (!other) throw new Error(`the scratch season ${SCRATCH_YEAR} is not offered`);
 
-      let dialogMessage: string | null = null;
-      page.once('dialog', (dialog) => {
-        dialogMessage = dialog.message();
-        void dialog.dismiss();
-      });
-
       await select.selectOption({ label: other });
       await commit.click();
 
-      expect(dialogMessage, 'pressing commit must raise a confirmation').not.toBeNull();
+      // 🔴 The confirmation is an in-app dialog now (P14), not browser chrome,
+      // so the wording is read off the rendered element rather than out of a
+      // `page.on('dialog')` handler. That is strictly stronger: the old version
+      // asserted the text of a string that `window.confirm` was *asked* to
+      // show, which is not evidence that anything reached the screen.
+      const confirm = page.getByRole('dialog');
+      await expect(confirm, 'pressing commit must raise a confirmation').toBeVisible();
+      const dialogMessage = (await confirm.textContent()) ?? '';
+
       expect(dialogMessage).toContain(other.trim());
       expect(dialogMessage).toMatch(/\d+ (person|people)/);
       expect(dialogMessage).toMatch(/cannot be undone/i);
+
+      // Declining is a click on Cancel, not `dialog.dismiss()`.
+      await confirm.getByRole('button', { name: 'Cancel' }).click();
+      await expect(confirm).toBeHidden();
 
       // Declining changes nothing — in the UI, and in the table.
       await expect(page.getByText(/is now the active season/)).toHaveCount(0);
@@ -394,17 +400,24 @@ test.describe('the league page', () => {
     // thumb can hit — and the fill is what says it is the act this state calls
     // for. Both are read off the rendered element, so the old treatment fails
     // both.
-    const run = page.getByRole('link', { name: 'Run the draft' });
     const setUp = page.getByRole('link', { name: 'Set up the season' });
-    const runBox = await run.boundingBox();
-    expect(runBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    const setUpBox = await setUp.boundingBox();
+    expect(setUpBox?.height ?? 0).toBeGreaterThanOrEqual(44);
 
-    const filled = async (locator: typeof run) =>
+    const filled = async (locator: typeof setUp) =>
       locator.evaluate((node) => getComputedStyle(node).backgroundColor);
     const transparent = /rgba\(0, 0, 0, 0\)|transparent/;
-    // A pending draft: running it is primary, setting up again is not.
-    expect(await filled(run)).not.toMatch(transparent);
-    expect(await filled(setUp)).toMatch(transparent);
+    // A pending draft: setting up IS the act this state calls for, so it is
+    // the filled primary.
+    expect(await filled(setUp)).not.toMatch(transparent);
+
+    // 🔴 And "Run the draft" is not offered at all while pending (P14). The
+    // draft has not been started, so every pick would be refused
+    // (`actions/draft/guard.ts`) — the console is a screen that says no to
+    // everything, and it used to be the loud carmine primary on this exact
+    // state. Asserted as an absence rather than dropped from the test: without
+    // this line the page could grow it back and nothing here would notice.
+    await expect(page.getByRole('link', { name: 'Run the draft' })).toHaveCount(0);
 
     // 🔴 Not printed on arrival, and reachable in one click.
     //
@@ -440,7 +453,21 @@ test.describe('the league page', () => {
         .evaluate((node) => getComputedStyle(node).backgroundColor);
     const transparent = /rgba\(0, 0, 0, 0\)|transparent/;
     expect(await fill('Set up the season')).not.toMatch(transparent);
-    expect(await fill('Run the draft')).toMatch(transparent);
+
+    // 🔴 "Run the draft" is absent, not merely unfilled (P14). With no seats
+    // dealt into groups `getDraftConsole` throws `NotFoundError`, so the link
+    // led to a 404 — offering it as a secondary action was offering a broken
+    // link, and this test used to assert its *colour*, which is a way of
+    // pinning that it was there.
+    await expect(page.getByRole('link', { name: 'Run the draft' })).toHaveCount(0);
+
+    // 🔴 And the primary-vs-secondary claim still needs a second control to
+    // mean anything, so it is made against the one that IS here: the invite
+    // trigger, which is outlined rather than filled.
+    const invite = page.getByRole('button', { name: 'Invite', exact: true });
+    expect(
+      await invite.evaluate((node) => getComputedStyle(node).backgroundColor),
+    ).toMatch(transparent);
   });
 
   test('a complete season offers no invite at all', async ({ page }) => {

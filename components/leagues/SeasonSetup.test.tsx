@@ -27,7 +27,18 @@ const randomiseGroups = vi.hoisted(() =>
   })),
 );
 const removeSeat = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
-const startDraft = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
+// 🔴 Typed as the action's real return, not inferred from the happy path.
+// Inferred, `mockResolvedValueOnce({ ok: false, message })` does not typecheck —
+// and `npm run typecheck` does not cover test files, so it fails only in
+// `next build`, i.e. when the e2e webServer tries to start.
+const startDraft = vi.hoisted(() =>
+  vi.fn(
+    async (): Promise<{ ok: boolean; data?: null; message?: string }> => ({
+      ok: true,
+      data: null,
+    }),
+  ),
+);
 const completeDraft = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
 
 vi.mock('@/actions/leagues/manage-seats', () => ({
@@ -37,6 +48,15 @@ vi.mock('@/actions/leagues/manage-seats', () => ({
   removeSeat,
 }));
 vi.mock('@/actions/leagues/manage-league', () => ({ startDraft, completeDraft }));
+
+/**
+ * 🔴 Starting the draft navigates to the console (P14), so the component calls
+ * `useRouter`, which throws "invariant expected app router to be mounted" in
+ * jsdom. Same shape as `AppShell.test.tsx` and `SearchOverlay.test.tsx`, and
+ * `push` is a spy so the navigation is asserted rather than merely permitted.
+ */
+const push = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
 import { SeasonSetup, type SetupSeatView } from '@/components/leagues/SeasonSetup';
 import { CHARACTERS } from '@/lib/leagues/characters';
@@ -526,5 +546,35 @@ describe('SeasonSetup, rounding out the groups', () => {
       ],
     });
     expect(screen.getByText('No running order yet')).toBeInTheDocument();
+  });
+
+  it('lands the owner on the console once the draft is open', async () => {
+    // 🔴 The owner's request: "When you lock in the orders/groups, it should
+    // take the user straight to the draft page." It is also the only way in
+    // now — the league page stopped offering "Run the draft" on a pending
+    // league, because picks are refused before the start.
+    const user = setup();
+
+    await user.click(screen.getByRole('button', { name: 'Start the draft' }));
+    const confirm = await screen.findByRole('dialog');
+    await user.click(within(confirm).getByRole('button', { name: 'Start the draft' }));
+
+    await waitFor(() => {
+      expect(push).toHaveBeenCalledWith('/leagues/7/draft?year=2026');
+    });
+  });
+
+  it('stays put when starting the draft fails', async () => {
+    // 🔴 A redirect on failure would carry the owner to a console that is not
+    // open, and the message saying why would be on the page they just left.
+    startDraft.mockResolvedValueOnce({ ok: false, message: 'set up the groups first' });
+    const user = setup();
+
+    await user.click(screen.getByRole('button', { name: 'Start the draft' }));
+    const confirm = await screen.findByRole('dialog');
+    await user.click(within(confirm).getByRole('button', { name: 'Start the draft' }));
+
+    expect(await screen.findByText(/set up the groups first/i)).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
 });

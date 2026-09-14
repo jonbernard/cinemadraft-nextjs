@@ -3,6 +3,26 @@ import { expect, type Page, test } from '@playwright/test';
 import { signInAs } from './support/session';
 
 /**
+ * Click through an in-app confirmation (P14, replacing `window.confirm`).
+ *
+ * 🔴 **Asserts the dialog appeared before clicking it.** The handlers this
+ * replaced — `page.once('dialog', (d) => d.accept())` — did not: with the
+ * confirmation deleted entirely no dialog would ever fire, the handler would
+ * simply never run, and the test would stay green. Two of them were unsound
+ * that way for as long as they existed.
+ *
+ * 🔴 **Scoped to the dialog.** The trigger and the confirm button share an
+ * accessible name by design (the button says the act), so an unscoped
+ * `getByRole('button', { name })` matches the trigger underneath and Playwright
+ * either re-clicks it or fails strict mode.
+ */
+async function confirmIn(page: Page, name: string | RegExp): Promise<void> {
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name }).click();
+}
+
+/**
  * 🔴 The Batch C gate: an owner can arrange a season and open the draft, and
  * nobody else can touch any of it.
  *
@@ -109,8 +129,11 @@ test.describe('season setup', () => {
 
     // 🔴 The draft cannot open while everyone is ungrouped: the board groups
     // by `group`, and all-null collapses into one group of everybody.
-    page.once('dialog', (dialog) => dialog.accept());
+    // 🔴 An in-app dialog, not browser chrome. The trigger and the confirm
+    // button share an accessible name, so the second click MUST be scoped to
+    // the dialog or it re-clicks the trigger and the test passes on nothing.
     await page.getByRole('button', { name: 'Start the draft' }).click();
+    await confirmIn(page, 'Start the draft');
     await expect(page.getByText(/set up the groups/i)).toBeVisible();
     expect((await statusOf(leagueId))[0]?.drafting_status).toBe('pending');
 
@@ -127,13 +150,21 @@ test.describe('season setup', () => {
       .poll(async () => (await seats(leagueId)).every((seat) => seat.group != null))
       .toBe(true);
 
-    page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Start the draft' }).click();
-    await expect(page.getByText('The draft is open')).toBeVisible();
+    await confirmIn(page, 'Start the draft');
+
+    // 🔴 Opening the draft LANDS ON THE CONSOLE now (P14, the owner's request:
+    // "when you lock in the orders/groups it should take the user straight to
+    // the draft page"). So the in-page "The draft is open" message is set and
+    // immediately navigated away from — asserting it would be racing the
+    // router. The navigation is the stronger claim anyway: it says the console
+    // opened, not merely that a string rendered.
+    await page.waitForURL(`**/leagues/${leagueId}/draft**`);
+    await expect(page.getByRole('heading', { name: /running order/i })).toBeVisible();
     expect((await statusOf(leagueId))[0]?.drafting_status).toBe('active');
 
     // 🔴 Arrangement controls disappear once it is open.
-    await page.reload();
+    await page.goto(`/leagues/${leagueId}/setup`);
     await expect(page.getByRole('button', { name: 'Deal at random' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Start the draft' })).toHaveCount(0);
   });
