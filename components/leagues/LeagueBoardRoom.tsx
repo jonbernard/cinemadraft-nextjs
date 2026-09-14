@@ -264,8 +264,18 @@ export function LeagueBoardRoom({
         groups.map((group) => (
           <section key={group.group} className="flex flex-col gap-4">
             {/* A heading and a running-order position are content, so
-                  `secondary`, not `dim` (P17.T34). */}
-            <h2 className="text-text-secondary text-xs font-normal">
+                  `secondary`, not `dim` (P17.T34).
+
+                  🔴 `sr-only` on a television (D124). The heading plus the
+                  gap under it is 32px of the 1080, and on a television the
+                  group is already named twice over — by the floating group nav,
+                  whose current entry carries `aria-current="page"` and the
+                  accent colour, and by the URL that was cast. The heading stays
+                  in the document so the outline and the section's own name do;
+                  only its pixels go. */}
+            <h2
+              className={tvMode ? 'sr-only' : 'text-text-secondary text-xs font-normal'}
+            >
               Group {group.group}
             </h2>
 
