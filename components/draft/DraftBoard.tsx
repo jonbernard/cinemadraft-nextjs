@@ -79,12 +79,19 @@ export function DraftBoard({
   seats,
   rounds,
   viewerSeatId,
+  tv = false,
   className,
 }: {
   seats: readonly BoardSeat[];
   rounds: number;
   /** The signed-in member's own seat, if they have one in this group. */
   viewerSeatId?: number | null;
+  /**
+   * TV sizing (P14.T19) — the same seats, the same rounds and the same markup,
+   * sized to a screen nobody can scroll. See the wrapper below for the
+   * arithmetic.
+   */
+  tv?: boolean;
   className?: string;
 }) {
   if (seats.length === 0) {
@@ -99,6 +106,27 @@ export function DraftBoard({
   // round 4 is round 4 for every seat — so it keys both the header and the
   // cells, and nothing depends on array position.
   const roundNumbers = Array.from({ length: rounds }, (_, index) => index + 1);
+
+  /**
+   * TV sizing in one expression, because the binding constraint is **height**.
+   *
+   * Measured against production on 2026-09-13: no group in any league in any
+   * season has ever had more than 4 seats, and rounds top out at 9. Ten poster
+   * columns fit across 1920 easily; four rows of poster do not fit down 1080
+   * unless the poster is sized from the height that is left rather than from
+   * the width. So:
+   *
+   *   row    = (100vh - TV_CHROME) / seats
+   *   poster = row - TV_CAPTION      — a height
+   *   column = poster * 2/3          — its width, from `aspect-[2/3]`
+   *
+   * and the board is capped at `seat column + rounds * column`, which
+   * `table-fixed` then divides between the columns. The two constants are a
+   * calibration knob measured in a production build: `TV_CHROME` is everything
+   * above and below this board on the page, `TV_CAPTION` the title and points
+   * line under each poster.
+   */
+  const tvWidth = `calc(10rem + ${rounds} * ((100vh - 21rem) / ${seats.length} - 3.25rem) * 2 / 3)`;
 
   return (
     <div className={className}>
@@ -175,8 +203,14 @@ export function DraftBoard({
 
       {/* Desktop: the aligned grid, where comparing a round across seats is
           the point. */}
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full border-collapse text-sm">
+      {/* 🔴 In TV mode this is NOT `overflow-x-auto`: a television has no
+          scrollbar and nobody to drive one, so anything past the right edge is
+          simply not on the board. The width cap above is what keeps it on. */}
+      <div
+        className={cn('hidden md:block', tv ? 'mx-auto w-full' : 'overflow-x-auto')}
+        style={tv ? { maxWidth: tvWidth } : undefined}
+      >
+        <table className={cn('w-full border-collapse text-sm', tv && 'table-fixed')}>
           <caption className="sr-only">
             Draft board: one row per seat, one column per round
           </caption>
@@ -195,7 +229,10 @@ export function DraftBoard({
                 <th
                   key={round}
                   scope="col"
-                  className="text-text-secondary tabular w-24 px-1 py-2 text-left font-mono text-xs font-normal"
+                  className={cn(
+                    'text-text-secondary tabular px-1 py-2 text-left font-mono text-xs font-normal',
+                    tv ? 'w-auto' : 'w-24',
+                  )}
                 >
                   {String(round).padStart(2, '0')}
                 </th>
@@ -236,7 +273,7 @@ export function DraftBoard({
                   {roundNumbers.map((round) => {
                     const pick = byRound.get(round);
                     return (
-                      <td key={round} className="px-1 py-3">
+                      <td key={round} className={cn('px-1', tv ? 'py-1' : 'py-3')}>
                         <PickCell
                           round={round}
                           film={

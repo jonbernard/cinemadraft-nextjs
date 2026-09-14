@@ -177,4 +177,76 @@ describe('DraftBoard', () => {
     expect(phone().getByText('Rounds 1–7')).toBeInTheDocument();
     expect(phone().queryByText(/Seat/)).not.toBeInTheDocument();
   });
+
+  it('gives every round column the same fixed width in ordinary mode', () => {
+    // The current behaviour, pinned so the TV branch below is provably a
+    // change rather than the default renamed.
+    render(<DraftBoard rounds={3} seats={[seat({ draftId: 1 })]} />);
+
+    const columns = screen.getAllByRole('columnheader').slice(1);
+    expect(columns).toHaveLength(3);
+    for (const column of columns) expect(column.className).toMatch(/\bw-24\b/);
+
+    const grid = screen.getByRole('table').parentElement as HTMLElement;
+    expect(grid.className).toMatch(/overflow-x-auto/);
+    expect(grid.style.maxWidth).toBe('');
+  });
+
+  it('sizes the board to the viewport in tv mode, with no horizontal scroll container', () => {
+    // 🔴 The defect being fixed: the desktop grid lives in `overflow-x-auto`
+    // with 96px round columns, and a television cannot scroll — anything past
+    // the right edge is simply not on the board. In tv mode the wrapper is not
+    // a scroll container, the columns are proportional, and the whole board is
+    // capped at a width derived from the height that is left over.
+    render(
+      <DraftBoard tv rounds={7} seats={[seat({ draftId: 1 }), seat({ draftId: 2 })]} />,
+    );
+
+    const columns = screen.getAllByRole('columnheader').slice(1);
+    for (const column of columns) expect(column.className).not.toMatch(/\bw-24\b/);
+
+    const table = screen.getByRole('table');
+    expect(table.className).toMatch(/table-fixed/);
+
+    const grid = table.parentElement as HTMLElement;
+    expect(grid.className).not.toMatch(/overflow-x-auto/);
+    // Height in, width out: the cap is derived from the viewport's height,
+    // not from a fixed column count. Asserted on the parts rather than on the
+    // whole string, because jsdom folds the arithmetic in `calc()` and the
+    // folded form is its business, not this component's.
+    expect(grid.style.maxWidth).toContain('100vh');
+
+    // 🔴 And the seat count is really in it. Without this, a cap that ignored
+    // how many rows have to fit down the screen — the entire binding
+    // constraint — would pass the line above.
+    const { container } = render(
+      <DraftBoard
+        tv
+        rounds={7}
+        seats={[1, 2, 3, 4].map((draftId) => seat({ draftId }))}
+      />,
+    );
+    const four = container.querySelector('table')?.parentElement as HTMLElement;
+    expect(four.style.maxWidth).not.toBe(grid.style.maxWidth);
+  });
+
+  it('still renders every seat and every round in tv mode', () => {
+    // 4 seats × 10 rounds is the measured production ceiling. "Fits" must
+    // never be bought by dropping content — the owner's requirement is that
+    // every pick is visible AT ONCE.
+    render(
+      <DraftBoard
+        tv
+        rounds={10}
+        seats={[1, 2, 3, 4].map((draftId) =>
+          seat({ draftId, picks: [pick(1, `Film ${draftId}`)] }),
+        )}
+      />,
+    );
+
+    const rows = desktop().getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(4);
+    for (const row of rows) expect(within(row).getAllByRole('cell')).toHaveLength(10);
+    expect(desktop().getAllByRole('cell')).toHaveLength(40);
+  });
 });

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { InviteDialog } from '@/components/leagues/InviteDialog';
 import { LeagueBoardRoom } from '@/components/leagues/LeagueBoardRoom';
 import { SectionHead } from '@/components/ui/SectionHead';
+import { TvModeLink } from '@/components/ui/TvModeLink';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { NOINDEX } from '@/lib/seo';
@@ -13,6 +14,7 @@ import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
 import { canManageLeague } from '@/lib/services/league-access';
 import { getLeagueBoardView } from '@/lib/services/league-view';
 import { getActiveYear } from '@/lib/services/season';
+import { cn } from '@/lib/utils/cn';
 
 /**
  * The origin an invite link should carry.
@@ -109,10 +111,17 @@ export default async function LeaguePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<{ year?: string; group?: string; tv?: string }>;
 }) {
   const { id } = await params;
-  const { year } = await searchParams;
+  const { year, group, tv } = await searchParams;
+
+  // 🔴 TV mode is a URL, not state (P14.T6/T19): one person opens the link and
+  // casts it, and a reload two hours into a draft comes back the same way it
+  // went. It reaches three places and no others — the `data-tv-mode` marker
+  // that one unlayered rule in globals.css reads, the header below, and what
+  // the room puts on the screen. It is deliberately NOT in `streamUrl`.
+  const tvMode = tv === '1';
 
   const leagueId = Number(id);
   if (!Number.isSafeInteger(leagueId) || leagueId <= 0) notFound();
@@ -147,6 +156,31 @@ export default async function LeaguePage({
   // second, disagreeing page (the note on `LiveRoom`'s `streamUrl`).
   const streamUrl = `/api/leagues/${view.leagueId}/board/stream?year=${view.year}`;
 
+  // 🔴 `?group=` validated against the groups this league-year actually has,
+  // the way the console validates its own, and defaulting to the first. A
+  // remote can land on any number; an unknown one must show a board, not an
+  // empty screen.
+  const requestedGroup = Number(group);
+  const activeGroup =
+    Number.isSafeInteger(requestedGroup) &&
+    view.groups.some((entry) => entry.group === requestedGroup)
+      ? requestedGroup
+      : (view.groups[0]?.group ?? null);
+
+  /**
+   * This page's own URL, with one thing changed.
+   *
+   * 🔴 **Every link rendered in TV mode carries `tv=1`.** D114, verbatim: the
+   * live room's league picker shipped dropping it and stranded a reader who
+   * had a remote and no address bar. The group nav below is the same control
+   * in the same trap, so both it and the toggle are built from here rather
+   * than assembled twice.
+   */
+  const pageUrl = (next: { group?: number | null; tv?: boolean }) =>
+    `/leagues/${view.leagueId}?year=${view.year}` +
+    (next.group == null ? '' : `&group=${next.group}`) +
+    (next.tv ? '&tv=1' : '');
+
   // Hoisted out of the JSX: `inviteBase()` used to be awaited inside a
   // conditional JSX expression, which is now inside two conditionals.
   const inviteUrl =
@@ -155,7 +189,18 @@ export default async function LeaguePage({
       : null;
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+    // 🔴 The marker, and the whole of TV mode's effect on the shell. One
+    // unlayered rule in globals.css — `body:has([data-tv-mode])
+    // [data-app-chrome]` — hides the rail, the utility strip, the phone top bar
+    // and the tab bar while it is present. No CSS was written for this page:
+    // the rule is keyed on the attribute, not on `/live`.
+    //
+    // 🔴 No `max-w-6xl` on a television. 1152px centred inside 1920 is a third
+    // of the screen thrown away, and the board is sized from what is left.
+    <div
+      className={cn('mx-auto flex flex-col gap-10', !tvMode && 'max-w-6xl')}
+      data-tv-mode={tvMode ? '' : undefined}
+    >
       <header className="flex flex-col gap-4">
         <SectionHead
           as="h1"
@@ -175,7 +220,11 @@ export default async function LeaguePage({
               the act; a pending draft means the season is set up and the league
               is waiting on the owner to start. Otherwise the page's subject is
               the board, and both step back. */}
-        {canManage ? (
+        {/* 🔴 Not on a television. These are the owner's two doors into the
+              console and the setup wizard — acts you perform at a keyboard, in
+              the other tab, while the league watches this one. Every row of
+              them is 60px off the board's height budget. */}
+        {canManage && !tvMode ? (
           <div className="flex flex-wrap items-center gap-3">
             {view.groups.length === 0 || isPending ? (
               /* 🔴 One action while the season is not running, and it is NOT
@@ -229,7 +278,7 @@ export default async function LeaguePage({
           </div>
         ) : null}
 
-        {seasons.length > 1 ? (
+        {seasons.length > 1 && !tvMode ? (
           <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
             {seasons.map((entry) => (
               <Link
@@ -247,16 +296,52 @@ export default async function LeaguePage({
             ))}
           </nav>
         ) : null}
+
+        {/* 🔴 The way out stays on the screen TV mode leaves behind, and the
+              group nav stays with it — a reader on a television has a remote
+              and no address bar, so a control that goes away with the chrome
+              it turned on is a trap (D112). Both hrefs come from `pageUrl`,
+              which is what carries `tv=1` through (D114). */}
+        <div className="flex flex-wrap items-center gap-3">
+          {tvMode && view.groups.length > 1 ? (
+            <nav aria-label="Groups" className="flex flex-wrap gap-3 text-sm">
+              {view.groups.map((entry) => (
+                <Link
+                  key={entry.group}
+                  href={pageUrl({ group: entry.group, tv: true })}
+                  aria-current={entry.group === activeGroup ? 'page' : undefined}
+                  className={
+                    entry.group === activeGroup
+                      ? 'text-accent-text flex min-h-11 items-center'
+                      : 'text-text-secondary flex min-h-11 items-center underline'
+                  }
+                >
+                  Group {entry.group}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+          <TvModeLink
+            href={pageUrl({ group: activeGroup, tv: !tvMode })}
+            active={tvMode}
+          />
+        </div>
       </header>
 
       <LeagueBoardRoom
         // 🔴 Keyed on the stream URL, so switching season reconciles into a new
         // connection rather than leaving one open to the old one.
+        //
+        // 🔴 `tv` and `group` are NOT in that URL, and that is the point: a
+        // toggle or a group change reconciles rather than remounts, so the
+        // `EventSource` is never dropped in the middle of a live draft (D114).
         key={streamUrl}
         initial={view}
         streamUrl={streamUrl}
         signedIn={user != null}
         viewerSeatId={view.viewerSeatId}
+        tvMode={tvMode}
+        group={activeGroup}
       />
     </div>
   );

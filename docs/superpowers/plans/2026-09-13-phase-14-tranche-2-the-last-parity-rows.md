@@ -2329,7 +2329,7 @@ At 1920×1080 the binding constraint is **height, not width**. Arithmetic to che
 - `DraftBoard` gains `tv?: boolean` (default `false`) — the TV sizing, nothing else.
 - `LeagueBoardRoom` gains `tvMode: boolean` and `group: number | null`.
 
-- [ ] **Step 1: Move `TvModeLink` out of `awards/`**
+- [x] **Step 1: Move `TvModeLink` out of `awards/`**
 
 It is used by two domains now, and `components/` is grouped by domain with `ui/` for anything that has none (AGENTS.md). TV mode has no domain.
 
@@ -2337,7 +2337,7 @@ It is used by two domains now, and `components/` is grouped by domain with `ui/`
 
 `git mv` the component, its test and its story. Update the import in `app/(app)/live/[abbr]/page.tsx`. The test reads `AppShell.tsx`, `TopBar.tsx` and `globals.css` by path from `process.cwd()`, so it moves unchanged.
 
-- [ ] **Step 2: Write the failing sizing test**
+- [x] **Step 2: Write the failing sizing test**
 
 In `components/draft/DraftBoard.test.tsx`:
 
@@ -2361,7 +2361,7 @@ it('still renders every seat and every round in tv mode', () => {
 });
 ```
 
-- [ ] **Step 3: The TV sizing in `DraftBoard`**
+- [x] **Step 3: The TV sizing in `DraftBoard`**
 
 Add `tv?: boolean`. In the desktop grid:
 
@@ -2372,7 +2372,7 @@ Add `tv?: boolean`. In the desktop grid:
 
 🔴 Do not add a second rendering path. The mobile stack and the desktop grid already render from the same `seats` and `rounds` (`DraftBoard:71`); a third would be a third thing to keep in step.
 
-- [ ] **Step 4: One group on screen, and a way to change it**
+- [x] **Step 4: One group on screen, and a way to change it**
 
 The page renders every group stacked. On a television during a draft, one group is the subject.
 
@@ -2382,7 +2382,7 @@ The page renders every group stacked. On a television during a draft, one group 
 
 🔴 **Every link in TV mode must carry `tv=1`.** This is D114, verbatim: the live room's league picker shipped dropping `?tv=1`, taking the reader out of full screen with no way back, and the gate caught it rather than the task that built it. The group nav here is the same control in the same trap.
 
-- [ ] **Step 5: The toggle must not drop the stream**
+- [x] **Step 5: The toggle must not drop the stream**
 
 `LeagueBoardRoom` is keyed on `streamUrl` in the page (P14.T11). 🔴 **`tv` must NOT appear in `streamUrl`**, or every toggle remounts the room, drops the `EventSource` and reconnects — in the middle of a live draft. D114 records exactly this for the live room; `components/awards/TvModeLink.test.tsx` has an assertion pinning it for `/live`, and this page needs its own.
 
@@ -2395,7 +2395,7 @@ it('does not carry tv mode in the stream url', () => {
 });
 ```
 
-- [ ] **Step 6: Measure in a production build**
+- [x] **Step 6: Measure in a production build**
 
 🔴 `npm run build && npm run start`, never `next dev` — a dev server answers 403 for every `_next/static` chunk on `127.0.0.1`, so a dev measurement is of an unstyled page.
 
@@ -2412,18 +2412,18 @@ document.querySelectorAll('table tbody td').length      // seats x rounds — ev
 
 Report the real numbers. Also check 1280×720, the other common panel: if it does not fit there, say so plainly rather than quietly targeting only 1920.
 
-- [ ] **Step 7: Mutate, and watch tests go red**
+- [x] **Step 7: Mutate, and watch tests go red**
 
 1. Drop `tv` from `DraftBoard`'s props and always use `w-24`. Expected: the tv sizing test FAILS.
 2. Put `tv=1` into `streamUrl`. Expected: the step 5 test FAILS. 🔴 If it does not, that test is decorative — make it real.
 3. Drop `tv=1` from the group nav links. Expected: a test FAILS. If none does, add one — this is D114's exact defect and it escaped its own task once already.
 4. Render only the first 5 rounds in tv mode. Expected: "still renders every seat and every round" FAILS.
 
-- [ ] **Step 8: e2e**
+- [x] **Step 8: e2e**
 
 Add to `e2e/league-board-live.spec.ts`: at 1920, a league mid-draft with `?tv=1` shows no chrome, no sideways scroll, every seat and every cell of the chosen group, and a pick entered in another context still lands live — TV mode must not cost the stream.
 
-- [ ] **Step 9: Record and commit**
+- [x] **Step 9: Record and commit**
 
 `docs/DECISIONS.md`: TV mode is now a property of a page rather than of `/live`, and `TvModeLink` moved to `ui/` because of it. Note that the density target is 4 seats — a production fact, not a guess — and what would have to change if a league ever drafts a bigger group.
 

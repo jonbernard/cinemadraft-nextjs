@@ -2271,6 +2271,7 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
 - [x] P14.T16 — a top bar on a phone, carrying the wordmark — `348aa0c`, merged at `9713efe`. Owner's call; the full lockup in a 44px sticky strip below `xl`, and the mark removed from `TabBar` rather than hidden (**D120**)
 - [x] P14.T17 — the auth form's focus ring is clipped — `8325cd3`. `overflow: visible` on Clerk's `cardBox`; the clip was horizontal only, and the plan's second edit was a no-op. 🔴 The e2e case it specified lives in a file that is **skipped in every default run**, so it is split — the geometry in `e2e/auth.spec.ts` (skipped, and says so), the token in `theme/clerk.test.ts` (runs every commit)
 - [x] P14.T18 — characters to round out the groups — `7406146`. 49 names from the old app; one press seats one character, by the owner's explicit instruction. Character-vs-person is list membership, not a column, and the cutover reason is written down (**D121**)
+- [x] P14.T19 — a TV view for the draft board — this commit. Owner's request. `?tv=1` on `/leagues/[id]` sets `data-tv-mode`, so D112's existing rule hides the chrome and **no CSS was written**; `DraftBoard` gains `tv`, which drops `overflow-x-auto` and sizes the columns from the height that is left, because at 1920×1080 the binding constraint is height (**D122**). One group on screen, `?group=` validated against the league's own groups, and `TvModeLink` moved to `components/ui/`
 
 **Tranche 2 gate — met.** Measured 2026-09-13 against executor-1 (5433) on port 3011, in a production build:
 

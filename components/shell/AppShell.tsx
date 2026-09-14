@@ -145,7 +145,7 @@ export function AppShell({
           search param, holds state, or re-renders — which is exactly why the
           live room's SSE connection survives the toggle. Remove the attribute
           and TV mode silently stops working; the guard against that is in
-          components/awards/TvModeLink.test.tsx, which reads this file and the
+          components/ui/TvModeLink.test.tsx, which reads this file and the
           stylesheet and asserts the two still agree. */}
       <div className="hidden xl:block" data-app-chrome>
         <NavRail pathname={pathname} />
