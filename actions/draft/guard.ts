@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@/lib/auth';
-import { ForbiddenError, NotFoundError } from '@/lib/errors';
+import { ConflictError, ForbiddenError, NotFoundError } from '@/lib/errors';
 import { type DraftPick, draftPickRepository } from '@/lib/repositories/draft-picks';
 import { type Draft, draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
@@ -56,6 +56,23 @@ async function authorize(seat: Draft): Promise<SeatControl> {
   // narrows the type, so the returned `userId` is a number without a cast.
   if (!user || !canManageLeague(league, user.id)) {
     throw new ForbiddenError('only a league owner may change this draft');
+  }
+
+  // 🔴 **A draft that has not started takes no picks.** `pending` means the
+  // owner is still arranging seats and groups, and `randomiseGroups` is allowed
+  // right up until the start for exactly that reason — so a pick entered now
+  // could have its seat's `order` re-dealt underneath it, leaving a board whose
+  // picks and running order describe different drafts. Nothing caught that:
+  // there was no status check in front of any draft write at all, and the
+  // league page offered "Run the draft" as its loud primary action on a league
+  // in this state. Reported by the owner against a league of theirs that had
+  // groups but had never been started.
+  //
+  // Only `pending` is refused. A `complete` season still accepts corrections —
+  // award shows resolve for months after a draft ends, and a misheard pick
+  // entered live is the ordinary case D46 is built around.
+  if (league.draftingStatus === 'pending') {
+    throw new ConflictError('the draft has not started yet');
   }
 
   return { userId: user.id, leagueId: league.id, seat };

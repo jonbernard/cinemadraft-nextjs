@@ -185,6 +185,56 @@ describe('addPick — refusals', () => {
     expect(await picksOf(fixture.seatA.id)).toEqual([]);
   });
 
+  it('refuses the owner while the draft has not started', async () => {
+    /**
+     * 🔴 A pick entered before the draft starts is a pick whose seat can still
+     * be re-dealt underneath it: `randomiseGroups` is allowed right up until
+     * the start, so `order` can change while the picks stay put, leaving a
+     * board whose running order and picks describe different drafts.
+     *
+     * There was no status check in front of any draft write, and the league
+     * page offered "Run the draft" as its loud primary action on exactly this
+     * state. The owner reported it against a league of their own.
+     *
+     * Restored in a `finally` so the rest of this file keeps its `active`
+     * league — the fixture is shared and the order of tests is not a contract.
+     */
+    signInAs(fixture.owner);
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { draftingStatus: 'pending' },
+    });
+
+    try {
+      const result = await addPick({
+        draftId: fixture.seatA.id,
+        movieId: fixture.films[0]?.id as number,
+      });
+
+      expect(result).toMatchObject({ ok: false, code: 'CONFLICT' });
+      expect(await picksOf(fixture.seatA.id)).toEqual([]);
+    } finally {
+      await db.league.update({
+        where: { id: fixture.league.id },
+        data: { draftingStatus: 'active' },
+      });
+    }
+  });
+
+  it('lets the owner pick once the draft has started', async () => {
+    // 🔴 The other half. A guard that refused everything would pass the case
+    // above while making the console useless.
+    signInAs(fixture.owner);
+
+    const result = await addPick({
+      draftId: fixture.seatA.id,
+      movieId: fixture.films[0]?.id as number,
+    });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(await picksOf(fixture.seatA.id)).toHaveLength(1);
+  });
+
   it('refuses a league member who is not the owner', async () => {
     // Members do not enter their own picks — the owner does, on the call
     // (D46). A member holding a seat is the most plausible attacker.
