@@ -408,16 +408,13 @@ test.describe('the league page', () => {
 
     // 🔴 Not printed on arrival, and reachable in one click.
     //
-    // `not.toBeVisible()`, not `toHaveCount(0)` — which is what the plan's
-    // version of this test asserted, and it is wrong against the plan's own
-    // `<details>` implementation: a closed disclosure keeps its contents in the
-    // DOM and in the served HTML. That is fine here and not a secrecy claim
-    // being quietly dropped: the invite is rendered only when `canManage`, so
-    // the bytes only ever reach an owner. What the disclosure fixes is that the
-    // credential was the loudest thing on the page and two mono lines wide on a
-    // phone.
-    await expect(page.getByText(/\/join\//)).not.toBeVisible();
-    await page.getByText('Invite').click();
+    // 🔴 `toHaveCount(0)` again since P14.T15. Against P17.T30's `<details>`
+    // it would have been wrong — a closed disclosure keeps its contents in the
+    // DOM and in the served HTML, which is why this said `not.toBeVisible()`
+    // — but the dialog renders its children only while open, so the credential
+    // really is absent until it is asked for.
+    await expect(page.getByText(/\/join\//)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Invite', exact: true }).click();
     await expect(page.getByText(/\/join\//)).toBeVisible();
   });
 

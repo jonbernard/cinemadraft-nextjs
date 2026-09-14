@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
-import { InviteAction } from '@/components/leagues/InviteAction';
+import { InviteDialog } from '@/components/leagues/InviteDialog';
 import { LeagueBoardRoom } from '@/components/leagues/LeagueBoardRoom';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
@@ -219,10 +219,17 @@ export default async function LeaguePage({
                   themselves — so showing it to every member would make every
                   member able to re-share the league, and leaving it on a
                   finished season is a standing credential on screen for no
-                  reason. Behind a disclosure either way: as a bare `<code>` it
+                  reason. Behind a control either way: as a bare `<code>` it
                   was the second element on the page and two mono lines at
-                  390px. */}
-            {inviteUrl ? <InviteAction url={inviteUrl} /> : null}
+                  390px.
+
+                  🔴 A modal dialog since P14.T15, not the `<details>` P17.T30
+                  chose. A disclosure expands in flow, and this one is in a row
+                  of 44px controls — opening it re-centred "Run the draft" and
+                  "Set up the season" against a three-row block, which is the
+                  defect the owner reported. The top layer leaves this row
+                  alone. */}
+            {inviteUrl ? <InviteDialog url={inviteUrl} /> : null}
           </div>
         ) : null}
 

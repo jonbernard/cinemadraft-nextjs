@@ -61,6 +61,32 @@ describe('the auth card', () => {
   });
 
   /**
+   * 🔴 The focus ring paints outside the field, so the card may not clip.
+   *
+   * The owner reported the carmine ring on `/auth/login`'s email field cut off
+   * (P14.T17). `FOCUS_RING` is a 2px outline at a 2px offset — 4px beyond the
+   * border box — and `card` sets `padding: 0`, so every full-width control
+   * spans the card edge to edge. Measured in a production build at 1440 with
+   * the field focused: `cardBox` computed `overflow: hidden`, and the ring
+   * overhung that clip by 5px left and 3px right on the Google button, the
+   * email field and "Continue" alike.
+   *
+   * 🔴 **This pin is not the geometry.** It reads the map, which is what
+   * decides the property, and it goes red if the property is dropped — but
+   * nothing here renders a browser, so it cannot see a ring. The geometric
+   * assertion lives in `e2e/auth.spec.ts`, which the default suite **skips**:
+   * the e2e server boots with no Clerk at all (D82/D84), and `/auth/login`
+   * there renders the error boundary rather than a form. Running it takes a
+   * server with real Clerk keys and `E2E_TEST_AUTH` unset, as that file says.
+   * This is the half that runs on every commit.
+   */
+  it('does not clip the focus ring off the fields', () => {
+    expect((authCardAppearance.elements.cardBox as { overflow?: string }).overflow).toBe(
+      'visible',
+    );
+  });
+
+  /**
    * 🔴 The flattening is the auth pages' own, not the provider's.
    *
    * `ClerkProvider`'s appearance reaches every Clerk surface in the app,

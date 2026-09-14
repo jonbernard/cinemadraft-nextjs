@@ -84,6 +84,53 @@ test.describe('auth', () => {
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
   });
 
+  /**
+   * 🔴 The owner's report, as geometry (P14.T17).
+   *
+   * The carmine focus ring on the email field was cut off. `FOCUS_RING` is a
+   * 2px outline at a 2px offset — 4px beyond the border box — `card` carries
+   * `padding: 0`, so the field spans the card edge to edge, and Clerk's
+   * `cardBox` computed `overflow: hidden`. Measured before the fix at 1440 in
+   * a production build: 5px of overhang on the left, 3px on the right.
+   *
+   * A geometric assertion rather than a screenshot comparison: a screenshot
+   * goes red for any restyle of this card and tells you nothing about why,
+   * whereas this names the defect. It walks the ancestors and fails if any box
+   * that clips is narrower than the field plus its ring.
+   *
+   * 🔴 **This case does not run in the default suite**, and the `test.skip`
+   * above is why: the e2e server boots with no Clerk (D82/D84) and
+   * `/auth/login` renders the error boundary there — zero
+   * `input[name="identifier"]` on the page, verified. The property it depends
+   * on is pinned in `theme/clerk.test.ts`, which does run on every commit.
+   */
+  test('the focus ring on the email field is not clipped', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/auth/login');
+    const input = page.locator('input[name="identifier"]');
+    await input.focus();
+
+    const clipped = await input.evaluate((el) => {
+      const ring = 4; // 2px outline at a 2px offset
+      const field = el.getBoundingClientRect();
+      for (let node = el.parentElement; node; node = node.parentElement) {
+        const style = getComputedStyle(node);
+        if (style.overflow === 'visible') continue;
+        const box = node.getBoundingClientRect();
+        if (
+          field.top - ring < box.top ||
+          field.bottom + ring > box.bottom ||
+          field.left - ring < box.left ||
+          field.right + ring > box.right
+        )
+          return true;
+      }
+      return false;
+    });
+
+    expect(clipped).toBe(false);
+  });
+
   test('a protected route sends a logged-out visitor to log in', async ({ page }) => {
     await page.goto('/leagues');
     await expect(page).toHaveURL(/\/auth\/login/);
