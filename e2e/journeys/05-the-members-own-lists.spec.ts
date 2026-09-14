@@ -273,7 +273,7 @@ test.describe('journey 5 — the member’s own lists', () => {
       // catch the toggle's screen-reader label, which names the film too.
       await expect(page.getByRole('link', { name: FILMS[0] as string })).toBeVisible();
       await expect(
-        page.getByRole('button', { name: new RegExp(`${FILMS[0]} — watched`) }),
+        page.getByRole('button', { name: new RegExp(`^Watched: ${FILMS[0]}`) }),
       ).toBeVisible();
     });
 

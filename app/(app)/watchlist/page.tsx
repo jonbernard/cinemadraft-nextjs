@@ -244,6 +244,7 @@ function WatchedFilms({
                   title={film.title}
                   watched
                   onChange={setWatched}
+                  hint="label"
                 />
               ) : null}
             </li>
@@ -311,7 +312,21 @@ function Shows({ shows, year }: { shows: ShowProgress[]; year: number }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    // 🔴 Two columns from `lg` up, not `sm` (D49). The container is `max-w-4xl`,
+    // so `sm` would give each show ~300px and the summary — a serif show name
+    // plus two meters — already wraps to three lines at that width. At `lg` the
+    // column is ~430px and it wraps to two, which is what it does today.
+    //
+    // 🔴 `items-start`, and that is the whole answer to the height-shift
+    // question. A grid row is as tall as its tallest cell and a stretched
+    // `<details>` would grow its neighbour's panel to match when it opens —
+    // the neighbour visibly inflating around unchanged content. `items-start`
+    // lets each panel keep its own height, so opening one moves only the rows
+    // below it, which is what a single column already did. `columns-2` was the
+    // other candidate and is worse: CSS multi-column reflows its items between
+    // columns as one grows, so opening a show makes *other* shows jump from
+    // one column to the other.
+    <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
       {shows.map((show) => (
         // A native <details>: it opens with a keyboard, before hydration, and
         // without a line of JavaScript. Closed by default because the summary
@@ -342,7 +357,7 @@ function Shows({ shows, year }: { shows: ShowProgress[]; year: number }) {
                       className="flex items-center justify-between gap-3"
                     >
                       <FilmTitle film={nominee} />
-                      <SeenChip watched={nominee.watched} />
+                      <NomineeToggle film={nominee} />
                     </li>
                   ))}
                 </ul>
@@ -388,7 +403,7 @@ function MostNominated({
               <span className="min-w-0 flex-1">
                 <FilmTitle film={film} />
               </span>
-              <SeenChip watched={film.watched} />
+              <NomineeToggle film={film} />
             </li>
           ))}
         </ul>
@@ -426,7 +441,7 @@ function Drafted({ leagues, year }: { leagues: LeagueProgress[]; year: number })
                 className="flex items-center justify-between gap-3 py-1"
               >
                 <FilmTitle film={film} />
-                <SeenChip watched={film.watched} />
+                <NomineeToggle film={film} />
               </li>
             ))}
           </ul>
@@ -451,9 +466,47 @@ function FilmTitle({ film }: { film: Pick<WatchlistFilm, 'title' | 'tmdbId'> }) 
   );
 }
 
-function SeenChip({ watched }: { watched: boolean }) {
-  if (!watched) return null;
+/**
+ * The one control the three progress views were missing.
+ *
+ * 🔴 **It replaces `SeenChip`, which rendered *nothing* when the film was
+ * unwatched** — so the row a reader most wanted to act on was the one row with
+ * no affordance at all, and the only way to mark a nominee seen was to go and
+ * find it on /browse. Membership of the watchlist *is* the record of having
+ * seen a film (D64), so the chip and the control are the same fact and there is
+ * no reason for the page to show one without the other.
+ *
+ * The words carry it rather than a tooltip: "Watched" is what the chip already
+ * said, and 526 nominees is not a page to hang 526 MUI poppers off.
+ *
+ * A film nominated in four categories renders four of these, which is correct —
+ * they are four separate rows a reader can act on — and they converge because
+ * the action states an end state and `revalidatePath` re-renders all of them.
+ * It does mean `data-testid` is not unique on this page; the e2e locators for
+ * it take `.first()`.
+ */
+function NomineeToggle({
+  film,
+}: {
+  film: Pick<WatchlistFilm, 'title' | 'tmdbId' | 'watched'>;
+}) {
+  // A nominee with no TMDB id cannot be marked — `setWatched` takes one — so it
+  // keeps the read-only statement of fact rather than a button that would fail.
+  if (!film.tmdbId) return film.watched ? <SeenChip /> : null;
 
+  return (
+    <WatchedToggle
+      tmdbId={film.tmdbId}
+      title={film.title}
+      watched={film.watched}
+      onChange={setWatched}
+      hint="label"
+    />
+  );
+}
+
+/** The fallback for a row with no TMDB id: seen, and nothing to press. */
+function SeenChip() {
   return (
     <StatusChip
       tone="neutral"

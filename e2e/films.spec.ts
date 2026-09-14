@@ -159,7 +159,7 @@ test.describe('a film page', () => {
   test('the watched badge is hidden from a signed-out reader', async ({ page }) => {
     await page.goto(`/films/${LA_LA_LAND}`);
 
-    await expect(page.getByRole('button', { name: /Mark .* as watched/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Mark as watched: / })).toHaveCount(0);
   });
 
   test('similar films link on to other film pages', async ({ page }) => {
