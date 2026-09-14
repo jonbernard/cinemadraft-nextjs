@@ -5,6 +5,7 @@ import {
   mergeCandidates,
   rankCandidates,
   type SearchContext,
+  withinDraftWindow,
 } from './search-ranking';
 
 /**
@@ -328,5 +329,45 @@ describe('mergeCandidates', () => {
     );
 
     expect(merged).toHaveLength(2);
+  });
+});
+
+describe('withinDraftWindow', () => {
+  it('keeps the season, the year it honours, and the five-year tail', () => {
+    // 🔴 The tail is not padding: This Is Endometriosis is a 2022 film
+    // nominated for Best Short Film in 2026, and Son of Saul and The
+    // Handmaiden carry 2015 and 2016 dates against 2017 and 2018 seasons.
+    // A tighter window would hide exactly the films hardest to find by title.
+    for (const year of [2026, 2025, 2024, 2023, 2022, 2021]) {
+      expect(withinDraftWindow(year, 2026)).toBe(true);
+    }
+  });
+
+  it('drops anything older than the window', () => {
+    // The owner's own example.
+    expect(withinDraftWindow(1934, 2026)).toBe(false);
+    expect(withinDraftWindow(2020, 2026)).toBe(false);
+  });
+
+  it('keeps a film dated after the season', () => {
+    // 🔴 A draft picks films that have not come out yet. `seasonBoost` gives a
+    // negative gap nothing, so these ranked last on the one screen that needs
+    // them most; excluding them would have made that permanent.
+    expect(withinDraftWindow(2027, 2026)).toBe(true);
+    expect(withinDraftWindow(2030, 2026)).toBe(true);
+  });
+
+  it('keeps a film with no release year', () => {
+    // An unknown date is not evidence of an old film — TMDB leaves it off
+    // precisely the upcoming titles a draft is reaching for.
+    expect(withinDraftWindow(null, 2026)).toBe(true);
+  });
+
+  it('is the boundary, exactly', () => {
+    // 🔴 Pinned at the edge rather than in the middle. An off-by-one here
+    // silently drops a whole year of eligible films, and 2021-for-2026 is the
+    // year the tail weight exists for.
+    expect(withinDraftWindow(2021, 2026)).toBe(true);
+    expect(withinDraftWindow(2020, 2026)).toBe(false);
   });
 });

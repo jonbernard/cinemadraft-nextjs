@@ -7,6 +7,7 @@ import {
   mergeCandidates,
   rankCandidates,
   type SearchContext,
+  withinDraftWindow,
 } from './search-ranking';
 
 export type { SearchContext } from './search-ranking';
@@ -106,7 +107,18 @@ export async function findFilms(
   const taken =
     context.kind === 'draft' ? new Set(context.takenMovieIds) : new Set<number>();
 
-  return rankCandidates(trimmed, candidates, context).map((candidate) => ({
+  // 🔴 Draft only. Browse is a catalogue and the award admin attaches nominees
+  // that may be years old by TMDB's reckoning; neither wants a window. A live
+  // draft does — see `withinDraftWindow`, which keeps undated and future films
+  // and drops only what is more than five years behind the season.
+  const eligible =
+    context.kind === 'draft'
+      ? candidates.filter((candidate) =>
+          withinDraftWindow(candidate.releaseYear, context.year),
+        )
+      : candidates;
+
+  return rankCandidates(trimmed, eligible, context).map((candidate) => ({
     id: candidate.id,
     tmdbId: candidate.tmdbId,
     title: candidate.title,

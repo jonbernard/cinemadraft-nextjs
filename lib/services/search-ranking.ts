@@ -173,6 +173,37 @@ function score(query: string, candidate: Candidate, context: SearchContext): num
 }
 
 /**
+ * Is this film worth showing someone drafting for `seasonYear`?
+ *
+ * 🔴 **The one place this module excludes anything, and only in a draft.**
+ * `rankCandidates` below never filters, for a reason that still holds: it
+ * cannot tell "no such film" from "that film is unavailable", and those need
+ * different reactions. But that argument is about a film that is *taken* — a
+ * 1934 film is not unavailable, it is irrelevant, and a live draft is the one
+ * place where a screen of irrelevant results costs the owner the room's
+ * attention while somebody waits to hear their pick. Requested by the owner in
+ * exactly those terms: "I don't need movies showing up from 1934".
+ *
+ * The window is `SEASON_WINDOW`, the same five years the boost already uses and
+ * for the same measured reason — everything beyond it is noise, and everything
+ * inside it includes the long tail of shorts and foreign-language films whose
+ * TMDB date sits years before the award that recognises them.
+ *
+ * 🔴 **Future films are kept, and that is a fix rather than a side effect.**
+ * `seasonBoost` gives a gap below zero nothing, so an unreleased film ranked
+ * last — on the screen used to draft films that have *not come out yet*. A
+ * date-less film is kept too: an unknown year is not evidence of an old one,
+ * and TMDB leaves the date off exactly the upcoming titles a draft wants.
+ */
+export function withinDraftWindow(
+  releaseYear: number | null,
+  seasonYear: number,
+): boolean {
+  if (releaseYear == null) return true;
+  return seasonYear - releaseYear <= SEASON_WINDOW;
+}
+
+/**
  * Order candidates for this query and context.
  *
  * 🔴 **Ranking orders; it never filters.** Every candidate handed in comes
