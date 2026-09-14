@@ -50,7 +50,14 @@ if [ -d "$WT" ]; then
 fi
 
 PG_PORT="$(free_port 5440)"
-E2E_PORT="$(free_port "$((5440 + 1000))")"   # 6440+, well clear of 3000/3011/3021
+# 🔴 DERIVED from the database port, not searched for separately. `free_port`
+# only reports what is listening NOW, and a server port is not bound until the
+# agent starts one — so two agents provisioned back to back both got 6440, and
+# the second to run e2e would have been handed the first's server by
+# `reuseExistingServer`, carrying the wrong E2E_TEST_AUTH_SECRET and failing
+# every spec as "not signed in". The database container IS bound at this point,
+# so 5440->6440, 5441->6441 is unique by construction.
+E2E_PORT="$((PG_PORT + 1000))"
 
 say "worktree   $WT  (branch $BRANCH off $BASE)"
 git -C "$REPO" worktree add -b "$BRANCH" "$WT" "$BASE" >&2
