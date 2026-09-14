@@ -2189,6 +2189,30 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
 
 - [x] **P12.T1** Deployed to `next.cinemadraft.com` against the Neon copy — verified 2026-09-14: `/`, `/award-shows` and `/how-it-works` all 200, and `?tv=1` on a league renders `data-tv-mode`, so the deployed build carries Phase 14 tranche 2. Owner still to confirm in the dashboard which Neon branch it points at, and that `events.image` still holds the twelve Blob URLs
+- [x] **P12.T1 confirmed 2026-09-14.** Vercel Production points at Neon endpoint
+  **`ep-morning-block-aus9jqrt`** (`-pooler`, `c-10.us-east-1.aws.neon.tech`),
+  database `neondb`, user `neondb_owner`, `sslmode=require` +
+  `channel_binding=require` — the same endpoint as the local reference in
+  `.env.neon`. 🔴 The credential itself lives only in Vercel (Sensitive, so it
+  cannot be read back or `vercel env pull`ed) and in `.env.neon`, which the
+  `.env*` ignore rule covers. Never record it here.
+
+  **Confirmed from the running system, not from config**, which is the check
+  that actually matters: `/leagues/1` renders 26 member links, `/award-shows`
+  lists all 12 shows, and all 12 of Phase 11's Blob logos resolve
+  (`ace adg afi asc bafta dga gg oscars pga raz sag wga`). So the deployed app
+  is on the restored production copy and `events.image` has **not** been
+  clobbered — the hazard Phase 13 T3 exists for has not happened yet.
+
+  🔴 A counting trap worth not repeating: grepping the page for
+  `blob.vercel-storage.com` returns **1**, not 12, because Next's image
+  optimizer URL-encodes the host into `_next/image?url=…`. The raw string
+  survives once. Count the encoded form.
+
+  🔴 **It is the POOLED endpoint**, which is consistent with D102: Neon's pooler
+  does not support `LISTEN`/`NOTIFY`, which is why the live stream polls rather
+  than subscribing.
+
 - [ ] **P12.T2** The capability sweep — `PARITY.md` is at **0 deficient**, so this starts from zero known gaps for the first time
 - [ ] **P12.T3** Free-tier headroom and the cold-start decision
 - [ ] **P12.T4** Load-test draft-day search
