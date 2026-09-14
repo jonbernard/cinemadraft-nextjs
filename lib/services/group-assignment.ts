@@ -82,3 +82,18 @@ export function suggestGroupCount(memberCount: number): number {
   if (memberCount <= 4) return 1;
   return Math.ceil(memberCount / 4);
 }
+
+/**
+ * How many more seats make every group the same size (P14.T18).
+ *
+ * 🔴 Zero when the seats already divide evenly, and **zero is a real answer** —
+ * the control above it says "groups are even" rather than "add 0", because a
+ * zero rendered as a number reads as a target you have failed to hit.
+ *
+ * Guards `groupCount <= 0` because the input is a number field the owner types
+ * into: `n % 0` is NaN, and a NaN on the setup screen is a bug report.
+ */
+export function seatsToEvenGroups(seatCount: number, groupCount: number): number {
+  if (groupCount <= 0) return 0;
+  return (groupCount - (seatCount % groupCount)) % groupCount;
+}

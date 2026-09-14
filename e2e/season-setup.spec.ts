@@ -90,7 +90,7 @@ test.describe('season setup', () => {
 
   test.afterAll(cleanup);
 
-  test('the owner seats a placeholder, deals groups and opens the draft', async ({
+  test('the owner seats an unregistered player, deals groups and opens the draft', async ({
     page,
   }) => {
     await register(page);
@@ -99,8 +99,10 @@ test.describe('season setup', () => {
     await page.goto(`/leagues/${leagueId}/setup`);
     await expect(page.getByRole('heading', { name: `${TAG} setup` })).toBeVisible();
 
-    // A placeholder — 17 of these exist in production.
-    await page.getByLabel(/without an account/i).fill('Celebrity Guest');
+    // A seat with nobody registered behind it — 17 of these exist in
+    // production. 🔴 Not a "placeholder": P14.T18 splits the two things this
+    // one mechanism carries, and a typed-in name is a real person.
+    await page.getByLabel(/hasn’t registered/i).fill('Celebrity Guest');
     await page.getByRole('button', { name: 'Add seat' }).click();
     await expect(page.getByText('Celebrity Guest seated')).toBeVisible();
     await expect.poll(async () => (await seats(leagueId)).length).toBe(2);

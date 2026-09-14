@@ -8,7 +8,13 @@ import {
   randomiseGroups,
   removeSeat,
 } from '@/actions/leagues/manage-seats';
-import type { Assignment } from '@/lib/services/group-assignment';
+import { isCharacter, nextCharacter } from '@/lib/leagues/characters';
+// 🔴 A *value* import from `lib/services/`, which every other component here
+// takes as a type only. It is safe because `group-assignment.ts` imports
+// nothing at all — no repository, no `lib/db`, so no Prisma can reach this
+// client bundle through it. Keep it that way: the day that module grows an
+// import, this line has to move rather than the module.
+import { type Assignment, seatsToEvenGroups } from '@/lib/services/group-assignment';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '../ui/Button';
 import { type CeremonyGroup, GroupCeremony } from './GroupCeremony';
@@ -68,6 +74,17 @@ export function SeasonSetup({
   // One group more than exists, so there is always somewhere new to put
   // someone without adding a group first.
   const options = [...new Set([...groups, groups.length + 1, 1])].sort((a, b) => a - b);
+
+  // 🔴 Resolved per render from the seats on screen, so pressing the button
+  // twice cannot seat the same character twice — and so the label can say the
+  // pool is empty rather than the button failing when pressed.
+  const character = nextCharacter(seats.map((seat) => seat.name));
+
+  // 🔴 Per render, never cached: `groupCount` is a control the owner types
+  // into and `seats` changes the moment one is added, and this line is the
+  // only thing that tells them the button and the groups input are one
+  // feature. A value computed at mount would go stale on the first keystroke.
+  const shortfall = seatsToEvenGroups(seats.length, groupCount);
 
   const run = useCallback(
     (work: () => Promise<{ ok: boolean; message?: string }>, success?: string) => {
@@ -176,8 +193,12 @@ export function SeasonSetup({
         {isPending ? (
           <form className="flex flex-wrap items-end gap-3" onSubmit={addSeat}>
             <label className="flex flex-col gap-1">
+              {/* 🔴 Not "someone without an account", which is what the
+                  characters below are. A name typed here is a real person who
+                  has not registered yet, and the old label called them a
+                  placeholder — the owner's complaint. */}
               <span className="text-text-dim text-xs">
-                Add someone without an account
+                Add a player who hasn’t registered
               </span>
               <input
                 type="text"
@@ -193,6 +214,28 @@ export function SeasonSetup({
               className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill min-h-11 border px-4 text-sm disabled:opacity-60 focus-visible:outline-2"
             >
               Add seat
+            </button>
+
+            {/* 🔴 ONE press seats ONE character, and there is deliberately no
+                "fill the gap" button beside it. The owner's words: "I don't
+                want you to do it for us." The count in the Groups section says
+                how many are wanted; choosing to add each one stays theirs.
+
+                A second control, not a second form — it acts rather than
+                submits, so `type="button"` inside the form above. */}
+            <button
+              type="button"
+              disabled={pending || character === null}
+              onClick={() => {
+                if (character === null) return;
+                run(
+                  () => addDummySeat({ leagueId, year, dummyName: character }),
+                  `${character} seated`,
+                );
+              }}
+              className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill min-h-11 border px-4 text-sm disabled:opacity-60 focus-visible:outline-2"
+            >
+              {character === null ? 'No characters left' : 'Add a character'}
             </button>
           </form>
         ) : null}
@@ -214,6 +257,25 @@ export function SeasonSetup({
                 className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill min-h-11 w-24 border px-3 text-sm focus-visible:outline-2"
               />
             </label>
+
+            {/* 🔴 Outside the `<label>`, deliberately: inside it this sentence
+                joins the input's accessible name, so a screen reader would
+                announce "How many groups 14 players add 2 characters for even
+                groups" on focus. It is a reading beside the control, not a
+                label for it.
+
+                🔴 Zero is said in words. "add 0 characters for even groups"
+                reads as a target you have failed to hit; "groups are even" is
+                the same fact and is the answer. */}
+            <p className="text-text-secondary text-sm">
+              <span className="tabular font-mono">{seats.length}</span>{' '}
+              {seats.length === 1 ? 'player' : 'players'}
+              {shortfall === 0
+                ? ' · groups are even'
+                : ` · add ${shortfall} ${
+                    shortfall === 1 ? 'character' : 'characters'
+                  } for even groups`}
+            </p>
             <button
               type="button"
               disabled={pending}
@@ -330,7 +392,18 @@ function SeatRow({
     <li className="border-border-rule flex flex-wrap items-center gap-3 border-b py-3">
       <span className="text-text-primary min-w-40 flex-1 text-sm">
         {seat.name}
-        {seat.isDummy ? <span className="text-text-dim"> · placeholder</span> : null}
+        {/* 🔴 Two different things share one database mechanism — both are a
+            seat with `dummy: true` and a `dummy_name` — and only one of them
+            is a placeholder. A name the owner typed in is a real person who
+            has not registered; calling them a placeholder was the complaint
+            P14.T18 fixes. Membership of `CHARACTERS` is what tells them apart,
+            with the known cost that a member genuinely named "Neo" reads as a
+            character; see that module for why it is not a column. */}
+        {seat.isDummy ? (
+          <span className="text-text-dim">
+            {isCharacter(seat.name) ? ' · character' : ' · not registered yet'}
+          </span>
+        ) : null}
       </span>
 
       <label className="flex items-center gap-2 text-xs">

@@ -39,6 +39,7 @@ vi.mock('@/actions/leagues/manage-seats', () => ({
 vi.mock('@/actions/leagues/manage-league', () => ({ startDraft, completeDraft }));
 
 import { SeasonSetup, type SetupSeatView } from '@/components/leagues/SeasonSetup';
+import { CHARACTERS } from '@/lib/leagues/characters';
 
 /**
  * The console the owner uses once a year, before a draft.
@@ -80,10 +81,15 @@ beforeEach(() => {
 });
 
 describe('SeasonSetup', () => {
-  it('lists everyone, marking placeholders', () => {
+  it('lists everyone, saying which seats have nobody behind them', () => {
+    // 🔴 "Guest" is a name the owner typed in, so it is a real person who has
+    // not registered — not a placeholder. That word was the owner's complaint
+    // (P14.T18) and it must not come back.
     setup();
 
-    expect(screen.getByText(/Guest/)).toHaveTextContent('placeholder');
+    const guest = screen.getByText(/Guest/);
+    expect(guest).toHaveTextContent('not registered yet');
+    expect(guest).not.toHaveTextContent('placeholder');
   });
 
   it('assigns a group with a select, so it works without a mouse', async () => {
@@ -163,10 +169,10 @@ describe('SeasonSetup', () => {
     confirm.mockRestore();
   });
 
-  it('seats a placeholder', async () => {
+  it('seats a player who has not registered', async () => {
     const user = setup();
 
-    await user.type(screen.getByLabelText(/without an account/i), 'Celebrity');
+    await user.type(screen.getByLabelText(/hasn’t registered/i), 'Celebrity');
     await user.click(screen.getByRole('button', { name: 'Add seat' }));
 
     await waitFor(() =>
@@ -316,5 +322,128 @@ describe('SeasonSetup', () => {
     expect(
       await screen.findByText('groups can only be arranged before the draft starts'),
     ).toBeInTheDocument();
+  });
+});
+
+/** `count` real people, so the arithmetic beside the groups input has a subject. */
+function players(count: number): SetupSeatView[] {
+  return Array.from({ length: count }, (_, index) => ({
+    draftId: index + 1,
+    name: `Player ${index + 1}`,
+    isDummy: false,
+    group: null,
+    order: null,
+    hasPicks: false,
+  }));
+}
+
+/** The sentence beside the groups input, without the heading above it. */
+function tally(): string {
+  const line = screen.getByText(/player/i, { selector: 'p' });
+  return line.textContent ?? '';
+}
+
+describe('SeasonSetup, rounding out the groups', () => {
+  it('says how many players there are and what even groups would need', () => {
+    setup({ seats: players(14), suggestedGroupCount: 4 });
+
+    expect(tally()).toBe('14 players · add 2 characters for even groups');
+  });
+
+  it('says the groups are even rather than asking for zero', () => {
+    // 🔴 "add 0 characters" reads as a target you have failed to hit.
+    setup({ seats: players(16), suggestedGroupCount: 4 });
+
+    expect(tally()).toBe('16 players · groups are even');
+  });
+
+  it('recomputes when the owner changes the group count', async () => {
+    // 🔴 The one that catches a value cached at mount.
+    const user = setup({ seats: players(14), suggestedGroupCount: 4 });
+    expect(tally()).toBe('14 players · add 2 characters for even groups');
+
+    const input = screen.getByLabelText(/how many groups/i);
+    await user.clear(input);
+    await user.type(input, '3');
+
+    expect(tally()).toBe('14 players · add 1 character for even groups');
+  });
+
+  it('seats one character per press, never the whole gap', async () => {
+    // 🔴 The owner's explicit instruction: "I don't want you to do it for us."
+    // Fourteen seats and four groups wants two more, and one press gives one.
+    const user = setup({ seats: players(14), suggestedGroupCount: 4 });
+
+    await user.click(screen.getByRole('button', { name: 'Add a character' }));
+
+    await waitFor(() => expect(addDummySeat).toHaveBeenCalledTimes(1));
+    const [call] = addDummySeat.mock.calls as unknown as [[{ dummyName: string }]];
+    expect(CHARACTERS as readonly string[]).toContain(call[0].dummyName);
+  });
+
+  it('never offers a character already seated', async () => {
+    // The whole pool bar one is taken, so the only name left is the last.
+    const taken: SetupSeatView[] = CHARACTERS.slice(0, 48).map((name, index) => ({
+      draftId: index + 1,
+      name,
+      isDummy: true,
+      group: null,
+      order: null,
+      hasPicks: false,
+    }));
+    const user = setup({ seats: taken, suggestedGroupCount: 12 });
+
+    await user.click(screen.getByRole('button', { name: 'Add a character' }));
+
+    await waitFor(() =>
+      expect(addDummySeat).toHaveBeenCalledWith({
+        leagueId: 7,
+        year: 2026,
+        dummyName: 'Annie Hall',
+      }),
+    );
+  });
+
+  it('refuses rather than repeating when every character is seated', () => {
+    const taken: SetupSeatView[] = CHARACTERS.map((name, index) => ({
+      draftId: index + 1,
+      name,
+      isDummy: true,
+      group: null,
+      order: null,
+      hasPicks: false,
+    }));
+    setup({ seats: taken, suggestedGroupCount: 13 });
+
+    expect(screen.getByRole('button', { name: 'No characters left' })).toBeDisabled();
+  });
+
+  it('calls a typed-in name a player, not a placeholder', async () => {
+    // 🔴 The owner's actual complaint. Both seats below are `isDummy` — one
+    // mechanism, two different things — and only the character is a placeholder.
+    setup({
+      seats: [
+        {
+          draftId: 1,
+          name: 'Neo',
+          isDummy: true,
+          group: null,
+          order: null,
+          hasPicks: false,
+        },
+        {
+          draftId: 2,
+          name: 'Aunt Sally',
+          isDummy: true,
+          group: null,
+          order: null,
+          hasPicks: false,
+        },
+      ],
+    });
+
+    expect(screen.getByText(/Aunt Sally/)).toHaveTextContent('not registered yet');
+    expect(screen.getByText(/Aunt Sally/)).not.toHaveTextContent('character');
+    expect(screen.getByText(/^Neo/)).toHaveTextContent('character');
   });
 });

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { dealIntoGroups, shuffle, suggestGroupCount } from './group-assignment';
+import {
+  dealIntoGroups,
+  seatsToEvenGroups,
+  shuffle,
+  suggestGroupCount,
+} from './group-assignment';
 
 /**
  * The rule that decides who drafts against whom.
@@ -129,5 +134,35 @@ describe('suggestGroupCount', () => {
 
   it('rounds up rather than leaving anyone out', () => {
     expect(suggestGroupCount(17)).toBe(5);
+  });
+});
+
+/**
+ * The number beside the groups input: how many more seats would make every
+ * group the same size (P14.T18).
+ */
+describe('seatsToEvenGroups', () => {
+  it('asks for nothing when the groups already divide evenly', () => {
+    expect(seatsToEvenGroups(16, 4)).toBe(0);
+    expect(seatsToEvenGroups(0, 4)).toBe(0);
+  });
+
+  it('asks for the gap to the next even split', () => {
+    expect(seatsToEvenGroups(14, 4)).toBe(2);
+    expect(seatsToEvenGroups(13, 4)).toBe(3);
+    expect(seatsToEvenGroups(17, 4)).toBe(3);
+  });
+
+  it('never asks for a whole extra group', () => {
+    // 🔴 The `% groupCount` on the outside. Without it, a count that already
+    // divides asks for `groupCount` more — four phantom seats at 16 and 4.
+    for (let seats = 0; seats <= 40; seats += 1) {
+      expect(seatsToEvenGroups(seats, 4)).toBeLessThan(4);
+    }
+  });
+
+  it('does not return NaN for a zero or negative group count', () => {
+    expect(seatsToEvenGroups(13, 0)).toBe(0);
+    expect(seatsToEvenGroups(13, -2)).toBe(0);
   });
 });
