@@ -16,6 +16,7 @@ import { loadFilmPage } from './film';
 import { getLeaderboard } from './leaderboard';
 import { getLiveShow } from './live';
 import { pointsForMovieIds } from './scoring';
+import { findFilms } from './search';
 
 afterAll(async () => {
   await db.$disconnect();
@@ -292,5 +293,55 @@ describe('the film page', () => {
     const { queries } = await countQueries(() => loadFilmPage('1185806'));
 
     expect(queries).toBe(1);
+  });
+});
+
+/**
+ * 🔴 Added by P12.T4, and the load test is why.
+ *
+ * Draft-day search is the one path that gets hammered: the owner types a title
+ * per pick, live, and the typeahead fires `findFilmsAction` on every debounce.
+ * `scripts/load-search.mjs` put four concurrent owners on it for two minutes
+ * against a local production build and found p95 = 22 ms against a 400 ms
+ * budget — comfortably inside it, and comfortably inside it *because* the
+ * nomination years for all 25 candidates are fetched in one query rather than
+ * one per film.
+ *
+ * That is exactly the property nothing was guarding. A load test is not a
+ * guard: it runs when somebody remembers, on a machine with a warm local
+ * Postgres, and 25 extra round trips would still finish in well under 400 ms
+ * there while costing real time on a cold Neon connection mid-draft. So the
+ * property gets pinned here, as an equality, next to the others.
+ */
+describe('draft-day search is batched', () => {
+  const noRemote = async () => [];
+
+  it('costs the same number of queries for one local match as for a page of them', async () => {
+    const one = await countQueries(() =>
+      findFilms('oppenheim', { kind: 'browse' }, noRemote),
+    );
+    const many = await countQueries(() => findFilms('the', { kind: 'browse' }, noRemote));
+
+    // 🔴 The equality proves nothing unless the second query really did return
+    // more films — two empty result sets cost the same and say nothing about
+    // batching. Both halves are asserted before the counts are compared.
+    expect(one.result.length).toBeGreaterThan(0);
+    expect(many.result.length).toBeGreaterThan(one.result.length);
+
+    expect(one.queries).toBeGreaterThan(0);
+    expect(many.queries).toBe(one.queries);
+  });
+
+  it('costs three queries, whatever the query and however many films match', async () => {
+    // A number rather than "not many", and the three are named so a fourth has
+    // to be argued for: `searchFuzzy`'s `$queryRaw` for the ranked ids, its
+    // `findMany` for the columns (a second trip on purpose — see the comment
+    // in `lib/repositories/movies.ts`), and `findManyByMovieIds` for every
+    // candidate's nomination years at once.
+    const { queries } = await countQueries(() =>
+      findFilms('the', { kind: 'browse' }, noRemote),
+    );
+
+    expect(queries).toBe(3);
   });
 });
