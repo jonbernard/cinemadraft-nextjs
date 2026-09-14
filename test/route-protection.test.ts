@@ -100,7 +100,7 @@ describe('route protection', () => {
     ).toEqual([]);
   });
 
-  it('names the ten routes that are protected today', () => {
+  it('names the eleven routes that are protected today', () => {
     // The other direction, and the reason it is worth spelling out: the test
     // above passes vacuously if `discoverRoutes()` ever stops discovering
     // anything — a rename of `app/`, a walk that throws and is caught, a glob
@@ -137,6 +137,11 @@ describe('route protection', () => {
       // so they land back here once they are in.
       '/leagues/new',
       '/list',
+      // 🔴 Protected because it cannot answer without a session: it resolves
+      // the reader's own uuid and redirects to `/members/<uuid>`. Signed out
+      // there is nothing to resolve, so the proxy's redirect is the right
+      // answer and `requirePageUser` is the second line.
+      '/profile',
       '/watchlist',
     ]);
   });

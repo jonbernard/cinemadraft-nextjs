@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { ConflictError } from '@/lib/errors';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
+import { profileFeedRepository } from '@/lib/repositories/profile-feeds';
+import { getLeagueBoard } from '@/lib/services/draft';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 import { authorizeLeague } from './guard';
 
@@ -92,12 +94,33 @@ export async function startDraft(input: z.infer<typeof Status>): Promise<ActionR
 }
 
 /**
- * Mark the draft finished (P10.T17).
+ * Mark the draft finished (P10.T17), and post each member's roster to their
+ * profile feed.
  *
- * The source also posted each member's picks to their profile feed at this
- * point, using a **hardcoded `year: 2024`** (`PARITY.md` bug 7). The feed is
- * batch E; when it lands, this is where it hooks in — with the league's real
- * season, not a literal.
+ * 🔴 **The feed post is the point of this action as much as the status is.**
+ * The source wrote one `profile_feeds` row per seated member here
+ * (`server/routes/league.js:62-86`), and in the restored production data
+ * **every one of the 125 feed rows came from this write** — 19 members,
+ * 2016-11-01 to 2023-12-04, and not one post from the manual composer. Omitting
+ * it left the port rendering an attachment kind nothing would ever create, and
+ * it went unnoticed because `PARITY.md` carried the deferral as an italic aside
+ * inside a row marked ported rather than as a row of its own.
+ *
+ * 🔴 **The league's real season, not the source's hardcoded `year: 2024`**
+ * (`PARITY.md` bug 7). `Status` already carries the year, so there is no
+ * literal to inherit.
+ *
+ * 🔴 **Written only on the transition into `complete`.** The source re-posted
+ * on every update, which is why the same roster appears twice in the data.
+ * Reading the status first and writing only when it changes makes pressing
+ * "Finish the draft" twice harmless — and a member's feed is the one surface
+ * where a duplicate is visible forever.
+ *
+ * 🔴 **A failed post does not fail the action.** The status change is the thing
+ * the owner asked for and it is already committed; a feed row is a
+ * consequence. Throwing here would report failure for an operation that
+ * succeeded, and the owner would press it again — producing the duplicate the
+ * guard above exists to prevent.
  */
 export async function completeDraft(
   input: z.infer<typeof Status>,
@@ -106,13 +129,62 @@ export async function completeDraft(
   if (!parsed.success) return fail('INVALID', 'that league is not valid');
 
   try {
-    await authorizeLeague(parsed.data.leagueId);
+    const { league } = await authorizeLeague(parsed.data.leagueId);
+    const wasComplete = league.draftingStatus === 'complete';
+
     await leagueRepository.update(parsed.data.leagueId, { draftingStatus: 'complete' });
 
+    if (!wasComplete) {
+      await postRosters(parsed.data.leagueId, parsed.data.year, league.name);
+    }
+
     revalidatePath(`/leagues/${parsed.data.leagueId}`, 'layout');
+    revalidatePath('/members', 'layout');
     return ok();
   } catch (error) {
     return toActionResult(error);
+  }
+}
+
+/**
+ * One feed row per seated member, naming what they drafted.
+ *
+ * 🔴 Dummy seats are skipped, and that is the whole of the filter: `uuid` is
+ * null for a seat the owner drafts on behalf of, and `profile_feeds` is keyed
+ * by `user_uuid`, so there is nowhere to put the row. 17 such seats exist in
+ * production.
+ *
+ * The message and the `components` pointer match the source's shape exactly —
+ * `[['draft', draftId]]` is what `lib/services/profile.ts` already expands into
+ * a roster, so this writes rows the port could already render.
+ */
+async function postRosters(leagueId: number, year: number, leagueName: string | null) {
+  try {
+    const board = await getLeagueBoard(leagueId, year);
+    const seats = board.groups.flatMap((group) => group.seats);
+
+    await Promise.all(
+      seats
+        .filter((seat) => seat.uuid != null)
+        .map((seat) =>
+          profileFeedRepository.create({
+            userUuid: seat.uuid as string,
+            message: `${seat.name} drafted these movies in the ${year} ${
+              leagueName ?? 'league'
+            } league.`,
+            icon: 'eva:calendar-fill',
+            components: [['draft', seat.draftId]],
+          }),
+        ),
+    );
+  } catch (error) {
+    // Deliberately swallowed — see the action's docstring. The status change
+    // has already committed and is what the owner asked for.
+    console.error('[league] could not post rosters to the feed', {
+      leagueId,
+      year,
+      error,
+    });
   }
 }
 
