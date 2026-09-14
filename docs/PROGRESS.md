@@ -2186,7 +2186,30 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 ## Phase 12 — Parallel run
 
-- [ ] P12 not started
+Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
+
+- [x] **P12.T1** Deployed to `next.cinemadraft.com` against the Neon copy — verified 2026-09-14: `/`, `/award-shows` and `/how-it-works` all 200, and `?tv=1` on a league renders `data-tv-mode`, so the deployed build carries Phase 14 tranche 2. Owner still to confirm in the dashboard which Neon branch it points at, and that `events.image` still holds the twelve Blob URLs
+- [ ] **P12.T2** The capability sweep — `PARITY.md` is at **0 deficient**, so this starts from zero known gaps for the first time
+- [ ] **P12.T3** Free-tier headroom and the cold-start decision
+- [ ] **P12.T4** Load-test draft-day search
+- [ ] **P12.T5** Fix what the above finds
+
+### Phase 12 measurements (2026-09-14)
+
+Recorded so nobody re-measures them, and so the plan's thresholds have a baseline.
+
+| Probe | Result |
+|---|---|
+| Cold `/` (first hit after idle) | **2.98s**, TTFB 2.94s |
+| Warm `/` | 0.68 / 0.65 / 0.50 / **0.44s** |
+| `/leagues/1` (16 seats, picks, ledger) | 1.00 → 0.77 → **0.62s** |
+| `/how-it-works` | 0.46s |
+
+🔴 **The cold number is the finding.** Neon Free scales to zero, so the first
+visitor after an idle period waits ~3 seconds — and this product's shape is a
+link pasted into a group chat, which makes the *first* visitor the common case
+rather than the rare one. P12.T3 decides whether that is accepted or bought off
+with a keep-warm, and records the reason either way.
 
 ### Phase 12 notes
 
