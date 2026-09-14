@@ -142,7 +142,36 @@ export const authCardAppearance = {
     // its content — measured 253px inside a 400px panel, narrower than the
     // sentence above it.
     rootBox: { width: '100%' },
-    cardBox: { width: '100%', boxShadow: 'none', borderRadius: 'var(--radius-sm)' },
+    // 🔴 `overflow: 'visible'` because the focus ring paints OUTSIDE the field
+    // (P14.T17). `FOCUS_RING` is a 2px outline at a 2px offset — 4px beyond the
+    // border box — and `card` below has `padding: 0`, so every full-width
+    // control spans the card edge to edge and its ring lands outside the
+    // rounded box Clerk clips. Measured on `/auth/login` at 1440 in a
+    // production build, focused: `getComputedStyle(cardBox).overflow` read
+    // `hidden`, and the ring overhung the clip by **5px on the left and 3px on
+    // the right** on all three full-width controls — the Google button, the
+    // email field and "Continue". (4px each side plus Clerk's own leftover
+    // `margin: -1px -1px 0` on `card`, which shifts it a pixel left; the
+    // asymmetry is that margin, not the ring.) Top and bottom were never
+    // clipped — they had 187px and 140px of headroom — so the owner's "cut on
+    // all four sides" is the corners going, not four edges.
+    //
+    // The ring is not the thing to change: 2px carmine at a 2px offset is what
+    // every other control in the app draws, and making this one form's focus
+    // indicator smaller to fit would be worse than the clipping it fixes.
+    //
+    // Nothing escapes: `cardBox`, `card` and `footer` all compute a
+    // transparent background, a 0px border and no shadow here, so the clip was
+    // holding back nothing that is painted. The rounded surface a reader
+    // actually sees is the page's own `rounded-sm bg-bg-panel p-6` wrapper
+    // outside Clerk entirely, and its 24px padding leaves the ring room.
+    // `card` already computes `visible`, so it is left alone.
+    cardBox: {
+      width: '100%',
+      boxShadow: 'none',
+      borderRadius: 'var(--radius-sm)',
+      overflow: 'visible',
+    },
     card: {
       width: '100%',
       padding: 0,
