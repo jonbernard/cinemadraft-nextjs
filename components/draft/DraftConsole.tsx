@@ -155,25 +155,42 @@ export function DraftConsole({
         return;
       }
 
-      // A TMDB-only film has no local id and cannot be drafted until it is
-      // saved. Phase 8 leaves that path to the award admin.
+      // 🔴 A film TMDB knows and this app has not cached yet is drafted by
+      // `tmdbId`, and `addPick` ingests it on the way through
+      // (`lib/services/film-ingest.ts`). Choosing it from the results IS the
+      // act of adding it — there is no separate admin step and there has not
+      // been one since Phase 8 taught the action to take a `tmdbId`.
       //
-      // 🔴 The title is in the message deliberately. The owner is typing what
-      // somebody just said aloud and is half a sentence ahead of the screen;
-      // "that film cannot be drafted" sends them hunting through five results
-      // for which one it meant.
-      const movieId = film.id;
-      if (movieId == null) {
-        setMessage(
-          `${film.title} is not in the app yet — an admin has to add it before it can be drafted.`,
-        );
+      // This used to refuse with "an admin has to add it before it can be
+      // drafted", which was true when it was written and then quietly stopped
+      // being true: the action, the prop type above and the search results all
+      // gained `tmdbId` support while this guard stayed. The owner ran into it
+      // mid-draft. `DraftListEditor` has done it the right way at `:95` all
+      // along, which is the shape copied here.
+      const identity =
+        film.id != null
+          ? { movieId: film.id }
+          : film.tmdbId
+            ? { tmdbId: film.tmdbId }
+            : null;
+
+      if (identity == null) {
+        // Neither id: not a film the server can resolve at all. Unreachable
+        // from a search result, which always carries one or the other — kept
+        // because the alternative is sending a request that cannot succeed.
+        //
+        // 🔴 The title is in the message deliberately. The owner is typing what
+        // somebody just said aloud and is half a sentence ahead of the screen;
+        // "that film cannot be drafted" sends them hunting through five results
+        // for which one it meant.
+        setMessage(`${film.title} cannot be drafted — it has no film id.`);
         return;
       }
 
       setMessage(null);
 
       startTransition(async () => {
-        const result = await onAssign({ draftId: currentSeat.draftId, movieId });
+        const result = await onAssign({ draftId: currentSeat.draftId, ...identity });
 
         if (!result.ok) {
           setMessage(result.message);

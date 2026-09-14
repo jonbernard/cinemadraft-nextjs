@@ -211,11 +211,13 @@ describe('DraftConsole — assigning', () => {
     expect(screen.getByRole('searchbox')).toHaveValue('battle');
   });
 
-  it('names the film when it is not in the app yet', async () => {
-    // A film TMDB knows and this app has never ingested: `id` is null.
-    // `FilmSearch` happily returns and selects one, so this is reachable in
-    // normal use — and used to be a silent `return` on the one screen that is
-    // run live with the league watching.
+  it('drafts a film TMDB knows and this app has never ingested', async () => {
+    // 🔴 `id` is null and `tmdbId` is set — a film the search found on TMDB.
+    // This used to be REFUSED with "an admin has to add it before it can be
+    // drafted", which was true when written and stopped being true when
+    // `addPick` learned to take a `tmdbId` and ingest through
+    // `lib/services/film-ingest.ts`. The owner hit the stale refusal mid-draft.
+    // Choosing a result IS the act of adding the film.
     const { onAssign, user } = setup({
       onSearch: vi.fn(async () => ({
         ok: true as const,
@@ -228,15 +230,39 @@ describe('DraftConsole — assigning', () => {
     await user.type(screen.getByRole('searchbox'), 'fight');
     await user.click(await screen.findByRole('button', { name: /Fight Club/ }));
 
-    // The title, so the owner knows which of the results on screen this is
-    // about, and the reason, so they know it is not a network failure.
-    expect(
-      await screen.findByText(/Fight Club is not in the app yet/i),
-    ).toBeInTheDocument();
-    expect(onAssign).not.toHaveBeenCalled();
-    // The query survives, as it does for a refused pick: the owner is half a
-    // sentence behind the room and should not retype the title.
-    expect(screen.getByRole('searchbox')).toHaveValue('fight');
+    // By tmdbId, and with no movieId alongside it — the server resolves one or
+    // the other, and sending both would make the payload say two things.
+    await waitFor(() => {
+      expect(onAssign).toHaveBeenCalledWith({
+        draftId: expect.any(Number),
+        tmdbId: '550',
+      });
+    });
+    expect(await screen.findByText(/Fight Club →/)).toBeInTheDocument();
+  });
+
+  it('still prefers the local id when the film is already cached', async () => {
+    // 🔴 The other half, and not decoration: a branch that sent `tmdbId` for
+    // every film would pass the case above while making every ordinary pick
+    // take the ingest path.
+    const { onAssign, user } = setup({
+      onSearch: vi.fn(async () => ({
+        ok: true as const,
+        data: [
+          { id: 77, tmdbId: '550', title: 'Fight Club', year: 1999, posterUrl: null },
+        ] as ConsoleFilm[],
+      })),
+    });
+
+    await user.type(screen.getByRole('searchbox'), 'fight');
+    await user.click(await screen.findByRole('button', { name: /Fight Club/ }));
+
+    await waitFor(() => {
+      expect(onAssign).toHaveBeenCalledWith({
+        draftId: expect.any(Number),
+        movieId: 77,
+      });
+    });
   });
 
   it('says which film had no seat, rather than returning silently', () => {
