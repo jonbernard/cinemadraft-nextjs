@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition } from 'react';
 
 import { findUserForRelink } from '@/actions/admin/find-user';
 import { relinkUser } from '@/actions/admin/relink';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 type FoundUser = {
   id: number;
@@ -37,6 +38,7 @@ export function RelinkPanel() {
   const [clerkId, setClerkId] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   const find = useCallback(
     (event: React.FormEvent) => {
@@ -59,7 +61,7 @@ export function RelinkPanel() {
     [email],
   );
 
-  const relink = useCallback(() => {
+  const relink = useCallback(async () => {
     if (!user) return;
     const trimmed = clerkId.trim();
     if (trimmed === '') {
@@ -67,9 +69,10 @@ export function RelinkPanel() {
       return;
     }
     if (
-      !window.confirm(
+      !(await confirm(
         `Move ${displayName(user)}'s drafts, picks, reviews and watchlist to Clerk identity "${trimmed}"? This cannot be undone from this page.`,
-      )
+        'Move',
+      ))
     ) {
       return;
     }
@@ -83,14 +86,15 @@ export function RelinkPanel() {
         setMessage('That did not work.');
       }
     });
-  }, [user, clerkId]);
+  }, [user, clerkId, confirm]);
 
-  const unlink = useCallback(() => {
+  const unlink = useCallback(async () => {
     if (!user) return;
     if (
-      !window.confirm(
+      !(await confirm(
         `Unlink ${displayName(user)} from ${user.clerkId ?? 'its current identity'}? They will not be able to sign in again until an admin relinks them.`,
-      )
+        'Unlink',
+      ))
     ) {
       return;
     }
@@ -105,10 +109,11 @@ export function RelinkPanel() {
         setMessage('That did not work.');
       }
     });
-  }, [user]);
+  }, [user, confirm]);
 
   return (
     <div className="flex flex-col gap-6">
+      {dialog}
       <form onSubmit={find} className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Find an account by email</span>

@@ -9,6 +9,7 @@ import { removeNominee } from '@/actions/awards/remove-nominee';
 import { setWinner } from '@/actions/awards/set-winner';
 import { findFilmsAction } from '@/actions/search/find-films';
 import { FilmSearch, type SearchedFilm } from '@/components/draft/FilmSearch';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { StatusChip } from '@/components/ui/StatusChip';
 import { cn } from '@/lib/utils/cn';
 
@@ -59,6 +60,7 @@ export function CategoryAdmin({
   const [resetSignal, setResetSignal] = useState(0);
   const [nomineeName, setNomineeName] = useState('');
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   const search = useCallback(
     async (query: string): Promise<SearchedFilm[]> => {
@@ -137,14 +139,15 @@ export function CategoryAdmin({
     });
   }, []);
 
-  const removeCategory = useCallback(() => {
+  const removeCategory = useCallback(async () => {
     // 🔴 Deleting a category never cascades — a refusal names how many
     // nominations are in the way, and the confirmation says so up front so
     // the admin is not surprised by it.
     if (
-      !window.confirm(
+      !(await confirm(
         `Delete "${categoryName}"? This refuses if any films are still nominated in it — remove those first.`,
-      )
+        'Delete',
+      ))
     ) {
       return;
     }
@@ -153,12 +156,13 @@ export function CategoryAdmin({
       const result = await deleteCategory(awardId);
       if (!result.ok) setMessage(result.message);
     });
-  }, [awardId, categoryName]);
+  }, [awardId, categoryName, confirm]);
 
   return (
     <div
       className={cn('border-border-rule flex flex-col gap-3 border-l-2 pl-4', className)}
     >
+      {dialog}
       {requiresNomineeName ? (
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Person nominated</span>

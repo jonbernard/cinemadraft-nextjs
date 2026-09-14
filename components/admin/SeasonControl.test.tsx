@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,6 +6,20 @@ import { SeasonControl } from '@/components/admin/SeasonControl';
 
 const setActiveYear = vi.hoisted(() => vi.fn());
 vi.mock('@/actions/admin/set-active-year', () => ({ setActiveYear }));
+
+/**
+ * 🔴 These tests used to stub `window.confirm` and assert it was called (P14).
+ * The moment the component stopped calling it, every one of those stubs would
+ * have gone on passing while the confirmation itself was gone — `mockReturnValue(true)`
+ * and "no dialog at all" are indistinguishable from the outside. They drive the
+ * real `ConfirmDialog` now: the dialog is found, read and answered by clicking
+ * its buttons, so deleting the confirmation makes them fail on a missing one.
+ *
+ * jsdom's `<dialog>` needs `showModal` to exist; `vitest.setup.ts` polyfills it.
+ */
+const dialog = () => screen.getByRole('dialog');
+const answer = (name: RegExp | string) =>
+  userEvent.click(within(dialog()).getByRole('button', { name }));
 
 const SEASONS = [
   { year: 2026, isActive: true },
@@ -26,24 +40,25 @@ describe('SeasonControl', () => {
   });
 
   it('does nothing when the confirmation is declined', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<SeasonControl seasons={SEASONS} memberCount={60} />);
 
     await userEvent.selectOptions(screen.getByLabelText(/season/i), '2025');
     await userEvent.click(screen.getByRole('button', { name: /make 2025 active/i }));
 
-    expect(confirm).toHaveBeenCalled();
+    await answer('Cancel');
     expect(setActiveYear).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { hidden: true })).not.toBeVisible();
   });
 
   it('names the year and the number of people in the confirmation', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<SeasonControl seasons={SEASONS} memberCount={60} />);
 
     await userEvent.selectOptions(screen.getByLabelText(/season/i), '2025');
     await userEvent.click(screen.getByRole('button', { name: /make 2025 active/i }));
 
-    const message = confirm.mock.calls[0]?.[0] as string;
+    // 🔴 Read off the rendered dialog, not off a spy's argument: the dialog
+    // existing at all is now half of what this asserts.
+    const message = dialog().textContent ?? '';
     expect(message).toContain('2025');
     expect(message).toContain('60 people');
     // Not an alternation with "re-scope": the message always contains that
@@ -51,12 +66,38 @@ describe('SeasonControl', () => {
     expect(message).toMatch(/cannot be undone/i);
   });
 
-  it('re-scopes the app once, when confirmed', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+  it('confirms in the app, not in browser chrome', async () => {
+    // The defect P14 fixes. `window.confirm` is unstyleable, unplaceable and
+    // says "cinemadraft.com says" above the sentence.
+    const native = vi.spyOn(window, 'confirm');
     render(<SeasonControl seasons={SEASONS} memberCount={60} />);
 
     await userEvent.selectOptions(screen.getByLabelText(/season/i), '2025');
     await userEvent.click(screen.getByRole('button', { name: /make 2025 active/i }));
+
+    expect(native).not.toHaveBeenCalled();
+    expect(dialog()).toBeVisible();
+    native.mockRestore();
+  });
+
+  it('the confirmation does not default to re-scoping the product', async () => {
+    // Focus lands on Cancel, so Enter on an unread dialog means no.
+    render(<SeasonControl seasons={SEASONS} memberCount={60} />);
+
+    await userEvent.selectOptions(screen.getByLabelText(/season/i), '2025');
+    await userEvent.click(screen.getByRole('button', { name: /make 2025 active/i }));
+
+    expect(document.activeElement).toBe(
+      within(dialog()).getByRole('button', { name: 'Cancel' }),
+    );
+  });
+
+  it('re-scopes the app once, when confirmed', async () => {
+    render(<SeasonControl seasons={SEASONS} memberCount={60} />);
+
+    await userEvent.selectOptions(screen.getByLabelText(/season/i), '2025');
+    await userEvent.click(screen.getByRole('button', { name: /make 2025 active/i }));
+    await answer(/make 2025 active/i);
 
     expect(setActiveYear).toHaveBeenCalledTimes(1);
     expect(setActiveYear).toHaveBeenCalledWith(2025);
@@ -66,7 +107,6 @@ describe('SeasonControl', () => {
     // `disabled` is what a pointer meets between a double-click and two
     // re-scopes, and `useTransition`'s pending flag is what sets it. (There is
     // no Enter path to guard: the control is a div, not a form.)
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     let release: (value: unknown) => void = () => {};
     setActiveYear.mockReturnValue(
       new Promise((resolve) => {
@@ -78,6 +118,8 @@ describe('SeasonControl', () => {
     await userEvent.selectOptions(screen.getByLabelText(/season/i), '2025');
     const commit = screen.getByRole('button', { name: /make 2025 active/i });
     await userEvent.click(commit);
+    await answer(/make 2025 active/i);
+    // The dialog is closed by now, so this is the page's one button again.
     await userEvent.click(screen.getByRole('button'));
 
     expect(setActiveYear).toHaveBeenCalledTimes(1);
@@ -113,6 +155,7 @@ describe('SeasonControl', () => {
     render(<SeasonControl seasons={SEASONS} memberCount={60} />);
 
     // Ten adjacent triggers that each re-scope the product is the defect.
+    // The confirmation renders nothing while closed, so it does not count.
     expect(screen.getAllByRole('button')).toHaveLength(1);
   });
 
