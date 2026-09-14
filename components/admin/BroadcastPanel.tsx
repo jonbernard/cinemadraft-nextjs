@@ -3,6 +3,7 @@
 import { useCallback, useState, useTransition } from 'react';
 
 import { broadcastNotification } from '@/actions/notifications/broadcast';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 
 /**
  * Send one notification to every member (T45).
@@ -19,9 +20,12 @@ export function BroadcastPanel({ recipientCount }: { recipientCount: number }) {
   const [link, setLink] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   const send = useCallback(
-    (event: React.FormEvent) => {
+    async (event: React.FormEvent) => {
+      // Synchronous, before the first `await`: the default is only cancellable
+      // while the event is still being dispatched.
       event.preventDefault();
       const trimmed = message.trim();
       if (trimmed === '') {
@@ -31,9 +35,10 @@ export function BroadcastPanel({ recipientCount }: { recipientCount: number }) {
 
       const people = recipientCount === 1 ? '1 person' : `${recipientCount} people`;
       if (
-        !window.confirm(
+        !(await confirm(
           `Send "${trimmed}" to ${people}? This cannot be undone or recalled once sent.`,
-        )
+          'Send',
+        ))
       ) {
         return;
       }
@@ -57,11 +62,12 @@ export function BroadcastPanel({ recipientCount }: { recipientCount: number }) {
         );
       });
     },
-    [message, icon, link, recipientCount],
+    [message, icon, link, recipientCount, confirm],
   );
 
   return (
     <form onSubmit={send} className="flex flex-col gap-4">
+      {dialog}
       <label className="flex flex-col gap-1">
         <span className="text-text-dim text-xs">Message</span>
         <textarea

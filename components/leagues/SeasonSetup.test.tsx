@@ -48,6 +48,17 @@ import { CHARACTERS } from '@/lib/leagues/characters';
  * picks cannot be removed, destructive actions confirm, and groups are frozen
  * once the draft opens.
  */
+/**
+ * 🔴 The confirmations used to be `window.confirm`, stubbed here with a spy
+ * (P14). A stub like that keeps passing after the confirmation is deleted —
+ * `mockReturnValue(true)` and "no dialog at all" look identical from outside —
+ * so these drive the real `ConfirmDialog` instead: find it, answer it, and let
+ * its absence be the failure.
+ */
+const confirmation = () => screen.getByRole('dialog');
+const answer = (user: ReturnType<typeof userEvent.setup>, name: RegExp | string) =>
+  user.click(within(confirmation()).getByRole('button', { name }));
+
 const SEATS: SetupSeatView[] = [
   { draftId: 1, name: 'Ada', isDummy: false, group: 1, order: 1, hasPicks: false },
   {
@@ -144,29 +155,37 @@ describe('SeasonSetup', () => {
     expect(row.textContent).toContain('has picks');
   });
 
-  it('confirms before removing someone', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  it('confirms before removing someone, in the app rather than in browser chrome', async () => {
+    const native = vi.spyOn(window, 'confirm');
     const user = setup();
 
     const row = screen.getByText(/Grace/).closest('li') as HTMLElement;
     await user.click(within(row).getByRole('button', { name: 'Remove' }));
 
-    expect(confirm).toHaveBeenCalled();
+    // The defect P14 fixes: this used to be a browser dialog the product could
+    // neither style nor place.
+    expect(native).not.toHaveBeenCalled();
+    expect(confirmation()).toHaveTextContent('Remove Grace from this league?');
+    // Destructive, so the keyboard default is the harmless one.
+    expect(document.activeElement).toBe(
+      within(confirmation()).getByRole('button', { name: 'Cancel' }),
+    );
+
+    await answer(user, 'Cancel');
     expect(removeSeat).not.toHaveBeenCalled();
-    confirm.mockRestore();
+    native.mockRestore();
   });
 
   it('removes once confirmed', async () => {
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = setup();
 
     const row = screen.getByText(/Grace/).closest('li') as HTMLElement;
     await user.click(within(row).getByRole('button', { name: 'Remove' }));
+    await answer(user, 'Remove');
 
     await waitFor(() =>
       expect(removeSeat).toHaveBeenCalledWith({ leagueId: 7, draftId: 2 }),
     );
-    confirm.mockRestore();
   });
 
   it('seats a player who has not registered', async () => {
@@ -209,7 +228,12 @@ describe('SeasonSetup', () => {
 
     await user.click(screen.getByRole('button', { name: 'Deal at random' }));
 
-    const ceremony = await screen.findByRole('dialog', { hidden: true });
+    // 🔴 Named, not "the only dialog": the confirmations are `<dialog>`s too
+    // (P14), and a closed one still matches `{ hidden: true }`.
+    const ceremony = await screen.findByRole('dialog', {
+      hidden: true,
+      name: /dealing/i,
+    });
     await user.click(within(ceremony).getByRole('button', { name: /skip/i }));
 
     expect(
@@ -240,14 +264,15 @@ describe('SeasonSetup', () => {
 
   it('confirms before starting the draft', async () => {
     // Groups are fixed from that moment.
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const user = setup();
 
     await user.click(screen.getByRole('button', { name: 'Start the draft' }));
 
-    expect(confirm).toHaveBeenCalled();
+    expect(confirmation()).toHaveTextContent(
+      'Start the draft? Groups cannot be changed afterwards.',
+    );
+    await answer(user, 'Cancel');
     expect(startDraft).not.toHaveBeenCalled();
-    confirm.mockRestore();
   });
 
   it('hides every arrangement control once the draft is open', async () => {
@@ -274,29 +299,29 @@ describe('SeasonSetup', () => {
     // nothing called it, so an owner on the one page that manages the season
     // had no way to say the draft was over. A draft with no end state is why
     // journey 1 could not finish.
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
     const user = setup({ status: 'active' });
 
     await user.click(screen.getByRole('button', { name: 'Finish the draft' }));
+    await answer(user, 'Finish the draft');
 
     expect(completeDraft).toHaveBeenCalledWith({ leagueId: 7, year: 2026 });
     await waitFor(() =>
       expect(screen.getByText('The draft is finished')).toBeInTheDocument(),
     );
-    confirm.mockRestore();
   });
 
   it('confirms before finishing, and a refusal writes nothing', async () => {
     // Same reasoning as starting: the league is told the draft is over, and
     // people stop watching. A mis-click must not be the thing that says so.
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const user = setup({ status: 'active' });
 
     await user.click(screen.getByRole('button', { name: 'Finish the draft' }));
 
-    expect(confirm).toHaveBeenCalled();
+    expect(confirmation()).toHaveTextContent(
+      'Finish the draft? The league will be told it is over.',
+    );
+    await answer(user, 'Cancel');
     expect(completeDraft).not.toHaveBeenCalled();
-    confirm.mockRestore();
   });
 
   it('offers nothing to finish before it has started, or after it has ended', () => {

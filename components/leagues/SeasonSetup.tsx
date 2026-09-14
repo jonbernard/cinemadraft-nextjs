@@ -17,6 +17,7 @@ import { isCharacter, nextCharacter } from '@/lib/leagues/characters';
 import { type Assignment, seatsToEvenGroups } from '@/lib/services/group-assignment';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '../ui/Button';
+import { useConfirm } from '../ui/ConfirmDialog';
 import { type CeremonyGroup, GroupCeremony } from './GroupCeremony';
 
 export type SetupSeatView = {
@@ -505,24 +506,28 @@ function RemoveSeatButton({
   onDone: (message: string | null) => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
-  const remove = useCallback(() => {
-    if (!window.confirm(`Remove ${name} from this league?`)) return;
+  const remove = useCallback(async () => {
+    if (!(await confirm(`Remove ${name} from this league?`, 'Remove'))) return;
     startTransition(async () => {
       const result = await removeSeat({ leagueId, draftId });
       onDone(result.ok ? `${name} removed` : result.message);
     });
-  }, [leagueId, draftId, name, onDone]);
+  }, [leagueId, draftId, name, onDone, confirm]);
 
   return (
-    <button
-      type="button"
-      disabled={disabled || pending}
-      onClick={remove}
-      className="text-text-dim hover:text-text-primary focus-visible:outline-accent-fill min-h-11 text-xs underline focus-visible:outline-2"
-    >
-      Remove
-    </button>
+    <>
+      {dialog}
+      <button
+        type="button"
+        disabled={disabled || pending}
+        onClick={remove}
+        className="text-text-dim hover:text-text-primary focus-visible:outline-accent-fill min-h-11 text-xs underline focus-visible:outline-2"
+      >
+        Remove
+      </button>
+    </>
   );
 }
 
@@ -539,24 +544,35 @@ function StartDraftButton({
   onDone: (message: string | null) => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
-  const start = useCallback(() => {
-    if (!window.confirm('Start the draft? Groups cannot be changed afterwards.')) return;
+  const start = useCallback(async () => {
+    if (
+      !(await confirm(
+        'Start the draft? Groups cannot be changed afterwards.',
+        'Start the draft',
+      ))
+    ) {
+      return;
+    }
     startTransition(async () => {
       const result = await startDraft({ leagueId, year });
       onDone(result.ok ? 'The draft is open' : result.message);
     });
-  }, [leagueId, year, onDone]);
+  }, [leagueId, year, onDone, confirm]);
 
   return (
-    <button
-      type="button"
-      disabled={disabled || pending}
-      onClick={start}
-      className="bg-accent-fill focus-visible:outline-accent-fill min-h-11 w-fit px-4 text-sm text-white disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
-    >
-      Start the draft
-    </button>
+    <>
+      {dialog}
+      <button
+        type="button"
+        disabled={disabled || pending}
+        onClick={start}
+        className="bg-accent-fill focus-visible:outline-accent-fill min-h-11 w-fit px-4 text-sm text-white disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        Start the draft
+      </button>
+    </>
   );
 }
 
@@ -591,23 +607,34 @@ function FinishDraftButton({
   onDone: (message: string | null) => void;
 }) {
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
-  const finish = useCallback(() => {
-    if (!window.confirm('Finish the draft? The league will be told it is over.')) return;
+  const finish = useCallback(async () => {
+    if (
+      !(await confirm(
+        'Finish the draft? The league will be told it is over.',
+        'Finish the draft',
+      ))
+    ) {
+      return;
+    }
     startTransition(async () => {
       const result = await completeDraft({ leagueId, year });
       onDone(result.ok ? 'The draft is finished' : result.message);
     });
-  }, [leagueId, year, onDone]);
+  }, [leagueId, year, onDone, confirm]);
 
   return (
-    <Button
-      type="button"
-      disabled={disabled || pending}
-      onClick={finish}
-      sx={{ width: 'fit-content', minHeight: 44 }}
-    >
-      Finish the draft
-    </Button>
+    <>
+      {dialog}
+      <Button
+        type="button"
+        disabled={disabled || pending}
+        onClick={finish}
+        sx={{ width: 'fit-content', minHeight: 44 }}
+      >
+        Finish the draft
+      </Button>
+    </>
   );
 }

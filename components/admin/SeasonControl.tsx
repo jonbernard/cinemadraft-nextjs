@@ -3,6 +3,7 @@
 import { useCallback, useState, useTransition } from 'react';
 
 import { setActiveYear } from '@/actions/admin/set-active-year';
+import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { cn } from '@/lib/utils/cn';
 
 export type SeasonRow = {
@@ -27,10 +28,23 @@ export type SeasonRow = {
  * state the count server-side, say it in the form, say it again in a
  * confirmation that interpolates both, and gate the call on it.
  *
- * `window.confirm` rather than a custom dialog, matching `BroadcastPanel`: it
- * is the platform's modal, focus-trapped and keyboard-operable for free, and
- * the two destructive admin actions in this product must not behave
- * differently from one another.
+ * 🔴 **`ConfirmDialog`, not `window.confirm` — and this reverses what stood
+ * here (P14).** The claim was that `window.confirm` is the platform's modal,
+ * focus-trapped and keyboard-operable for free, and that the two destructive
+ * admin actions must not behave differently from one another. The first half
+ * was true and is no longer a reason: `showModal()` on a native `<dialog>`
+ * gives the same focus trap, the same Escape key, page inertness and top-layer
+ * stacking, so the free accessibility was never what `window.confirm` alone
+ * bought. What it *costs* is that the confirmation is browser chrome — drawn
+ * by the browser, in the browser's type, at the top of the viewport, prefixed
+ * with "cinemadraft.com says", and impossible for this product to style or
+ * place. The owner saw one on `/leagues/[id]/setup` and overruled the note.
+ *
+ * The consistency half now argues the opposite way. `window.confirm` made
+ * these two admin actions match each other and match nothing else: there were
+ * nine call sites in five files, each free to drift. All nine render
+ * `components/ui/ConfirmDialog` now, so they behave identically because they
+ * are the same component rather than because everybody remembered.
  *
  * 🔴 A `<div>` and a `type="button"`, not a `<form>` — deliberately unlike
  * `BroadcastPanel`. With no form there is no implicit submission, so Enter in
@@ -56,22 +70,24 @@ export function SeasonControl({
   const [choice, setChoice] = useState<number | null>(active);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   const people = memberCount === 1 ? '1 person' : `${memberCount} people`;
 
-  const activate = useCallback(() => {
+  const activate = useCallback(async () => {
     // 🔴 Belt and braces with the `disabled` below. The button being off is
     // what a pointer meets; this is what a stale render or a second click in
     // the same tick meets. (There is no Enter path: see the docstring.)
     if (choice == null || choice === active || pending) return;
 
     if (
-      !window.confirm(
+      !(await confirm(
         `Make ${choice} the active season? This re-scopes every league, draft, ` +
           `award show and dashboard in the app for all ${people}, immediately. ` +
           `It takes effect with no redeploy and cannot be undone — only replaced ` +
           `by activating another season.`,
-      )
+        `Make ${choice} active`,
+      ))
     ) {
       return;
     }
@@ -81,10 +97,11 @@ export function SeasonControl({
       const result = await setActiveYear(choice);
       setMessage(result.ok ? `${choice} is now the active season` : result.message);
     });
-  }, [choice, active, people, pending]);
+  }, [choice, active, people, pending, confirm]);
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
+      {dialog}
       <label className="flex flex-col gap-2">
         <span className="text-text-secondary text-sm">Season</span>
         <select
@@ -102,9 +119,9 @@ export function SeasonControl({
         </select>
       </label>
 
-      {/* Said here as well as in the dialog: someone who dismisses a browser
-          modal by reflex must still have read the number. Same rule the
-          broadcast form follows. */}
+      {/* Said here as well as in the dialog: someone who dismisses a modal
+          by reflex must still have read the number. Same rule the broadcast
+          form follows. */}
       <p className="text-text-secondary text-sm">
         {/* 🔴 Stated here, in running text. The ten-button version said "Active"
             beside the year in a plain span; after P17.T28 the only other places
