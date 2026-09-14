@@ -57,7 +57,13 @@ const port = process.env.E2E_PORT ?? '3000';
  * refuse before a single row is created, which means here, at config load.
  */
 const database = process.env.DATABASE_URL ?? '';
-if (/localhost:5432\b/.test(database)) {
+// 🔴 **Not on CI.** There, 5432 is a throwaway service container that exists
+// for this one job and is thrown away with it — the whole hazard below is a
+// DEVELOPER MACHINE, where 5432 is the database the owner has a dev server and
+// a browser pointed at. Guarding the port alone got that wrong and turned CI
+// red on the commit that introduced the guard, which is the guard being more
+// confident than its own reasoning.
+if (!process.env.CI && /localhost:5432\b/.test(database)) {
   throw new Error(
     "e2e refuses to run against localhost:5432 — that is the owner's database " +
       '(cinemadraft-postgres), and these specs write real rows into it. Export ' +
