@@ -301,7 +301,7 @@ test.describe('browse', () => {
   test('the watched badge is hidden from a signed-out reader', async ({ page }) => {
     await page.goto('/browse');
 
-    await expect(page.getByRole('button', { name: /Mark .* as watched/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Mark as watched: / })).toHaveCount(0);
   });
 
   test('posters come straight from TMDB, not the optimizer', async ({ page }) => {
@@ -342,7 +342,7 @@ test.describe('marking a film watched', () => {
       await expect(badge).toHaveAttribute('aria-pressed', 'false');
       // The name is still asserted — it is what a screen reader hears. The
       // difference is that it is the assertion rather than the handle.
-      await expect(badge).toHaveAccessibleName(/^Mark .* as watched$/);
+      await expect(badge).toHaveAccessibleName(/^Mark as watched: .+$/);
 
       await badge.click();
       await expect(badge).toHaveAttribute('aria-pressed', 'true');

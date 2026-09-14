@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ActionResult } from '@/actions/result';
@@ -26,8 +26,32 @@ type ChangeHandler = (input: {
   watched: boolean;
 }) => Promise<ActionResult<{ watched: boolean }>>;
 
+/**
+ * What the eye actually reads: the text nodes, minus anything hidden from
+ * sight. An assertion on `textContent` would pass for an `sr-only` span, which
+ * is the failure mode being tested for.
+ */
+function visibleText(element: HTMLElement): string {
+  return [...element.querySelectorAll('*')]
+    .filter(
+      (node) =>
+        node.children.length === 0 &&
+        !node.className.toString().includes('sr-only') &&
+        node.getAttribute('aria-hidden') !== 'true' &&
+        !node.closest('[aria-hidden="true"]'),
+    )
+    .map((node) => node.textContent?.trim() ?? '')
+    .join(' ')
+    .trim();
+}
+
 function renderToggle(
-  options: { watched?: boolean; onChange?: ChangeHandler; title?: string } = {},
+  options: {
+    watched?: boolean;
+    onChange?: ChangeHandler;
+    title?: string;
+    hint?: 'label' | 'tooltip';
+  } = {},
 ) {
   const onChange = options.onChange ?? vi.fn(async () => ok({ watched: true }));
   render(
@@ -36,6 +60,7 @@ function renderToggle(
       title={options.title ?? 'La La Land'}
       watched={options.watched ?? false}
       onChange={onChange}
+      hint={options.hint ?? 'label'}
     />,
   );
   return { onChange, button: screen.getByRole('button') };
@@ -45,7 +70,9 @@ describe('what a screen reader hears', () => {
   it('names the film, so twenty badges on a grid are distinguishable', () => {
     renderToggle({ title: 'Sinners' });
 
-    expect(screen.getByRole('button', { name: /Mark Sinners as watched/i })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: /Mark as watched: Sinners/i }),
+    ).toBeTruthy();
   });
 
   it('announces the state through aria-pressed, not the icon', () => {
@@ -54,7 +81,7 @@ describe('what a screen reader hears', () => {
     // The source carried this in a plus-versus-check swap, so a screen reader
     // heard "button" in both states.
     expect(button.getAttribute('aria-pressed')).toBe('true');
-    expect(button.textContent).toMatch(/watched/i);
+    expect(button.getAttribute('aria-label')).toMatch(/watched/i);
   });
 
   it('says what pressing it will do when the film is already watched', () => {
@@ -156,6 +183,95 @@ describe('when the write fails', () => {
 
     await waitFor(() =>
       expect(screen.getByRole('status').textContent).toBe('log in to mark films watched'),
+    );
+  });
+});
+
+/**
+ * 🔴 The defect this component shipped with: everything above is about a screen
+ * reader, and a sighted reader got a bare glyph. These are the tests that go red
+ * if the words come back off.
+ */
+describe('what a sighted reader sees', () => {
+  it('says the action in words where there is room', () => {
+    const { button } = renderToggle({ hint: 'label' });
+
+    // The *visible* text, not the accessible name — `sr-only` text would pass a
+    // name assertion and leave the reader looking at a bare glyph, which is
+    // precisely the bug.
+    expect(visibleText(button)).toBe('Mark as watched');
+  });
+
+  it('says "Watched" rather than the action once the film is marked', () => {
+    const { button } = renderToggle({ hint: 'label', watched: true });
+
+    expect(visibleText(button)).toBe('Watched');
+  });
+
+  it('carries a tooltip where a label would not fit', async () => {
+    // `hint="tooltip"` is the poster-grid case. The popper is MUI's and only
+    // exists once opened, so this asserts the wiring: the control is inside a
+    // tooltip that describes it with the same words.
+    const { button } = renderToggle({ hint: 'tooltip', title: 'Sinners' });
+
+    fireEvent.mouseOver(button);
+
+    await waitFor(() =>
+      expect(screen.getByRole('tooltip').textContent).toBe('Mark as watched: Sinners'),
+    );
+  });
+
+  it('shows one mechanism, never both', () => {
+    // Two things saying the same thing on one control is clutter, and a native
+    // `title` alongside MUI's tooltip would also give it a second description.
+    const labelled = renderToggle({ hint: 'label' }).button;
+    expect(labelled.getAttribute('title')).toBe(null);
+
+    cleanup();
+
+    const tipped = renderToggle({ hint: 'tooltip' }).button;
+    expect(visibleText(tipped)).toBe('');
+    expect(tipped.getAttribute('title')).toBe(null);
+  });
+
+  it('offers an eye, not a plus, for a film not yet watched', () => {
+    // 🔴 D64: a row means "I have seen this". A `+` reads as "add to a list of
+    // films to watch later" — the opposite — and the component's own docstring
+    // insists no string says "add to watchlist". The icon was the one thing
+    // still saying it.
+    const { button } = renderToggle({ watched: false });
+    const paths = [...button.querySelectorAll('path')].map((p) => p.getAttribute('d'));
+
+    expect(paths).not.toContain('M12 5v14M5 12h14');
+    expect(button.querySelector('circle')).toBeTruthy();
+  });
+});
+
+describe('the visible label and the accessible name agree', () => {
+  /**
+   * 🔴 WCAG 2.5.3, Label in Name: a voice-control user says the words in front
+   * of them, so the accessible name has to *contain* the visible ones. The old
+   * name was "Mark La La Land as watched", which does not contain "Mark as
+   * watched" — the film's title was wedged through the middle of it.
+   */
+  it.each([true, false])('in both states (watched: %s)', (watched) => {
+    const { button } = renderToggle({ hint: 'label', watched, title: 'Sinners' });
+
+    const name = button.getAttribute('aria-label') ?? '';
+    expect(name).toContain(visibleText(button));
+    // And the name still names the film, which is why it is longer.
+    expect(name).toContain('Sinners');
+  });
+
+  it('is the same string the tooltip shows', async () => {
+    const { button } = renderToggle({ hint: 'tooltip', title: 'Sinners' });
+
+    fireEvent.mouseOver(button);
+
+    await waitFor(() =>
+      expect(screen.getByRole('tooltip').textContent).toBe(
+        button.getAttribute('aria-label'),
+      ),
     );
   });
 });

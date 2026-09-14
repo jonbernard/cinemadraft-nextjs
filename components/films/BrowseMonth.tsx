@@ -85,6 +85,14 @@ export function BrowseMonth({
                   title={film.title}
                   watched={film.watched}
                   onChange={setWatched}
+                  // 🔴 The one call site with no room for words. The badge sits
+                  // in a poster's corner in a grid that is two columns wide at
+                  // 390px, so a visible label would either overlay the artwork
+                  // or push the poster out of its 2:3 box. MUI's tooltip opens
+                  // on long-press as well as hover, so a phone reader is not
+                  // left with the bare glyph the way a native `title` would
+                  // leave them.
+                  hint="tooltip"
                   className="absolute bottom-0 right-0"
                 />
               ) : null}
