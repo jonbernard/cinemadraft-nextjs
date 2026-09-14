@@ -52,6 +52,16 @@ export default config([
   // their own rows and need no restored data.
   'lib/services/draft.test.ts',
   'lib/services/draft-console.test.ts',
+  // The running-order chain — setup list, console and snake all reading the
+  // same `drafts.order` — against league 1's 2026 season, and deliberately so:
+  // its first case is a vacuity guard asserting that group 1's positions 1-4
+  // (draft ids 315, 318, 307, 314) disagree with id order, name order and
+  // insertion order. A seeded fixture would have to reproduce that
+  // disagreement by hand, which is the same as assuming the answer. Excluded
+  // rather than weakened. The rules underneath run on every push:
+  // `draft-order.test.ts` for the snake and `group-assignment.test.ts` for the
+  // deal and the even-groups arithmetic.
+  'lib/services/running-order.test.ts',
   // The live page, read against the real Oscars row and its 2025 season —
   // it asserts the show resolved and that its category count is over
   // twenty, which is what a restored season looks like and what an empty
