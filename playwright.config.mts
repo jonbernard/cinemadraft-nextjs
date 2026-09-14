@@ -37,6 +37,35 @@ process.env.E2E_TEST_AUTH_SECRET ??= randomBytes(32).toString('hex');
  */
 const port = process.env.E2E_PORT ?? '3000';
 
+/**
+ * 🔴 Never run the browser suite against the owner's own database.
+ *
+ * Three local databases as of 2026-09-13: `cinemadraft-postgres` on **5432**
+ * is the owner's — it is what `next dev` reads through `.env.local`, and it
+ * holds leagues they made by hand and a real Clerk claim. 5433 and 5434 are
+ * `postgres-executor-1` and `-2`, restored copies for agents and tests.
+ *
+ * These specs write real scratch rows: leagues, seats, shows, accounts. Pointed
+ * at 5432 they would silently pollute the database the owner is clicking around
+ * in, and the damage is only visible later as a row-count assertion failing
+ * somewhere unrelated. That is precisely what happened the other way round
+ * tonight — the owner's league and sign-in turned nine tests red — and it cost
+ * a full suite run to diagnose.
+ *
+ * `lib/db.test.ts` already refuses any port but 5433/5434, but it is a *unit*
+ * test: it runs after the browser suite has finished writing. This has to
+ * refuse before a single row is created, which means here, at config load.
+ */
+const database = process.env.DATABASE_URL ?? '';
+if (/localhost:5432\b/.test(database)) {
+  throw new Error(
+    "e2e refuses to run against localhost:5432 — that is the owner's database " +
+      '(cinemadraft-postgres), and these specs write real rows into it. Export ' +
+      'DATABASE_URL for executor-1 (5433) or executor-2 (5434) first:\n' +
+      '  export DATABASE_URL=postgresql://cinemadraft:local@localhost:5433/cinemadraft',
+  );
+}
+
 export default defineConfig({
   testDir: './e2e',
   // Runs after every browser has closed. The specs create real accounts, and a

@@ -42,12 +42,28 @@ describe('active year (D22)', () => {
 
 describe('claimable accounts (D25)', () => {
   it('starts with every account unclaimed', async () => {
+    // 🔴 This is an assertion about the RESTORED DUMP, and it only survives
+    // because the executor databases are now separate from the one the owner
+    // signs into (5432). It went red on 2026-09-13 when a real local sign-in
+    // claimed a row — `syncClerkIdentity` doing exactly its job — and could
+    // not be cleaned up, since setting `clerk_id` back to null is precisely
+    // what makes a row claimable again on the next request. Three databases,
+    // not one, is what fixed it. If this goes red again, check which port the
+    // run is pointed at before touching the test.
     expect(await db.user.count({ where: { clerkId: { not: null } } })).toBe(0);
   });
 
   it('refuses two accounts claiming the same Clerk identity', async () => {
     // Unique on clerk_id is what stops a second Clerk identity attaching to an
     // already-claimed account, which would be an account-takeover vector.
+    //
+    // 🔴 Measured as a DELTA, not against a hardcoded 0. The point of the
+    // assertion after the transaction is that the failed write rolled back —
+    // "how many links exist in this database" is a different question, and
+    // answering it with a constant made this case fail whenever a real sign-in
+    // had happened, while the rollback it tests was working perfectly.
+    const before = await db.user.count({ where: { clerkId: { not: null } } });
+
     await expect(
       db.$transaction(async (tx) => {
         const [a, b] = await tx.user.findMany({ take: 2, orderBy: { id: 'asc' } });
@@ -63,7 +79,7 @@ describe('claimable accounts (D25)', () => {
       }),
     ).rejects.toThrow();
 
-    expect(await db.user.count({ where: { clerkId: { not: null } } })).toBe(0);
+    expect(await db.user.count({ where: { clerkId: { not: null } } })).toBe(before);
   });
 });
 

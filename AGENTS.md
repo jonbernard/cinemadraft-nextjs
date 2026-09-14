@@ -38,10 +38,42 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
 
 - **Biome**, not ESLint or Prettier. `npm run lint` covers linting, formatting, and import order. Biome does not typecheck — `npm run typecheck` is separate.
 - **MUI for components, Tailwind for custom styling.** They coexist through CSS cascade layers ordered `theme, base, mui, components, utilities`. Never reach for `!important` to make a Tailwind class beat MUI; if that seems necessary the layer order is wrong. Three Playwright tests in `e2e/smoke.spec.ts` pin this — do not relax them.
-- **All local databases run in Docker** (`npm run db:up`, which starts both). There is no native Postgres server on the dev machine, and the local Postgres binaries are clients only.
-  - **5433 is the primary** — a restored copy of production. League 1 is sixty real people's history, and `lib/db.test.ts` asserts exact row counts against it (60 users / 13 leagues / 1,355 movies / 156 drafts).
-  - **5434 is the second worktree's database**, an identical clone. It exists so two agents can run tests and browsers at once: the suite's DB-backed project is serial by design, because `available_years_one_active` is a global partial unique index with no per-worker copy, so two runs against *one* database race it. Point a run at it by exporting `DATABASE_URL=postgresql://cinemadraft:local@localhost:5434/cinemadraft` — process env beats `.env.local` in Vitest, Playwright and Next alike.
-  - 🔴 `lib/db.test.ts` asserts the port too, not only the counts — it accepts **either** 5433 or 5434 and rejects Neon. An earlier version of this note claimed only the counts mattered; that was wrong, and the second database failed that one test and nothing else until it was fixed.
+- **All local databases run in Docker** (`npm run db:up`). There is no native Postgres server on the dev machine, and the local Postgres binaries are clients only.
+
+  🔴 **Three databases as of 2026-09-13, and the split is the point.**
+
+  | Port | Container | Whose |
+  |---|---|---|
+  | **5432** | `cinemadraft-postgres` | **The owner's.** `next dev` reads it through `.env.local`. Never run tests against it. |
+  | **5433** | `cinemadraft-postgres-executor-1` | Agents and tests. Restored copy. |
+  | **5434** | `cinemadraft-postgres-executor-2` | A second agent, in a second worktree. Restored copy. |
+
+  🔴 **Export `DATABASE_URL` for every test run.** `.env.local` points at
+  **5432**, the owner's, so a run that inherits it is pointed at the wrong
+  database:
+
+  ```bash
+  export DATABASE_URL=postgresql://cinemadraft:local@localhost:5433/cinemadraft
+  ```
+
+  Two guards catch a mistake, at different moments. `playwright.config.mts`
+  **throws at config load** if `DATABASE_URL` names 5432 — it has to be before a
+  single row is written, because the browser specs create real leagues, seats
+  and accounts. `lib/db.test.ts` refuses any port but 5433/5434, which catches a
+  unit run but only after it has finished.
+
+  **Why three.** They used to be two, and 5433 was both the test baseline and
+  what `next dev` read. On 2026-09-13 the owner signed in to verify the Clerk
+  flow and made a league while clicking around — ordinary use — and nine tests
+  went red asserting the restored copy was pristine. Worse, it could not be
+  cleaned up: blanking `clerk_id` is exactly what makes a row claimable again,
+  so the next page load re-claimed it. Separating the owner's database from the
+  executors is what fixed it, and it is why the row counts below can still be
+  exact.
+
+  - **The executors are restored copies of production.** League 1 is sixty real people's history, and `lib/db.test.ts` asserts exact row counts against them (60 users / 13 leagues / 1,355 movies / 156 drafts).
+  - **5434 is the second worktree's database**, an identical clone of 5433. It exists so two agents can run tests and browsers at once: the suite's DB-backed project is serial by design, because `available_years_one_active` is a global partial unique index with no per-worker copy, so two runs against *one* database race it. Point a run at it by exporting `DATABASE_URL=postgresql://cinemadraft:local@localhost:5434/cinemadraft` — process env beats `.env.local` in Vitest, Playwright and Next alike.
+  - 🔴 `lib/db.test.ts` asserts the port too, not only the counts — it accepts **either** 5433 or 5434, and rejects both Neon and the owner's 5432. An earlier version of this note claimed only the counts mattered; that was wrong, and the second database failed that one test and nothing else until it was fixed.
   - Re-clone it whenever it drifts: `pg_dump -h localhost -p 5433 … -Fc` piped into `pg_restore -h localhost -p 5434 … --clean --if-exists`. Both must sit at the baseline counts above, or `lib/db.test.ts` fails on whichever one a run happens to use.
 - **Two agents at once means two worktrees and two databases.** One checkout cannot hold two builds: `npm run build` writes a shared `.next/`, so two production builds race each other silently and each measures a directory the other is overwriting. The git index is shared too — staging a file someone else is mid-edit sweeps their work into your commit, which has happened here.
 
