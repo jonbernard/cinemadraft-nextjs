@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useMemo, useState, useTransition } from 'react';
 import { completeDraft, startDraft } from '@/actions/leagues/manage-league';
 import {
   addDummySeat,
@@ -116,6 +116,32 @@ export function SeasonSetup({
     [leagueId, seats, run],
   );
 
+  /**
+   * The seats in the running order the board will use, not the order they were
+   * created in.
+   *
+   * 🔴 **The list used to render `seats` straight through, and showed no
+   * `order` at all** — so after dealing, the page looked exactly as it had
+   * before, and the owner reasonably concluded the randomiser was not setting
+   * an order. It was: `dealIntoGroups` assigns `order: position + 1` within
+   * each group and `assignSeats` writes it. Only the evidence was missing.
+   *
+   * Unassigned seats sort last: before a deal every seat is `group: null`, and
+   * putting them first would open the page on a list of blanks.
+   */
+  const ordered = useMemo(
+    () =>
+      [...seats].sort((a, b) => {
+        const byGroup =
+          (a.group ?? Number.MAX_SAFE_INTEGER) - (b.group ?? Number.MAX_SAFE_INTEGER);
+        if (byGroup !== 0) return byGroup;
+        return (
+          (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER)
+        );
+      }),
+    [seats],
+  );
+
   const onDummyNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setDummyName(event.target.value);
   }, []);
@@ -176,7 +202,7 @@ export function SeasonSetup({
         <h2 className="text-text-dim text-xs font-normal">Who is playing</h2>
 
         <ul className="flex flex-col">
-          {seats.map((seat) => (
+          {ordered.map((seat) => (
             <SeatRow
               key={seat.draftId}
               seat={seat}
@@ -390,6 +416,22 @@ function SeatRow({
 
   return (
     <li className="border-border-rule flex flex-wrap items-center gap-3 border-b py-3">
+      {/* 🔴 The running order, in the same two-digit monospace the board's own
+          pending list uses, so the number here and the number there are
+          recognisably the same fact. An em dash before a deal rather than a
+          zero: no order yet is a different thing from an order of nothing. */}
+      <span className="text-text-secondary tabular w-6 shrink-0 font-mono text-xs">
+        {/* 🔴 The digits are for the eye and the sentence is for the ear.
+            `aria-label` on a bare span is not supported — a span has no role
+            to carry it — and "01" read aloud on its own says nothing about
+            what it numbers. */}
+        <span aria-hidden="true">
+          {seat.order == null ? '—' : String(seat.order).padStart(2, '0')}
+        </span>
+        <span className="sr-only">
+          {seat.order == null ? 'No running order yet' : `Position ${seat.order}`}
+        </span>
+      </span>
       <span className="text-text-primary min-w-40 flex-1 text-sm">
         {seat.name}
         {/* 🔴 Two different things share one database mechanism — both are a

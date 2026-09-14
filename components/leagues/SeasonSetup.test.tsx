@@ -446,4 +446,60 @@ describe('SeasonSetup, rounding out the groups', () => {
     expect(screen.getByText(/Aunt Sally/)).not.toHaveTextContent('character');
     expect(screen.getByText(/^Neo/)).toHaveTextContent('character');
   });
+
+  it('shows the running order the deal chose, and orders the list by it', () => {
+    // 🔴 The defect the owner reported as "we're not setting the order when
+    // we're randomizing into groups". The order WAS being set —
+    // `dealIntoGroups` assigns `order: position + 1` and `assignSeats` writes
+    // it — but this list rendered seats in creation order and showed no order
+    // at all, so a deal changed nothing visible and looked like a no-op.
+    setup({
+      seats: [
+        {
+          draftId: 3,
+          name: 'Carol',
+          isDummy: false,
+          group: 2,
+          order: 1,
+          hasPicks: false,
+        },
+        {
+          draftId: 1,
+          name: 'Alice',
+          isDummy: false,
+          group: 1,
+          order: 2,
+          hasPicks: false,
+        },
+        { draftId: 2, name: 'Bob', isDummy: false, group: 1, order: 1, hasPicks: false },
+      ],
+    });
+
+    const rows = screen.getAllByRole('listitem');
+    // Group 1 before group 2, and within group 1 the dealt order, NOT the
+    // creation order — which would have put Alice first.
+    expect(rows[0]).toHaveTextContent('Bob');
+    expect(rows[1]).toHaveTextContent('Alice');
+    expect(rows[2]).toHaveTextContent('Carol');
+    expect(rows[0]).toHaveTextContent('01');
+    expect(rows[1]).toHaveTextContent('02');
+  });
+
+  it('says a seat has no running order yet rather than showing a zero', () => {
+    // Before a deal every seat is group null / order null. A "00" reads as a
+    // position; no position is a different fact.
+    setup({
+      seats: [
+        {
+          draftId: 1,
+          name: 'Alice',
+          isDummy: false,
+          group: null,
+          order: null,
+          hasPicks: false,
+        },
+      ],
+    });
+    expect(screen.getByText('No running order yet')).toBeInTheDocument();
+  });
 });
