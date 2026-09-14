@@ -48,6 +48,7 @@ Every task's requirements implicitly include all of this.
 | P14.T15 | — | The invite goes in a dialog (owner-reported layout defect) |
 | P14.T16 | — | A top bar on a phone, carrying the wordmark (owner's call) |
 | P14.T17 | — | The auth form's focus ring is clipped (owner-reported) |
+| P14.T18 | — | Characters to round out the groups (owner's request) |
 
 T15 and T16 are the owner's two requests of 2026-09-13 and are independent of the parity work; T15 is ordered after T11 because both edit `app/(app)/leagues/[id]/page.tsx`.
 
@@ -2021,6 +2022,288 @@ git commit
 ```
 
 Message starts `P14.T17: the focus ring on the auth form is clipped`. Record the `getComputedStyle` reading from step 1, the mutation result, and what step 6's second check showed.
+
+---
+
+### Task P14.T18: characters to round out the groups
+
+**Not a parity row — the owner's request**, carried back from the old app: a list of fictional characters that can be seated as placeholders so every group comes out the same size.
+
+**What exists today.** `components/leagues/SeasonSetup.tsx` has one way to add a seat: a text field labelled "Add someone without an account", submitting `addDummySeat({ leagueId, year, dummyName })`, and the seat list renders `· placeholder` for any `isDummy` seat (`:333`). The groups control is a bare number input labelled "How many groups" (`:207-213`), defaulted from `suggestGroupCount(memberCount)` in `lib/services/group-assignment.ts:81`.
+
+**What the owner asked for, in their words and what each part means:**
+
+1. *"a list of fictional characters we could add as placeholders"* — the 49 names below, verbatim, as a data module.
+2. *"we should be able to press a button to add another character randomly"* — **one press, one character.** 🔴 *"I don't want you to do it for us"* — do **not** add a "fill the gap" button that seats all of them at once, and do not seat any automatically. The owner keeps the decision; the button only saves them thinking of a name.
+3. *"We do want to keep the text field/on the fly adding, but these aren't 'placeholder' accounts these would be real people."* — the text field stays, and its result must **stop being labelled a placeholder**. Two different acts share one mechanism today, and the label describes the wrong one.
+4. *"Next to the groups input, you should display the number of current players, and how many placeholder characters we need to add to have even groups."*
+
+**Files:**
+- Create: `lib/leagues/characters.ts`, `lib/leagues/characters.test.ts`
+- Modify: `components/leagues/SeasonSetup.tsx`, `components/leagues/SeasonSetup.test.tsx`
+- Maybe modify: `lib/services/group-assignment.ts` (+ its test) for the shortfall arithmetic
+
+**Interfaces:**
+- Produces: `export const CHARACTERS: readonly string[]` from `lib/leagues/characters.ts`.
+- Produces: `export function seatsToEvenGroups(seatCount: number, groupCount: number): number` — how many more seats make every group the same size.
+
+- [ ] **Step 1: The list, verbatim**
+
+`lib/leagues/characters.ts`. 🔴 These are the owner's names, in the owner's order — do not sort, dedupe, "fix" spelling, or add to them.
+
+```ts
+/**
+ * Placeholder seats, from the old app (P14.T18).
+ *
+ * A league drafts in equal groups, so an odd number of players leaves a group
+ * short. The owner fills the gap with fictional characters — a seat somebody
+ * drafts on behalf of — and this is the pool the "Add a character" button
+ * draws from.
+ *
+ * 🔴 **These are the placeholders. The text field beside the button is not.**
+ * Both create a seat with `dummy: true` and a `dummy_name`, because the
+ * database has one mechanism for "a seat with no account behind it". But a name
+ * typed into that field is a *real person* who has not registered yet, and
+ * calling their seat a placeholder in the UI was the owner's complaint.
+ * Membership of this list is what tells the two apart — see `isCharacter`.
+ *
+ * Carried over verbatim, in the owner's order. Not sorted, not deduped, not
+ * extended.
+ */
+export const CHARACTERS = [
+  'Tyler Durden', 'Indiana Jones', 'Ellen Ripley', 'Travis Bickle', 'James Bond',
+  'Vito Corleone', 'Sweeney Todd', 'Bill Cutting', 'Forrest Gump', 'Hannibal Lecter',
+  'Roger Kint', 'Anton Chigurh', 'Daniel Plainview', 'Tommy DeVito',
+  'Ellis Boyd Redding', 'John McClane', 'Harry Callahan', 'Jules Winnfield',
+  'Ferris Bueller', 'Tony Montana', 'Marty McFly', 'Rocky Balboa',
+  'Charles Foster Kane', 'Jason Bourne', 'Sarah Connor', 'Maggie Fitzgerald',
+  'Jack Sparrow', 'John Coffey', 'Agent Smith', 'Lloyd Christmas', 'Bruce Wayne',
+  'Max Cady', 'Bobby Wiley', 'Frank Slade', 'Jake LaMotta', 'Sonny Wortzik',
+  'Andy Dufresne', 'Han Solo', 'Neo', 'Norman Bates', 'Michael Corleone',
+  'Alonzo Harris', 'Edward Scissorhands', 'Hans Landa', 'E.T.',
+  'Frank Abagnale Jr.', 'Viktor Navorski', 'Penny Lane', 'Annie Hall',
+] as const;
+
+/** Is this seat one of ours, or a real person who has not registered? */
+export function isCharacter(name: string): boolean {
+  return (CHARACTERS as readonly string[]).includes(name);
+}
+
+/**
+ * A character not already seated in this league, or null when the pool is
+ * exhausted.
+ *
+ * 🔴 Takes the names already present rather than reading them itself: a league
+ * with Tyler Durden in it twice is two seats nobody can tell apart on a draft
+ * board, and the owner drafts on behalf of both.
+ *
+ * 🔴 Takes `pick` so the test can be deterministic without stubbing a global.
+ * `lib/services/group-assignment.ts` already owns `shuffle`; this is the same
+ * posture — randomness is an argument, not an ambient fact.
+ */
+export function nextCharacter(
+  taken: readonly string[],
+  pick: (max: number) => number = (max) => Math.floor(Math.random() * max),
+): string | null {
+  const free = CHARACTERS.filter((name) => !taken.includes(name));
+  return free.length === 0 ? null : (free[pick(free.length)] ?? null);
+}
+```
+
+- [ ] **Step 2: Write the failing tests for the list**
+
+`lib/leagues/characters.test.ts`:
+
+```ts
+it('carries all 49 names, in the owner’s order', () => {
+  expect(CHARACTERS).toHaveLength(49);
+  expect(CHARACTERS[0]).toBe('Tyler Durden');
+  expect(CHARACTERS.at(-1)).toBe('Annie Hall');
+});
+
+it('never offers a character already seated', () => {
+  const taken = CHARACTERS.slice(0, 48);
+  expect(nextCharacter(taken, () => 0)).toBe('Annie Hall');
+});
+
+it('returns null rather than repeating when the pool is exhausted', () => {
+  // 🔴 49 characters is a hard ceiling. A league big enough to exhaust it
+  // must get a refusal the UI can say out loud, not a duplicate seat.
+  expect(nextCharacter([...CHARACTERS], () => 0)).toBeNull();
+});
+
+it('tells a character apart from a real person who has not registered', () => {
+  expect(isCharacter('Neo')).toBe(true);
+  expect(isCharacter('Jon Bernard')).toBe(false);
+});
+```
+
+Run: `npx vitest run lib/leagues/characters.test.ts`. Expected: FAIL, module not found. Then implement and expect PASS.
+
+- [ ] **Step 3: The shortfall arithmetic, with its failing test first**
+
+Add to `lib/services/group-assignment.ts` — it already owns `suggestGroupCount` and `dealIntoGroups`, and this is the third question about the same shape:
+
+```ts
+/**
+ * How many more seats make every group the same size (P14.T18).
+ *
+ * 🔴 Zero when the seats already divide evenly, and **zero is a real answer** —
+ * the control above it says "groups are even" rather than "add 0", because a
+ * zero rendered as a number reads as a target you have failed to hit.
+ *
+ * Guards `groupCount <= 0` because the input is a number field the owner types
+ * into: `n % 0` is NaN, and a NaN on the setup screen is a bug report.
+ */
+export function seatsToEvenGroups(seatCount: number, groupCount: number): number {
+  if (groupCount <= 0) return 0;
+  return (groupCount - (seatCount % groupCount)) % groupCount;
+}
+```
+
+Test, in `lib/services/group-assignment.test.ts`:
+
+```ts
+it('asks for nothing when the groups already divide evenly', () => {
+  expect(seatsToEvenGroups(16, 4)).toBe(0);
+  expect(seatsToEvenGroups(0, 4)).toBe(0);
+});
+
+it('asks for the gap to the next even split', () => {
+  expect(seatsToEvenGroups(14, 4)).toBe(2);
+  expect(seatsToEvenGroups(13, 4)).toBe(3);
+  expect(seatsToEvenGroups(17, 4)).toBe(3);
+});
+
+it('never asks for a whole extra group', () => {
+  // 🔴 The `% groupCount` on the outside. Without it, a count that already
+  // divides asks for `groupCount` more — four phantom seats at 16 and 4.
+  for (let seats = 0; seats <= 40; seats += 1) {
+    expect(seatsToEvenGroups(seats, 4)).toBeLessThan(4);
+  }
+});
+
+it('does not return NaN for a zero or negative group count', () => {
+  expect(seatsToEvenGroups(13, 0)).toBe(0);
+});
+```
+
+- [ ] **Step 4: The button, beside the existing field**
+
+In `components/leagues/SeasonSetup.tsx`, inside the `isPending` block that holds the add-seat form (`:177-197`). It is a second control, **not** a second form — the text field submits, this one just acts:
+
+```tsx
+<button
+  type="button"
+  disabled={pending || character === null}
+  onClick={() => {
+    if (character === null) return;
+    run(() => addDummySeat({ leagueId, year, dummyName: character }), `${character} seated`);
+  }}
+  className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill min-h-11 border px-4 text-sm disabled:opacity-60 focus-visible:outline-2"
+>
+  {character === null ? 'No characters left' : 'Add a character'}
+</button>
+```
+
+with, above the return:
+
+```tsx
+// 🔴 Resolved per render from the seats on screen, so pressing it twice cannot
+// seat the same character twice — and so the label can say the pool is empty
+// rather than the button failing when pressed.
+const character = nextCharacter(seats.map((seat) => seat.name));
+```
+
+🔴 Read the file's existing `run(...)` helper and `pending` state and use them; do not introduce a second transition idiom in a component that already has one.
+
+- [ ] **Step 5: Stop calling real people placeholders**
+
+At `:333` the seat list renders `· placeholder` for every `isDummy` seat. Split it:
+
+```tsx
+{seat.isDummy ? (
+  <span className="text-text-dim">
+    {isCharacter(seat.name) ? ' · character' : ' · not registered yet'}
+  </span>
+) : null}
+```
+
+and relabel the text field from "Add someone without an account" to **"Add a player who hasn’t registered"**, which is what it does.
+
+🔴 **Why membership of the list and not a database column.** A column would be truer, but it is a migration, and Phase 13's final restore drops every column this port added (see T12's T3b note) — so it buys correctness at the cost of one more thing to re-apply during a cutover. The list is fixed and known, and the failure mode of the cheap version is that a member genuinely named "Neo" is labelled a character. Say so in a comment rather than leaving it for someone to discover. If the owner would rather have the column, it is `drafts.is_character` and a sibling of T12's migration.
+
+- [ ] **Step 6: The count, beside the groups input**
+
+In the Groups section (`:203-215`), after the number input's `<label>`:
+
+```tsx
+<p className="text-text-secondary text-sm">
+  <span className="tabular font-mono">{seats.length}</span>{' '}
+  {seats.length === 1 ? 'player' : 'players'}
+  {shortfall === 0
+    ? ' · groups are even'
+    : ` · add ${shortfall} ${shortfall === 1 ? 'character' : 'characters'} for even groups`}
+</p>
+```
+
+with `const shortfall = seatsToEvenGroups(seats.length, groupCount);`.
+
+🔴 It must recompute when the owner changes the group count — `groupCount` is already `useState`, so read it directly rather than caching. And it must recompute when a seat is added, which is what makes the button and this line one feature rather than two.
+
+- [ ] **Step 7: Component tests**
+
+In `components/leagues/SeasonSetup.test.tsx`:
+
+```tsx
+it('says how many players there are and what even groups would need', () => {
+  // 14 seats, 4 groups → "14 players · add 2 characters for even groups"
+});
+
+it('says the groups are even rather than asking for zero', () => {
+  // 16 seats, 4 groups
+});
+
+it('recomputes when the owner changes the group count', () => {
+  // 🔴 The one that catches a value cached at mount: type 3 into the input
+  // with 14 seats and expect "add 1", not "add 2".
+});
+
+it('seats one character per press, never the whole gap', () => {
+  // 🔴 The owner's explicit instruction: "I don't want you to do it for us."
+  // One press, one addDummySeat call, with a name from the list.
+});
+
+it('never offers a character already seated', () => {});
+
+it('calls a typed-in name a player, not a placeholder', () => {
+  // 🔴 The owner's actual complaint.
+});
+```
+
+- [ ] **Step 8: Mutate, and watch tests go red**
+
+1. Drop the outer `% groupCount` from `seatsToEvenGroups`. Expected: "never asks for a whole extra group" and "asks for nothing when the groups already divide evenly" FAIL. Restore.
+2. Make the button seat the whole shortfall in a loop. Expected: "seats one character per press" FAILS. Restore.
+3. Make `nextCharacter` ignore `taken`. Expected: "never offers a character already seated" FAILS — in both the unit and the component test. Restore.
+4. Compute `shortfall` once at mount instead of per render. Expected: "recomputes when the owner changes the group count" FAILS. Restore. 🔴 If it does not, that test is decorative — fix it before committing.
+
+- [ ] **Step 9: Verify and commit**
+
+```bash
+export DATABASE_URL=postgresql://cinemadraft:local@localhost:5433/cinemadraft
+npm run lint && npm run typecheck && npx vitest run && bash scripts/layering.sh
+npm run test:e2e -- e2e/season-setup.spec.ts
+```
+
+```bash
+git add lib/leagues/characters.ts lib/leagues/characters.test.ts \
+        lib/services/group-assignment.ts lib/services/group-assignment.test.ts \
+        components/leagues/SeasonSetup.tsx components/leagues/SeasonSetup.test.tsx
+git commit
+```
+
+Message starts `P14.T18: characters to round out the groups`. Record the one-press-one-character constraint as the owner's explicit instruction, the list-membership-not-a-column trade and its known failure mode, and every mutation result.
 
 ---
 
