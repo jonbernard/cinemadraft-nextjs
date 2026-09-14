@@ -2214,7 +2214,16 @@ Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
   than subscribing.
 
 - [ ] **P12.T2** The capability sweep — `PARITY.md` is at **0 deficient**, so this starts from zero known gaps for the first time
-- [ ] **P12.T3** Free-tier headroom and the cold-start decision
+- [x] **P12.T3** Free-tier headroom and the cold-start decision — **D123**.
+  Burn is 2.32 CU-hrs in 14 days → ~5 CU-hrs/month, **5% of the 100 CU-hr
+  allowance**; storage 36 MB of 512 MB. A 3h ceremony costs 0.75 CU-hrs at
+  Neon's 0.25 CU floor and 6 at the 2 CU ceiling, so a twelve-show season is
+  9–72 and fits even at the ceiling. The ~3s cold start is **accepted**: a
+  keep-warm is `0.25 × 730 = 182 CU-hrs/month`, 1.8× the whole allowance before
+  a single ceremony. 🔴 Runtime Cache: `lib/external/cache.ts` is the only
+  caching layer and it fronts **TMDB, not the database** — there is no
+  meaningful cache on the database path, which is what the code says and what
+  the 5% burn is consistent with
 - [ ] **P12.T4** Load-test draft-day search
 - [ ] **P12.T5** Fix what the above finds
 
