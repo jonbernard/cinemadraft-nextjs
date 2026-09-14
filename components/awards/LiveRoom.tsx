@@ -34,6 +34,14 @@ export type LiveRoomView = {
   }[];
   league: (LiveLeague & { standings: readonly StandingsRow[] }) | null;
   leagueOptions: readonly { id: number; name: string | null }[];
+  /**
+   * The category the admin has put on screen, or null (P14.T12/T13).
+   *
+   * A pointer on the event row, so this is a comparison and never a join: an
+   * id that matches no category — one put up and then deleted — simply marks
+   * nothing.
+   */
+  focusedAwardId: number | null;
 };
 
 /** Has this category got a winner in this frame? */
@@ -158,6 +166,25 @@ export function LiveRoom({
   const [revealed, setRevealed] = useState<number | null>(null);
   /** What the reader is looking at, readable from inside the effect's closure. */
   const shown = useRef(initial);
+  /** The selection this page has already moved to, so a re-render does not re-scroll. */
+  const scrolled = useRef<number | null>(initial.focusedAwardId);
+
+  useEffect(() => {
+    const focused = view.focusedAwardId;
+    // 🔴 First render is excluded by seeding the ref with the server's own
+    // value: a reader opening the page mid-ceremony already has the selection
+    // in their first frame, and yanking their scroll before they have looked
+    // at anything is the same defect as replaying every reveal on reload.
+    if (focused == null || focused === scrolled.current) return;
+    scrolled.current = focused;
+    document.getElementById(`award-${focused}`)?.scrollIntoView({
+      block: 'start',
+      // Honour the reader's own setting rather than deciding for them.
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
+    });
+  }, [view.focusedAwardId]);
 
   useEffect(() => {
     if (!initial.onAir) return;
@@ -325,7 +352,7 @@ export function LiveRoom({
           ) : (
             <ol className="flex flex-col gap-6">
               {view.categories.map((category) => (
-                <li key={category.awardId}>
+                <li key={category.awardId} id={`award-${category.awardId}`}>
                   {/* 🔴 The chips this replaces are gone on purpose, not
                     overlooked. A brass chip naming the winner and a neutral one
                     counting the nominees were the whole category: the posters
@@ -338,6 +365,7 @@ export function LiveRoom({
                     points={category.points}
                     nominees={category.nominees}
                     reveal={category.awardId === revealed}
+                    onScreen={category.awardId === view.focusedAwardId}
                   />
                 </li>
               ))}

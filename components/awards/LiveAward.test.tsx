@@ -174,4 +174,17 @@ describe('LiveAward', () => {
     // uses, which is the same corner the last keyframe moves to.
     expect(marks?.getAttribute('class')).toContain('motion-reduce:right-1.5');
   });
+
+  it('says in words when it is the one being announced', () => {
+    // 🔴 Not colour alone. The page is read from three metres (the arithmetic
+    // in `LiveAward`'s docstring), where a border tint subtends nothing — and
+    // a word is also what survives a monochrome panel and a screen reader.
+    render(<LiveAward name="Best Picture" points={10} nominees={nominees} onScreen />);
+    expect(screen.getByText(/on screen now/i)).toBeInTheDocument();
+  });
+
+  it('says nothing when it is not', () => {
+    render(<LiveAward name="Best Picture" points={10} nominees={nominees} />);
+    expect(screen.queryByText(/on screen now/i)).not.toBeInTheDocument();
+  });
 });

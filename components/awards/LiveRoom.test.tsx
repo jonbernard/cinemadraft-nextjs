@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LiveRoom, type LiveRoomView } from './LiveRoom';
 
@@ -131,6 +131,7 @@ function view(overrides: Partial<LiveRoomView> = {}): LiveRoomView {
     ],
     league: null,
     leagueOptions: [],
+    focusedAwardId: null,
     ...overrides,
   };
 }
@@ -359,5 +360,51 @@ describe('LiveRoom', () => {
     // Still nothing when a later frame repeats what was already decided.
     only().frame(decided());
     expect(container.querySelectorAll('.animate-reveal-mark')).toHaveLength(0);
+  });
+  it('marks the category the admin has on screen', () => {
+    room(view({ focusedAwardId: 10 }));
+
+    const mark = screen.getByText(/on screen now/i);
+    expect(mark.closest('li')?.textContent).toContain('Best Picture');
+  });
+
+  it('moves the mark when a frame changes the selection', () => {
+    // 🔴 The whole feature: the admin points at a category and every open page
+    // follows within one poll. Asserting the mark MOVED, not that one exists —
+    // a component that marked everything would pass the weaker version.
+    room(view({ focusedAwardId: 10 }));
+    only().frame(view({ focusedAwardId: 11 }));
+
+    const marks = screen.getAllByText(/on screen now/i);
+    expect(marks).toHaveLength(1);
+    expect(marks[0]?.closest('li')?.textContent).toContain('Best Sound');
+  });
+
+  it('marks nothing when the admin has selected nothing', () => {
+    room(view({ focusedAwardId: null }));
+    expect(screen.queryByText(/on screen now/i)).not.toBeInTheDocument();
+  });
+
+  it('scrolls the focused category into view when the selection changes, and not on first render', () => {
+    // 🔴 Not on first render. A reader who opens the page mid-ceremony has the
+    // selection in their first frame; yanking their scroll position before
+    // they have looked at anything is the same defect as replaying every
+    // reveal on reload (`LiveAward`'s `reveal` default).
+    const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
+    room(view({ focusedAwardId: 10 }));
+    expect(scroll).not.toHaveBeenCalled();
+
+    only().frame(view({ focusedAwardId: 11 }));
+
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect((scroll.mock.contexts[0] as Element).id).toBe('award-11');
+
+    // And a frame repeating the same selection does not scroll again — a
+    // re-render every two seconds that re-scrolled would make the page
+    // unreadable.
+    only().frame(view({ focusedAwardId: 11 }));
+    expect(scroll).toHaveBeenCalledTimes(1);
+
+    scroll.mockRestore();
   });
 });

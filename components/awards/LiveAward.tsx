@@ -1,5 +1,6 @@
 import { PosterFrame } from '@/components/ui/PosterFrame';
 import { SectionHead } from '@/components/ui/SectionHead';
+import { StatusChip } from '@/components/ui/StatusChip';
 import { WinnerSeal } from '@/components/ui/WinnerSeal';
 import { cn } from '@/lib/utils/cn';
 
@@ -65,6 +66,7 @@ export function LiveAward({
   points,
   nominees,
   reveal = false,
+  onScreen = false,
 }: {
   name: string;
   points: number;
@@ -79,6 +81,20 @@ export function LiveAward({
    * page was open (P14.T4); everything else renders already-won.
    */
   reveal?: boolean;
+  /**
+   * This is the category the admin has put up right now (P14.T13).
+   *
+   * 🔴 **Carmine, not brass.** Brass is an award outcome (D85/D99), and "being
+   * announced right now" is not one — it is the same register as the `Live`
+   * chip in the header, and borrowing brass would teach two meanings for one
+   * colour on the one page where the colour is the message.
+   *
+   * 🔴 **And not only colour.** This screen is read from three metres (the
+   * arithmetic above): a border tint subtends nothing at that distance. The
+   * chip says it in words, which is also what survives a monochrome panel and
+   * a screen reader.
+   */
+  onScreen?: boolean;
 }) {
   const decided = nominees.some((nominee) => nominee.isWinner);
 
@@ -93,7 +109,16 @@ export function LiveAward({
         // value rather than the `awards.points` foreign key (D41) and this is
         // one of two surfaces that could print the key and be believed. The
         // winner is named under its own poster instead.
-        right={`${points} pts`}
+        right={
+          onScreen ? (
+            <span className="flex items-center gap-2">
+              <StatusChip tone="carmine">On screen now</StatusChip>
+              {`${points} pts`}
+            </span>
+          ) : (
+            `${points} pts`
+          )
+        }
         className="pb-0"
       >
         {name}

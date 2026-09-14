@@ -95,3 +95,17 @@ export const NothingEnteredYet: StoryObj<typeof meta> = {
 export const WinnerRevealed: StoryObj<typeof meta> = {
   args: { name: 'Best Picture', points: 20, nominees, reveal: true },
 };
+
+/**
+ * The category the admin has put up. Carmine, because "being announced right
+ * now" is urgency and not an award outcome — and in words as well as colour,
+ * because the panel is three metres away.
+ */
+export const OnScreen: StoryObj<typeof meta> = {
+  args: {
+    name: 'Best Picture',
+    points: 20,
+    nominees: nominees.map((nominee) => ({ ...nominee, isWinner: false })),
+    onScreen: true,
+  },
+};
