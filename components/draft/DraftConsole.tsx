@@ -58,6 +58,21 @@ function SeatButton({
         )}
       >
         <span className="flex min-w-0 flex-wrap items-center gap-2">
+          {/* 🔴 The seat's position in the running order. The list was already
+              SORTED by it and headed "Running order", but never showed the
+              number — so the snake could not be checked against anything, and
+              a turn that looked wrong (the owner's report: "it was snaking
+              from p4->p5->p6 and that seemed odd") had no evidence either way.
+              It was in fact correct; there was just nothing on screen to say
+              so. Same two-digit monospace as the board and the setup list, so
+              the three screens name the same fact the same way.
+
+              Digits for the eye, sentence for the ear: `aria-label` is not
+              supported on a bare span, and "02" read aloud names nothing. */}
+          <span className="text-text-secondary tabular w-6 shrink-0 font-mono text-xs">
+            <span aria-hidden="true">{String(seat.order).padStart(2, '0')}</span>
+            <span className="sr-only">{`Position ${seat.order}`}</span>
+          </span>
           <span className="text-text-primary text-sm">{seat.name}</span>
           {/* Named, never colour alone (a11y: colour-not-only). */}
           {isCurrent ? <StatusChip tone="carmine">On the clock</StatusChip> : null}

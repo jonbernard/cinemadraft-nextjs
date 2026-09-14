@@ -278,4 +278,21 @@ describe('DraftConsole — assigning', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('searchbox')).toBeDisabled();
   });
+
+  it('numbers each seat with its position in the running order', () => {
+    // 🔴 The list was sorted by `order` and headed "Running order" but showed
+    // no number, so the snake could not be checked against anything. The owner
+    // reported a turn sequence that "seemed odd"; it was correct, and there
+    // was simply no evidence on screen either way.
+    setup();
+
+    // The `<section aria-labelledby>` is the labelled thing, so it is a
+    // region; the `<ul>` inside carries no name of its own.
+    const order = screen.getByRole('region', { name: /running order/i });
+    const seats = within(order).getAllByRole('listitem');
+    expect(seats[0]).toHaveTextContent('01');
+    expect(seats[1]).toHaveTextContent('02');
+    // Spoken, not just shown: "02" alone names nothing.
+    expect(within(order).getByText('Position 1')).toBeInTheDocument();
+  });
 });
