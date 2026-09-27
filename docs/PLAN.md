@@ -262,7 +262,7 @@ Plan: [`docs/superpowers/plans/2026-08-16-phase-9-scoring.md`](superpowers/plans
 - T4′: Wire it into the league board, batched
 - T5′: E2E and close-out
 
-**Gate:** ✅ **Met.** Scoring unit tests green; **zero drift against the captured production fixtures** — a whole season (123 films), a whole league (12 team totals) and a per-event breakdown (11 shows, 335 points) all reproduce the source API exactly. **Zero drift against the captured production fixtures** — which is the honest reading of the original gate, since the drift that matters is between the port and the app people have used for ten years, not between two copies of our own data.
+**Gate:** ✅ **Met.** Scoring unit tests green; **zero drift against the captured production fixtures** — a whole season (123 films), a whole league (12 team totals) and a per-event breakdown (11 shows, 335 points) all reproduce the source API exactly. **Zero drift against the captured production fixtures** — which is the honest reading of the original gate, since the drift that matters is between the port and the app people have used for ten years, not between two copies of our own data. Since D125 (2026-09-27) two 2025 films and four league 1 seats differ from the fixtures by owner ruling — a named deviation list in `scoring.production.test.ts`; every other figure is still exact.
 
 ---
 
