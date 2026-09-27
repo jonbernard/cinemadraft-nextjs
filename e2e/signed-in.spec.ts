@@ -470,6 +470,48 @@ test.describe('the league page', () => {
     ).toMatch(transparent);
   });
 
+  test('TV mode sits in the action row and is shaped like the rest of it', async ({
+    page,
+  }) => {
+    // Owner-reported: TV mode was alone on a second line, right-aligned, and
+    // the one squared control beside three rounded ones.
+    const userId = await signInAs(page, {
+      email: `${TAG}-owner-tv@example.test`,
+      firstName: 'Owner',
+    });
+    const leagueId = await scratchLeague(userId, { name: 'tv', status: 'active' });
+
+    // The primitive's radius, read off the primitive rather than typed here.
+    await page.goto('/tokens');
+    const radius = (locator: ReturnType<typeof page.locator>) =>
+      locator.evaluate((node) => getComputedStyle(node).borderTopLeftRadius);
+    const primitive = await radius(page.getByTestId('mui-button'));
+    expect(primitive).not.toBe('0px');
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/leagues/${leagueId}`);
+
+    const tv = page.getByRole('link', { name: 'TV mode', exact: true });
+    const run = await page.getByRole('link', { name: 'Run the draft' }).boundingBox();
+    const tvBox = await tv.boundingBox();
+    if (!run || !tvBox) throw new Error('no layout');
+    expect(Math.abs(tvBox.y - run.y)).toBeLessThanOrEqual(2);
+    expect(tvBox.height).toBe(run.height);
+    expect(await radius(tv)).toBe(primitive);
+
+    // 🔴 A reader who manages nothing still gets it, at the row's start rather
+    // than floating off to the right by itself.
+    await page.context().clearCookies();
+    await page.reload();
+    await expect(page.getByRole('link', { name: 'Run the draft' })).toHaveCount(0);
+    await expect(tv).toBeVisible();
+    const heading = await page.getByRole('heading', { level: 1 }).boundingBox();
+    const alone = await tv.boundingBox();
+    if (!heading || !alone) throw new Error('no layout');
+    expect(Math.abs(alone.x - heading.x)).toBeLessThanOrEqual(2);
+    expect(await radius(tv)).toBe(primitive);
+  });
+
   test('a complete season offers no invite at all', async ({ page }) => {
     // `drafting_status = 'complete'` is a real enum value and two production
     // leagues carry it. Nobody is left to invite, and a standing join

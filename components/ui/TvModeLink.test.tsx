@@ -49,6 +49,22 @@ describe('TvModeLink', () => {
 
     expect(screen.getByRole('link', { name: 'TV mode' }).className).toMatch(/min-h-11/);
   });
+
+  it('is rounded like every other button, and places itself nowhere', () => {
+    // It was the one squared control in the league's action row (the Phase
+    // 3.5 brief forbids those), and its own `ml-auto` pushed it right on a row
+    // of its own. Placement belongs to the caller; the browser test in
+    // e2e/signed-in.spec.ts measures the result.
+    render(<TvModeLink href="/live/oscars" active={false} className="ml-auto" />);
+    const { className } = screen.getByRole('link', { name: 'TV mode' });
+    expect(className).toMatch(/\brounded-sm\b/);
+    expect(className).toMatch(/\bml-auto\b/);
+
+    render(<TvModeLink href="/live/oscars" active />);
+    expect(screen.getByRole('link', { name: 'Leave TV mode' }).className).not.toMatch(
+      /ml-auto/,
+    );
+  });
 });
 
 describe('the TV mode seam', () => {
