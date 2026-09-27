@@ -102,6 +102,29 @@ describe('buildCalendarFeed — duration', () => {
   });
 });
 
+describe('buildCalendarFeed — start instant', () => {
+  it('is date + time, and a time past 24h carries the instant into the next UTC day', () => {
+    // The restored Oscars row, per the award-show-dates spec: the date is UTC
+    // midnight of the ceremony's local day (15 March) and the time is 25.5h,
+    // because 9:30 PM ET is 01:30Z on the 16th. Every other fixture here has a
+    // time of 0, which cannot tell `date + time` from `date` alone.
+    const oscars: CalendarShow = {
+      id: 7,
+      abbreviation: 'oscars',
+      name: 'Academy Awards',
+      nomDate: Date.UTC(2026, 0, 22),
+      nomTime: 13 * 60 * MIN,
+      nomDuration: null,
+      awardsDate: Date.UTC(2026, 2, 15),
+      awardsTime: 91_800_000,
+      awardsDuration: null,
+    };
+    const body = buildCalendarFeed([oscars], { baseUrl });
+    expect(body).toContain('DTSTART:20260122T130000Z');
+    expect(body).toContain('DTSTART:20260316T013000Z');
+  });
+});
+
 describe('buildCalendarFeed — sort', () => {
   it('sorts every event by start across shows, not by name or id', () => {
     const body = buildCalendarFeed(shows, { baseUrl });

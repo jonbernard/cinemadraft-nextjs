@@ -1,4 +1,4 @@
-import { expect, type Page, test } from '@playwright/test';
+import { type APIResponse, expect, type Page, test } from '@playwright/test';
 
 import { skipWithoutRestoredCorpus } from './support/corpus';
 import { signInAs } from './support/session';
@@ -311,6 +311,51 @@ test.describe('award shows', () => {
     expect(decodeURIComponent(src ?? '')).toContain('blob.vercel-storage.com');
     const response = await page.request.get(src ?? '');
     expect(response.status()).toBe(200);
+  });
+
+  test.describe('the calendar feed, signed out (D127)', () => {
+    // The `request` fixture: a fresh context with no storage state, so signed
+    // out by construction — which is exactly what a calendar client is.
+    async function expectFeed(response: APIResponse) {
+      expect(response.status()).toBe(200);
+      expect(response.headers()['content-type']).toBe('text/calendar; charset=utf-8');
+      const body = await response.text();
+      expect(body.startsWith('BEGIN:VCALENDAR')).toBe(true);
+      return body;
+    }
+
+    test('answers at /api/ical and at one show, with no session', async ({ request }) => {
+      const { abbreviation } = await seedShow();
+      await withDb((query) =>
+        query(
+          'update events set awards_date = $1, awards_time = 0 where abbreviation = $2',
+          [Date.UTC(YEAR, 1, 1), abbreviation],
+        ),
+      );
+      const get = (path: string) => request.get(path, { maxRedirects: 0 });
+
+      // The bare URL is the one `/award-shows` hands out, and a required
+      // catch-all 404'd it.
+      expect(await expectFeed(await get('/api/ical'))).toContain(
+        `SUMMARY:${TAG} Show Awards`,
+      );
+      expect(await expectFeed(await get(`/api/ical/${abbreviation}`))).toContain(
+        `SUMMARY:${TAG} Show Awards`,
+      );
+
+      expect((await get('/api/ical/nope')).status()).toBe(404);
+      expect((await get('/api/ical/a/b')).status()).toBe(404);
+    });
+
+    test('serves the real Oscars feed', async ({ request }) => {
+      // The URL a member would actually subscribe to. CI has no Oscars row;
+      // the scratch show above is the CI-safe half of this.
+      await skipWithoutRestoredCorpus();
+      const body = await expectFeed(
+        await request.get('/api/ical/oscars', { maxRedirects: 0 }),
+      );
+      expect(body).toContain('/award-shows/oscars');
+    });
   });
 
   test.describe('as an admin', () => {

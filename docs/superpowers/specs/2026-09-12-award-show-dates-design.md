@@ -149,7 +149,7 @@ The procedure:
 ## Scores and caching
 
 Nothing here touches scoring. These columns feed the show page's schedule and
-the public iCal feed (`app/api/ical/[...slug]/route.ts`), so `set-dates --commit`
+the public iCal feed (`app/api/ical/[[...slug]]/route.ts`), so `set-dates --commit`
 revalidates each changed show through the existing `/api/revalidate` — the same
 reason the nominations pipeline does, and the same endpoint.
 

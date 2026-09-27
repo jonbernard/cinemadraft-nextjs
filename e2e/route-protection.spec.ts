@@ -43,10 +43,12 @@ const SAMPLES: Record<string, string> = {
   '[uuid]': '00000000-0000-0000-0000-000000000000',
   // Catch-alls need at least one segment; optional ones (`[[...x]]`) need none,
   // and the route's real URL is the path without them.
-  '[...slug]': 'e2e-clerk-nope',
   '[...notFound]': 'e2e-clerk-no-such-page',
   '[[...login]]': '',
   '[[...register]]': '',
+  // 🔴 Empty on purpose: this requests the bare `/api/ical`, the URL
+  // `/award-shows` hands out, which a required catch-all 404'd (D127).
+  '[[...slug]]': '',
 };
 
 function urlFor(route: string): string {

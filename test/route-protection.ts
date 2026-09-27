@@ -263,6 +263,14 @@ export const PUBLIC_ROUTES = [
   // reader — 51 of 60 stored avatars are Gravatar URLs whose path is
   // `MD5(email)`. That rule lives in the page; this entry only opens the door.
   '/members/[uuid]',
+  // 🔴 The ceremony-dates calendar feed, by the owner's ruling (D127). Its
+  // audience is a calendar client polling a pasted URL, and none of them sends
+  // a session — protected, it answered every subscriber with a login page. It
+  // reads only `eventRepository`, which has no user, league or member column,
+  // and says only what the public award-show pages above already say.
+  // Optional catch-all: the bare `/api/ical` is every show, `/api/ical/<abbr>`
+  // is one.
+  '/api/ical/[[...slug]]',
   // 🔴 Crawler and scraper endpoints, useless behind a redirect: a bot asking
   // for robots.txt gets sent to a login page, and a scraper building a link
   // preview gets one for the share card. All three are generated from public
