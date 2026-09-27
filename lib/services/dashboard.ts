@@ -1,13 +1,10 @@
 import { getNowPlaying } from '@/lib/external/tmdb-now-playing';
-import { draftPickRepository } from '@/lib/repositories/draft-picks';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { eventRepository } from '@/lib/repositories/events';
-import { leagueRepository } from '@/lib/repositories/leagues';
-import { type Movie, movieRepository } from '@/lib/repositories/movies';
-import { userRepository } from '@/lib/repositories/users';
+import type { Movie } from '@/lib/repositories/movies';
 import { posterUrl } from '@/lib/utils/poster';
-import { denseRank } from '@/lib/utils/rank';
-import { ledgerForMovies, sumTotals } from './scoring';
+import { rankSeats, type StandingsRow } from '@/lib/utils/rank';
+import { getLeagueBoard, type Seat } from './draft';
 import { getActiveYear, type SeasonPhase, toSeasonPhases } from './season';
 
 /** One drafted film on the viewer's own strip. */
@@ -64,14 +61,8 @@ export type RosterEntry = {
   pickedAt: number | null;
 };
 
-export type StandingsRow = {
-  userId: number;
-  name: string;
-  total: number;
-  /** Dense position: a tie shares a number and the next row skips. */
-  position: number;
-  isViewer: boolean;
-};
+/** Re-exported: `lib/utils/rank.ts` owns the league table (`rankSeats`). */
+export type { StandingsRow };
 
 export type LeagueView = {
   id: number;
@@ -132,25 +123,6 @@ export type DashboardView = {
 };
 
 /**
- * A display name from the parts a `User` actually has.
- *
- * The Sequelize model carried a VIRTUAL `${firstName} ${lastName}`, which is
- * why the profile fixture has one, but the repository deliberately does not
- * (some rows hold unnormalized names). Formatting belongs in one place, and
- * this is it. Falls back to the email local part rather than rendering an
- * empty cell in the standings.
- */
-function displayName(user: {
-  firstName: string | null;
-  lastName: string | null;
-  email: string;
-}) {
-  const parts = [user.firstName, user.lastName].filter(Boolean);
-  if (parts.length > 0) return parts.join(' ');
-  return user.email.split('@')[0] ?? user.email;
-}
-
-/**
  * Everything the dashboard renders, assembled once.
  *
  * The page does no data assembly of its own. That is what keeps the RSC
@@ -187,7 +159,7 @@ export async function getDashboard(userId: number | null): Promise<DashboardView
     year,
     // A league the viewer has no seat in this season still belongs on the
     // page — they may be mid-draft, or the season may not have started.
-    leagues: leagues.filter((league) => league !== null),
+    leagues,
     events: toSeasonPhases(events),
     nowPlaying: nowPlaying.map((film) => ({
       tmdbId: film.tmdbId,
@@ -201,127 +173,53 @@ export async function getDashboard(userId: number | null): Promise<DashboardView
   };
 }
 
+/**
+ * One league on the dashboard: the viewer's roster and the league table.
+ *
+ * 🔴 Read off `getLeagueBoard`, the league page's own load, not assembled a
+ * second time. The dashboard used to build its own seats and skip any seat
+ * with no user, so placeholders vanished from its table and nine members of
+ * league 1 saw a different position here than on `/leagues/1` (Jon Bernard
+ * 13th against 16th in 2026). Same seats, same totals, same `rankSeats`: the
+ * two cannot disagree. The board is one batched load, so this costs no more
+ * queries than the old assembly did (`scoring.batching.test.ts`).
+ */
 async function buildLeague(
   leagueId: number,
   viewerId: number,
   year: number,
-): Promise<LeagueView | null> {
-  const [league, drafts] = await Promise.all([
-    leagueRepository.findById(leagueId),
-    draftRepository.findByLeagueIdAndYear(leagueId, year),
-  ]);
-  if (!league) return null;
-
-  const picksByDraft = await draftPickRepository.findManyByDraftIds(
-    drafts.map((d) => d.id),
-  );
-
-  // One scoring pass for the whole league. Scoring per seat would re-query
-  // the same nominations once per member.
-  const allMovieIds = [
-    ...new Set(
-      picksByDraft.flatMap((pick) => (pick.movieId == null ? [] : [pick.movieId])),
-    ),
-  ];
-  // 🔴 The ledger rather than the totals, because the roster needs to know
-  // which films won and the ledger already does. Same rule, same load, same
-  // inputs — `ledgerForMovies` and `pointsForMovieIds` both go through
-  // `loadScoringInputs`, and `MovieLedger.total` is by construction the sum of
-  // its lines (D41). One extra batched query names the shows; it does not grow
-  // with seats, which is the property scoring.batching.test.ts guards.
-  const [ledgers, users] = await Promise.all([
-    ledgerForMovies(allMovieIds, year),
-    userRepository.findManyByIds([
-      ...new Set(drafts.flatMap((draft) => (draft.userId == null ? [] : [draft.userId]))),
-    ]),
-  ]);
-  const totals: ReadonlyMap<number, number> = new Map(
-    [...ledgers].map(([id, ledger]) => [id, ledger.total]),
-  );
-  const userById = new Map(users.map((user) => [user.id, user]));
-
-  const rows = drafts
-    .flatMap((draft) => {
-      const user = draft.userId == null ? undefined : userById.get(draft.userId);
-      if (!user) return [];
-      const movieIds = picksByDraft
-        .filter((pick) => pick.draftId === draft.id)
-        .flatMap((pick) => (pick.movieId == null ? [] : [pick.movieId]));
-      return [
-        { userId: user.id, name: displayName(user), total: sumTotals(totals, movieIds) },
-      ];
-    })
-    .sort((a, b) => b.total - a.total);
-
-  const positions = denseRank(rows);
-  const standings: StandingsRow[] = rows.map((row, index) => ({
-    ...row,
-    position: positions[index] as number,
-    isViewer: row.userId === viewerId,
-  }));
+): Promise<LeagueView> {
+  const board = await getLeagueBoard(leagueId, year);
+  const seats = board.groups.flatMap((group) => group.seats);
+  const standings = rankSeats(seats, viewerId);
+  const seat = seats.find((entry) => entry.userId === viewerId);
 
   return {
-    id: league.id,
-    name: league.name,
-    ...(await buildRoster(drafts, picksByDraft, totals, ledgers, viewerId)),
+    id: board.leagueId,
+    name: board.leagueName,
+    ...(seat ? roster(seat) : { roster: [], total: 0 }),
     standings,
     position: standings.find((row) => row.isViewer)?.position ?? null,
   };
 }
 
-async function buildRoster(
-  drafts: { id: number; userId: number | null }[],
-  picks: {
-    draftId: number;
-    movieId: number | null;
-    order: number | null;
-    createdAt: Date | null;
-  }[],
-  totals: ReadonlyMap<number, number>,
-  ledgers: ReadonlyMap<number, { lines: readonly { won: boolean }[] }>,
-  viewerId: number,
-): Promise<{ roster: RosterEntry[]; total: number }> {
-  const seat = drafts.find((draft) => draft.userId === viewerId);
-  if (!seat) return { roster: [], total: 0 };
-
-  const mine = picks
-    .filter((pick) => pick.draftId === seat.id && pick.movieId != null)
-    // Ordered by draft round, never by points. Snake order is real
-    // information — round 1 cost more than the last round (§6.7).
-    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-  const movies = await movieRepository.findManyByIds(
-    mine.map((pick) => pick.movieId as number),
-  );
-  const movieById = new Map(movies.map((movie) => [movie.id, movie]));
-
-  const total = mine.reduce(
-    (sum, pick) => sum + (totals.get(pick.movieId as number) ?? 0),
-    0,
-  );
-
-  const roster = mine.flatMap((pick, index) => {
-    const movie = movieById.get(pick.movieId as number);
-    if (!movie) return [];
-    const points = totals.get(movie.id) ?? 0;
-    return [
-      {
-        movie,
-        posterUrl: posterUrl(movie.poster, 'w342'),
-        status: statusOf(ledgers.get(movie.id)),
-        // The stored `order` is the draft round, but it is nullable and has
-        // gaps in the restored data; the index is the reliable sequence.
-        round: pick.order ?? index + 1,
-        points,
-        // Guarded: before anything has been awarded every seat is on zero,
-        // and dividing by it would make every bar NaN on opening day.
-        share: total > 0 ? points / total : 0,
-        pickedAt: pick.createdAt?.getTime() ?? null,
-      },
-    ];
-  });
-
-  return { roster, total };
+function roster(seat: Seat): { roster: RosterEntry[]; total: number } {
+  // The board's picks are already in draft-round order, never by points —
+  // snake order is real information: round 1 cost more than the last (§6.7).
+  return {
+    total: seat.total,
+    roster: seat.picks.map((pick) => ({
+      movie: pick.movie,
+      posterUrl: posterUrl(pick.movie.poster, 'w342'),
+      status: statusOf(pick.ledger),
+      round: pick.round,
+      points: pick.points,
+      // Guarded: before anything has been awarded every seat is on zero,
+      // and dividing by it would make every bar NaN on opening day.
+      share: seat.total > 0 ? pick.points / seat.total : 0,
+      pickedAt: pick.createdAt?.getTime() ?? null,
+    })),
+  };
 }
 
 /**
@@ -332,9 +230,7 @@ async function buildRoster(
  * other derivation — a second query, a separate winners lookup — could
  * disagree with the points printed under the same poster.
  */
-function statusOf(
-  ledger: { lines: readonly { won: boolean }[] } | undefined,
-): RosterEntry['status'] {
-  if (!ledger || ledger.lines.length === 0) return 'none';
-  return ledger.lines.some((line) => line.won) ? 'won' : 'nominated';
+function statusOf(lines: readonly { won: boolean }[]): RosterEntry['status'] {
+  if (lines.length === 0) return 'none';
+  return lines.some((line) => line.won) ? 'won' : 'nominated';
 }

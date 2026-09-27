@@ -20,6 +20,8 @@ export type BoardPick = {
    * click, which is the N+1 that `scoring.batching.test.ts` exists to prevent.
    */
   ledger: LedgerLine[];
+  /** `draft_picks.created_at`, nullable in the schema. The dashboard's shelves sort on it. */
+  createdAt: Date | null;
 };
 
 export type Seat = {
@@ -136,6 +138,7 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
             round: pick.order ?? index + 1,
             points: ledgers.get(movie.id)?.total ?? 0,
             ledger: ledgers.get(movie.id)?.lines ?? [],
+            createdAt: pick.createdAt,
           },
         ];
       });

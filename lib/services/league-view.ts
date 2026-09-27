@@ -1,6 +1,5 @@
 import { posterUrl } from '@/lib/utils/poster';
-import { denseRank } from '@/lib/utils/rank';
-import type { StandingsRow } from './dashboard';
+import { rankSeats, type StandingsRow } from '@/lib/utils/rank';
 import { getLeagueBoard } from './draft';
 import type { LedgerLine } from './scoring';
 
@@ -118,19 +117,8 @@ export async function getLeagueBoardView(
         }));
 
   // P10.T10: the same seats and totals `getLeagueBoard` already loaded, ranked
-  // rather than reused as a second query. `StandingsRow.userId` doubles as the
-  // React key and the `isViewer` comparison, so a dummy seat — which has no
-  // `userId` — gets a negative sentinel built from its `draftId`, which real
-  // user ids (positive DB ids) can never collide with.
-  const ranked = [...seats].sort((a, b) => b.total - a.total);
-  const positions = denseRank(ranked);
-  const standings = ranked.map((seat, index) => ({
-    userId: seat.userId ?? -seat.draftId,
-    name: seat.name,
-    total: seat.total,
-    position: positions[index] as number,
-    isViewer: userId != null && seat.userId === userId,
-  }));
+  // by the one shared definition rather than a second query or a second sort.
+  const standings = rankSeats(seats, userId);
 
   return {
     leagueId: board.leagueId,

@@ -3,7 +3,7 @@ import { draftRepository } from '@/lib/repositories/drafts';
 import { eventRepository } from '@/lib/repositories/events';
 import { leagueRepository } from '@/lib/repositories/leagues';
 import { posterUrl } from '@/lib/utils/poster';
-import { denseRank } from '@/lib/utils/rank';
+import { rankSeats } from '@/lib/utils/rank';
 import { type Category, getAwardShow } from './award-show';
 import { getLeagueBoard } from './draft';
 
@@ -101,7 +101,7 @@ export type LiveSeat = {
  * `components/StandingsPanel` is rendered with these, so the table a pinned
  * reader sees on `/live` is the same component fed the same numbers as the one
  * on `/leagues/[id]`. `total` is `Seat.total` straight off `getLeagueBoard` and
- * `position` is the shared `denseRank`, so there is no second arithmetic and no
+ * `position` is the shared `rankSeats`, so there is no second arithmetic and no
  * second definition of a tie.
  */
 export type LiveStanding = {
@@ -376,15 +376,12 @@ async function liveLeague(
     // is total and does not shuffle between two seats on the same score.
     .sort((a, b) => b.earned - a.earned || a.name.localeCompare(b.name));
 
-  // The season table, exactly as `/leagues/[id]` builds it: the board's own
-  // seats sorted by their season total and dense-ranked by the shared util.
-  // 🔴 Nothing here re-adds a score. `Seat.total` is `getLeagueBoard`'s, and
-  // a dummy seat — which has no user — takes `-draftId` as its key, which no
-  // real (positive) user id can collide with.
-  const ranked = [...board.groups.flatMap((group) => group.seats)].sort(
-    (a, b) => b.total - a.total,
+  // The season table, exactly as `/leagues/[id]` builds it: the same shared
+  // `rankSeats` over the board's own seats. 🔴 Nothing here re-adds a score.
+  const standings = rankSeats(
+    board.groups.flatMap((group) => group.seats),
+    userId,
   );
-  const positions = denseRank(ranked);
 
   return {
     id: board.leagueId,
@@ -394,12 +391,6 @@ async function liveLeague(
     // be worse than showing no total at all (the `MovieLedger` rule).
     total: seats.reduce((sum, seat) => sum + seat.earned, 0),
     seats,
-    standings: ranked.map((seat, index) => ({
-      userId: seat.userId ?? -seat.draftId,
-      name: seat.name,
-      total: seat.total,
-      position: positions[index] as number,
-      isViewer: userId != null && seat.userId === userId,
-    })),
+    standings,
   };
 }

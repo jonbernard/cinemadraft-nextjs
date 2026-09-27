@@ -7,6 +7,7 @@ import { clearCacheForTests } from '@/lib/external/cache';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { type Event, eventRepository } from '@/lib/repositories/events';
 import { getDashboard } from './dashboard';
+import { getLeagueBoardView } from './league-view';
 import { pointsForMovieIds } from './scoring';
 
 afterAll(async () => {
@@ -192,12 +193,44 @@ describe('getDashboard', () => {
     for (const entry of roster) {
       expect(entry.points).toBe(reference.get(entry.movie.id) ?? 0);
     }
+  });
 
-    // And the seat total is still the sum of what it is showing.
-    for (const league of view.leagues) {
-      const fromRoster = league.roster.reduce((sum, e) => sum + e.points, 0);
-      expect(league.total).toBe(fromRoster);
+  it('ranks every member exactly where the league page does, placeholders included', async () => {
+    // 🔴 The dashboard used to skip seats with no user before ranking, so in
+    // league 1's 2026 season it ranked 13 rows where `/leagues/1` ranks 16, and
+    // nine members read a different position on each page (draft 305, Jon
+    // Bernard: 13th here, 16th there). Checked for every member with a seat in
+    // the active season, against the league page's own view, row for row and
+    // in order — not against this service's own numbers.
+    const members = await db.draft.findMany({
+      where: { year: 2026, userId: { not: null } },
+      select: { userId: true },
+      distinct: ['userId'],
+    });
+    expect(members.length).toBeGreaterThan(10);
+
+    let placeholders = 0;
+    for (const { userId } of members) {
+      const view = await getDashboard(Number(userId));
+      for (const league of view.leagues) {
+        const page = await getLeagueBoardView(league.id, view.year, Number(userId));
+        expect({ league: league.id, userId, standings: league.standings }).toEqual({
+          league: league.id,
+          userId,
+          standings: page.standings,
+        });
+        placeholders += league.standings.filter((row) => row.userId < 0).length;
+      }
     }
+    // Vacuity guard: league 1 2026 holds three placeholder seats, seen once
+    // per member of it. Without them this test could not tell the two rules
+    // apart.
+    expect(placeholders).toBeGreaterThan(0);
+
+    const league1 = (await getDashboard(await aMemberOfLeague1())).leagues.find(
+      (league) => league.id === 1,
+    );
+    expect(league1?.standings).toHaveLength(16);
   });
 
   it('never divides by zero when nothing has scored', async () => {
