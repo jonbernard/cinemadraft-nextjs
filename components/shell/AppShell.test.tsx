@@ -118,6 +118,23 @@ describe('AppShell', () => {
     expect(sheet()).not.toHaveAttribute('open');
   });
 
+  it('closes nothing on mount, only on a navigation', () => {
+    // 🔴 The close-on-navigate effect used to run on mount too. That lands
+    // after hydration commits, so a tap on More in between opened the sheet
+    // and the effect shut it again — nav.spec.ts's More-sheet tests flaked on
+    // CI exactly that way. jsdom cannot tap in that window; not calling
+    // `close()` at mount is the property that closes it.
+    const close = vi.spyOn(HTMLDialogElement.prototype, 'close');
+    usePathname.mockReturnValue('/');
+    const { rerender } = render(<AppShell isSignedIn={false}>content</AppShell>);
+    expect(close).not.toHaveBeenCalled();
+
+    usePathname.mockReturnValue('/leagues');
+    rerender(<AppShell isSignedIn={false}>content</AppShell>);
+    expect(close).toHaveBeenCalled();
+    close.mockRestore();
+  });
+
   it('the phone sheet is a native dialog, so Escape and focus are the platform’s job', () => {
     usePathname.mockReturnValue('/');
     render(<AppShell isSignedIn={false}>content</AppShell>);

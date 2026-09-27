@@ -114,9 +114,18 @@ export function AppShell({
   }, []);
 
   // A sheet left open across a navigation would cover the page it just
-  // reached. Ported verbatim from AppNav's drawer-close-on-navigate effect.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the trigger, not a value read here
+  // reached. Ported from AppNav's drawer-close-on-navigate effect.
+  //
+  // 🔴 On a CHANGE of pathname, never on mount. A mount effect runs after
+  // hydration commits, and a tap in between — a `showModal()` straight from
+  // the click handler — is closed by it a moment later: the sheet flashes and
+  // is gone. `load` fires before hydration here, so that window opens the
+  // moment `goto` resolves, and on a loaded CI runner it was wide enough to
+  // flake nav.spec.ts's More-sheet tests (sheet never visible, focus outside).
+  const shownPath = useRef(pathname);
   useEffect(() => {
+    if (shownPath.current === pathname) return;
+    shownPath.current = pathname;
     sheet.current?.close();
     search.current?.close();
   }, [pathname]);
