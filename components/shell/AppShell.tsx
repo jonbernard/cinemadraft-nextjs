@@ -11,8 +11,8 @@ import { MoreSheet } from './MoreSheet';
 import { NavRail } from './NavRail';
 import { NotificationBell, type NotificationItem } from './NotificationBell';
 import { SearchOverlay } from './SearchOverlay';
-import { SearchIcon, TabBar } from './TabBar';
-import { TopBar } from './TopBar';
+import { TabBar } from './TabBar';
+import { SearchIcon, TopBar } from './TopBar';
 
 /**
  * The application shell (D67, D75): a floating rail plus a content panel on
@@ -35,11 +35,10 @@ import { TopBar } from './TopBar';
  * phone layout with no wordmark, no search and no account control anywhere but
  * two taps into the More sheet.
  *
- * The chrome now travels with the tab bar instead, from `sm` up to `xl`, which
- * closes that range without costing a phone any vertical space (decided
- * 2026-09-12; `TabBar` carries the 390px measurement that made the floor `sm`
- * rather than every width). The strip is unchanged and still `xl`-only; the two
- * never render at once.
+ * Below `xl` that chrome is `TopBar`'s now — the wordmark, search and the
+ * account control in one sticky row at every width (P14.T16, D128), which
+ * closes that range and gives a phone search in one tap. The strip is
+ * unchanged and still `xl`-only; the two never render at once.
  *
  * `usePathname()` is read once, here, and passed down to `NavRail`, `TabBar`
  * and `MoreSheet` — one router read for the whole shell rather than three.
@@ -156,7 +155,7 @@ export function AppShell({
             first focusable element by DOM order. Above the strip, because the
             two never render at once — the strip is `xl`-only and this is
             `xl:hidden` — and this is the row a phone sees first. */}
-        <TopBar />
+        <TopBar isSignedIn={isSignedIn} onSearch={openSearch} searchId={searchId} />
         <Strip
           isSignedIn={isSignedIn}
           isAdmin={isAdmin}
@@ -197,9 +196,6 @@ export function AppShell({
         onMore={openMore}
         isMoreOpen={isMoreOpen}
         moreId={moreId}
-        isSignedIn={isSignedIn}
-        onSearch={openSearch}
-        searchId={searchId}
       />
       <MoreSheet
         id={moreId}
@@ -209,8 +205,6 @@ export function AppShell({
         isAdmin={isAdmin}
         notifications={notifications}
         unreadCount={unreadCount}
-        onSearch={openSearch}
-        searchId={searchId}
       />
       <SearchOverlay id={searchId} ref={search} />
     </div>
@@ -219,8 +213,8 @@ export function AppShell({
 
 /**
  * The desktop strip: search, create, a live countdown slot, the theme
- * toggle, and the account control. 52px tall, hidden below `xl` where the
- * tab bar and More sheet carry the same jobs instead.
+ * toggle, and the account control. 52px tall, hidden below `xl` where
+ * `TopBar` and the More sheet carry the same jobs instead.
  *
  * No page supplies a countdown yet, so the slot renders nothing rather than
  * a placeholder — an empty box inviting content is worse than no box.

@@ -1,5 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { signInAs } from './support/session';
+
 /**
  * The scratch shows this file's last test needs, and the tag that removes them.
  *
@@ -49,37 +51,40 @@ async function seedShows(): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-  await withDb(async (query) =>
-    query('delete from events where abbreviation like $1', [`${TAG}-%`]),
-  );
+  await withDb(async (query) => {
+    await query('delete from events where abbreviation like $1', [`${TAG}-%`]);
+    // The signed-in chrome case's member. `@example.test` keeps it out of
+    // `lib/db.test.ts`'s counts even if a killed run leaves it behind.
+    await query('delete from users where email like $1', [`${TAG}-%@example.test`]);
+  });
 }
 
 /**
- * Open the global search panel from whichever trigger the width actually
- * shows — the strip's icon above `xl`, the bar's own icon from `sm` up, the
- * More sheet's row below that. All three are in the DOM at every width and
- * only one is ever clickable.
+ * Open the global search panel from whichever trigger the width shows — the
+ * strip's icon above `xl`, `TopBar`'s below it (D128).
  *
- * 🔴 The `< 1280` branch used to be the More sheet, because below `xl` there
- * was no other way in — the shape of the defect P17.T2 closed. The sheet's
- * route still exists and keeps its own test below; it is simply no longer the
- * only one.
+ * `.first()` on purpose: both triggers are in the DOM at every width, CSS hides
+ * one, and Playwright's role query skips the hidden one — so exactly one
+ * match is ever clickable. Before D128 a phone had a third route, two taps into
+ * the More sheet, and this helper branched on width to take it.
  */
-async function openSearchPanel(page: Page, width: number): Promise<void> {
-  if (width >= 640) {
-    // `.first()` on purpose: the strip's trigger and the bar's are both in the
-    // DOM at every width, and Playwright's visibility filter leaves exactly
-    // one of them clickable.
-    await page.getByRole('button', { name: 'Search' }).first().click();
-  } else {
-    await page.getByRole('button', { name: 'More', exact: true }).click();
-    await page
-      .getByRole('dialog', { name: 'More' })
-      .getByRole('button', { name: 'Search' })
-      .click();
-  }
+async function openSearchPanel(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Search' }).first().click();
   await expect(page.getByRole('dialog', { name: 'Search films' })).toBeVisible();
 }
+
+/**
+ * The two rows below `xl`, found through the landmark and the link each one
+ * owns rather than through a class name.
+ *
+ * The bottom bar is the `<nav>`'s parent: the landmark holds destinations only,
+ * and chrome used to sit beside it in that wrapper — which is exactly where a
+ * check scoped to the landmark alone would miss it.
+ */
+const bottomBar = (page: Page) =>
+  page.getByRole('navigation', { name: 'Primary, mobile' }).locator('..');
+const topBar = (page: Page) =>
+  page.getByRole('link', { name: 'Cinemadraft, home' }).locator('..');
 
 /**
  * The shell that makes every other page reachable (D67, D75).
@@ -96,11 +101,12 @@ async function openSearchPanel(page: Page, width: number): Promise<void> {
  * renders exactly one of the two navigations visibly — both are always in the
  * DOM, which is why every locator here is scoped to a named landmark.
  *
- * 🔴 The bar's *chrome* is gated separately, at `sm` (640px), and that is the
- * whole of P17.T2: until it was, 1024–1280px got the phone layout — no rail,
- * no header, no wordmark, no search, no way in except two taps into the More
- * sheet. The four widths below are the four that decide something: 1440 the
- * design target, 1280 the rail's edge, 1024 the dead zone, 390 the phone.
+ * 🔴 Below `xl` the chrome — wordmark, search, the account control — is
+ * `TopBar`'s, at every width (P14.T16, D128). Before P17.T2, 1024–1280px got
+ * the phone layout with no header, no wordmark, no search and no way in except
+ * two taps into the More sheet. The widths below are the ones that decide
+ * something: 1440 the design target, 1280 the rail's edge, 1024 the old dead
+ * zone, 768 a tablet, 390 the phone.
  *
  * Accessible names are the contract, hard-coded on purpose: the rail is
  * `Main`, the tab bar is `Primary, mobile`, the sheet is `More`. They differ
@@ -121,6 +127,7 @@ test.describe('navigation', () => {
   const RAIL_EDGE = { width: 1280, height: 900 };
   const DEAD_ZONE = { width: 1024, height: 800 };
   const PHONE = { width: 390, height: 844 };
+  const TABLET = { width: 768, height: 1024 };
 
   // Before as well as after: a run killed halfway leaves rows behind, and the
   // next run's `marks the current page` would then be reading debris.
@@ -138,9 +145,8 @@ test.describe('navigation', () => {
     // Both navigations are in the DOM at every width; only CSS decides. The
     // bar is gated at `xl` and the rail is its complement, so at 1440px the
     // media query must be hiding the whole bar — a fact jsdom cannot show.
-    // (The bar's chrome has its own, lower gate at `sm`; above `xl` it goes
-    // with the bar, and the strip carries identity, search and the account
-    // control instead. The two never render at once.)
+    // (Above `xl` the strip carries search and the account control and
+    // `TopBar` goes with the bar; the two never render at once.)
     await expect(page.getByRole('navigation', { name: 'Primary, mobile' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'More', exact: true })).toBeHidden();
   });
@@ -185,7 +191,7 @@ test.describe('navigation', () => {
     expect(scrolls).toBe(false);
   });
 
-  test('1024px is not a phone — the bar carries identity, search and the way in', async ({
+  test('1024px is not a phone — the top bar carries identity, search and the way in', async ({
     page,
   }) => {
     await page.setViewportSize(DEAD_ZONE);
@@ -198,13 +204,11 @@ test.describe('navigation', () => {
     await expect(page.getByRole('navigation', { name: 'Primary, mobile' })).toBeVisible();
 
     await expect(page.getByRole('link', { name: 'Cinemadraft, home' })).toBeVisible();
-    // Unqualified on purpose: the strip's copies are `xl:flex` and the More
-    // sheet's are inside a closed `<dialog>`, so neither is in the
-    // accessibility tree here. One match each means the visible one is the one
-    // this width gets, which is the whole claim. Since P14.T16 the wordmark's
-    // single match is `TopBar`'s rather than the tab bar's — the identity moved
-    // rows, and "a reader can tell which app they are in at 1024px" is what is
-    // actually being asserted, which is unchanged.
+    // Unqualified on purpose: the strip's copies are `xl:flex`, so they are not
+    // in the accessibility tree here. One match each means the visible one is
+    // the one this width gets, which is the whole claim. All three are
+    // `TopBar`'s now (P14.T16 moved the wordmark, D128 the other two); which
+    // row they are in is the test below's job.
     await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
 
@@ -233,58 +237,116 @@ test.describe('navigation', () => {
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
     }
 
-    // 🔴 And no label wrapped: a two-line label is the bar growing taller,
-    // which is exactly what folding the chrome in was chosen to avoid — and
-    // the measurement (P17.T2 Step 1) that put the chrome's floor at `sm`
-    // rather than at every width. 48.5px today; 65px the moment a slot drops
-    // below about 65px of label.
+    // 🔴 And no label wrapped: a two-line label is the bar growing taller —
+    // the measurement (P17.T2 Step 1) that kept the chrome off this row on a
+    // phone, and the reason it still has five slots rather than six (D128).
+    // 48.5px today; 65px the moment a slot drops below about 65px of label.
     const bar = page.locator('nav[aria-label="Primary, mobile"]');
     const height = (await bar.boundingBox())?.height ?? 0;
     expect(height).toBeLessThanOrEqual(56);
   });
 
-  test('the chrome is not a sixth tab, and is absent where it would not fit', async ({
+  /**
+   * 🔴 D128, as geometry: search and the account control are in the top bar
+   * and not in the bottom one, at a phone and a tablet, signed in and out.
+   *
+   * 768 as well as 390 because the two widths used to differ — below `sm` the
+   * pair lived in the More sheet, from `sm` beside the tab bar's `<nav>` — and
+   * the move has to hold on both sides of that old line.
+   */
+  test('search and the account control are in the top bar, not the bottom one', async ({
     page,
   }) => {
+    for (const signedIn of [false, true]) {
+      if (signedIn) await signInAs(page, { email: `${TAG}-chrome@example.test` });
+      const account = signedIn
+        ? { role: 'button' as const, name: 'Log out' }
+        : { role: 'link' as const, name: 'Log in' };
+
+      for (const size of [PHONE, TABLET]) {
+        await page.setViewportSize(size);
+        await page.goto('/');
+
+        const top = topBar(page);
+        const bottom = bottomBar(page);
+        const search = top.getByRole('button', { name: 'Search' });
+        const way = top.getByRole(account.role, { name: account.name });
+        await expect(search).toBeVisible();
+        await expect(way).toBeVisible();
+
+        // Scoped to the whole bottom bar, not the landmark inside it: the
+        // chrome used to sit beside the `<nav>`, outside it.
+        await expect(bottom.getByRole('button', { name: 'Search' })).toHaveCount(0);
+        await expect(bottom.getByRole(account.role, { name: account.name })).toHaveCount(
+          0,
+        );
+
+        // Right side, opposite the wordmark, and at the top of the viewport.
+        const mark = await page
+          .getByRole('link', { name: 'Cinemadraft, home' })
+          .boundingBox();
+        const searchBox = await search.boundingBox();
+        const wayBox = await way.boundingBox();
+        if (!mark || !searchBox || !wayBox)
+          throw new Error('the top bar rendered no boxes');
+        expect(searchBox.x).toBeGreaterThan(mark.x + mark.width);
+        expect(wayBox.x).toBeGreaterThan(searchBox.x);
+        expect(wayBox.x + wayBox.width).toBeLessThanOrEqual(size.width);
+        for (const box of [searchBox, wayBox]) {
+          expect(box.y).toBeLessThan(100);
+          expect(box.width).toBeGreaterThanOrEqual(44);
+          expect(box.height).toBeGreaterThanOrEqual(44);
+        }
+
+        // And the bottom bar is five slots, still one row.
+        await expect(
+          page.locator(
+            'nav[aria-label="Primary, mobile"] > a, nav[aria-label="Primary, mobile"] > button',
+          ),
+        ).toHaveCount(5);
+      }
+    }
+  });
+
+  test('the top bar stays at the top while the page scrolls', async ({ page }) => {
     await page.setViewportSize(PHONE);
+    // Taller than the viewport on any database — the same reason the
+    // bottom-bar test below seeds these.
+    await seedShows();
+    await page.goto('/award-shows');
+
+    const top = topBar(page);
+    // 🔴 The computed style, not the class: jsdom cannot see a `sticky`
+    // degraded to `static` by an ancestor's `overflow` or `transform` (D120).
+    expect(await top.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
+
+    await page.evaluate(() => window.scrollTo(0, 600));
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    expect((await top.boundingBox())?.y).toBe(0);
+    await expect(top.getByRole('button', { name: 'Search' })).toBeVisible();
+  });
+
+  test('desktop is unchanged — the strip keeps search and the way in', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
     await page.goto('/');
 
-    // Five destinations in the landmark, whatever else sits on the bar.
-    await expect(
-      page.locator(
-        'nav[aria-label="Primary, mobile"] > a, nav[aria-label="Primary, mobile"] > button',
-      ),
-    ).toHaveCount(5);
+    // The top bar is `xl:hidden`; the rail's wordmark is the only one on screen.
+    await expect(page.getByRole('link', { name: 'Cinemadraft, home' })).toHaveCount(1);
+    await expect(topBar(page).getByRole('button', { name: 'Search' })).toBeHidden();
 
-    // At 390px the bar's own chrome is in the DOM and displayed nowhere: the
-    // row has no slack for it. Search and the account control are in the More
-    // sheet, which is where D75 put them and where they stayed.
-    await expect(page.getByRole('button', { name: 'Search' })).toBeHidden();
-
-    // 🔴 The wordmark is the exception, and P14.T16 is why this assertion
-    // inverted rather than being deleted. It used to read `toBeHidden()` — a
-    // phone had no wordmark anywhere in the application, which the owner
-    // reported as a defect. It is visible now because it is no longer on this
-    // row at all: it is `TopBar`'s, a second strip that costs the five tab
-    // slots nothing. So the claim here is stronger than before, not weaker —
-    // the mark is on screen AND it is not the tab bar's.
-    const phoneMark = page.getByRole('link', { name: 'Cinemadraft, home' });
-    await expect(phoneMark).toBeVisible();
-    expect(
-      await phoneMark.evaluate((el) =>
-        Boolean(el.closest('nav[aria-label="Primary, mobile"]')?.parentElement),
-      ),
-    ).toBe(false);
-    // Top of the viewport, not the bottom: the tab bar is the last 48.5px of a
-    // 844px phone, so anything under 100px cannot be sitting in it.
-    expect((await phoneMark.boundingBox())?.y ?? 999).toBeLessThan(100);
-
-    // At 1024 it is still the only one — and it never claims to be the current
-    // page, on `/` or anywhere else. Current-ness is a destination property.
-    await page.setViewportSize(DEAD_ZONE);
-    const mark = page.getByRole('link', { name: 'Cinemadraft, home' });
-    await expect(mark).toBeVisible();
-    await expect(mark).not.toHaveAttribute('aria-current', /.*/);
+    // One visible Search and one Log in, both in the strip's row at the top of
+    // the content column — right of the 208px rail, not inside it.
+    const search = page.getByRole('button', { name: 'Search' });
+    const login = page.getByRole('link', { name: 'Log in' });
+    await expect(search).toHaveCount(1);
+    await expect(login).toHaveCount(1);
+    for (const control of [search, login]) {
+      const box = await control.boundingBox();
+      expect(box?.y ?? 999).toBeLessThan(80);
+      expect(box?.x ?? 0).toBeGreaterThan(208);
+    }
   });
 
   test('marks the current page', async ({ page }) => {
@@ -297,8 +359,7 @@ test.describe('navigation', () => {
     await expect(current).toHaveText(/Award shows/);
   });
 
-  // 390px: the bar is the phone's navigation and nothing else. Its chrome
-  // starts at `sm` — see the two tests above for why, and for what 1024px gets.
+  // 390px: the bar is the phone's navigation and nothing else (D128).
   test('phone shows bottom tabs with labels, and no rail', async ({ page }) => {
     await page.setViewportSize(PHONE);
     await page.goto('/');
@@ -383,9 +444,7 @@ test.describe('navigation', () => {
     expect(result.focused).toBe(false);
   });
 
-  test('the More sheet holds the yours destinations, the theme and the account control', async ({
-    page,
-  }) => {
+  test('the More sheet holds the yours destinations and the theme', async ({ page }) => {
     await page.setViewportSize(PHONE);
     await page.goto('/');
     await page.getByRole('button', { name: 'More', exact: true }).click();
@@ -419,10 +478,13 @@ test.describe('navigation', () => {
       '/profile',
     );
 
-    // The four destinations and the account control; the theme toggle is a
-    // button.
-    await expect(sheet.getByRole('link')).toHaveCount(5);
-    await expect(sheet.getByRole('link', { name: 'Log in' })).toBeVisible();
+    // The four destinations and nothing else; the theme toggle is a button.
+    // 🔴 No account control and no search (D128) — both are one tap away in
+    // `TopBar` now, and the sheet was only ever their home because the bottom
+    // row had no room for them.
+    await expect(sheet.getByRole('link')).toHaveCount(4);
+    await expect(sheet.getByRole('link', { name: 'Log in' })).toHaveCount(0);
+    await expect(sheet.getByRole('button', { name: 'Search' })).toHaveCount(0);
     await expect(sheet.getByRole('button', { name: /theme/i })).toBeVisible();
   });
 
@@ -461,8 +523,8 @@ test.describe('navigation', () => {
 
   /**
    * The close button, for everyone who does not already know Escape — at both
-   * widths, because the phone opens the panel from the More sheet and focus has
-   * to land on the sheet's trigger, not on a row inside a closed sheet.
+   * widths. Since D128 the phone opens the panel from the top bar, so focus
+   * lands back on the top bar's Search at either width.
    */
   test('the close button puts the search panel away, and focus goes back to the trigger', async ({
     page,
@@ -470,7 +532,7 @@ test.describe('navigation', () => {
     for (const size of [DESKTOP, PHONE]) {
       await page.setViewportSize(size);
       await page.goto('/');
-      await openSearchPanel(page, size.width);
+      await openSearchPanel(page);
 
       const panel = page.getByRole('dialog', { name: 'Search films' });
       const close = panel.getByRole('button', { name: 'Close search' });
@@ -484,18 +546,14 @@ test.describe('navigation', () => {
       await close.click();
 
       await expect(panel).toBeHidden();
-      await expect(
-        size.width >= 640
-          ? page.getByRole('button', { name: 'Search' }).first()
-          : page.getByRole('button', { name: 'More', exact: true }),
-      ).toBeFocused();
+      await expect(page.getByRole('button', { name: 'Search' }).first()).toBeFocused();
     }
   });
 
   test('a click on the backdrop puts the search panel away too', async ({ page }) => {
     await page.setViewportSize(DESKTOP);
     await page.goto('/');
-    await openSearchPanel(page, DESKTOP.width);
+    await openSearchPanel(page);
 
     const panel = page.getByRole('dialog', { name: 'Search films' });
     // Bottom-left corner: outside the panel, which is centred and top-aligned.
@@ -505,28 +563,31 @@ test.describe('navigation', () => {
     await expect(page.getByRole('button', { name: 'Search' }).first()).toBeFocused();
   });
 
-  test('the panel opens from the More sheet, and one Escape closes it there too', async ({
+  test('on a phone the panel opens from the top bar, and focus goes back there', async ({
     page,
   }) => {
     await page.setViewportSize(PHONE);
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'More', exact: true }).click();
-    const sheet = page.getByRole('dialog', { name: 'More' });
-    await sheet.getByRole('button', { name: 'Search' }).click();
+    // D128 moved the phone's trigger out of the More sheet into `TopBar`, so
+    // the element `<dialog>` hands focus back to is the top bar's button — one
+    // tap in and one Escape out, where it used to be two taps and the sheet's
+    // trigger.
+    const trigger = topBar(page).getByRole('button', { name: 'Search' });
+    await trigger.click();
 
     const panel = page.getByRole('dialog', { name: 'Search films' });
     await expect(panel).toBeVisible();
-    // Opening the panel closes the sheet — two modal dialogs at once leaves
-    // the reader trapped behind the wrong one — so the element focus returns
-    // to is the sheet's trigger, not the row that was clicked.
-    await expect(sheet).toBeHidden();
 
     await page.getByRole('searchbox', { name: 'Find a film' }).fill('sinners');
     await page.keyboard.press('Escape');
 
     await expect(panel).toBeHidden();
-    await expect(page.getByRole('button', { name: 'More', exact: true })).toBeFocused();
+    await expect(trigger).toBeFocused();
+
+    // And the keyboard shortcut still reaches it from a phone-width window.
+    await page.keyboard.press('/');
+    await expect(panel).toBeVisible();
   });
 
   test('the search panel is centred, guttered and inside the viewport', async ({
@@ -535,7 +596,7 @@ test.describe('navigation', () => {
     for (const size of [DESKTOP, PHONE]) {
       await page.setViewportSize(size);
       await page.goto('/');
-      await openSearchPanel(page, size.width);
+      await openSearchPanel(page);
 
       const panel = page.getByRole('dialog', { name: 'Search films' });
       const box = await panel.boundingBox();

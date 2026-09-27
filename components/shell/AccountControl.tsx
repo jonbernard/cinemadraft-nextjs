@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { logOutOfTestSession } from '@/actions/auth/log-out';
 import { cn } from '@/lib/utils/cn';
+import { compactUserButtonAppearance } from '@/theme/clerk';
 
 /**
  * Logged in: Clerk's account menu. Logged out: a way in.
@@ -11,8 +12,8 @@ import { cn } from '@/lib/utils/cn';
  *
  * 🔴 One definition, three callers. This lived as two identical copies — one
  * in `AppShell`'s strip, one in `MoreSheet` — each carrying a comment
- * apologising for the other. P17.T2 needed a third, on the tab bar, and three
- * copies of an auth control is how one of them silently stops matching the
+ * apologising for the other. P17.T2 needed a third, on the tab bar (on
+ * `TopBar` since D128, which also took the sheet's), and three copies of an auth control is how one of them silently stops matching the
  * key it branches on.
  *
  * 🔴 `UserButton` throws outside a `<ClerkProvider>`, and the e2e run mounts
@@ -29,11 +30,10 @@ export function AccountControl({
   /**
    * A 44px icon square instead of the strip's bordered button.
    *
-   * The tab bar's chrome budget is one touch target wide (P17.T2 Step 1
-   * measured it), and the bordered "Log in" is 71px. The name is unchanged in
-   * both shapes — the label just moves to `sr-only`, which is also what keeps
-   * the chrome from reading as a sixth tab: every tab is an icon *over* a
-   * visible label, and no chrome control has one.
+   * `TopBar`'s chrome is icon squares (D128; it was the tab bar's, where
+   * P17.T2 Step 1 measured a one-target budget), and the bordered "Log in" is
+   * 71px. The name is unchanged in both shapes — the label just moves to
+   * `sr-only`.
    */
   compact?: boolean;
 }) {
@@ -75,7 +75,7 @@ export function AccountControl({
     );
   }
 
-  return <UserButton />;
+  return <UserButton appearance={compact ? compactUserButtonAppearance : undefined} />;
 }
 
 function PersonIcon() {

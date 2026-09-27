@@ -190,3 +190,28 @@ export const authCardAppearance = {
     footerItem: { paddingLeft: 0, paddingRight: 0 },
   },
 } satisfies Appearance;
+
+/**
+ * The account menu's trigger where it sits among icon squares — `TopBar`'s
+ * right side (D128).
+ *
+ * 🔴 Clerk draws the trigger as the bare 28px avatar — measured in a production
+ * build at 390, 768 and 1440 — so beside `TopBar`'s 44px search square it was
+ * the one target in the row under the floor. The avatar keeps its size; the
+ * button around it grows to 44px, which is the part a thumb hits.
+ *
+ * Not in `clerkAppearance`: that map reaches the desktop strip's trigger too,
+ * and the strip is unchanged by D128. `AccountControl` passes this only in its
+ * `compact` shape.
+ */
+export const compactUserButtonAppearance = {
+  elements: {
+    userButtonTrigger: {
+      minWidth: '44px',
+      minHeight: '44px',
+      justifyContent: 'center',
+      '&:hover': { background: 'var(--color-bg-surface)' },
+      ...FOCUS_RING,
+    },
+  },
+} satisfies Appearance;
