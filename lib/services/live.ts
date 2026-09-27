@@ -295,7 +295,7 @@ export async function getLiveShow(
     onAir: event.awardsActive === true,
     focusedAwardId: event.focusedAwardId,
     // 🔴 From `hasWinner`, not from `winner != null`. A `winners` row whose
-    // film has no `nominations` row for the season leaves `isWinner` unset on
+    // `nomination_id` is not among the season's nominations leaves `isWinner` unset on
     // every nominee, so `winner` is null while the category is genuinely
     // decided. The counter is the honest number; the chip below it still needs
     // a nominee to name, and says "N nominees" when it has none.

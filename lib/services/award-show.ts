@@ -94,7 +94,7 @@ function toNominee(
     detailCharacter: string | null;
   },
   movie: Movie | undefined,
-  winningMovieIds: ReadonlySet<number>,
+  winningNominationIds: ReadonlySet<number>,
 ): Nominee {
   return {
     nominationId: nomination.id,
@@ -104,7 +104,7 @@ function toNominee(
     posterPath: movie?.poster ?? null,
     detailName: nomination.detailName,
     detailCharacter: nomination.detailCharacter,
-    isWinner: winningMovieIds.has(nomination.movieId),
+    isWinner: winningNominationIds.has(nomination.id),
   };
 }
 
@@ -140,11 +140,16 @@ export async function getAwardShow(
   ]);
   const movieById = new Map(movies.map((movie) => [movie.id, movie]));
 
+  // 🔴 By nomination, not by film. One film can hold two nominations in one
+  // category — *One Battle After Another* for Benicio del Toro and for Sean
+  // Penn — and matching the win on `movieId` crowned both. `nomination_id` is
+  // measured sound in the restored data: all 734 point at a nomination with the
+  // winner's own award, film and year, so there is no by-film fallback to keep.
   const winnersByAward = new Map<number, Set<number>>();
   for (const winner of winners) {
     const existing = winnersByAward.get(winner.awardId);
-    if (existing) existing.add(winner.movieId);
-    else winnersByAward.set(winner.awardId, new Set([winner.movieId]));
+    if (existing) existing.add(winner.nominationId);
+    else winnersByAward.set(winner.awardId, new Set([winner.nominationId]));
   }
 
   const nominationsByAward = new Map<number, typeof nominations>();

@@ -10,6 +10,8 @@ const revalidatePath = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({ revalidatePath }));
 
 import { db } from '@/lib/db';
+import { getAwardShow } from '@/lib/services/award-show';
+import { getLiveShow } from '@/lib/services/live';
 import { pointsForMovieIds } from '@/lib/services/scoring';
 import { attachNominee } from './attach-nominee';
 import { focusAward } from './focus-award';
@@ -679,5 +681,91 @@ describe('focusAward', () => {
       `/award-shows/${fixture.event.abbreviation}`,
       'layout',
     );
+  });
+});
+
+/**
+ * 🔴 One film, two nominations, one category: *One Battle After Another* for
+ * Benicio del Toro **and** Sean Penn, 2026 Best Supporting Actor. Sean Penn won,
+ * and both nominees showed "Winner" — on the poster grid, and in the admin list
+ * where both also offered "Clear winner" — because the win was matched to the
+ * nominee by film. `winners.nomination_id` names the nomination that won; that
+ * is the match.
+ *
+ * Seeded directly, not through `attachNominee`: that action refuses a second
+ * nomination of the same film in one category (a double-click guard), so the
+ * shape only reaches the database from an import or the source app. 18 of the
+ * 734 restored winners are this shape.
+ */
+describe('a film nominated twice in one category', () => {
+  async function twoNominations() {
+    const now = new Date();
+    const film = fixture.films[0] as { id: number };
+    // One after the other, not in parallel, so the ids are in a fixed order.
+    const ids: number[] = [];
+    for (const detailName of ['Benicio del Toro', 'Sean Penn']) {
+      const row = await db.nomination.create({
+        data: {
+          movieId: BigInt(film.id),
+          awardId: BigInt(fixture.actingCategory.id),
+          year: YEAR,
+          detailName,
+          createdAt: now,
+          updatedAt: now,
+        },
+        select: { id: true },
+      });
+      ids.push(row.id);
+    }
+    return { film, first: { id: ids[0] as number }, second: { id: ids[1] as number } };
+  }
+
+  async function recordWin(movieId: number, nominationId: number) {
+    const now = new Date();
+    await db.winner.create({
+      data: {
+        movieId: BigInt(movieId),
+        awardId: BigInt(fixture.actingCategory.id),
+        nominationId: BigInt(nominationId),
+        year: YEAR,
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+  }
+
+  async function winningNominations() {
+    const show = await getAwardShow(fixture.event.abbreviation, YEAR);
+    const category = show.categories.find(
+      (entry) => entry.awardId === fixture.actingCategory.id,
+    );
+    return category?.nominees.filter((nominee) => nominee.isWinner) ?? [];
+  }
+
+  it('the award show marks only the nomination that won', async () => {
+    const { film, second } = await twoNominations();
+    await recordWin(film.id, second.id);
+
+    const winners = await winningNominations();
+
+    expect(winners.map((nominee) => nominee.nominationId)).toEqual([second.id]);
+    expect(winners[0]?.detailName).toBe('Sean Penn');
+  });
+
+  it('the live show marks only the nomination that won', async () => {
+    const { film, second } = await twoNominations();
+    await recordWin(film.id, second.id);
+
+    const view = await getLiveShow(fixture.event.abbreviation, YEAR, null);
+    const category = view.categories.find(
+      (entry) => entry.awardId === fixture.actingCategory.id,
+    );
+
+    expect(
+      category?.nominees
+        .filter((nominee) => nominee.isWinner)
+        .map((nominee) => nominee.nominationId),
+    ).toEqual([second.id]);
+    expect(view.resolved).toBe(1);
   });
 });
