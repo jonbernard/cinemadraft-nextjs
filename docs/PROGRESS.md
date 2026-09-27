@@ -2249,7 +2249,7 @@ Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
   report queries per request, on purpose: reading `pg_stat_database.xact_commit`
   either side gave 2.79 against a true 3.00, because a pooled connection does
   not commit per statement. `test/query-count.ts` is the instrument
-- [x] **P12.T5** Fix what the above finds — four findings, every one fixed and none carried. Findings, one commit each:
+- [x] **P12.T5** Fix what the above finds — five findings, every one fixed and none carried. Findings, one commit each:
   - `/leagues/new` answered **500** to a signed-out visitor (T2a's sweep;
     confirmed against the deployed site) — `692875f`. Reclassified as a
     protected route, so the proxy redirects with `?redirect_url=`; the page
@@ -2291,6 +2291,24 @@ Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
     Pinned by `e2e/leagues.spec.ts` "does not scroll sideways at 390, signed
     out" (restored-corpus only, so it skips on CI), watched red at 584 with
     the class reverted
+  - **Scoring drift the Phase 9 gate could not see** (the 2026-09-27 scoring
+    audit, which ran the source's own points router on the restored dump). Its
+    four fixtures held no film nominated in two seasons, so "zero drift" was
+    true of them only, and dropping the season filter left every parity test
+    green. Fixed on `agent/scoring-final`: the season rule is now a decision,
+    **D126** (7 league 1 seat totals, 7 picks, Travis Bickle 2021 #15 → #16),
+    alongside **D125**'s 3P; the film page shows each season rather than the
+    latest (`ee19255`); the dashboard ranks placeholder seats as the league page
+    does, through one shared `rankSeats` (`d0a59db`, nine members' 2026
+    positions corrected). 🔴 **What makes the next drift impossible to miss**:
+    `scoring.differential.test.ts` compares every figure the source scored —
+    1,109 film-seasons, 2,542 per-show cells, 1,025 picks, 156 seats by draft
+    id, 20 league tables in order, 1,100 film pages — against two derived
+    deviation lists and nothing else (`9d9f261`, restored data, local only),
+    and `scoring.rules.test.ts` runs every rule and the four latent cases on
+    synthetic rows on CI (`6da8dc7`). Both were watched red against each
+    mutation the audit ran. Also found: the source had no tie order at all
+    (PARITY source bug 16)
 
 🔴 **Gate: open.** Three of its four lines are met — free-tier headroom is a
 number with its ceiling (D123), draft-day search is inside its threshold
