@@ -619,6 +619,8 @@ audit, and it is still the last thing that happens.
 
 ### Phase 13 — Cutover
 
+**Runbook:** `docs/superpowers/plans/2026-09-27-phase-13-cutover.md` — the ordered OWNER/AGENT steps, their checks and rollbacks; it corrects T2/T3b below (normalize.sql, wipe before restore, `resolve 0_init`).
+
 - T1: Swap Clerk to its Production instance — create it for `cinemadraft.com`, add DNS records, set `pk_live_`/`sk_live_` in Vercel Production, recreate the webhook and its signing secret (all per-instance)
 - T2: Final `pg_dump` from Heroku → Neon
 - T3: **Restore the twelve award-show logo URLs that T2 just clobbered.**
