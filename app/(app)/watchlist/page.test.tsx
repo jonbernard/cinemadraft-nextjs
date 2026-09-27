@@ -196,24 +196,22 @@ describe.each(['awards', 'nominations', 'drafted'])('?view=%s', (view) => {
 });
 
 describe('the awards view', () => {
-  it('lays its shows out in two columns, but not on a phone', async () => {
-    // 🔴 Mobile-first (D49): one column by default, two only where there is
-    // room — the container is `max-w-4xl`, so at `sm` each show would get
-    // ~300px and its summary already wraps to three lines at that width.
+  it('lays its shows out in one column at every width', async () => {
+    // 🔴 One column, phone to desktop — the owner's call in `7064de9`, which
+    // replaced the two columns from `lg` this test used to pin.
     //
-    // 🔴 `items-start` is the load-bearing half and the answer to the
-    // height-shift question. A grid row is as tall as its tallest cell, so a
-    // stretched panel would grow to match whichever `<details>` beside it is
-    // open — the neighbour visibly inflating around unchanged content. With
-    // this, each panel keeps its own height and opening one moves only the
-    // rows below, exactly as the single column did.
+    // `lg:items-start` stays: a grid row is as tall as its tallest cell, so
+    // if a second column ever returns, a closed `<details>` would otherwise
+    // stretch to match an open neighbour.
     const { container } = await renderView('awards');
-    const grid = container.querySelector('.lg\\:grid-cols-2');
+    // Found by what it holds, not by a class, so a changed class list cannot
+    // make the lookup miss and the assertions below pass on nothing.
+    const grid = container.querySelector('details')?.parentElement;
 
     expect(grid).toBeTruthy();
-    expect(grid?.className).toContain('lg:items-start');
-    // Not two columns at the narrowest width, which is what `grid-cols-2` with
-    // no breakpoint would mean.
-    expect(grid?.className.split(/\s+/)).not.toContain('grid-cols-2');
+    const classes = grid?.className.split(/\s+/) ?? [];
+    expect(classes).toContain('lg:items-start');
+    // No multi-column track at any breakpoint, bare or prefixed.
+    expect(classes.filter((c) => /(^|:)(grid-cols|columns)-(?!1$)/.test(c))).toEqual([]);
   });
 });

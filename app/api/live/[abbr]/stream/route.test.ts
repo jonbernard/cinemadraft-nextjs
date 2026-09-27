@@ -325,4 +325,43 @@ describe('GET /api/live/[abbr]/stream', () => {
     expect(stream.closed).toBe(false);
     expect(stream.frames).toHaveLength(1);
   });
+
+  it('logs a failed poll at error level, and nothing when a reader leaves', async () => {
+    /**
+     * A pair, so neither half is vacuous: the same spy that must stay silent
+     * through every way a connection normally ends has to hear the one real
+     * fault. Before P12.T5 the poll's catch swallowed it, so an outage left
+     * nothing in the log but viewers on a frozen frame.
+     */
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      mocks.getLiveShow.mockResolvedValue(BASE);
+
+      // A reader who goes away (abort), a consumer that cancels, and the
+      // route's own 50s self-close — the three normal endings.
+      const aborter = new AbortController();
+      collect(await GET(request('?year=2026', aborter.signal), params));
+      await settle();
+      aborter.abort();
+
+      const cancelled = await GET(request('?year=2026'), params);
+      await (cancelled.body as ReadableStream<Uint8Array>).cancel();
+
+      collect(await GET(request('?year=2026'), params));
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(logged).not.toHaveBeenCalled();
+
+      const failure = new Error('Neon is asleep');
+      mocks.getLiveShow.mockResolvedValueOnce(BASE).mockRejectedValueOnce(failure);
+      collect(await GET(request('?year=2026'), params));
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(logged).toHaveBeenCalledTimes(1);
+      expect(logged).toHaveBeenCalledWith(
+        expect.stringContaining('poll failed'),
+        failure,
+      );
+    } finally {
+      logged.mockRestore();
+    }
+  });
 });

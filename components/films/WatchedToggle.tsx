@@ -216,6 +216,7 @@ export function WatchedToggle({
           No `describeChild`: that mode adds a native `title` attribute and an
           `aria-describedby`, which is a second string for one control. The
           default is name-only, and MUI's string is this same `label`. */}
+      {/* biome-ignore lint/suspicious/noLeakedRender: `button` is a JSX element, never a falsy value that could render */}
       {hint === 'tooltip' ? <Tooltip title={label}>{button}</Tooltip> : button}
 
       {/* Announced rather than shown as a tooltip: the failure needs to reach

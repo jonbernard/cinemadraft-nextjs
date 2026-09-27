@@ -1,5 +1,6 @@
 import { expect, type Page, test } from '@playwright/test';
 
+import { skipWithoutRestoredCorpus } from './support/corpus';
 import { signInAs } from './support/session';
 
 /**
@@ -147,5 +148,40 @@ test.describe('leagues', () => {
     const response = await page.goto('/join/00000000-0000-4000-8000-000000000000');
 
     expect(response?.status()).toBe(404);
+  });
+});
+
+test.describe('the league page on a phone', () => {
+  test.beforeEach(skipWithoutRestoredCorpus);
+
+  test('does not scroll sideways at 390, signed out', async ({ page }) => {
+    /**
+     * League 1, not a scratch league: the overflow came from its real size —
+     * sixteen seats, each shelf's picks carrying a ledger whose `sr-only`
+     * spans are `position: absolute`. With no positioned ancestor inside the
+     * shelf's `overflow-x-auto`, their containing block was outside it, so the
+     * scroller did not clip them and the DOCUMENT scrolled: 584 in a 390
+     * viewport (P12.T5). `relative` on `Shelf`'s list is the fix.
+     *
+     * Not vacuous: the shelves themselves still overflow — that is what they
+     * are for — so this also asserts one of them is wider than the viewport.
+     */
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/leagues/1');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+    const widths = await page.evaluate(() => ({
+      document: document.scrollingElement?.scrollWidth ?? 0,
+      viewport: window.innerWidth,
+      widestShelf: Math.max(
+        0,
+        ...[...document.querySelectorAll('ul.overflow-x-auto')].map(
+          (ul) => ul.scrollWidth,
+        ),
+      ),
+    }));
+
+    expect(widths.widestShelf).toBeGreaterThan(widths.viewport);
+    expect(widths.document).toBeLessThanOrEqual(widths.viewport);
   });
 });

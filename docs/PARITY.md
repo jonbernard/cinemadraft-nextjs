@@ -3,15 +3,18 @@
 **What the source app does, and whether the port does it.** Cutover is blocked
 while any row is open.
 
-🔴 **As of 2026-09-13 no row is open.** Phase 14 tranche 2 closed the last four
-(P10.T3, T21, T31, T32), so **parity no longer blocks the cutover** — Phase 12's
-manual parallel-run pass starts from zero known gaps rather than from a list to
-work around. What remains against the source is the **dropped** column, which is
-fifteen deliberate refusals, each carrying its reason.
+🔴 **As of 2026-09-27 no row is open.** Phase 14 tranche 2 closed the last four
+(P10.T3, T21, T31, T32) on 2026-09-13; a review against the source then found a
+fifth on 2026-09-14 — the league-completion feed post, which had lived as an
+aside inside a ported row — and `ad2d58f` closed it. So **parity does not block
+the cutover**, and Phase 12's manual parallel-run pass starts from zero known
+gaps rather than from a list to work around. What remains against the source is
+the **dropped** column, which is fifteen deliberate refusals, each carrying its
+reason.
 
 | | |
 |---|---|
-| Audited | 2026-08-15; verdicts current at 2026-09-13 (Phase 14 tranche 2) |
+| Audited | 2026-08-15; verdicts current at 2026-09-27 (P12.T5) |
 | Source | `cinemadraft` @ `caa1e7f` (2023-12-12), read-only |
 | Port | `cinemadraft-nextjs` @ end of Phase 6 |
 | Source surface | 19 route files · **71 endpoints** · 17 controller modules · **81 exported functions** · 24 client routes · 9 sub-views · 80 page files |
@@ -21,8 +24,8 @@ fifteen deliberate refusals, each carrying its reason.
 
 | Verdict | Count |
 |---|---|
-| **ported** | 69 |
-| **deficient** | 1 |
+| **ported** | 70 |
+| **deficient** | 0 |
 | **dropped** | 15 |
 | **total capabilities** | 85 |
 
@@ -58,7 +61,9 @@ relink page — each gated independently at the action and at the page.
 Phase 14 closed the last four, in two tranches: tranche 1 built the transport
 and the live room (P10.T31), tranche 2 the dashboard's route into it (P10.T3),
 the board moving while the draft runs (P10.T21) and the admin's selection
-reaching every watcher (P10.T32)._
+reaching every watcher (P10.T32). The fifth, found by a source review on
+2026-09-14 after the matrix read zero, was the league-completion feed post;
+`ad2d58f` closed it and P12.T5 flipped the row._
 
 🔴 **Read this the right way round.** It said, through Phase 10, that the port
 had the harder half done and the *broad* half outstanding, and that the open
@@ -149,7 +154,7 @@ which is why so many rows are cheap and a few are not.
 | Add a seat, including a placeholder for someone with no account | **ported** | `POST /draft/add` (`routes/draft.js:51`) | `actions/leagues/manage-seats.ts` — owner-gated, closing source bug 4 | ✓ |
 | Remove or rename a seat | **ported** | `DELETE /draft/:id`, `PUT /draft/:leagueId/:id` | `actions/leagues/manage-seats.ts` — owner-gated (closing source bug 5), and refuses a seat holding picks, which would orphan them | ✓ |
 | Start the draft / mark it complete | **ported** | Start/Complete buttons, `PUT /league/:id`, `/status` | `actions/leagues/manage-league.ts` — status only, closing source bug 6. 🔴 The feed post it also wrote is **its own row below**, not an aside here — see "A finished league posts each member's roster" | ✓ |
-| **A finished league posts each member's roster to their profile feed** | **deficient** | `PUT /league/:id` → `server/routes/league.js:62-86` — on `draftingStatus === 'complete'`, one `profile_feeds` row per seated member: *"Micah drafted these movies in the 2024 Racso award league."*, icon `eva:calendar-fill`, `components: [["draft", <draftId>]]` so it renders the whole roster | 🔴 **Nothing writes it.** `actions/leagues/manage-league.ts` sets the status and revalidates; the only feed write in the port is `actions/profile/post-feed-item.ts`, the manual composer. The port *renders* this attachment kind already (`lib/services/profile.ts:242`, `components/profile/FeedPost.tsx`) — it will simply never have one to render | ✓ |
+| **A finished league posts each member's roster to their profile feed** | **ported** | `PUT /league/:id` → `server/routes/league.js:62-86` — on `draftingStatus === 'complete'`, one `profile_feeds` row per seated member: *"Micah drafted these movies in the 2024 Racso award league."*, icon `eva:calendar-fill`, `components: [["draft", <draftId>]]` so it renders the whole roster | `actions/leagues/manage-league.ts` — `completeDraft` → `postRosters` writes one row per seated member with the source's sentence, icon and `[['draft', draftId]]` pointer, which `lib/services/profile.ts` already expands into the roster (`ad2d58f`). Called from `components/leagues/SeasonSetup.tsx`'s "Finish the draft". 🔴 Deliberately *not* the source's behaviour in three ways: written only on the **transition** into `complete` (the source re-posted on every update, which is why one 2024 roster appears twice in the data); the league's **real** season rather than the hardcoded `year: 2024` (bug 7); and a failed post does not fail the action. Dummy seats (no `uuid`) are skipped — there is nowhere to key the row. Pinned by `actions/leagues/season-actions.test.ts` "posts each seated member their roster" and "does not post twice when the draft is finished twice"; re-verified in P12.T5 by removing the `postRosters` call, which turns the first red | ✓ |
 | Stage next season's draft | **ported** | "Stage next draft" adornment on the year select | `actions/leagues/manage-league.ts` — idempotent, carries placeholders forward | ✓ |
 | League settings | **ported** | `PUT /league/:id` | `actions/leagues/manage-league.ts` — named fields through a Zod allowlist, so the source's take-the-league bug (6) is impossible | ✓ |
 
