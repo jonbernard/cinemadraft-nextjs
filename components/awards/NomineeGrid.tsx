@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { PosterFrame } from '@/components/ui/PosterFrame';
 import { StatusChip } from '@/components/ui/StatusChip';
 import { cn } from '@/lib/utils/cn';
@@ -29,11 +31,18 @@ export type GridNominee = {
  * learn which films are in play, and resizing one of them makes that harder to
  * do at a glance in exchange for information the chip already carries.
  */
-export function NomineeGrid({
+export function NomineeGrid<T extends GridNominee>({
   nominees,
+  actions,
   className,
 }: {
-  nominees: readonly GridNominee[];
+  nominees: readonly T[];
+  /**
+   * Controls under each poster — the admin's "Mark winner" and "Remove".
+   * Omitted for everyone else, so a reader's grid carries no controls at all
+   * rather than hidden ones.
+   */
+  actions?: (nominee: T) => ReactNode;
   className?: string;
 }) {
   if (nominees.length === 0) {
@@ -69,6 +78,8 @@ export function NomineeGrid({
               ) : null}
             </span>
           ) : null}
+
+          {actions ? actions(nominee) : null}
         </li>
       ))}
     </ul>

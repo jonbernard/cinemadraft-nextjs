@@ -23,6 +23,8 @@ export type Nominee = {
   /** The person, for categories that nominate one. */
   detailName: string | null;
   detailCharacter: string | null;
+  /** TMDB's person id, so the admin's picker can tell who is already up. */
+  detailId: number | null;
   isWinner: boolean;
 };
 
@@ -92,6 +94,7 @@ function toNominee(
     movieId: number;
     detailName: string | null;
     detailCharacter: string | null;
+    detailId: number | null;
   },
   movie: Movie | undefined,
   winningNominationIds: ReadonlySet<number>,
@@ -104,6 +107,7 @@ function toNominee(
     posterPath: movie?.poster ?? null,
     detailName: nomination.detailName,
     detailCharacter: nomination.detailCharacter,
+    detailId: nomination.detailId,
     isWinner: winningNominationIds.has(nomination.id),
   };
 }

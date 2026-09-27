@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { CategoryAdmin } from '@/components/admin/CategoryAdmin';
 import { CategoryCreate } from '@/components/admin/CategoryCreate';
-import { EventAdmin } from '@/components/admin/EventAdmin';
+import { EventAdminDialog } from '@/components/admin/EventAdminDialog';
 import { NomineeGrid } from '@/components/awards/NomineeGrid';
 import { ShowLogo } from '@/components/awards/ShowLogo';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -138,6 +138,30 @@ export default async function AwardShowPage({
           </Link>
         ) : null}
 
+        {isAdmin && event ? (
+          // In a dialog rather than a panel above the categories: it is opened
+          // once a season, and as a panel it pushed the categories — what an
+          // admin is actually working in on the night — below the fold.
+          <EventAdminDialog
+            className="w-fit"
+            event={{
+              id: event.id,
+              name: event.name,
+              abbreviation: event.abbreviation,
+              image: event.image,
+              nomActive: event.nomActive,
+              nomDate: event.nomDate,
+              nomTime: event.nomTime,
+              nomDuration: event.nomDuration,
+              awardsActive: event.awardsActive,
+              awardsDate: event.awardsDate,
+              awardsTime: event.awardsTime,
+              awardsDuration: event.awardsDuration,
+              liveResults: event.liveResults,
+            }}
+          />
+        ) : null}
+
         {seasons.length > 1 ? (
           <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
             {seasons.map((entry) => (
@@ -158,31 +182,6 @@ export default async function AwardShowPage({
         ) : null}
       </header>
 
-      {isAdmin && event ? (
-        <Panel tone="surface" as="section" className="flex flex-col gap-4 p-4">
-          <SectionHead as="h2" className="pb-0">
-            Edit this show
-          </SectionHead>
-          <EventAdmin
-            event={{
-              id: event.id,
-              name: event.name,
-              abbreviation: event.abbreviation,
-              image: event.image,
-              nomActive: event.nomActive,
-              nomDate: event.nomDate,
-              nomTime: event.nomTime,
-              nomDuration: event.nomDuration,
-              awardsActive: event.awardsActive,
-              awardsDate: event.awardsDate,
-              awardsTime: event.awardsTime,
-              awardsDuration: event.awardsDuration,
-              liveResults: event.liveResults,
-            }}
-          />
-        </Panel>
-      ) : null}
-
       {show.categories.length === 0 ? (
         <EmptyState title="No categories yet">
           Nothing has been entered for this show and season.
@@ -196,20 +195,6 @@ export default async function AwardShowPage({
               {category.name}
             </SectionHead>
 
-            {category.nominees.length > 0 || !category.hasWinner ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {category.nominees.length > 0 ? (
-                  <StatusChip tone="brass">
-                    {category.nominees.length}{' '}
-                    {category.nominees.length === 1 ? 'nomination' : 'nominations'}
-                  </StatusChip>
-                ) : null}
-                {category.hasWinner ? null : <StatusChip>No winner yet</StatusChip>}
-              </div>
-            ) : null}
-
-            <NomineeGrid nominees={category.nominees} />
-
             {isAdmin ? (
               <CategoryAdmin
                 awardId={category.awardId}
@@ -221,14 +206,20 @@ export default async function AwardShowPage({
                 // put up and then deleted leaves an id that matches nothing
                 // (P14.T12).
                 onScreen={event?.focusedAwardId === category.awardId}
-                nominees={category.nominees.map((nominee) => ({
-                  nominationId: nominee.nominationId,
-                  movieId: nominee.movieId,
-                  title: nominee.title,
-                  isWinner: nominee.isWinner,
-                }))}
-              />
-            ) : null}
+                nominees={category.nominees}
+              >
+                <CategoryChips category={category} />
+              </CategoryAdmin>
+            ) : (
+              <>
+                {category.nominees.length > 0 || !category.hasWinner ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CategoryChips category={category} />
+                  </div>
+                ) : null}
+                <NomineeGrid nominees={category.nominees} />
+              </>
+            )}
           </section>
         ))
       )}
@@ -250,5 +241,24 @@ export default async function AwardShowPage({
         </Panel>
       ) : null}
     </div>
+  );
+}
+
+/** What a category holds so far, in words: how many are up, and whether it is decided. */
+function CategoryChips({
+  category,
+}: {
+  category: { nominees: readonly unknown[]; hasWinner: boolean };
+}) {
+  return (
+    <>
+      {category.nominees.length > 0 ? (
+        <StatusChip tone="brass">
+          {category.nominees.length}{' '}
+          {category.nominees.length === 1 ? 'nomination' : 'nominations'}
+        </StatusChip>
+      ) : null}
+      {category.hasWinner ? null : <StatusChip>No winner yet</StatusChip>}
+    </>
   );
 }

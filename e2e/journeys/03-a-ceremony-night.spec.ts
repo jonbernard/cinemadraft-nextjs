@@ -270,17 +270,22 @@ test.describe('journey 3 — a ceremony night', () => {
     });
 
     await beat(page, 'The show is renamed, and given a ceremony date', async () => {
-      // The one editing surface that exists: `components/EventAdmin.tsx`.
-      await page.getByLabel('Name', { exact: true }).fill(`${TAG} Show of Shows`);
+      // The one editing surface that exists: `components/EventAdmin.tsx`,
+      // behind "Edit this show" in a modal dialog.
+      await page.getByRole('button', { name: 'Edit this show' }).click();
+      const edit = page.getByRole('dialog', { name: 'Edit this show' });
+      await edit.getByLabel('Name', { exact: true }).fill(`${TAG} Show of Shows`);
       // 🔴 Scoped to the Awards fieldset. "Announced" is the label of *two*
       // fields on this form — nominations and awards — so an unscoped
       // `getByLabel` is ambiguous and fails the locator, not the assertion.
-      await page
+      await edit
         .getByRole('group', { name: 'Awards' })
         .getByLabel('Announced')
         .fill(`${YEAR}-03-14T20:00`);
-      await page.getByRole('button', { name: 'Save show' }).click();
-      await expect(page.getByText('Saved')).toBeVisible();
+      await edit.getByRole('button', { name: 'Save show' }).click();
+      await expect(edit.getByText('Saved')).toBeVisible();
+      await edit.getByRole('button', { name: 'Close' }).click();
+      await expect(edit).toBeHidden();
 
       await page.reload();
       await expect(
