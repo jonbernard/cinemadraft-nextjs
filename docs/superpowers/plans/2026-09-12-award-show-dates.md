@@ -350,7 +350,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
     `{id, abbreviation, name, nomDate, nomTime, awardsDate, awardsTime, nomInstant, awardsInstant, nomCurrent, awardsCurrent, nomTimeOfDay, awardsTimeOfDay}`
   - CLI: `node scripts/award-import.mjs dates`
 
-- [ ] **Step 1: Implement the loader**
+- [x] **Step 1: Implement the loader**
 
 Append to `scripts/award-import.mjs`:
 
@@ -411,7 +411,7 @@ export async function loadDates(client) {
 }
 ```
 
-- [ ] **Step 2: Add the `dates` branch to `main()`**
+- [x] **Step 2: Add the `dates` branch to `main()`**
 
 Inside `main()`, alongside the other command branches:
 
@@ -446,7 +446,7 @@ Inside `main()`, alongside the other command branches:
   }
 ```
 
-- [ ] **Step 3: Verify against the local database**
+- [x] **Step 3: Verify against the local database**
 
 ```bash
 npm run db:up
@@ -463,7 +463,7 @@ season`**, which is correct: AFI names ten films and declares no winners.
 If any instant renders at an odd time — `3:00 AM`, say — the conversion or the
 sum is wrong; stop and report it rather than continuing.
 
-- [ ] **Step 4: Lint and commit**
+- [x] **Step 4: Lint and commit**
 
 ```bash
 npm run lint

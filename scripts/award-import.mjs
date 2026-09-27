@@ -726,9 +726,64 @@ export function formatEt(instantMs) {
   }).format(new Date(instantMs));
 }
 
+/**
+ * Every show's schedule, and whether each half is already current.
+ *
+ * 🔴 Nominations and ceremony are judged separately. A show routinely
+ * announces its nominations date months before its ceremony date, so treating
+ * the show as one unit would either re-research what is already known or skip
+ * what is still missing.
+ */
+export async function loadDates(client) {
+  const active = await client.query(
+    'SELECT year FROM available_years WHERE is_active = true LIMIT 1',
+  );
+  const newest = await client.query(
+    'SELECT year FROM available_years ORDER BY year DESC LIMIT 1',
+  );
+  const activeYear = active.rows[0]?.year ?? newest.rows[0]?.year;
+  if (activeYear == null) throw new Error('no seasons exist in available_years');
+
+  const rows = await client.query(
+    `SELECT id, abbreviation, name, nom_date, nom_time, awards_date, awards_time
+       FROM events
+      ORDER BY abbreviation`,
+  );
+
+  const shows = rows.rows.map((row) => {
+    const nomDate = row.nom_date == null ? null : Number(row.nom_date);
+    const nomTime = row.nom_time == null ? null : Number(row.nom_time);
+    const awardsDate = row.awards_date == null ? null : Number(row.awards_date);
+    const awardsTime = row.awards_time == null ? null : Number(row.awards_time);
+
+    const nomInstant = nomDate == null ? null : nomDate + (nomTime ?? 0);
+    const awardsInstant = awardsDate == null ? null : awardsDate + (awardsTime ?? 0);
+
+    return {
+      id: row.id,
+      abbreviation: row.abbreviation,
+      name: row.name,
+      nomDate,
+      nomTime,
+      awardsDate,
+      awardsTime,
+      nomInstant,
+      awardsInstant,
+      nomCurrent: isInSeason(nomInstant, activeYear),
+      awardsCurrent: isInSeason(awardsInstant, activeYear),
+      // What to reuse when a source gives a date but no time. These are stable
+      // per show — SAG announces at 10:00 ET, WGA at 11:00, most at 8:00.
+      nomTimeOfDay: nomTime,
+      awardsTimeOfDay: awardsTime,
+    };
+  });
+
+  return { activeYear, shows };
+}
+
 import { pathToFileURL } from 'node:url';
 
-const COMMANDS = ['context', 'apply', 'finish', 'refresh'];
+const COMMANDS = ['context', 'apply', 'finish', 'refresh', 'dates'];
 
 async function main(argv) {
   const [command, ...rest] = argv;
@@ -850,6 +905,35 @@ async function main(argv) {
       process.exitCode = 1;
     } else {
       console.log('every title checked is visible on the live page');
+    }
+  }
+
+  if (command === 'dates') {
+    const client = await connect();
+    try {
+      const { activeYear, shows } = await loadDates(client);
+      console.log(`active season: ${activeYear}\n`);
+      for (const show of shows) {
+        const needs = [];
+        if (!show.nomCurrent) needs.push('nominations');
+        if (!show.awardsCurrent) needs.push('ceremony');
+        console.log(
+          `${show.abbreviation.padEnd(7)} ${needs.length === 0 ? 'skip  ' : 'RESEARCH'} ${show.name}`,
+        );
+        console.log(
+          `        nominations ${formatEt(show.nomInstant).padEnd(28)} ${show.nomCurrent ? 'current' : 'not this season'}`,
+        );
+        console.log(
+          `        ceremony    ${formatEt(show.awardsInstant).padEnd(28)} ${show.awardsCurrent ? 'current' : 'not this season'}`,
+        );
+      }
+      const outstanding = shows.filter((show) => !show.nomCurrent || !show.awardsCurrent);
+      console.log(
+        `\n${outstanding.length} of ${shows.length} shows need research: ` +
+          outstanding.map((show) => show.abbreviation).join(', '),
+      );
+    } finally {
+      await client.end();
     }
   }
 }
