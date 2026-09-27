@@ -80,6 +80,20 @@ describe('SearchOverlay', () => {
     expect(screen.getByRole('dialog', { hidden: true })).not.toHaveAttribute('open');
   });
 
+  it('closes from its close button, without the reader knowing Escape', async () => {
+    // jsdom has no focus restoration (vitest.setup.ts polyfills `close()` and
+    // nothing more), so whether focus goes back to the trigger is asserted in
+    // e2e/nav.spec.ts. What this proves is the part that is the panel's own:
+    // the button exists under its name and calls the dialog's `close()`.
+    const user = userEvent.setup();
+    render(<SearchOverlay id={SEARCH_ID} open />);
+    const panel = screen.getByRole('dialog', { name: 'Search films' });
+
+    await user.click(screen.getByRole('button', { name: 'Close search' }));
+
+    expect(panel).not.toHaveAttribute('open');
+  });
+
   it('shows the top nine, not everything the search returned', async () => {
     // Twenty rows hung the panel off the bottom of a 900px screen. Ranking
     // already put the answer first; the rest is noise the reader scrolls past.
@@ -102,7 +116,8 @@ describe('SearchOverlay', () => {
     await waitFor(() => expect(screen.getByText('Result 9')).toBeInTheDocument());
 
     expect(screen.queryByText('Result 10')).toBeNull();
-    expect(screen.getAllByRole('button')).toHaveLength(9);
+    // Named, not every button: the panel's own close button is a button too.
+    expect(screen.getAllByRole('button', { name: /Result \d+/ })).toHaveLength(9);
   });
 
   it('offers no link for a film TMDB does not know', async () => {

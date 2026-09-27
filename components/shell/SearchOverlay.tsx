@@ -46,6 +46,14 @@ const TOP_RESULTS = 9;
  *
  * There is no result count and no submit button. Enter already selects, and a
  * button that repeats it is a second way to be wrong.
+ *
+ * 🔴 **It has a close button, and a backdrop click closes it.** Escape alone
+ * was a key the reader had to already know. Both call the platform's own
+ * close — the button through `close()`, the backdrop through `closedby="any"`
+ * — so focus still returns to whichever control opened the panel. The button
+ * comes *after* `FilmSearch` in the DOM and is only placed top-right by CSS:
+ * `showModal()` focuses the first focusable descendant, and that has to stay
+ * the field.
  */
 export function SearchOverlay({
   id,
@@ -112,6 +120,7 @@ export function SearchOverlay({
       open={open}
       ref={mergeRefs(dialog, ref)}
       onKeyDown={onKeyDown}
+      closedby="any"
       aria-label="Search films"
       // Top-aligned rather than centred *vertically*: the panel reads as a
       // search bar dropping out of the chrome the icon lives in, not as a
@@ -129,7 +138,9 @@ export function SearchOverlay({
       // thing to prevent, not a row count.
       className="bg-bg-panel text-text-primary mx-auto mt-16 mb-auto max-h-[calc(100dvh-5rem)] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-lg p-0 backdrop:bg-black/60 backdrop:backdrop-blur-sm"
     >
-      <div className="flex flex-col gap-4 p-4">
+      {/* `pt-6` makes room for the close button above the field: a 44px
+          target centred on the label would overlap the input's top edge. */}
+      <div className="flex flex-col gap-4 p-4 pt-6">
         <FilmSearch
           autoFocus
           label="Find a film"
@@ -150,6 +161,26 @@ export function SearchOverlay({
           </p>
         ) : null}
       </div>
+
+      <button
+        type="button"
+        onClick={() => dialog.current?.close()}
+        aria-label="Close search"
+        className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill absolute top-2 right-2 flex h-11 w-11 items-center justify-center rounded-sm focus-visible:outline-2"
+      >
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          viewBox="0 0 24 24"
+          className="h-5 w-5 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        >
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      </button>
     </dialog>
   );
 }
