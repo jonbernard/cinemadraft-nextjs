@@ -614,6 +614,8 @@ export async function refresh({
 }
 
 const ET = 'America/New_York';
+const HOUR = 3600000;
+const DAY = 86400000;
 
 /**
  * A zone's offset from UTC at a given instant, in milliseconds, positive east.
@@ -781,9 +783,181 @@ export async function loadDates(client) {
   return { activeYear, shows };
 }
 
+/** Default announcement times, used only when a show has no prior value. */
+const DEFAULT_NOM_TIME = '08:00';
+const DEFAULT_AWARDS_TIME = '20:00';
+
+/** Every problem with a dates plan, as sentences. Empty means it may be applied. */
+export function validateDatesPlan(plan, shows) {
+  const problems = [];
+  const known = new Set(shows.map((show) => show.abbreviation.toLowerCase()));
+
+  if (plan.kind !== 'dates') problems.push('kind must be "dates"');
+  if (!Number.isSafeInteger(plan.year) || plan.year <= 0) {
+    problems.push('year must be a positive integer');
+  }
+  if (!Array.isArray(plan.sources) || plan.sources.length === 0) {
+    problems.push('the plan records no source URL');
+  }
+
+  for (const entry of plan.shows ?? []) {
+    const abbreviation = (entry.abbreviation ?? '').toLowerCase();
+    if (!known.has(abbreviation)) {
+      problems.push(`"${entry.abbreviation}" is not a show`);
+      continue;
+    }
+    if (entry.nominations == null && entry.awards == null) {
+      problems.push(
+        `${entry.abbreviation} names neither a nominations date nor an awards date`,
+      );
+    }
+    for (const field of ['nominations', 'awards']) {
+      const given = entry[field];
+      if (given == null) continue;
+      if (!DATE_PATTERN.test(given.date ?? '')) {
+        problems.push(`${entry.abbreviation} ${field} date must be YYYY-MM-DD`);
+      }
+      if (given.time != null && !TIME_PATTERN.test(given.time)) {
+        problems.push(`${entry.abbreviation} ${field} time must be HH:MM`);
+      }
+    }
+  }
+
+  return problems;
+}
+
+/**
+ * Write each season's schedule.
+ *
+ * 🔴 Everything that can refuse does so before the first UPDATE, so a refusal
+ * never leaves half a season's calendar entered.
+ *
+ * 🔴 A field already current for this season is skipped rather than rewritten,
+ * which is what makes this safe to re-run monthly as shows announce. `recheck`
+ * on an entry overrides that, for a date that has moved.
+ *
+ * 🔴 A column is never nulled. An entry that omits `awards` leaves both
+ * ceremony columns exactly as they were — a show that has not announced keeps
+ * last season's value and is reported, rather than losing it.
+ */
+export async function applyDates(client, plan, state, { commit }) {
+  const problems = validateDatesPlan(plan, state.shows);
+  if (problems.length > 0) {
+    throw new Error(`this plan cannot be applied:\n  - ${problems.join('\n  - ')}`);
+  }
+
+  if (plan.year !== state.activeYear) {
+    throw new Error(
+      `plan year ${plan.year} is not the active season ${state.activeYear} — ` +
+        'fix the plan, or change the active season first',
+    );
+  }
+
+  const byAbbreviation = new Map(
+    state.shows.map((show) => [show.abbreviation.toLowerCase(), show]),
+  );
+  const changes = [];
+  const skipped = [];
+
+  for (const entry of plan.shows) {
+    const show = byAbbreviation.get(entry.abbreviation.toLowerCase());
+
+    for (const field of ['nominations', 'awards']) {
+      const given = entry[field];
+      if (given == null) continue;
+
+      const isNominations = field === 'nominations';
+      const alreadyCurrent = isNominations ? show.nomCurrent : show.awardsCurrent;
+      if (alreadyCurrent && entry.recheck !== true) {
+        skipped.push({
+          abbreviation: show.abbreviation,
+          field,
+          reason: `already set for the ${state.activeYear} season`,
+        });
+        continue;
+      }
+
+      const tz = given.tz ?? ET;
+      const existingTime = isNominations ? show.nomTimeOfDay : show.awardsTimeOfDay;
+      const existingDate = isNominations ? show.nomDate : show.awardsDate;
+      let time = given.time;
+      let timeDefaulted = false;
+      if (time == null && existingTime == null) {
+        time = isNominations ? DEFAULT_NOM_TIME : DEFAULT_AWARDS_TIME;
+        timeDefaulted = true;
+      } else if (time == null) {
+        // 🔴 The stored time is ms past UTC midnight, not a wall clock: 8:00 AM
+        // ET is stored as 13h. Read it back in the zone at the instant it was
+        // stored for, so the reused time is the show's wall-clock time and a
+        // January 8pm reused for a March ceremony is 8pm EDT, not 9pm.
+        const stored =
+          (existingDate ?? Date.parse(`${given.date}T00:00:00Z`)) + existingTime;
+        time = msToHhmm(stored + zoneOffsetMs(stored, tz));
+      }
+
+      const split = toDateTimeSplit({ date: given.date, time, tz });
+      const instant = split.date + split.time;
+
+      if (!isInSeason(instant, state.activeYear)) {
+        throw new Error(
+          `${show.abbreviation} ${field} ${formatEt(instant)} is outside the ` +
+            `${state.activeYear} season — this is usually the wrong year's announcement`,
+        );
+      }
+
+      changes.push({
+        abbreviation: show.abbreviation,
+        id: show.id,
+        field,
+        fromInstant: isNominations ? show.nomInstant : show.awardsInstant,
+        toInstant: instant,
+        date: split.date,
+        time: split.time,
+        timeDefaulted,
+      });
+    }
+  }
+
+  if (!commit) return { changes, skipped };
+
+  await client.query('BEGIN');
+  try {
+    for (const change of changes) {
+      const columns =
+        change.field === 'nominations'
+          ? 'nom_date = $1, nom_time = $2'
+          : 'awards_date = $1, awards_time = $2';
+      await client.query(
+        `UPDATE events SET ${columns}, updated_at = now() WHERE id = $3`,
+        [change.date, change.time, change.id],
+      );
+    }
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  }
+
+  return { changes, skipped };
+}
+
+/**
+ * A stored time-of-day back into `HH:MM`, so a reused time round-trips through
+ * the same conversion a fresh one does.
+ *
+ * Takes the remainder past a whole day first: an evening ceremony's stored
+ * time exceeds 24 hours, and `25:00` is not a wall clock.
+ */
+export function msToHhmm(ms) {
+  const withinDay = ((ms % DAY) + DAY) % DAY;
+  const hours = Math.floor(withinDay / HOUR);
+  const minutes = Math.floor((withinDay % HOUR) / 60000);
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
 import { pathToFileURL } from 'node:url';
 
-const COMMANDS = ['context', 'apply', 'finish', 'refresh', 'dates'];
+const COMMANDS = ['context', 'apply', 'finish', 'refresh', 'dates', 'set-dates'];
 
 async function main(argv) {
   const [command, ...rest] = argv;
@@ -932,6 +1106,62 @@ async function main(argv) {
         `\n${outstanding.length} of ${shows.length} shows need research: ` +
           outstanding.map((show) => show.abbreviation).join(', '),
       );
+    } finally {
+      await client.end();
+    }
+  }
+
+  if (command === 'set-dates') {
+    const planPath = rest.find((arg) => !arg.startsWith('--'));
+    const commit = rest.includes('--commit');
+    const { readFileSync } = await import('node:fs');
+    const plan = JSON.parse(readFileSync(planPath, 'utf8'));
+
+    const client = await connect();
+    try {
+      const state = await loadDates(client);
+      const report = await applyDates(client, plan, state, { commit });
+
+      console.log(commit ? 'WROTE:' : 'DRY RUN — nothing written:');
+      for (const change of report.changes) {
+        console.log(
+          `  ${change.abbreviation.padEnd(7)} ${change.field.padEnd(12)} ` +
+            `${formatEt(change.fromInstant)}  →  ${formatEt(change.toInstant)}` +
+            (change.timeDefaulted ? '  (no prior time — default used)' : ''),
+        );
+      }
+      for (const skip of report.skipped) {
+        console.log(`  = ${skip.abbreviation} ${skip.field} (${skip.reason})`);
+      }
+      console.log(
+        `${report.changes.length} to change, ${report.skipped.length} skipped` +
+          (commit ? '' : ' — re-run with --commit to write'),
+      );
+
+      if (commit && report.changes.length > 0) {
+        const secret = process.env.REVALIDATE_SECRET ?? null;
+        if (!secret) {
+          console.error(
+            'REVALIDATE_SECRET is not set — the dates are written but no cache was cleared',
+          );
+          process.exitCode = 1;
+        } else {
+          const baseUrl = process.env.SITE_URL ?? 'https://cinemadraft.com';
+          for (const abbreviation of new Set(
+            report.changes.map((change) => change.abbreviation.toLowerCase()),
+          )) {
+            const posted = await fetch(`${baseUrl}/api/revalidate`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ secret, abbreviation }),
+            });
+            console.log(
+              `  revalidate ${abbreviation}: ${posted.ok ? 'ok' : `FAILED ${posted.status}`}`,
+            );
+            if (!posted.ok) process.exitCode = 1;
+          }
+        }
+      }
     } finally {
       await client.end();
     }

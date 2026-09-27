@@ -488,7 +488,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   - `applyDates(client, plan, state, {commit}): Promise<{changes: Change[], skipped: {abbreviation, field, reason}[]}>` where `Change` is `{abbreviation, field, fromInstant, toInstant, date, time}`
   - CLI: `node scripts/award-import.mjs set-dates <plan.json> [--commit]`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `scripts/award-import.test.mjs`:
 
@@ -660,12 +660,12 @@ describe('applyDates', () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `npx vitest run scripts/award-import.test.mjs`
 Expected: FAIL — `validateDatesPlan is not a function`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `scripts/award-import.mjs`:
 
@@ -823,7 +823,7 @@ export function msToHhmm(ms) {
 }
 ```
 
-- [ ] **Step 4: Wire `set-dates` into `main()`**
+- [x] **Step 4: Wire `set-dates` into `main()`**
 
 ```javascript
   if (command === 'set-dates') {
@@ -882,12 +882,12 @@ export function msToHhmm(ms) {
   }
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `npx vitest run scripts/award-import.test.mjs`
 Expected: PASS, the whole file.
 
-- [ ] **Step 6: Mutation-check the two guards that matter**
+- [x] **Step 6: Mutation-check the two guards that matter**
 
 For each, break it, re-run, confirm RED, restore, confirm GREEN — and quote the failure line:
 
@@ -896,7 +896,7 @@ For each, break it, re-run, confirm RED, restore, confirm GREEN — and quote th
 
 If either stays green, the test does not pin the behaviour: say so and add the case that does.
 
-- [ ] **Step 7: Dry run against the local database**
+- [x] **Step 7: Dry run against the local database**
 
 ```bash
 DATABASE_URL='postgresql://cinemadraft:local@localhost:5433/cinemadraft' \
@@ -915,7 +915,7 @@ Expected: a `current → proposed` table with both sides rendered in ET, and
 `SELECT nom_date, awards_date FROM events WHERE abbreviation = '<abbr>'`
 unchanged. Record both readings.
 
-- [ ] **Step 8: Lint and commit**
+- [x] **Step 8: Lint and commit**
 
 ```bash
 npm run lint
