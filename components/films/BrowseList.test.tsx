@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -373,5 +373,147 @@ describe('BrowseList', () => {
     // the infinite-scroll Back trap D80 was right to avoid.
     expect(push).not.toHaveBeenCalled();
     push.mockRestore();
+  });
+  it('switching sides starts the list over, from page 1', async () => {
+    // Past loads two more pages, the second empty, which ends the list. The
+    // future side must then show only its own films, page again from 2, and
+    // not inherit the "ended" flag that would stop it before it starts.
+    loadBrowsePage
+      .mockResolvedValueOnce({
+        ok: true,
+        data: {
+          when: 'past',
+          page: 2,
+          pageCount: 9,
+          months: [monthOf('09/2026', 'Second')],
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        data: { when: 'past', page: 3, pageCount: 9, months: [] },
+      });
+    const { rerender } = render(
+      <BrowseList
+        when="past"
+        initial={{
+          when: 'past',
+          page: 1,
+          pageCount: 9,
+          months: [monthOf('10/2026', 'First')],
+          hero: null,
+        }}
+        isSignedIn={false}
+      />,
+    );
+
+    intersect();
+    await waitFor(() => expect(screen.getByText('Second')).toBeInTheDocument());
+    intersect();
+    await waitFor(() => expect(screen.queryByTestId('browse-sentinel')).toBeNull());
+    expect(loadBrowsePage).toHaveBeenLastCalledWith({ when: 'past', page: 3 });
+
+    // The navigation: same component, same place in the tree, new props.
+    rerender(
+      <BrowseList
+        when="future"
+        initial={{
+          when: 'future',
+          page: 1,
+          pageCount: 3,
+          months: [monthOf('12/2026', 'Soon')],
+          hero: null,
+        }}
+        isSignedIn={false}
+      />,
+    );
+
+    expect(screen.getByText('Soon')).toBeInTheDocument();
+    expect(screen.queryByText('First')).toBeNull();
+    expect(screen.queryByText('Second')).toBeNull();
+    expect(screen.getByTestId('browse-sentinel')).toBeInTheDocument();
+
+    loadBrowsePage.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        when: 'future',
+        page: 2,
+        pageCount: 3,
+        months: [monthOf('01/2027', 'Announced')],
+      },
+    });
+    intersect();
+    await waitFor(() => expect(screen.getByText('Announced')).toBeInTheDocument());
+    expect(loadBrowsePage).toHaveBeenLastCalledWith({ when: 'future', page: 2 });
+  });
+
+  it('drops a page from the old side that lands after the switch', async () => {
+    let resolveStale: (value: unknown) => void = () => {};
+    loadBrowsePage.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveStale = resolve;
+      }),
+    );
+    const { rerender } = render(
+      <BrowseList
+        when="past"
+        initial={{
+          when: 'past',
+          page: 1,
+          pageCount: 9,
+          months: [monthOf('10/2026', 'First')],
+          hero: null,
+        }}
+        isSignedIn={false}
+      />,
+    );
+
+    intersect();
+    expect(loadBrowsePage).toHaveBeenCalledWith({ when: 'past', page: 2 });
+
+    // The reader switches while page 2 of the past is still in flight.
+    window.history.replaceState(null, '', '/browse?when=future');
+    rerender(
+      <BrowseList
+        when="future"
+        initial={{
+          when: 'future',
+          page: 1,
+          pageCount: 3,
+          months: [monthOf('12/2026', 'Soon')],
+          hero: null,
+        }}
+        isSignedIn={false}
+      />,
+    );
+
+    await act(async () => {
+      resolveStale({
+        ok: true,
+        data: {
+          when: 'past',
+          page: 2,
+          pageCount: 9,
+          months: [monthOf('09/2026', 'Stale')],
+        },
+      });
+    });
+
+    expect(screen.queryByText('Stale')).toBeNull();
+    // 🔴 The URL is the half that outlives the component: a late write here
+    // would put the reader back on the past side at the next reload.
+    expect(window.location.search).toBe('?when=future');
+
+    loadBrowsePage.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        when: 'future',
+        page: 2,
+        pageCount: 3,
+        months: [monthOf('01/2027', 'Announced')],
+      },
+    });
+    intersect();
+    await waitFor(() => expect(screen.getByText('Announced')).toBeInTheDocument());
+    expect(loadBrowsePage).toHaveBeenLastCalledWith({ when: 'future', page: 2 });
   });
 });
