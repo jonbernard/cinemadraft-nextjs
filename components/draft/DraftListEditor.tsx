@@ -214,7 +214,14 @@ function EntryRow({
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2">
       <div
         {...row.handleProps}
-        className="focus-visible:outline-accent-fill flex min-h-11 min-w-0 flex-1 items-center gap-3 px-2 focus-visible:outline-2"
+        // 🔴 A row with a select takes a whole line to itself below `sm`: at
+        // 390px the select beside the title left it ~90px, and "Arrival"
+        // clipped under it. The select and Remove wrap to the line below. A
+        // row the drafts have marked has no select, so it stays on one line.
+        className={cn(
+          'focus-visible:outline-accent-fill flex min-h-11 min-w-0 grow items-center gap-3 px-2 focus-visible:outline-2',
+          entry.drafted ? 'basis-0' : 'basis-full sm:basis-0',
+        )}
       >
         {/* The position in the list, not the stored one: while a drag is in
             flight the two differ. */}
@@ -245,32 +252,37 @@ function EntryRow({
             </span>
           )}
         </span>
-        <span className="min-w-0 flex-1 text-sm">
-          <span
-            className={cn(
-              'font-serif',
-              faded ? 'text-text-secondary' : 'text-text-primary',
-            )}
-          >
-            {entry.title}
-          </span>
-          {entry.releaseYear ? (
-            <span className="text-text-dim tabular font-mono text-xs">
-              {' '}
-              {entry.releaseYear}
+        {/* The chip sits under the title rather than beside it: beside it, at
+            390px, a one-word title ran underneath "Taken · Rhoda Vance". */}
+        <span className="flex min-w-0 flex-1 flex-col items-start gap-1 text-sm">
+          <span>
+            <span
+              className={cn(
+                'font-serif',
+                faded ? 'text-text-secondary' : 'text-text-primary',
+              )}
+            >
+              {entry.title}
             </span>
-          ) : null}
+            {entry.releaseYear ? (
+              <span className="text-text-dim tabular font-mono text-xs">
+                {' '}
+                {entry.releaseYear}
+              </span>
+            ) : null}
+          </span>
+          {/* Carmine marks *this one* — the film this member took. Gone to
+              somebody else is information rather than urgency, so it is
+              neutral. */}
+          {chip ? <StatusChip tone={chip.tone}>{chip.label}</StatusChip> : null}
         </span>
-        {/* Carmine marks *this one* — the film this member took. Gone to
-            somebody else is information rather than urgency, so it is neutral. */}
-        {chip ? <StatusChip tone={chip.tone}>{chip.label}</StatusChip> : null}
       </div>
 
       {/* The manual mark is for drafts the app never saw. Once the board has
           the pick, a select that could contradict it is only a way to be
           wrong, so it goes. */}
       {entry.drafted ? null : (
-        <label className="flex items-center">
+        <label className="ml-auto flex items-center">
           <span className="sr-only">Mark {entry.title}</span>
           <select
             value={entry.status}

@@ -310,6 +310,16 @@ test.describe('journey 5 — the member’s own lists', () => {
         await expect(
           page.getByRole('button', { name: `Remove ${FILMS[1]} from your list` }),
         ).toBeVisible();
+        // 🔴 At 390px the title is never under the select: a row with a select
+        // puts it on the line below. Measured on the one row that has both a
+        // select and a title long enough to have clipped ("Zephy…").
+        await page.setViewportSize({ width: 390, height: 900 });
+        const open = rows.filter({ hasText: FILMS[0] as string });
+        const title = await open.locator('span.font-serif').boundingBox();
+        const select = await open.getByRole('combobox').boundingBox();
+        if (!title || !select) throw new Error('the open row has no title or select box');
+        expect(select.y).toBeGreaterThanOrEqual(title.y + title.height);
+        await page.setViewportSize({ width: 1280, height: 720 });
         // The drafted film and the one marked by hand both count as gone.
         await expect(page.getByText(/still on the board/)).toHaveText(
           /^2 of 4 still on the board\.$/,
