@@ -853,12 +853,13 @@ test.describe('the league page', () => {
     expect(league.y).toBeLessThan(900);
 
     // Name, standing, points, roster, standings and a next action. One of
-    // one: the scratch league's second seat is a placeholder, and standings
-    // count people.
+    // TWO: the scratch league's second seat is a placeholder, and standings
+    // rank every seat, placeholders included (`rankSeats`, D126) — the league
+    // page always did, and the dashboard's "1 of 1" was it disagreeing.
     const section = (name: string) =>
       page.locator('section').filter({ has: heading(`${LEAGUE_TAG}-${name}`) });
     const mine = section('home-drafted');
-    await expect(mine.getByText('Position 1 of 1', { exact: true })).toBeVisible();
+    await expect(mine.getByText('Position 1 of 2', { exact: true })).toBeVisible();
     await expect(mine.getByText('Your points')).toBeVisible();
     await expect(
       mine.getByRole('list', { name: 'Drafted films, in draft order' }),
