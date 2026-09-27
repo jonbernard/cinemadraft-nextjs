@@ -713,3 +713,398 @@ describe('refresh', () => {
     ).rejects.toThrow(/REVALIDATE_SECRET/);
   });
 });
+
+import {
+  formatEt,
+  isInSeason,
+  seasonWindow,
+  toDateTimeSplit,
+  toInstant,
+  zoneOffsetMs,
+} from './award-import.mjs';
+
+const ET = 'America/New_York';
+
+describe('zoneOffsetMs', () => {
+  it('is -5h for New York in January', () => {
+    expect(zoneOffsetMs(Date.parse('2026-01-15T12:00:00Z'), ET)).toBe(-5 * 3600000);
+  });
+
+  // 🔴 US daylight saving begins 8 March 2026. The Oscars are the 15th, so a
+  // ceremony converted at -5 would be recorded an hour late.
+  it('is -4h for New York in late March', () => {
+    expect(zoneOffsetMs(Date.parse('2026-03-20T12:00:00Z'), ET)).toBe(-4 * 3600000);
+  });
+});
+
+describe('toInstant', () => {
+  it('converts a winter morning announcement', () => {
+    expect(toInstant({ date: '2026-01-22', time: '08:00', tz: ET })).toBe(
+      Date.parse('2026-01-22T13:00:00Z'),
+    );
+  });
+
+  // The real Oscars ceremony, inside daylight saving.
+  it('converts a spring evening ceremony', () => {
+    expect(toInstant({ date: '2026-03-15', time: '21:30', tz: ET })).toBe(
+      Date.parse('2026-03-16T01:30:00Z'),
+    );
+  });
+
+  // 🔴 What the second pass is for. Daylight saving begins at 07:00Z on 8 March
+  // 2026; 05:00 EDT that morning is 09:00Z, but the naive reading (05:00Z) still
+  // sits on the EST side, so a single pass lands an hour late at 10:00Z. The
+  // Oscars case above cannot catch this — both of its readings are past the
+  // transition — which is why a single-pass mutation left the suite green.
+  it('converts a time just after the daylight-saving transition', () => {
+    expect(toInstant({ date: '2026-03-08', time: '05:00', tz: ET })).toBe(
+      Date.parse('2026-03-08T09:00:00Z'),
+    );
+  });
+});
+
+describe('toDateTimeSplit', () => {
+  // Matches the restored oscars row exactly: 1769040000000 + 46800000.
+  it('splits a morning announcement into UTC midnight plus the offset', () => {
+    expect(toDateTimeSplit({ date: '2026-01-22', time: '08:00', tz: ET })).toEqual({
+      date: Date.parse('2026-01-22T00:00:00Z'),
+      time: 13 * 3600000,
+    });
+  });
+
+  // 🔴 The >24h case, and the reason the split exists: an 8pm ET ceremony is
+  // 01:00Z the NEXT day, but it belongs on the 11th's calendar row. Matches the
+  // restored gg row: 1768089600000 + 90000000.
+  it('keeps an evening ceremony on its own calendar day, past 24 hours', () => {
+    expect(toDateTimeSplit({ date: '2026-01-11', time: '20:00', tz: ET })).toEqual({
+      date: Date.parse('2026-01-11T00:00:00Z'),
+      time: 25 * 3600000,
+    });
+  });
+
+  // Matches the restored oscars awards row: 1773532800000 + 91800000.
+  it('handles a half-hour ceremony inside daylight saving', () => {
+    expect(toDateTimeSplit({ date: '2026-03-15', time: '21:30', tz: ET })).toEqual({
+      date: Date.parse('2026-03-15T00:00:00Z'),
+      time: 25.5 * 3600000,
+    });
+  });
+
+  it('rejects a malformed date rather than writing NaN', () => {
+    expect(() =>
+      toDateTimeSplit({ date: 'January 22nd', time: '08:00', tz: ET }),
+    ).toThrow(/date/);
+  });
+
+  it('rejects a malformed time rather than writing NaN', () => {
+    expect(() => toDateTimeSplit({ date: '2026-01-22', time: '8am', tz: ET })).toThrow(
+      /time/,
+    );
+  });
+});
+
+// 🔴 Every one of the twelve restored rows, round-tripped. If the conversion
+// drifts, these are what notice — they are real production values, not
+// invented ones.
+describe('the restored rows round-trip', () => {
+  const ROWS = [
+    ['afi noms', 1764806400000, 46800000, '2025-12-04', '08:00'],
+    ['gg noms', 1765152000000, 46800000, '2025-12-08', '08:00'],
+    ['gg show', 1768089600000, 90000000, '2026-01-11', '20:00'],
+    ['oscars noms', 1769040000000, 46800000, '2026-01-22', '08:00'],
+    ['oscars show', 1773532800000, 91800000, '2026-03-15', '21:30'],
+    ['sag noms', 1767744000000, 54000000, '2026-01-07', '10:00'],
+    ['sag show', 1772323200000, 90000000, '2026-03-01', '20:00'],
+    ['wga noms', 1769472000000, 57600000, '2026-01-27', '11:00'],
+    ['bafta show', 1771718400000, 90000000, '2026-02-22', '20:00'],
+    ['dga show', 1770422400000, 90000000, '2026-02-07', '20:00'],
+  ];
+
+  for (const [label, date, time, localDate, localTime] of ROWS) {
+    it(`${label} converts to the stored split`, () => {
+      expect(toDateTimeSplit({ date: localDate, time: localTime, tz: ET })).toEqual({
+        date,
+        time,
+      });
+    });
+  }
+});
+
+describe('seasonWindow / isInSeason', () => {
+  it('runs 1 August of the prior year to 31 July', () => {
+    const window = seasonWindow(2026);
+    expect(new Date(window.start).toISOString()).toBe('2025-08-01T00:00:00.000Z');
+    expect(new Date(window.end).toISOString()).toBe('2026-07-31T23:59:59.999Z');
+  });
+
+  it('accepts the real dates of the 2026 season', () => {
+    expect(isInSeason(1764806400000, 2026)).toBe(true); // AFI noms, Dec 2025
+    expect(isInSeason(1773532800000, 2026)).toBe(true); // Oscars, Mar 2026
+  });
+
+  it('rejects the season either side', () => {
+    expect(isInSeason(Date.parse('2025-07-31T00:00:00Z'), 2026)).toBe(false);
+    expect(isInSeason(Date.parse('2026-08-01T00:00:00Z'), 2026)).toBe(false);
+  });
+
+  // A show that has never had a date must read as "not current", not crash.
+  it('treats a null instant as not in season', () => {
+    expect(isInSeason(null, 2026)).toBe(false);
+  });
+});
+
+describe('formatEt', () => {
+  it('renders an instant as a readable ET moment', () => {
+    expect(formatEt(1773532800000 + 91800000)).toMatch(/Mar 15, 2026.*9:30/);
+  });
+
+  it('renders a null as an em dash rather than "Invalid Date"', () => {
+    expect(formatEt(null)).toBe('—');
+  });
+});
+
+import { applyDates, validateDatesPlan } from './award-import.mjs';
+
+const SHOWS = [
+  {
+    id: 7,
+    abbreviation: 'dga',
+    name: 'Directors Guild of America',
+    nomDate: null,
+    nomTime: 46800000,
+    awardsDate: null,
+    awardsTime: 90000000,
+    nomInstant: null,
+    awardsInstant: null,
+    nomCurrent: false,
+    awardsCurrent: false,
+    nomTimeOfDay: 46800000,
+    awardsTimeOfDay: 90000000,
+  },
+];
+
+const STATE = { activeYear: 2026, shows: SHOWS };
+
+const PLAN = {
+  kind: 'dates',
+  year: 2026,
+  sources: ['https://dga.org/awards'],
+  shows: [
+    {
+      abbreviation: 'dga',
+      nominations: { date: '2026-01-08', time: '08:00', tz: 'America/New_York' },
+      awards: { date: '2026-02-07', time: '20:00', tz: 'America/New_York' },
+    },
+  ],
+};
+
+describe('validateDatesPlan', () => {
+  it('accepts a well-formed plan', () => {
+    expect(validateDatesPlan(PLAN, SHOWS)).toEqual([]);
+  });
+
+  it('rejects an abbreviation that is not a real show', () => {
+    const bad = { ...PLAN, shows: [{ ...PLAN.shows[0], abbreviation: 'nope' }] };
+    expect(validateDatesPlan(bad, SHOWS)).toContain('"nope" is not a show');
+  });
+
+  it('rejects a plan with no sources recorded', () => {
+    expect(validateDatesPlan({ ...PLAN, sources: [] }, SHOWS)).toContain(
+      'the plan records no source URL',
+    );
+  });
+
+  it('rejects the wrong kind', () => {
+    expect(validateDatesPlan({ ...PLAN, kind: 'nominations' }, SHOWS)).toContain(
+      'kind must be "dates"',
+    );
+  });
+
+  it('rejects a show entry with neither nominations nor awards', () => {
+    const bad = { ...PLAN, shows: [{ abbreviation: 'dga' }] };
+    expect(validateDatesPlan(bad, SHOWS)).toContain(
+      'dga names neither a nominations date nor an awards date',
+    );
+  });
+});
+
+describe('applyDates', () => {
+  function fakeDbClient() {
+    const ran = [];
+    return {
+      ran,
+      async query(text, params) {
+        ran.push({ text, params });
+        return { rows: [] };
+      },
+    };
+  }
+
+  it('writes nothing without --commit', async () => {
+    const client = fakeDbClient();
+    const report = await applyDates(client, PLAN, STATE, { commit: false });
+    expect(report.changes).toHaveLength(2);
+    expect(client.ran.some((call) => /UPDATE events/.test(call.text))).toBe(false);
+  });
+
+  // 🔴 Refuse before the first write, not after it. Writing and then failing to
+  // revalidate leaves production written but serving the old schedule.
+  it('refuses --commit without REVALIDATE_SECRET and writes nothing', async () => {
+    const client = fakeDbClient();
+    await expect(
+      applyDates(client, PLAN, STATE, { commit: true, secret: null }),
+    ).rejects.toThrow(/REVALIDATE_SECRET/);
+    expect(client.ran).toHaveLength(0);
+  });
+
+  it('writes the split, not the instant', async () => {
+    const client = fakeDbClient();
+    await applyDates(client, PLAN, STATE, { commit: true, secret: 'test-secret' });
+    const update = client.ran.find((call) => /nom_date/.test(call.text));
+    // 8am ET on 8 January → UTC midnight of the 8th, plus 13 hours.
+    expect(update.params).toContain(Date.parse('2026-01-08T00:00:00Z'));
+    expect(update.params).toContain(13 * 3600000);
+  });
+
+  // 🔴 The same failure the nominations year check exists for: a plausible,
+  // complete, entirely wrong season.
+  it('refuses a date outside the season window and writes nothing', async () => {
+    const client = fakeDbClient();
+    const bad = {
+      ...PLAN,
+      shows: [
+        {
+          abbreviation: 'dga',
+          nominations: { date: '2027-01-08', time: '08:00', tz: 'America/New_York' },
+        },
+      ],
+    };
+    await expect(
+      applyDates(client, bad, STATE, { commit: true, secret: 'test-secret' }),
+    ).rejects.toThrow(/outside the 2026 season/);
+    expect(client.ran.some((call) => /UPDATE events/.test(call.text))).toBe(false);
+  });
+
+  it('refuses a plan year that is not the active season', async () => {
+    const client = fakeDbClient();
+    await expect(
+      applyDates(client, { ...PLAN, year: 2025 }, STATE, {
+        commit: true,
+        secret: 'test-secret',
+      }),
+    ).rejects.toThrow(/not the active season/);
+    expect(client.ran).toHaveLength(0);
+  });
+
+  // The owner's rule: a re-run only researches and writes what is new.
+  it('skips a field that is already current for this season', async () => {
+    const client = fakeDbClient();
+    const current = {
+      activeYear: 2026,
+      shows: [
+        { ...SHOWS[0], nomCurrent: true, nomInstant: Date.parse('2026-01-08T13:00:00Z') },
+      ],
+    };
+    const report = await applyDates(client, PLAN, current, {
+      commit: true,
+      secret: 'test-secret',
+    });
+    expect(report.changes.map((change) => change.field)).toEqual(['awards']);
+    expect(report.skipped[0]).toMatchObject({
+      abbreviation: 'dga',
+      field: 'nominations',
+    });
+  });
+
+  it('writes a skipped field anyway when the entry sets recheck', async () => {
+    const client = fakeDbClient();
+    const current = {
+      activeYear: 2026,
+      shows: [
+        { ...SHOWS[0], nomCurrent: true, nomInstant: Date.parse('2026-01-08T13:00:00Z') },
+      ],
+    };
+    const plan = { ...PLAN, shows: [{ ...PLAN.shows[0], recheck: true }] };
+    const report = await applyDates(client, plan, current, {
+      commit: true,
+      secret: 'test-secret',
+    });
+    expect(report.changes.map((change) => change.field)).toEqual([
+      'nominations',
+      'awards',
+    ]);
+  });
+
+  // 🔴 A show that announced nothing must keep what it has — never nulled.
+  it('leaves the ceremony columns untouched when the entry omits awards', async () => {
+    const client = fakeDbClient();
+    const plan = {
+      ...PLAN,
+      shows: [
+        {
+          abbreviation: 'dga',
+          nominations: { date: '2026-01-08', time: '08:00', tz: 'America/New_York' },
+        },
+      ],
+    };
+    await applyDates(client, plan, STATE, { commit: true, secret: 'test-secret' });
+    expect(client.ran.some((call) => /awards_date/.test(call.text))).toBe(false);
+  });
+
+  // A source giving only a date is the common case.
+  it('reuses the show existing time when the entry omits one', async () => {
+    const client = fakeDbClient();
+    const plan = {
+      ...PLAN,
+      shows: [{ abbreviation: 'dga', nominations: { date: '2026-01-08' } }],
+    };
+    await applyDates(client, plan, STATE, { commit: true, secret: 'test-secret' });
+    const update = client.ran.find((call) => /nom_date/.test(call.text));
+    expect(update.params).toContain(46800000);
+  });
+
+  // 🔴 Reuse means the wall-clock time, not the stored milliseconds. A ceremony
+  // last held at 8pm EST (stored 25h) and reused for a date inside daylight
+  // saving must land at 8pm EDT — 24h — not keep 25h and drift to 9pm.
+  it('reuses the existing wall-clock time across a daylight-saving change', async () => {
+    const client = fakeDbClient();
+    const state = {
+      activeYear: 2026,
+      shows: [{ ...SHOWS[0], awardsDate: Date.parse('2025-01-11T00:00:00Z') }],
+    };
+    const plan = {
+      ...PLAN,
+      shows: [{ abbreviation: 'dga', awards: { date: '2026-03-15' } }],
+    };
+    const report = await applyDates(client, plan, state, { commit: false });
+    expect(report.changes[0]).toMatchObject({
+      date: Date.parse('2026-03-15T00:00:00Z'),
+      time: 24 * 3600000,
+      timeDefaulted: false,
+    });
+  });
+
+  it('falls back to the default time, and says so, when the show has none', async () => {
+    const client = fakeDbClient();
+    const state = {
+      activeYear: 2026,
+      shows: [{ ...SHOWS[0], nomTime: null, nomTimeOfDay: null }],
+    };
+    const plan = {
+      ...PLAN,
+      shows: [{ abbreviation: 'dga', nominations: { date: '2026-01-08' } }],
+    };
+    const report = await applyDates(client, plan, state, { commit: false });
+    expect(report.changes[0]).toMatchObject({ time: 13 * 3600000, timeDefaulted: true });
+  });
+
+  it('refuses a malformed date before computing anything', async () => {
+    const bad = {
+      ...PLAN,
+      shows: [{ abbreviation: 'dga', nominations: { date: 'Jan 8' } }],
+    };
+    expect(validateDatesPlan(bad, SHOWS)).toContain(
+      'dga nominations date must be YYYY-MM-DD',
+    );
+  });
+});

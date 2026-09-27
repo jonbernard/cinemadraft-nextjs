@@ -597,10 +597,6 @@ arithmetic**, so volume is nearly free and an N+1 is the only real danger.
 and asserts a _constant_ bound — cost must not grow with league size. **Any new
 surface that shows a score adds a case there.**
 
-Plan: _not yet written_ — 7 tasks, see `docs/PLAN.md`
-
-- [ ] P9 not started
-
 ---
 
 ## Phase 10 — Remaining features to parity
@@ -2213,7 +2209,22 @@ Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
   does not support `LISTEN`/`NOTIFY`, which is why the live stream polls rather
   than subscribing.
 
-- [ ] **P12.T2** The capability sweep — `PARITY.md` is at **0 deficient**, so this starts from zero known gaps for the first time
+- [x] **P12.T2a** The capability sweep, automated half — `5b57fa9`.
+  `scripts/sweep-deployed.mjs`: every **public** route, signed out, GET only,
+  against the deployed origin — expected status, the page's own `<h1>`, no
+  error-boundary text, and TTFB. The route list is `discoverRoutes()` ∩
+  `PUBLIC_ROUTES` from `test/route-protection.ts`, not a typed list, and a new
+  dynamic route with no example URL throws rather than being skipped. Shown red
+  before being believed: a dead origin reports 23/23 RED and exits 1. Its one
+  real red was `/leagues/new` answering **500** to a stranger — fixed under T5
+- [ ] **P12.T2b** 🔴 **The owner's manual PARITY walk — the owner's, not an
+  agent's.** Walk `docs/PARITY.md` top to bottom against the deployed build and
+  mark each ported row pass/fail here: the rows a script cannot judge (does the
+  draft console feel right on a call, do the standings read correctly, is the
+  live page legible on the television). `PARITY.md` reads **70 ported / 0
+  deficient / 15 dropped = 85** as of P12.T5. Known exception:
+  `e2e/award-shows.spec.ts`'s Blob-logo test reads production-copy data and is
+  red against a freshly migrated database; that is not a regression
 - [x] **P12.T3** Free-tier headroom and the cold-start decision — **D123**.
   Burn is 2.32 CU-hrs in 14 days → ~5 CU-hrs/month, **5% of the 100 CU-hr
   allowance**; storage 36 MB of 512 MB. A 3h ceremony costs 0.75 CU-hrs at
@@ -2224,8 +2235,69 @@ Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
   caching layer and it fronts **TMDB, not the database** — there is no
   meaningful cache on the database path, which is what the code says and what
   the 5% burn is consistent with
-- [ ] **P12.T4** Load-test draft-day search
-- [ ] **P12.T5** Fix what the above finds
+- [x] **P12.T4** Load-test draft-day search — `2b39e88`. Threshold written
+  before the run and unchanged since: **p95 < 400ms on the local-only path, 0
+  5xx**, both constants in `scripts/load-search.mjs`, which exits non-zero on
+  either. Four owners, one debounced query each per 400ms for two minutes,
+  against a local production build on an agent database with `TMDB_API_KEY`
+  unset (never the deployed site — a load test on Neon Free spends the
+  allowance being measured): **1,198 requests, p50 18ms, p95 22ms, p99 24ms,
+  max 36ms, 0 errors, 0 5xx.** No N+1: draft-day search is **3 queries**
+  whatever the query and however many films match, now pinned as two
+  equalities in `lib/services/scoring.batching.test.ts`, both watched going red
+  against a deliberately N+1'd `findFilms` (27 queries). 🔴 The script does not
+  report queries per request, on purpose: reading `pg_stat_database.xact_commit`
+  either side gave 2.79 against a true 3.00, because a pooled connection does
+  not commit per statement. `test/query-count.ts` is the instrument
+- [x] **P12.T5** Fix what the above finds — four findings, every one fixed and none carried. Findings, one commit each:
+  - `/leagues/new` answered **500** to a signed-out visitor (T2a's sweep;
+    confirmed against the deployed site) — `692875f`. Reclassified as a
+    protected route, so the proxy redirects with `?redirect_url=`; the page
+    keeps `requirePageUser()` as a second line
+  - **A finished league posted nothing to its members' feeds** (a source
+    review, `f393cd5`, which took PARITY to 1 deficient) — `ad2d58f`, with its
+    e2e teardown follow-up `96ddb4d`. `completeDraft` writes one roster post per
+    seated member on the transition into `complete` only; `/profile` added so a
+    member can reach their own. PARITY row flipped to **ported** in the P12.T5
+    ledger commit, after re-running its mutation (remove the `postRosters` call
+    → "posts each seated member their roster" red)
+  - **`⨯ Error: The destination stream closed early.` in the server log** (Phase
+    14 note) — fixed in the second P12.T5 commit, and the note's diagnosis was
+    wrong. 🔴 **The SSE routes never produced it**: in a production build a
+    curl timeout, `reader.cancel()`, navigation, a hidden tab, a closed context
+    and the 50s self-close all logged **nothing**. A temporary
+    `onRequestError` hook caught the real source — `routeType: 'render'`,
+    `renderSource: 'react-server-components-payload'`, path
+    `/live/…?tv=1&_rsc=…`: an **RSC navigation the browser abandoned
+    mid-render**. React's Flight renderer aborts with a plain `Error`, Next's
+    abort filter matches only `name === 'AbortError'`, and it is printed at
+    error level with a digest. Any page does it — 4 of 20 aborted
+    `/live/[abbr]?tv=1` navigations and 8 of 20 aborted `/` navigations logged
+    it before; **0 of 40** after. `instrumentation.ts` drops exactly that
+    message and passes everything else through. The same commit made a failed
+    poll **visible**: both routes' `catch` had swallowed it, so an outage left
+    nothing in the log; it now logs `[live stream] poll failed; keeping the
+    last frame` (or `[board stream]`) and still keeps the connection
+  - **`/leagues/[id]` scrolled sideways at 390px** (was an Open question) —
+    fixed in the third P12.T5 commit. Still there when re-measured in a
+    production build, signed out, league 1: `scrollingElement.scrollWidth`
+    **584** in a 390 viewport. The note's cause was half stale — `PosterFrame`
+    is `relative` now, so its `<img>` and pick number were already contained —
+    and walking containing blocks (not the DOM) found the rest: **38
+    `sr-only` spans** in the pick ledgers' `<summary>`, `position: absolute`
+    with no positioned ancestor inside `Shelf`'s `overflow-x-auto`. `relative`
+    on `Shelf`'s list, the note's suggested fix, in the shared component:
+    **390 / 390**, 0 escaping, and 1024 and 1440 unchanged at their viewport.
+    Pinned by `e2e/leagues.spec.ts` "does not scroll sideways at 390, signed
+    out" (restored-corpus only, so it skips on CI), watched red at 584 with
+    the class reverted
+
+🔴 **Gate: open.** Three of its four lines are met — free-tier headroom is a
+number with its ceiling (D123), draft-day search is inside its threshold
+(T4), and every finding is fixed (T5). The fourth, "every ported row
+confirmed on the deployed build", is **P12.T2b, the owner's manual walk**, and
+Phase 13 waits on it. The fixes in T5 reach `next.cinemadraft.com` only when
+`dev` is merged to `main`, so walk the deployed build after that deploy.
 
 ### Phase 12 measurements (2026-09-14)
 
@@ -2255,6 +2327,10 @@ with a keep-warm, and records the reason either way.
   finding, not a carried-forward deferral. What is still *deliberately*
   different is the fifteen dropped rows, each with its reason in the matrix;
   read those before filing a parity bug against one of them.
+  🔴 **Superseded 2026-09-14:** a source review found a fifth row the matrix had
+  hidden as an aside (the league-completion feed post, `f393cd5`), and
+  `ad2d58f` closed it. Recounted from the table at P12.T5: **70 ported / 0
+  deficient / 15 dropped = 85**.
 
 - 🔴 **`e2e/award-shows.spec.ts`'s "a show wears its mark, served from Blob" test
   reads production-copy data** — it navigates to `/award-shows/oscars` and
@@ -2269,7 +2345,7 @@ with a keep-warm, and records the reason either way.
 
 ## Phase 13 — Cutover
 
-- [ ] P13 not started
+- [ ] P13 not started — gated on the Phase 12 gate; no plan written yet
 
 ## Phase 14 — Realtime
 
@@ -2349,7 +2425,7 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
 
 ### Phase 14 notes
 
-- 🔴 **Every viewer disconnect logs an error line, and nothing is wrong.** Cancelling a stream reader makes Next log `⨯ Error: The destination stream closed early.` at error level. That is what a tab being hidden, a navigation, a close and each of the route's own ~36 self-closes per viewer per three-hour ceremony will each produce, so a ceremony's log will carry hundreds of error lines describing normal behaviour. Nothing breaks and the route's teardown is correct — it is logging hygiene in the `cancel`/abort path, found by the T7 agent and left deliberately rather than redesigned inside a gate task. Worth fixing before the first real ceremony, if only so a genuine error is still findable.
+- ✅ **Fixed in P12.T5, and the diagnosis below was wrong** — the streams never logged it; an abandoned RSC navigation did. See P12.T5's findings. The original note, kept for the record: 🔴 **Every viewer disconnect logs an error line, and nothing is wrong.** Cancelling a stream reader makes Next log `⨯ Error: The destination stream closed early.` at error level. That is what a tab being hidden, a navigation, a close and each of the route's own ~36 self-closes per viewer per three-hour ceremony will each produce, so a ceremony's log will carry hundreds of error lines describing normal behaviour. Nothing breaks and the route's teardown is correct — it is logging hygiene in the `cancel`/abort path, found by the T7 agent and left deliberately rather than redesigned inside a gate task. Worth fixing before the first real ceremony, if only so a genuine error is still findable.
 - **The league picker in TV mode** shipped dropping `?tv=1` and was caught by the gate rather than by the task that built it (D114). The link-building was in the room; the mode was on the page.
 
 ## Phase 16 — New features
@@ -2366,7 +2442,7 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
   loudly. Not fixed: `lib/db.test.ts` asserts exactly 1,355 rows, so deleting
   any of them is a deliberate change with a test to update.
 
-- [ ] P16 not started
+- [ ] P16 not started — post-cutover (`docs/PLAN.md` § Phase 16), gated on Phase 13; no plan written yet
 
 ---
 
@@ -2419,22 +2495,6 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
   before T1 too, and T1 changed neither number — but it is now the only visible
   size inversion in the app. Sizes outside `SectionHead` are tranche 4's
   (T18/T33); left alone on purpose so that sweep's diff stays readable.
-- **🔴 Found by P17.T1's browser pass, not fixed — `/leagues/[id]` overflows
-  horizontally at 390px.** `document.scrollingElement.scrollWidth` is **582**
-  in a 390px viewport, signed out, on league 1. Not introduced by T1 (its only
-  rendering change is heading font-size, and headings shrink-wrap) and not named
-  by any tranche: tranche 2's T10 owns `/films/[tmdbId]`'s overflow, which
-  measures **2304px** at 390px in the same pass, but nothing owns the league
-  page. Same class of defect, one owner short.
-  🔴 **Cause, found by the tranche-1 gate pass and still 582 in a production
-  build** (so not a dev artefact; the document really scrolls, `scrollLeft` maxes
-  at **192.5**): the roster shelves' `overflow-x-auto` does clip, but **134
-  `position: absolute` descendants escape it** — `PosterFrame`'s poster `<img>`
-  and the `text-[0.65rem]` pick number — because no ancestor inside the scroller
-  is positioned, so their containing block is outside it. Their right edges run
-  to 673px; the furthest that counts toward the document is an `sr-only` span at
-  exactly **582**. No *in-flow* element exceeds 390 at any depth. The fix is
-  `relative` on the scroller (or on each shelf cell), not a width.
 
 - **Raise the past side's `vote_count.gte` from 200 to ~400?** It would sharpen
   "films anybody has heard of" and would also thin out genuinely good
@@ -2444,8 +2504,8 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
   then nothing (measured 2026-09-12). `BrowseList` now stops on the first empty
   page, so this reads as a list that ends rather than a broken scroll — but if
   the shelf should be longer, the floor is the knob, not the sort.
-- **`NEXT_PUBLIC_ACTIVE_YEAR` still set in Vercel.** Delete it once P5.T0 ships the database-backed read path (D22). It was last touched 510 days ago — this is the variable that forces an annual rebuild.
-- **Neon injected unused auth variables.** `NEON_AUTH_BASE_URL` and `VITE_NEON_AUTH_URL` are Neon Auth (Stack Auth), which this project does not use — auth is Clerk (D7). Delete them so no one later infers a second auth system. The `VITE_` prefix is also wrong for a Next app.
+- ✅ **Resolved 2026-09-27 — `NEXT_PUBLIC_ACTIVE_YEAR` is gone from Vercel** (owner confirmed the deletion). ~~Still set in Vercel; delete it once P5.T0 ships the database-backed read path (D22).~~ Nothing in the code reads it: `git grep 'env.NEXT_PUBLIC_ACTIVE_YEAR'` returns nothing, and the four remaining mentions are comments, a test title and a migration comment recording that `AvailableYear.isActive` replaced it (`lib/services/season.ts`, `lib/repositories/available-years.ts` and its test, `prisma/migrations/20260814130000_app_columns`). D22 is discharged; nothing may reintroduce it.
+- **`NEON_AUTH_BASE_URL` and `VITE_NEON_AUTH_URL` belong to the Neon Vercel integration, and they stay.** The integration injects and manages them (owner, 2026-09-27), so deleting them by hand would only fight it. 🔴 **Nothing in the app reads them** — `git grep 'NEON_AUTH_BASE_URL\|VITE_NEON_AUTH_URL'` matches only this note — and **do not infer a second auth system from their presence**: they are Neon Auth (Stack Auth) plumbing this project does not use. Auth is Clerk, and only Clerk (D7). The `VITE_` prefix is a further tell that no Next code was ever meant to consume one.
 - **`BLOB_WEBHOOK_PUBLIC_KEY` is not set in Development**, only Production/Preview. Only matters if Blob webhooks are handled locally; Phase 11 already routes around the OIDC environment constraint.
 - **Clerk keys are Development instance (`pk_test_`) in all environments.** This is also the source of the `Development mode` banner on the hosted sign-in card — expected, not a defect, and it goes when the keys swap. Correct for the build — the Production instance needs a verified domain. At release, create it, swap Production to `pk_live_`/`sk_live_`, and recreate the webhook (endpoints and signing secrets are per-instance).
 - **Realtime transport undecided** — deferred to phase 14 by D23. Not on the cutover path.
