@@ -199,6 +199,14 @@ export const userRepository = {
    * `provider` records how the account came into being. Legacy rows say
    * `auth0` or `google.com`; these say `clerk`, so the two populations stay
    * distinguishable after Auth0 is decommissioned and `providerId` goes dead.
+   *
+   * 🔴 Idempotent under concurrency, at the database. A new member's first page
+   * load fires several requests at once, and the webhook races them too; each
+   * finds no row and inserts. The unique indexes (`users_clerk_id_key`,
+   * `users_email_key`) let exactly one insert through. The losers re-read: the
+   * same identity gets the winner's row, and a different identity that holds
+   * the address gets `ConflictError` — never a second account, never the other
+   * person's row. An in-process lock would not do: Vercel runs many instances.
    */
   async createFromClerk(input: {
     clerkId: string;
@@ -208,22 +216,38 @@ export const userRepository = {
     image: string | null;
   }): Promise<User> {
     const now = new Date();
-    return db.user.create({
-      data: {
-        uuid: randomUUID(),
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        image: input.image,
-        clerkId: input.clerkId,
-        provider: 'clerk',
-        role: 'user',
-        createdAt: now,
-        updatedAt: now,
-        lastLogin: now,
-      },
-      select: SELECT,
-    });
+    try {
+      return await db.user.create({
+        data: {
+          uuid: randomUUID(),
+          email: input.email,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          image: input.image,
+          clerkId: input.clerkId,
+          provider: 'clerk',
+          role: 'user',
+          createdAt: now,
+          updatedAt: now,
+          lastLogin: now,
+        },
+        select: SELECT,
+      });
+    } catch (error) {
+      // Read what the winner wrote rather than parsing which index refused us:
+      // the answer is the same for either one.
+      const winner = await db.user.findUnique({
+        where: { clerkId: input.clerkId },
+        select: SELECT,
+      });
+      if (winner) return winner;
+      const holder = await db.user.findFirst({
+        where: byEmail(input.email),
+        select: { id: true },
+      });
+      if (holder) throw new ConflictError(`${input.email} is held by user ${holder.id}`);
+      throw error;
+    }
   },
 
   /**

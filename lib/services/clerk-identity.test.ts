@@ -175,4 +175,73 @@ describe('syncClerkIdentity', () => {
     // A silent refusal leaves the member locked out with nothing to act on.
     expect(logged).toHaveBeenCalled();
   });
+
+  describe('under concurrency — a signed-in page fires several requests at once', () => {
+    // RSC, streams and actions all resolve the session on the first page load,
+    // and the webhook is a racer too. Every one of them must come back with the
+    // same single row: no duplicate, no throw, no claim handed to someone else.
+    const N = 10;
+
+    it('claims a legacy row once, by mixed-case email, for every concurrent caller', async () => {
+      // Green before the create fix too: `claim`'s conditional write and
+      // re-read already held. Red if the re-read goes (mutation-checked).
+      const before = await db.user.count();
+
+      const results = await Promise.all(
+        Array.from({ length: N }, () => syncClerkIdentity(identity())),
+      );
+
+      for (const result of results) {
+        expect(['claimed', 'linked']).toContain(result.status);
+        expect(result.user?.id).toBe(legacyId);
+      }
+      expect(await db.user.count()).toBe(before);
+      const row = await db.user.findUnique({ where: { id: legacyId } });
+      expect(row?.clerkId).toBe('user_test_aaa');
+    });
+
+    it('creates exactly one row for a brand-new identity', async () => {
+      const fresh = identity({
+        clerkId: 'user_new_race',
+        emails: [{ address: `racer${DOMAIN}`, verified: true }],
+      });
+
+      const results = await Promise.all(
+        Array.from({ length: N }, () => syncClerkIdentity(fresh)),
+      );
+
+      const rows = await db.user.findMany({ where: { clerkId: 'user_new_race' } });
+      expect(rows).toHaveLength(1);
+      for (const result of results) {
+        expect(['created', 'linked']).toContain(result.status);
+        expect(result.user?.id).toBe(rows[0]?.id);
+      }
+    });
+
+    it('gives a new address to one identity and refuses the other, without throwing', async () => {
+      // One person, two Clerk identities (Google and an email code), both
+      // signing in at once on an address with no row yet. The loser must not
+      // get a second account, and must not throw.
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      const address = `twoidentities${DOMAIN}`;
+      const racers = Array.from({ length: N }, (_, i) =>
+        identity({
+          clerkId: `user_racer_${i % 2}`,
+          emails: [{ address, verified: true }],
+        }),
+      );
+
+      const results = await Promise.all(racers.map((racer) => syncClerkIdentity(racer)));
+
+      const rows = await db.user.findMany({ where: { email: address } });
+      expect(rows).toHaveLength(1);
+      for (const [i, result] of results.entries()) {
+        if (racers[i]?.clerkId === rows[0]?.clerkId) {
+          expect(result.user?.id).toBe(rows[0]?.id);
+        } else {
+          expect(result.status).toBe('collision');
+        }
+      }
+    });
+  });
 });

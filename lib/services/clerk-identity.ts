@@ -102,14 +102,27 @@ export async function syncClerkIdentity(identity: ClerkIdentity): Promise<SyncRe
 
   // No legacy row matched any verified address: a genuinely new member.
   const primary = verified[0] as ClerkEmail;
-  return {
-    status: 'created',
-    user: await userRepository.createFromClerk({
-      clerkId: identity.clerkId,
+  try {
+    return {
+      status: 'created',
+      user: await userRepository.createFromClerk({
+        clerkId: identity.clerkId,
+        email: primary.address,
+        firstName: identity.firstName,
+        lastName: identity.lastName,
+        image: identity.image,
+      }),
+    };
+  } catch (error) {
+    // A different identity created a row on this address between our lookup
+    // and our insert — the concurrent form of the collision above. The same
+    // identity racing itself never reaches here: `createFromClerk` hands it
+    // the winner's row.
+    if (!(error instanceof ConflictError)) throw error;
+    console.error('[auth] create refused', {
       email: primary.address,
-      firstName: identity.firstName,
-      lastName: identity.lastName,
-      image: identity.image,
-    }),
-  };
+      clerkId: identity.clerkId,
+    });
+    return { status: 'collision' };
+  }
 }
