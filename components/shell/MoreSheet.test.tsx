@@ -56,8 +56,9 @@ const unreadyYours: NavLink[] = readyYours.map((link) => ({ ...link, ready: fals
  * asserting through a real `showModal()` open, which jsdom cannot do.
  */
 // `AccountControl` renders Clerk's `UserButton` only when a publishable key is
-// present (D84). Stated here rather than inherited from .env.local, so the
-// suite behaves the same on CI, which has no Clerk key, as on a laptop.
+// present (D84). The sheet no longer carries one (D127), and the key is stated
+// anyway so the "no account control" case below would see the Clerk shape if
+// it came back — the same on CI, which has no key, as on a laptop.
 beforeEach(() => vi.stubEnv('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY', 'pk_test_sheet'));
 afterEach(() => vi.unstubAllEnvs());
 
@@ -102,13 +103,10 @@ describe('MoreSheet', () => {
     for (const label of ['Watchlist', 'Draft list', 'How it works']) {
       expect(screen.queryByRole('link', { hidden: true, name: label })).toBeNull();
     }
-    // The theme toggle and account control are unconditional — only the
-    // yours group and its divider are gated.
+    // The theme toggle is unconditional — only the yours group and its
+    // divider are gated.
     expect(
       screen.getByRole('button', { hidden: true, name: /theme/i }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { hidden: true, name: 'Log in' }),
     ).toBeInTheDocument();
   });
 
@@ -119,18 +117,21 @@ describe('MoreSheet', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows a log in link when signed out', () => {
-    render(<MoreSheet id={MORE_ID} ref={createRef()} pathname="/" isSignedIn={false} />);
-    expect(
-      screen.getByRole('link', { hidden: true, name: 'Log in' }),
-    ).toBeInTheDocument();
-  });
-
-  it('shows the account control when signed in', () => {
-    render(<MoreSheet id={MORE_ID} ref={createRef()} pathname="/" isSignedIn />);
-    expect(
-      screen.getByRole('button', { hidden: true, name: 'Account' }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole('link', { hidden: true, name: 'Log in' })).toBeNull();
-  });
+  // 🔴 D127. Search and the account control are `TopBar`'s at every width
+  // below `xl`; a copy here is a second way to the same place, and the sheet
+  // was only ever their home because the bottom row had no room for them.
+  // Both worlds, because the two shapes are different elements: a "Log in"
+  // link signed out, Clerk's `UserButton` (stubbed as "Account") signed in.
+  it.each([false, true])(
+    'carries no search and no account control (signed in: %s)',
+    (isSignedIn) => {
+      render(
+        <MoreSheet id={MORE_ID} ref={createRef()} pathname="/" isSignedIn={isSignedIn} />,
+      );
+      expect(screen.queryByRole('button', { hidden: true, name: 'Search' })).toBeNull();
+      expect(screen.queryByRole('link', { hidden: true, name: 'Log in' })).toBeNull();
+      expect(screen.queryByRole('button', { hidden: true, name: 'Account' })).toBeNull();
+      expect(screen.queryByRole('button', { hidden: true, name: 'Log out' })).toBeNull();
+    },
+  );
 });

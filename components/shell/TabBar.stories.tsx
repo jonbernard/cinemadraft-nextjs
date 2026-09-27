@@ -10,9 +10,6 @@ const meta = {
     onMore: () => {},
     isMoreOpen: false,
     moreId: 'more',
-    isSignedIn: false,
-    onSearch: () => {},
-    searchId: 'search',
   },
 } satisfies Meta<typeof TabBar>;
 
@@ -38,23 +35,12 @@ export const MoreOpen: StoryObj<typeof meta> = {
 };
 
 /**
- * 390px, where the chrome is deliberately absent.
+ * 390px: five slots of 78px, and nothing else on the row.
  *
- * P17.T2 measured it: five slots of 78px with "Award shows" at 64.8px leaves
- * the row no slack, and two 44px chrome squares drop a slot to 60.4px, wrap
- * that label and take the bar from 48.5px to 65px. So the chrome is
- * `hidden sm:flex` and this story is what that looks like — the bar a phone
- * gets, unchanged, with search and the account control in the More sheet. Every
- * other story here is the `sm`+ shape, with search and the way in.
- *
- * The mark used to be a third square in that group. P14.T16 moved it to
- * `TopBar`, because `hidden sm:flex` meant this width had no wordmark anywhere
- * in the app — see `TopBar.stories.tsx`'s `Phone`, which is the row above.
- *
- * 🔴 No signed-in story: `AccountControl` renders Clerk's `UserButton` when a
- * publishable key is present, and that throws outside a `<ClerkProvider>` —
- * the same reason `AppShell.stories.tsx` has none. `TabBar.test.tsx` covers the
- * signed-in shape, with the key stubbed away.
+ * P17.T2 measured it: "Award shows" renders 64.8px, so the row has no slack.
+ * Search and the account control are `TopBar`'s since D127 — see
+ * `TopBar.stories.tsx`'s `Phone`, the row above this one — and the bar is the
+ * same five destinations at every width below `xl`.
  */
 export const Phone: StoryObj<typeof meta> = {
   globals: {

@@ -107,7 +107,7 @@ test.describe('journey 4 — a reader browses', () => {
     });
 
     await beat(page, 'The reader searches for a film by name', async () => {
-      // The panel's trigger: the strip's above `xl`, the More sheet's below.
+      // The panel's trigger: the strip's above `xl`, `TopBar`'s below (D127).
       // `.first()` because both are in the DOM at every width and exactly one
       // is clickable — the same reasoning as `nav.spec.ts`'s helper.
       await page.getByRole('button', { name: 'Search' }).first().click();

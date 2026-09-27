@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { authCardAppearance, clerkAppearance } from './clerk';
+import {
+  authCardAppearance,
+  clerkAppearance,
+  compactUserButtonAppearance,
+} from './clerk';
 
 /**
  * 🔴 The controls Clerk draws are the only controls on the busiest form in the
@@ -35,6 +39,21 @@ describe('every Clerk control', () => {
       '&:focus-visible'?: { outline?: string };
     };
     expect(element['&:focus-visible']?.outline).toMatch(/^2px solid var\(--color-/);
+  });
+});
+
+// 🔴 D127. Clerk's own trigger is the bare 28px avatar; in `TopBar`'s row of
+// 44px squares it was the one target under the floor.
+describe("the top bar's account trigger", () => {
+  const trigger = compactUserButtonAppearance.elements.userButtonTrigger;
+
+  it('clears the 44px touch target both ways', () => {
+    expect(Number.parseFloat(trigger.minWidth)).toBeGreaterThanOrEqual(44);
+    expect(Number.parseFloat(trigger.minHeight)).toBeGreaterThanOrEqual(44);
+  });
+
+  it('draws a focus ring of its own', () => {
+    expect(trigger['&:focus-visible'].outline).toMatch(/^2px solid var\(--color-/);
   });
 });
 

@@ -5,7 +5,6 @@ import { type NavLink, YOURS_LINKS } from '@/lib/nav/links';
 import { cn } from '@/lib/utils/cn';
 import { Eyebrow } from '../ui/Eyebrow';
 import { ThemeToggle } from '../ui/ThemeToggle';
-import { AccountControl } from './AccountControl';
 import { type NotificationItem, NotificationsSection } from './NotificationBell';
 
 /**
@@ -38,8 +37,6 @@ export function MoreSheet({
   notifications = [],
   unreadCount = 0,
   yours = YOURS_LINKS,
-  onSearch,
-  searchId,
 }: {
   id: string;
   ref?: Ref<HTMLDialogElement>;
@@ -49,9 +46,6 @@ export function MoreSheet({
   notifications?: NotificationItem[];
   unreadCount?: number;
   yours?: NavLink[];
-  /** Opens the global search panel. Omitted in stories that render the sheet alone. */
-  onSearch?: () => void;
-  searchId?: string;
 }) {
   // A nav entry pointing at a 404 is worse than a missing one — the same gate
   // `NavRail`'s `Group` and `TabBar` both apply. The heading and its divider
@@ -66,25 +60,6 @@ export function MoreSheet({
       className="bg-bg-panel text-text-primary mt-auto mb-0 w-full max-w-none rounded-t-lg rounded-b-none p-0 backdrop:bg-black/60 xl:hidden"
     >
       <div className="flex flex-col gap-4 p-4">
-        {/* Above "Yours": the phone has no strip, so this is the only way to
-            the search panel that is not a keyboard shortcut. */}
-        {onSearch ? (
-          <>
-            <button
-              type="button"
-              onClick={onSearch}
-              aria-haspopup="dialog"
-              aria-controls={searchId}
-              className="focus-visible:outline-accent-fill text-text-secondary hover:text-text-primary hover:bg-bg-surface flex min-h-11 items-center gap-3 rounded-sm px-2 text-sm transition-colors focus-visible:outline-2"
-            >
-              <SheetIcon path="M18 18l-3.5-3.5M4 10.5a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0" />
-              Search
-            </button>
-
-            <div className="border-border-rule border-t" />
-          </>
-        ) : null}
-
         {visible.length > 0 ? (
           <>
             <Eyebrow className="px-2">Yours</Eyebrow>
@@ -137,9 +112,11 @@ export function MoreSheet({
           </>
         ) : null}
 
-        <div className="flex items-center justify-between px-2">
+        {/* Search and the account control are `TopBar`'s since D127 — one tap
+            at every width below `xl`, so a copy here would only be a second
+            way to the same place. */}
+        <div className="flex items-center px-2">
           <ThemeToggle />
-          <AccountControl isSignedIn={isSignedIn} />
         </div>
       </div>
     </dialog>
