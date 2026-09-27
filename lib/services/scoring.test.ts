@@ -125,15 +125,20 @@ describe('scoreMovies', () => {
   });
 
   it('ignores a win in an award the movie was not nominated for', () => {
-    // Nothing to score against: the rule iterates nominations, so a stray
-    // winner row cannot invent points out of nowhere.
+    // The realistic case: the film IS nominated — for award 1 — and a stray
+    // winner row sits in award 2, naming a nomination the film does not hold.
+    // It must not turn the film's award-1 nomination into a win. (The old
+    // version of this case had no nominations at all, so any rule passed.)
     const totals = scoreMovies({
-      nominations: [],
-      pointsByAward: new Map([[1, 20]]),
+      nominations: [award(1, 100)],
+      pointsByAward: new Map([
+        [1, 20],
+        [2, 50],
+      ]),
       winningNominationIds: new Set([nextNominationId++]),
     });
 
-    expect(totals.size).toBe(0);
+    expect(Object.fromEntries(totals)).toEqual({ 100: 20 });
   });
 
   it('scores an award with no resolvable points as nothing, never NaN', () => {
