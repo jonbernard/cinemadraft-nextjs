@@ -8,18 +8,18 @@ import { tmdbFetch } from './tmdb-client';
  * (`src/pages/browse/index.js:83`), but `discovery.js` sends materially
  * different parameters for each side:
  *
- * - **Past:** `release_date.lte` today, `vote_average >= 4`, `vote_count >= 200`,
- *   newest first. The vote floors are what keep it to films anybody has heard
+ * - **Past:** one calendar month at a time, `vote_average >= 4`, `vote_count >= 200`.
+ *   The vote floors are what keep it to films anybody has heard
  *   of; without them, "recent releases" is a wall of unrated obscurities,
  *   because TMDB's catalogue is mostly long tail.
- * - **Future:** `primary_release_date.gte` today, **most notable first**, and no
+ * - **Future:** one calendar month at a time, **most notable first**, and no
  *   vote floor at all — an unreleased film has no votes, so keeping
  *   `vote_count >= 200` returns an empty page. That is precisely what "just
  *   flip the sort" would have shipped, and it would have looked like a broken
  *   feature rather than a wrong query.
  *
- * 🔴 **The future side sorts by popularity, not by date** (P15.T9), which is a
- * deliberate departure from the source and from this file's first version.
+ * 🔴 **TMDB sorts by popularity inside one month, not by date** (P15.T9), which
+ * is a deliberate departure from the source and from this file's first version.
  * Measured against the live API on 2026-09-12: with `primary_release_date.asc`,
  * pages 1 and 3 returned twenty films each of which **none** cleared any usable
  * quality floor — sorting by date puts *today's* long tail first, because on any
@@ -28,13 +28,13 @@ import { tmdbFetch } from './tmdb-client';
  * pages. Sorting by popularity puts the films a reader came for at the top and
  * lets the tail fall off the end, which is also what makes the pages full.
  *
- * 🔴 **`primary_release_date`, and only on the future side** (P15.T9). With a
- * `with_release_type` filter set, `release_date.gte` matches *any* theatrical
- * release of a film, a re-release included — so a 2006 title with a 2026
- * re-issue appeared on "The future" while its card rendered 2006, which is what
- * page 3 of the deployed site was showing. The sort carried the same fault: it
- * ordered by a different date than the one displayed. Looking back the old
- * parameter is right, because a re-release genuinely did play on that date.
+ * 🔴 The app page is the month, **not TMDB's result page**. A popularity page
+ * mixes October, November and December, so appending page 2 can add more films
+ * to a November section that page 1 made look finished. Each app page instead
+ * bounds `release_date` to one month, exhausts TMDB's popularity pages down to
+ * the floor, and defensively drops a row whose displayed date falls outside the
+ * bound (a re-release can otherwise do that). Thus direct `?page=2` loads and
+ * auto-appending page 2 expose the same complete adjacent month.
  *
  * Both sides pass `with_release_type=2|3` (limited *and* wide theatrical) and
  * `region=US`, because the league is scored on US theatrical seasons and awards
@@ -104,12 +104,26 @@ const POPULARITY_FLOOR = { past: 10, future: 5 } as const;
 /** Shorts and catalogue filler, excluded server-side rather than by hand. */
 const RUNTIME_FLOOR = '40';
 
-/** TMDB caps `page` at 500 and errors above it. */
+/** The public cursor and TMDB's private sub-page cursor both cap at 500. */
 const MAX_PAGE = 500;
 
 /** `2026-08-17` in UTC, which is also the cache key's day bucket. */
 function today(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function monthWindow(when: BrowseWhen, page: number, day: string) {
+  const now = new Date(`${day}T00:00:00Z`);
+  const offset = (page - 1) * (when === 'past' ? -1 : 1);
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1));
+  const end = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 1, 0));
+  const monthStart = start.toISOString().slice(0, 10);
+  const monthEnd = end.toISOString().slice(0, 10);
+
+  return {
+    gte: when === 'future' && page === 1 ? day : monthStart,
+    lte: when === 'past' && page === 1 ? day : monthEnd,
+  };
 }
 
 function toFilm(result: TmdbDiscoverResult, when: BrowseWhen): DiscoveredFilm | null {
@@ -146,57 +160,57 @@ export async function discoverFilms(input: {
 }): Promise<DiscoverPage> {
   const page = Math.min(MAX_PAGE, Math.max(1, Math.trunc(input.page)));
   const day = today();
+  const window = monthWindow(input.when, page, day);
 
   const params: Record<string, string> = {
     language: 'en-US',
     region: 'US',
     with_release_type: '2|3',
     'with_runtime.gte': RUNTIME_FLOOR,
-    page: String(page),
-    sort_by: input.when === 'past' ? 'release_date.desc' : 'popularity.desc',
+    sort_by: 'popularity.desc',
+    'release_date.gte': window.gte,
+    'release_date.lte': window.lte,
     ...(input.when === 'past'
       ? {
-          'release_date.lte': day,
           'vote_average.gte': VOTE_AVERAGE_FLOOR,
           'vote_count.gte': VOTE_COUNT_FLOOR,
         }
-      : { 'primary_release_date.gte': day }),
+      : {}),
   };
 
-  const body = await tmdbFetch<TmdbDiscoverResponse>('/discover/movie', params, {
-    // The day is part of the key. Without it, "released before today" would be
-    // answered from yesterday's cache — and a key containing a timestamp rather
-    // than a date would never hit at all.
-    // 🔴 `v2` because P15.T9 changed what these parameters mean. Without the
-    // bump the first deploy answers every query from a cache built by the old
-    // one — re-releases and all — for the rest of the day.
-    key: `tmdb:discover:v2:${input.when}:${day}:${page}`,
-    tags: ['tmdb', 'tmdb-discover'],
-    name: 'tmdb-discover',
-  });
+  const results: TmdbDiscoverResult[] = [];
+  for (let tmdbPage = 1; tmdbPage <= MAX_PAGE; tmdbPage += 1) {
+    const body = await tmdbFetch<TmdbDiscoverResponse>(
+      '/discover/movie',
+      { ...params, page: String(tmdbPage) },
+      {
+        // The day is part of the key because page 1 is a partial month. `v3`
+        // separates calendar pages from the old unbounded popularity pages.
+        key: `tmdb:discover:v3:${input.when}:${day}:${page}:${tmdbPage}`,
+        tags: ['tmdb', 'tmdb-discover'],
+        name: 'tmdb-discover',
+      },
+    );
+    if (!body) return { page, pageCount: 0, films: [] };
 
-  const results = Array.isArray(body?.results) ? body.results : [];
+    const batch = Array.isArray(body.results) ? body.results : [];
+    results.push(...batch);
+    const totalPages = Math.min(
+      MAX_PAGE,
+      typeof body.total_pages === 'number' ? body.total_pages : 0,
+    );
+    const lastPopularity = batch.at(-1)?.popularity ?? 0;
+    if (tmdbPage >= totalPages || lastPopularity <= POPULARITY_FLOOR[input.when]) break;
+  }
 
   return {
-    page: typeof body?.page === 'number' ? body.page : page,
-    pageCount: Math.min(
-      MAX_PAGE,
-      typeof body?.total_pages === 'number' ? body.total_pages : 0,
-    ),
+    page,
+    pageCount: MAX_PAGE,
     films: results.flatMap((result) => {
       const film = toFilm(result, input.when);
       if (!film) return [];
-      // Defensive, and cheap. TMDB's date semantics have moved before, and a
-      // film dated in the past has no business on a page titled "The future"
-      // whatever the API returns. Undated films are kept: an announced title
-      // with no date is exactly what that page is for.
-      if (
-        input.when === 'future' &&
-        film.releaseDate != null &&
-        film.releaseDate.toISOString().slice(0, 10) < day
-      ) {
-        return [];
-      }
+      const releaseDay = film.releaseDate?.toISOString().slice(0, 10);
+      if (!releaseDay || releaseDay < window.gte || releaseDay > window.lte) return [];
       return [film];
     }),
   };
