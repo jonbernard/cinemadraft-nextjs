@@ -947,9 +947,19 @@ describe('applyDates', () => {
     expect(client.ran.some((call) => /UPDATE events/.test(call.text))).toBe(false);
   });
 
+  // 🔴 Refuse before the first write, not after it. Writing and then failing to
+  // revalidate leaves production written but serving the old schedule.
+  it('refuses --commit without REVALIDATE_SECRET and writes nothing', async () => {
+    const client = fakeDbClient();
+    await expect(
+      applyDates(client, PLAN, STATE, { commit: true, secret: null }),
+    ).rejects.toThrow(/REVALIDATE_SECRET/);
+    expect(client.ran).toHaveLength(0);
+  });
+
   it('writes the split, not the instant', async () => {
     const client = fakeDbClient();
-    await applyDates(client, PLAN, STATE, { commit: true });
+    await applyDates(client, PLAN, STATE, { commit: true, secret: 'test-secret' });
     const update = client.ran.find((call) => /nom_date/.test(call.text));
     // 8am ET on 8 January → UTC midnight of the 8th, plus 13 hours.
     expect(update.params).toContain(Date.parse('2026-01-08T00:00:00Z'));
@@ -969,16 +979,19 @@ describe('applyDates', () => {
         },
       ],
     };
-    await expect(applyDates(client, bad, STATE, { commit: true })).rejects.toThrow(
-      /outside the 2026 season/,
-    );
+    await expect(
+      applyDates(client, bad, STATE, { commit: true, secret: 'test-secret' }),
+    ).rejects.toThrow(/outside the 2026 season/);
     expect(client.ran.some((call) => /UPDATE events/.test(call.text))).toBe(false);
   });
 
   it('refuses a plan year that is not the active season', async () => {
     const client = fakeDbClient();
     await expect(
-      applyDates(client, { ...PLAN, year: 2025 }, STATE, { commit: true }),
+      applyDates(client, { ...PLAN, year: 2025 }, STATE, {
+        commit: true,
+        secret: 'test-secret',
+      }),
     ).rejects.toThrow(/not the active season/);
     expect(client.ran).toHaveLength(0);
   });
@@ -992,7 +1005,10 @@ describe('applyDates', () => {
         { ...SHOWS[0], nomCurrent: true, nomInstant: Date.parse('2026-01-08T13:00:00Z') },
       ],
     };
-    const report = await applyDates(client, PLAN, current, { commit: true });
+    const report = await applyDates(client, PLAN, current, {
+      commit: true,
+      secret: 'test-secret',
+    });
     expect(report.changes.map((change) => change.field)).toEqual(['awards']);
     expect(report.skipped[0]).toMatchObject({
       abbreviation: 'dga',
@@ -1009,7 +1025,10 @@ describe('applyDates', () => {
       ],
     };
     const plan = { ...PLAN, shows: [{ ...PLAN.shows[0], recheck: true }] };
-    const report = await applyDates(client, plan, current, { commit: true });
+    const report = await applyDates(client, plan, current, {
+      commit: true,
+      secret: 'test-secret',
+    });
     expect(report.changes.map((change) => change.field)).toEqual([
       'nominations',
       'awards',
@@ -1028,7 +1047,7 @@ describe('applyDates', () => {
         },
       ],
     };
-    await applyDates(client, plan, STATE, { commit: true });
+    await applyDates(client, plan, STATE, { commit: true, secret: 'test-secret' });
     expect(client.ran.some((call) => /awards_date/.test(call.text))).toBe(false);
   });
 
@@ -1039,7 +1058,7 @@ describe('applyDates', () => {
       ...PLAN,
       shows: [{ abbreviation: 'dga', nominations: { date: '2026-01-08' } }],
     };
-    await applyDates(client, plan, STATE, { commit: true });
+    await applyDates(client, plan, STATE, { commit: true, secret: 'test-secret' });
     const update = client.ran.find((call) => /nom_date/.test(call.text));
     expect(update.params).toContain(46800000);
   });

@@ -233,8 +233,8 @@ something to page every member about.
    ```
 
    This revalidates each changed show itself, so the show page's schedule is
-   current. Without the secret the dates are still written but it exits 1 and
-   says no cache was cleared — set it and run `refresh <ABBR>` for each show.
+   current. Without the secret it refuses before writing anything and exits 1
+   — set it and re-run. A dry run, without `--commit`, needs no secret.
 
 ### What to know about the shows
 

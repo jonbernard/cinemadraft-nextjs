@@ -840,7 +840,7 @@ export function validateDatesPlan(plan, shows) {
  * ceremony columns exactly as they were — a show that has not announced keeps
  * last season's value and is reported, rather than losing it.
  */
-export async function applyDates(client, plan, state, { commit }) {
+export async function applyDates(client, plan, state, { commit, secret }) {
   const problems = validateDatesPlan(plan, state.shows);
   if (problems.length > 0) {
     throw new Error(`this plan cannot be applied:\n  - ${problems.join('\n  - ')}`);
@@ -919,6 +919,14 @@ export async function applyDates(client, plan, state, { commit }) {
   }
 
   if (!commit) return { changes, skipped };
+
+  // 🔴 Before the first write, not after: written-but-not-revalidated leaves
+  // production serving the old schedule with nothing left to say so.
+  if (!secret) {
+    throw new Error(
+      'REVALIDATE_SECRET is not set — refusing to write dates the cache could not be cleared for',
+    );
+  }
 
   await client.query('BEGIN');
   try {
@@ -1114,13 +1122,14 @@ async function main(argv) {
   if (command === 'set-dates') {
     const planPath = rest.find((arg) => !arg.startsWith('--'));
     const commit = rest.includes('--commit');
+    const secret = process.env.REVALIDATE_SECRET ?? null;
     const { readFileSync } = await import('node:fs');
     const plan = JSON.parse(readFileSync(planPath, 'utf8'));
 
     const client = await connect();
     try {
       const state = await loadDates(client);
-      const report = await applyDates(client, plan, state, { commit });
+      const report = await applyDates(client, plan, state, { commit, secret });
 
       console.log(commit ? 'WROTE:' : 'DRY RUN — nothing written:');
       for (const change of report.changes) {
@@ -1139,27 +1148,19 @@ async function main(argv) {
       );
 
       if (commit && report.changes.length > 0) {
-        const secret = process.env.REVALIDATE_SECRET ?? null;
-        if (!secret) {
-          console.error(
-            'REVALIDATE_SECRET is not set — the dates are written but no cache was cleared',
+        const baseUrl = process.env.SITE_URL ?? 'https://cinemadraft.com';
+        for (const abbreviation of new Set(
+          report.changes.map((change) => change.abbreviation.toLowerCase()),
+        )) {
+          const posted = await fetch(`${baseUrl}/api/revalidate`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ secret, abbreviation }),
+          });
+          console.log(
+            `  revalidate ${abbreviation}: ${posted.ok ? 'ok' : `FAILED ${posted.status}`}`,
           );
-          process.exitCode = 1;
-        } else {
-          const baseUrl = process.env.SITE_URL ?? 'https://cinemadraft.com';
-          for (const abbreviation of new Set(
-            report.changes.map((change) => change.abbreviation.toLowerCase()),
-          )) {
-            const posted = await fetch(`${baseUrl}/api/revalidate`, {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ secret, abbreviation }),
-            });
-            console.log(
-              `  revalidate ${abbreviation}: ${posted.ok ? 'ok' : `FAILED ${posted.status}`}`,
-            );
-            if (!posted.ok) process.exitCode = 1;
-          }
+          if (!posted.ok) process.exitCode = 1;
         }
       }
     } finally {
