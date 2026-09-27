@@ -8,10 +8,12 @@
 
 **Spec:** `docs/PLAN.md` § Phase 13 (T1–T7), spec §8 (migration sequence, D27) and §9 (claiming, D25/D26), `docs/reference/clerk-instance-settings.md`, and the Phase 0/2/12 notes in `docs/PROGRESS.md`.
 
+> 🔴 **The rule: the cutover restore is a full wipe-and-replace from the live Heroku site.** Nothing done on staging (`next.cinemadraft.com` and its Neon database) survives it: not leagues, drafts or award entries made there, and not one Clerk claim. **Staging is disposable.** That is what lets the owner test it hard during Phase 12, and `scripts/restore-from-heroku.sh` puts it back to a copy of the live site in one command, as often as needed (§ Resetting staging during testing). This plan re-applies nothing from Neon.
+
 ## Global Constraints
 
 - 🔴 **Red means stop.** Every step names its check and what red looks like, and those are fixed before the step runs. A red check is never re-read as green. If a check turns out unable to fail, stop, replace it, and write down that you did (AGENTS.md).
-- 🔴 **Heroku is the system of record until S25.** Anything that exists only on Neon is lost at S17 unless this plan re-applies it.
+- 🔴 **Heroku is the system of record until S25.** Every real write happens there. Anything that exists only on Neon is gone after S17, on purpose.
 - 🔴 **Verify against counts taken from the dump, not from live production** (Phase 0 notes). The live-Heroku comparison at S14 exists for a different reason: it proves the freeze held.
 - Postgres clients come from libpq ≥ 17 (`$(brew --prefix libpq)/bin`, 18.6 as of 2026-09-27). The PATH `psql` is older and fails to read the dump.
 - `pg_restore` and `prisma migrate` run over the **unpooled** Neon URL. The app keeps the pooled one.
@@ -25,9 +27,9 @@
 The failures most likely to hurt, and the step that catches each one:
 
 1. **A write lands on Heroku after the dump and is lost.** Maintenance mode does not stop worker dynos, schedulers or direct clients. → S13's write counter and S14's diff of dump counts against live counts.
-2. **`nominations.year` comes back as `text` and every film scores zero, with no error anywhere.** → S19's schema checks, and S24's standings compared against the Heroku oracle from S12.
-3. **A stale Dev-instance `clerk_id` survives the restore.** The member's first Production sign-in then hits the never-reassign guard, and they get `AccountLinkError` on their own account. → S22 asserts zero claimed rows.
-4. **The Prisma CLI migrates Docker or the pooler instead of Neon's direct endpoint.** → `DIRECT_URL` on every command, plus the host check in S19.
+2. **`nominations.year` comes back as `text` and every film scores zero, with no error anywhere.** → the script's C5 in S17, and S24's standings compared against the Heroku oracle from S12.
+3. **A stale Dev-instance `clerk_id` survives the restore.** The member's first Production sign-in then hits the never-reassign guard, and they get `AccountLinkError` on their own account. → the script's C7 asserts zero claimed rows, and S22 re-reads it.
+4. **The Prisma CLI migrates Docker or the pooler instead of Neon's direct endpoint.** → the script passes the target as `DIRECT_URL`, refuses a `-pooler` host, and makes the operator type the host it is about to wipe.
 5. **The mixed-case email account is locked out.** → S22 compares the count against Heroku's, and S24d is a real sign-in by that member.
 
 ---
@@ -42,7 +44,7 @@ The failures most likely to hurt, and the step that catches each one:
 export REPO=/Users/jonbernard/Development/cinemadraft-nextjs
 export CUT="$REPO/.local/cutover"            # gitignored; every artefact below lands here
 export PSQL="$(brew --prefix libpq)/bin/psql" PGR="$(brew --prefix libpq)/bin/pg_restore"
-export HEROKU_DB="$(heroku config:get DATABASE_URL -a cinemadraft)"
+export HEROKU_DB="$(heroku config:get DATABASE_URL -a cinemadraft)"   # no CLI: `read -rs HEROKU_DB` and paste the URI from the Heroku dashboard
 export NEON_DIRECT="$(grep -m1 '^DATABASE_URL_UNPOOLED=' "$REPO/.env.neon" | cut -d= -f2- | tr -d '"')"
 case "$NEON_DIRECT" in *-pooler.*) echo "RED: pooled URL";; *ep-morning-block-aus9jqrt.*) echo ok;; *) echo "RED: not the production endpoint";; esac
 mkdir -p "$CUT"
@@ -50,15 +52,14 @@ mkdir -p "$CUT"
 
 The endpoint is `ep-morning-block-aus9jqrt`, from P12.T1. Anything other than `ok` is red.
 
-**Already dry-run, 2026-09-27.** The agent ran the database half of the window (S17 → S20, C3–C8) in a throwaway Docker Postgres: `.local/baseline.dump` stood in for today's Neon, and the August dump for the final one. Results:
-- The wipe and restore ran with 0 errors, and C3 was empty.
-- Before normalizing, C4 found 146 uppercase identifiers. After, it found 0, and the folded diff was empty.
-- `migrate status` listed all 5 migrations as unapplied. `resolve` and `deploy` applied the 4 later ones.
-- C5 was 10 × `t`, and went `f` on three mutations: year back to text, trigram index dropped, `focused_award_id` dropped.
-- C6 went from `0|12` to `12|12`.
-- C7 read claimed 0, mixed-case 1, collisions 0, active 1.
+**Already dry-run, 2026-09-27**, twice. First by hand (S17 → S20, C3–C8), with `.local/baseline.dump` standing in for today's Neon and the August dump for the final one: 0 restore errors, 146 uppercase identifiers before normalizing and 0 after, all 5 migrations unapplied before `resolve`, C6 `0|12` → `12|12`, C7 claimed 0 / mixed-case 1 / collisions 0 / active 1.
 
-S11 repeats all of this against a fresh Heroku dump.
+Then through `scripts/restore-from-heroku.sh`, into a throwaway Docker Postgres 17 on 5460 with the August dump (`.local/prod-dump.dump`, 360K):
+- Run 1 on an empty database, confirmed by typing the host at the prompt: green. Run 2 on the result, with `--yes`: green. Run 3 after dirtying it (a junk user and five junk films, a stray table, a stray column on `nominations`, a user given a `clerk_id`, the Oscars logo put back to its old path, no active year, three winners deleted): green, and afterwards every count matched the dump again, the stray table and column were gone, and the logo was back on Blob.
+- **1.3 seconds** per run (three timed runs: 1.25, 1.28, 1.24s), including counting the dump.
+- Each mutation went red at the check it should: skipping the wipe → C3 (or `pg_restore` itself, when PascalCase tables are already there); skipping `normalize.sql` → C4 (146 uppercase identifiers); skipping `migrate deploy` → C5; skipping the logo SQL → C6 (`0|12`); deleting a winner straight after `pg_restore` → C3; deleting one at the end → C7's recount; `nominations.year` put back to `text` → C5, naming that row; no active year → C7; a claimed user → C7. A truncated dump is refused before the wipe; a mid-step SQL error is reported as `failed during: <step>`.
+
+S11 repeats the script run against a fresh Heroku dump.
 
 **Point of no return: S25.** That is the moment the apex resolves to Vercel. The first member write on Neon follows within minutes, and from then on going back to Heroku loses that write. Before S25, every step is free to undo. The rollback ladder is at the end.
 
@@ -66,7 +67,7 @@ S11 repeats all of this against a fresh Heroku dump.
 
 ## What a full restore wipes
 
-**Schema.** These are the six changes from PLAN.md § T3b. They are gone after the wipe in S17, S19 puts them back, and each has its own line in check C5:
+**Schema.** These are the six changes from PLAN.md § T3b. They are gone after the wipe in S17, the script's `migrate deploy` puts them back, and each has its own line in check C5:
 
 | Migration | Change |
 |---|---|
@@ -77,25 +78,56 @@ S11 repeats all of this against a fresh Heroku dump.
 | `20260816120000_nominations_year_integer` | `nominations.year` as `integer`. The restore brings back `text`, and nothing errors |
 | `20260913120000_event_focused_award` | `events.focused_award_id` (D117) |
 
-**Data the port wrote to Neon since the Phase 2 restore** (dump created 2026-08-13 22:17 EDT). S7 measures each of these, and the owner decides on each nonzero line:
+**Data: all of it.** Everything on Neon is replaced by the dump. None of it is re-applied. The lines worth knowing:
 
-| What | After the restore | Verdict |
-|---|---|---|
-| `events.image`: 12 Blob URLs (Phase 11) | Back to `/images/awards/*.jpg` | **Re-apply**: S20 (PLAN.md § T3's SQL) |
-| `users.clerk_id` from staging sign-ins | NULL | 🔴 **Losing these is required, not just acceptable.** They are Development-instance ids, so they can never match a Production identity. A survivor makes that member's first sign-in a collision. S22 asserts 0 |
-| `users` rows created by staging sign-ups | Deleted | Fine. Those people register again on Production |
-| `available_years.is_active` | The migration marks **2026** | Fine if the season is still 2026. S7 records Neon's current value, and S21 re-applies it if it differs |
-| `events.focused_award_id` | NULL | Fine. NULL means "nothing on screen" (D117) |
-| `movies.accent_hex` | NULL | Fine. It is filled in lazily (`lib/repositories/movies.ts`) |
-| `movies` rows cached from TMDB on staging | Deleted | Fine. They are fetched again on first use, and `award-import.mjs apply` fetches any it needs |
-| `nominations` / `winners` entered on Neon, by `award-import.mjs` or the admin UI | Deleted | **Re-apply if S7 finds any.** Replay `.local/award-plans/*.json` with `apply --commit`, which is idempotent: existing nominations are skipped and winners are replaced per category. 🔴 **No `.local/award-plans/` exists in any checkout as of 2026-09-27.** If S7 finds entries with no plan behind them, the owner either re-enters them or accepts the loss |
-| `notifications` from `award-import.mjs finish` on Neon | Deleted | Fine. No member reads staging. Whether a replay broadcasts again is the owner's call in S21 |
-| `profile_feeds` roster posts (`completeDraft`, P12.T5) | Deleted | Fine. Only staging leagues completed on Neon, and real leagues' posts come from Heroku |
-| Leagues, drafts, picks, lists and watchlists made on staging | Deleted | Fine if they are test data. If S7 shows real use, the owner decides. There is no replay tooling |
-| Character seats (D121) | No change: they are code, not data | Nothing to do |
-| `_prisma_migrations` | Dropped by the wipe | Rebuilt by S19 |
+| What | After the restore |
+|---|---|
+| `events.image`: 12 Blob URLs (Phase 11) | Back to `/images/awards/*.jpg`, then the script applies `prisma/award-logos.sql` (PLAN.md § T3) and checks 12 of 12 |
+| `users.clerk_id` from staging sign-ins | NULL. 🔴 **Required, not just acceptable.** They are Development-instance ids and can never match a Production identity; a survivor makes that member's first sign-in a collision. The script's C7 asserts 0 |
+| `available_years.is_active` | The migration marks **2026**, and the script asserts exactly one active year. If the season should be another year by then, S21 sets it |
+| `events.focused_award_id`, `movies.accent_hex` | NULL. NULL means "nothing on screen" (D117); accent colours refill lazily |
+| Everything created on staging: users, leagues, drafts, picks, lists, watchlists, TMDB-cached films, nominations, winners, notifications, roster posts | Deleted. Test data |
+| `_prisma_migrations` | Dropped by the wipe, rebuilt by the script |
 
-Ceiling on S7: a write that stamps neither `created_at` nor `updated_at` is invisible to its first query, and a delete is invisible to all of them. The targeted probes cover the unstamped writes this port is known to make.
+---
+
+## Resetting staging during testing
+
+Staging can be put back to a copy of the live site **at any time during Phase 12's manual walk**, with the same script the window uses. Break whatever you like; this undoes it.
+
+**Once first:** a way to dump Heroku. Either install the Heroku CLI and `heroku login` (S5), or copy the database URI from the Heroku dashboard (cinemadraft → Resources → Heroku Postgres → Settings → Database Credentials). Neon's unpooled URL is `DATABASE_URL_UNPOOLED` in `.env.neon`. Run from a checkout that has the script (it lands with this plan's branch) and sits at the commit Vercel Production is deployed from: `migrate deploy` applies that checkout's `prisma/migrations`, and a checkout ahead of Production would add columns the deployed code does not know about.
+
+```bash
+REPO=/Users/jonbernard/Development/cinemadraft-nextjs; mkdir -p "$REPO/.local/cutover"
+DUMP="$REPO/.local/cutover/staging-$(date +%Y%m%d-%H%M).dump"
+
+# 1. A fresh dump. Either:
+heroku pg:backups:capture -a cinemadraft && heroku pg:backups:download -a cinemadraft --output "$DUMP"
+# or, without the CLI:
+read -rs HEROKU_DB && /opt/homebrew/opt/libpq/bin/pg_dump -Fc -d "$HEROKU_DB" -f "$DUMP"
+
+# 2. Wipe staging and restore it. Close every staging tab first.
+NEON_DIRECT="$(grep -m1 '^DATABASE_URL_UNPOOLED=' "$REPO/.env.neon" | cut -d= -f2- | tr -d '"')"
+bash scripts/restore-from-heroku.sh "$DUMP" "$NEON_DIRECT"
+# It shows the host, database, dump size and dump time, and asks you to type the host:
+#   ep-morning-block-aus9jqrt.c-10.us-east-1.aws.neon.tech
+```
+
+Green is the last line, `GREEN: restored 17 tables …`. Any `RED:` line names the check that failed; fix the cause and run it again, since every run starts with a wipe.
+
+**What it costs.**
+- **Nothing on Heroku changes.** `pg_dump` is a read; `pg:backups:capture` adds one backup to Heroku's list and touches no rows. Members keep using the live site throughout.
+- **Time:** 1.3 seconds locally, against Docker. Against Neon it is network-bound and has not been measured; expect well under a minute, plus the dump itself. Staging answers with errors for that long, between the wipe and the end of `migrate deploy`.
+- The award-show pages are render-cached (`app/api/revalidate/route.ts`). If one still shows staging-era nominations afterwards, redeploy Production, or run `award-import.mjs refresh <show>` with `SITE_URL=https://next.cinemadraft.com`.
+
+**What you lose: everything done on staging, including every Clerk claim.** Every `users.clerk_id` is NULL again, so every account is unclaimed, exactly as it will be at cutover.
+
+**The Clerk Development instance is not reset**, and does not need to be. It still holds every identity made on staging, each with the id that pointed at a now-wiped `users.clerk_id`. What that means on the next visit (`getCurrentUser` in `lib/auth.ts` → `syncClerkIdentity` → `userRepository.claim`):
+- **An identity whose verified email belongs to a Heroku account is re-claimed silently, on its next page load.** The id lookup misses, the email matches, and the conditional write attaches the same Dev id to the same row. A tab that is still signed in does not even need to sign in again. No webhook is needed: this is the lazy path, the same code the Production cutover relies on.
+- **The mixed-case email account** is matched case-insensitively (`byEmail`), so it re-claims like any other. Each reset makes it unclaimed again, which is a free rehearsal of S24d if its owner is willing to sign in.
+- **An identity whose email is not in Heroku** (a test address registered on staging) gets a brand-new, empty `users` row with a new id. Its old row, and every league it made, went with the reset.
+- **Two Clerk identities with one email** (possible if account linking was ever off on the Dev instance) cannot both win: the first to load a page claims the row and the second gets `AccountLinkError`. Delete the duplicate in the Clerk Dev dashboard, or relink through `/admin`.
+- If the script's C7 reports claimed users, a staging tab re-claimed its account between `migrate deploy` and the check. It is harmless on staging; close the tab and run again. At cutover it is S22's red.
 
 ---
 
@@ -125,7 +157,7 @@ Ceiling on S7: a write that stamps neither `created_at` nor `updated_at` is invi
 
 - [ ] **S4 · OWNER — Decisions, in writing, before the window is booked:**
   - (a) Must any award data be entered between the restore and go-live? If so, which show and which kind (see S21). Until S13, the place to enter it is Heroku, the system of record.
-  - (b) A verdict on every nonzero line S7 reports.
+  - (b) *(Removed 2026-09-27: nothing on Neon is kept, so there is nothing to give a verdict on.)*
   - (c) The window: no award show or live draft within 48 hours either side, with members told beforehand. Suggested wording: *"Down for an hour; afterwards sign up with the same email and your leagues come with you."*
   - (d) Who owns the mixed-case email account (look it up with `select id from users where email <> lower(email)` and do not write the address down), and whether they can sign in during the window.
   - (e) Where DNS is hosted, and whether Cloudflare proxying is involved.
@@ -147,20 +179,7 @@ Ceiling on S7: a write that stamps neither `created_at` nor `updated_at` is invi
 
   This is the rollback target for S25, and the dyno formation to restore in R1. **Flag:** any process type other than `web`, or a scheduler add-on. Maintenance mode will not stop either, so S13 must scale it down.
 
-- [ ] **S7 · AGENT (read-only) — Inventory what the port wrote to Neon.** First confirm the cutoff from the dump Neon was restored from:
-
-  ```bash
-  "$PGR" --list "$REPO/.local/prod-dump.dump" | grep 'Archive created at'
-  ```
-
-  It reads `2026-08-13 22:17:25 EDT`. Then run **C8** with `cutoff='2026-08-14 02:17:25+00'` and save the output to `$CUT/neon-drift.txt`. The owner writes a verdict beside every nonzero line, using the table above. **Red:** C8's `public` object list contains anything beyond these:
-  - the 16 app tables and `_prisma_migrations` (relkind `r` 17)
-  - 16 sequences (`S`)
-  - their indexes (`i`, 47 on the baseline copy)
-  - `pg_stat_statements`' 2 views (`v`)
-  - the `pg_trgm` and `pg_stat_statements` extensions
-
-  S17 destroys anything unaccounted for.
+- [ ] **S7 · AGENT (read-only, optional) — What S17 will discard.** For the owner's peace of mind only; nothing is re-applied. `scripts/row-counts.sh "$NEON_DIRECT" > "$CUT/neon-discarded.txt"` records staging's per-table counts, and C8 with `cutoff='2026-08-14 02:17:25+00'` (the August dump's creation time) shows what changed since the last restore. There is no red: whatever it lists is deleted by design.
 
 - [ ] **S8 · OWNER — Lower the DNS TTL.** Set the apex and `www` records to TTL 300. Do it at least one old TTL (from `before.txt`) before the window. **Check:** `dig +noall +answer @1.1.1.1 cinemadraft.com` shows ≤ 300. **Red:** a higher TTL on the day, which makes any DNS rollback that much slower.
 
@@ -192,12 +211,13 @@ Ceiling on S7: a write that stamps neither `created_at` nor `updated_at` is invi
   export NEON_DIRECT="$DATABASE_URL" DUMP="$CUT/rehearsal.dump"       # a LOCAL database, for the rehearsal only
   ```
 
-  Run S17–S20 and S22 **verbatim** against it, substituting `$DUMP` for `final.dump`. 🔴 **Run each step's check once before its fix, and watch it go red**:
-  - C4's uppercase count is > 0 before S18
-  - C5 shows `f` rows before S19
-  - C6 reads `0|12` before S20
+  Run the script against it, twice, exactly as S17 will, but with `--yes` (localhost only):
 
-  A check that is already green before the fix is not a check. Then:
+  ```bash
+  bash scripts/restore-from-heroku.sh "$DUMP" "$NEON_DIRECT" --yes    # then again: it must be green both times
+  ```
+
+  Its mutations were already watched going red on 2026-09-27 (Conventions); re-do one if the script has changed since. Then:
 
   ```bash
   env -u E2E_TEST_AUTH DATABASE_URL="$NEON_DIRECT" npx vitest run lib/services/clerk-identity
@@ -237,6 +257,8 @@ Before starting, re-export the shell block in Conventions. Confirm `git rev-pars
   heroku pg:backups -a cinemadraft          # note the backup id; T7 keeps it
   ```
 
+  Without the CLI: `"$(brew --prefix libpq)/bin/pg_dump" -Fc -d "$HEROKU_DB" -f "$CUT/final.dump"`. That leaves no Heroku-side backup for T7, so take one from the Heroku dashboard as well.
+
   **Check (AGENT):**
 
   ```bash
@@ -248,69 +270,47 @@ Before starting, re-export the shell block in Conventions. Confirm `git rev-pars
   Then run **C2**, run C1 once more, and record `select count(*) from "Users" where email <> lower(email)` from `$HEROKU_DB` into `$CUT/heroku-mixed-case.txt`.
   **Red:** C2 is not empty, or C1 has moved since S13. Either means a write landed between the freeze and the dump. Go back to S13's red path, then capture again.
 
-- [ ] **S15 · OWNER — Back up Neon.** In the Neon console, create branch `pre-cutover-<date>` from `main` at the current point in time. Export its **unpooled** URL as `NEON_BACKUP`.
-  **Check (AGENT):** `diff <(scripts/row-counts.sh "$NEON_BACKUP") <(scripts/row-counts.sh "$NEON_DIRECT")` is empty. **Red:** any difference, which means the branch is not at the current head.
-  This is the only copy of anything S7 found, and staging's way back.
+- [ ] **S15 · (Removed 2026-09-27.)** A Neon backup branch existed to keep what S7 found. Nothing on Neon is kept.
 
-- [ ] **S16 · AGENT (read-only) — Re-run C8 against `$NEON_DIRECT`, and `diff` it against `$CUT/neon-drift.txt`.** **Red:** a new nonzero line that has no owner verdict. Stop and get one.
+- [ ] **S16 · (Removed 2026-09-27.)** It re-ran S7 to catch new staging writes needing a verdict. There are no verdicts.
 
-- [ ] **S17 · AGENT (owner approves) — Wipe and restore (T2).** 🔴 **Wipe first; do not use `--clean`.** `--clean` drops objects by the dump's names (`"Users"` and so on). The port's snake_case tables and `_prisma_migrations` would survive it, S18 would then collide, and `migrate deploy` would find nothing pending.
+- [ ] **S17 · AGENT (owner approves) — Wipe, restore, normalize, migrate, logos (T2, T3, T3b).** One command. The owner types the host at its prompt:
 
   ```bash
-  "$PSQL" "$NEON_DIRECT" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE' -c 'CREATE SCHEMA public'
-  "$PGR" --no-owner --no-privileges --exit-on-error -d "$NEON_DIRECT" "$CUT/final.dump"
+  bash scripts/restore-from-heroku.sh "$CUT/final.dump" "$NEON_DIRECT" 2>&1 | tee "$CUT/restore.txt"   # type ep-morning-block-aus9jqrt.c-10.us-east-1.aws.neon.tech
   ```
 
-  **Check:** the restore exits 0 with no `pg_restore: error` line. Then run **C3**, which must be empty. **Red:** any error, or a non-empty C3. Wipe and run it again. Never continue on a partial restore.
-
-- [ ] **S18 · AGENT (owner approves) — Normalize (D27).** PLAN.md § T2 leaves this step out. Spec §8, D27 and the Phase 2 plan all require it.
+  It does, in order and stopping at the first red: `DROP SCHEMA public CASCADE` (🔴 not `pg_restore --clean`, which drops only the dump's PascalCase names and leaves the port's snake_case tables and `_prisma_migrations` behind); `pg_restore --no-owner --no-privileges --exit-on-error` and **C3**; `prisma/normalize.sql` (D27, which PLAN.md § T2 leaves out) and **C4**; `migrate resolve --applied 0_init` then `migrate deploy`, with the target passed as `DIRECT_URL`, and **C5**; `prisma/award-logos.sql` and **C6**; then **C7**. The checks are defined in the script.
+  **Green:** the last line reads `GREEN: restored 17 tables into ep-morning-block-aus9jqrt…`, and the Prisma output names that host.
+  **Red:** any `RED:` line, which names its check. Fix the cause and run it again; every run starts with a wipe, so there is no partial state to clean up. Never continue past a red. A `normalize.sql` error most likely means Heroku's schema changed since the file was generated (`scripts/generate-normalize-sql.mjs`); S11 should have caught it first.
+  Then, AGENT, the part the script cannot do: every Blob URL answers `200`.
 
   ```bash
-  "$PSQL" "$NEON_DIRECT" -v ON_ERROR_STOP=1 -f prisma/normalize.sql
+  "$PSQL" "$NEON_DIRECT" -Atc "select image from events order by 1" | while read -r u; do curl -s -o /dev/null -w "%{http_code} $u\n" "$u"; done
   ```
 
-  **Check:** **C4**. Folded counts must be identical and the uppercase count must be 0. **Red:** a psql error. The file runs in one transaction, so a failure leaves the restore untouched. Look for a Heroku schema change that `normalize.sql` does not know about, since the file is generated from the schema; S11 should already have caught one.
+- [ ] **S18–S20 · (Folded into S17 on 2026-09-27.)** Normalize, migrate and the logo URLs are steps 3–5 of the script.
 
-- [ ] **S19 · AGENT (owner approves) — Migrate (T3b).**
-
-  ```bash
-  DIRECT_URL="$NEON_DIRECT" npx prisma migrate status          # must name ep-morning-block-aus9jqrt (not -pooler, not localhost) and list all 5 as not yet applied
-  DIRECT_URL="$NEON_DIRECT" npx prisma migrate resolve --applied 0_init
-  DIRECT_URL="$NEON_DIRECT" npx prisma migrate deploy          # expect the 4 later migrations applied
-  DIRECT_URL="$NEON_DIRECT" npx prisma migrate status          # "Database schema is up to date!"
-  ```
-
-  **Check:** **C5**, 10 rows, all `t`. Optionally, eyeball PLAN.md § T3b's five `\d` commands; C5 is the gate. **Red:** any `f`, above all row 1 (`nominations.year` still `text`).
-
-- [ ] **S20 · AGENT (owner approves) — Restore the logo URLs (T3).** The SQL is taken from PLAN.md so it cannot drift:
-
-  ```bash
-  awk '/^  UPDATE events SET image/ {sub(/^  /, ""); print}' "$REPO/docs/PLAN.md" > "$CUT/logos.sql"
-  test "$(wc -l < "$CUT/logos.sql")" -eq 12 && "$PSQL" "$NEON_DIRECT" -v ON_ERROR_STOP=1 -1 -f "$CUT/logos.sql"
-  ```
-
-  **Check:** **C6**. It reads `12|12`, and every Blob URL answers `200`. **Red:** `on_blob < shows`, which means an abbreviation mismatch or a 13th event, or any response other than 200. Count by query. Do not grep the HTML: the image optimizer URL-encodes the host.
-
-- [ ] **S21 · AGENT / OWNER — Re-apply what S4 said to.** Do each item only if its verdict says so.
-  - **Active season** (S7 recorded a year other than 2026). This must be two statements, because the partial unique index would reject a single-statement swap:
+- [ ] **S21 · AGENT / OWNER — Only what S4a decided.** Usually nothing. Staging data is never re-applied.
+  - **Active season**, if it should not be 2026. This must be two statements, because the partial unique index would reject a single-statement swap:
 
     ```sql
     BEGIN; UPDATE available_years SET is_active = false WHERE is_active;
     UPDATE available_years SET is_active = true WHERE year = <Y>; COMMIT;
     ```
 
-  - **Award entries**, whether replayed from plan files or newly decided in S4a. Follow the award-entry skill with `DATABASE_URL="$NEON_DIRECT"`. 🔴 Also set **`SITE_URL=https://next.cinemadraft.com`** on `refresh`: its default is `https://cinemadraft.com`, which is still Heroku at this point. You would get a 404 from Heroku, and the skill reads a 404 as "secret mismatch".
+  - **Award entries** that S4a decided must land between the restore and go-live. Follow the award-entry skill with `DATABASE_URL="$NEON_DIRECT"`. 🔴 Also set **`SITE_URL=https://next.cinemadraft.com`** on `refresh`: its default is `https://cinemadraft.com`, which is still Heroku at this point. You would get a 404 from Heroku, and the skill reads a 404 as "secret mismatch".
   - If the owner wants no broadcast, flip the flag by hand instead of running `finish --commit`: `UPDATE events SET nom_active = false, updated_at = now() WHERE abbreviation = '<abbr>'` (use `awards_active` for winners).
 
   **Check:** `refresh` reports no missing titles. C7's active-year line reads 1 row and the intended year.
 
-- [ ] **S22 · AGENT (read-only) — Data invariants.** Run **C7**.
+- [ ] **S22 · AGENT (read-only) — Data invariants.** The script ran C7 already; run **C7** again here, because S21 may have written since.
   - Claimed users = **0**.
   - Mixed-case emails = the number in `$CUT/heroku-mixed-case.txt`.
   - Folded-email collisions = **0**.
   - Active years = **1**.
 
-  **Red:** any line off. A nonzero claimed count means someone signed in to `next.` during the window, so stay signed out until S24. If that is what happened and S24 has not started, clear it with `UPDATE users SET clerk_id = NULL` and re-run C7. A mixed-case count that is off means S17 did not restore the dump you think it did.
+  **Red:** any line off. A nonzero claimed count means someone signed in to `next.` during the window, so stay signed out until S24. If that is what happened and S24 has not started, clear it with `UPDATE users SET clerk_id = NULL` and re-run C7. A mixed-case count that is off means S17 did not restore the dump you think it did. The script's last line prints the same count.
 
 - [ ] **S23 · OWNER — Clerk Production goes live on Vercel (T1, second half).** In Vercel Production scope **only**, set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` (`pk_live_…`) and `CLERK_SECRET_KEY` (`sk_live_…`). Preview keeps `pk_test_`.
   In Clerk Production → Webhooks, create an endpoint at `https://next.cinemadraft.com/api/webhooks/clerk` subscribed to `user.created` and `user.updated`. It is the same Production deployment the apex will serve. Put its signing secret in `CLERK_WEBHOOK_SIGNING_SECRET` (Production, Sensitive).
@@ -383,7 +383,6 @@ Raise the DNS TTL back at +48h if everything is green.
 - [ ] **S29 · OWNER — Keep the evidence first.**
   - `final.dump` sits in `$CUT` and in a second location off this machine, and `shasum -a 256 -c` passes on both copies.
   - `heroku pg:backups -a cinemadraft` still lists S14's backup as Completed.
-  - The Neon `pre-cutover-<date>` branch is kept.
 
   **Check (AGENT):** restore the second copy into a scratch container and diff its counts against `$CUT/dump-row-counts.tsv`. Use the CI-verify recipe from AGENTS.md on port 5435, then run `pg_restore` and `scripts/row-counts.sh`. **Red:** a non-empty diff means that copy is not a backup.
 
@@ -421,12 +420,12 @@ Raise the DNS TTL back at +48h if everything is green.
 
 ## Where this plan departs from PLAN.md § Phase 13
 
-1. **T2 leaves out `prisma/normalize.sql`.** Without it, `migrate deploy` runs against PascalCase tables and fails. The step is S18.
+1. **T2 leaves out `prisma/normalize.sql`.** Without it, `migrate deploy` runs against PascalCase tables and fails. It is step 3 of S17's script.
 2. **T3b's explanation of the wipe is wrong, and so is its fix as written.**
    - "a restore with `--clean` reverts them" is not what happens. `--clean` drops only the dump's PascalCase names, so the snake_case tables and `_prisma_migrations` survive.
    - `0_init` is the **normalized** schema, not the dump's.
    - The fix is S17's wipe, followed by `migrate resolve --applied 0_init` before `deploy`.
-3. **The row-count diff needs folded names after normalization.** `lower("AvailableYears")` is `availableyears`, not `available_years`, and the same goes for `DraftPicks` and `ProfileFeeds`. C4 strips the underscores.
+3. **The row-count diff needs folded names after normalization.** `lower("AvailableYears")` is `availableyears`, not `available_years`, and the same goes for `DraftPicks` and `ProfileFeeds`. The script's C4 strips the underscores.
 4. **T1 says recreate the webhook, and T4 says point it at the apex.** This plan does both: create it at `next.` in S23, then edit its URL in S26 so the secret carries over.
 5. **T5's verification is split.** Everything that can be proven before the point of no return is proven on `next.` (S24). Only the apex-specific checks remain after it (S27).
 
@@ -448,53 +447,9 @@ Every query runs as `"$PSQL" "$NEON_DIRECT" -At` unless marked otherwise.
 diff "$CUT/dump-row-counts.tsv" <(scripts/row-counts.sh "$HEROKU_DB")
 ```
 
-**C3: restore against dump, raw names.** Must be empty.
+**C3–C6 live in `scripts/restore-from-heroku.sh`**, which runs them after the step each one guards: C3 raw counts against the dump's (`scripts/dump-row-counts.sh` vs `scripts/row-counts.sh`), C4 folded counts and zero uppercase identifiers, C5 the nine T3b schema facts, C6 `12|12` logos on Blob. The script is their only definition.
 
-```bash
-diff "$CUT/dump-row-counts.tsv" <(scripts/row-counts.sh "$NEON_DIRECT")
-```
-
-**C4: normalized.** The diff must be empty and the count must be 0.
-
-```bash
-norm() { grep -v -e '^sequelizemeta' -e '^_prisma_migrations' | awk -F'\t' -v OFS='\t' '{gsub(/_/, "", $1); print}' | sort; }
-diff <(norm < "$CUT/dump-row-counts.tsv") <(scripts/row-counts.sh "$NEON_DIRECT" | norm)
-"$PSQL" "$NEON_DIRECT" -Atc "select (select count(*) from information_schema.columns where table_schema = 'public'
-  and (table_name <> lower(table_name) or column_name <> lower(column_name)))
-  + (select count(*) from pg_type t join pg_namespace n on n.oid = t.typnamespace
-     where n.nspname = 'public' and t.typtype = 'e' and t.typname <> lower(t.typname))"
-```
-
-**C5: the T3b schema.** 10 rows, all `t`.
-
-```sql
-select name, ok from (values
-  ('nominations.year is integer', coalesce((select data_type = 'integer' from information_schema.columns
-      where table_schema = 'public' and table_name = 'nominations' and column_name = 'year'), false)),
-  ('events.focused_award_id',   exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'events' and column_name = 'focused_award_id')),
-  ('available_years.is_active', exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'available_years' and column_name = 'is_active')),
-  ('movies.accent_hex',         exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'movies' and column_name = 'accent_hex')),
-  ('users.clerk_id',            exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'clerk_id')),
-  ('available_years_one_active partial unique', exists (select 1 from pg_indexes where schemaname = 'public'
-      and indexname = 'available_years_one_active' and indexdef like 'CREATE UNIQUE INDEX%WHERE is_active%')),
-  ('users_clerk_id_key unique', exists (select 1 from pg_indexes where schemaname = 'public'
-      and indexname = 'users_clerk_id_key' and indexdef like 'CREATE UNIQUE INDEX%')),
-  ('movies_title_trgm gin trigram', exists (select 1 from pg_indexes where schemaname = 'public'
-      and indexname = 'movies_title_trgm' and indexdef like '%USING gin%gin_trgm_ops%')),
-  ('pg_trgm installed', exists (select 1 from pg_extension where extname = 'pg_trgm')),
-  -- to_jsonb, so the query still parses (and reads f) when the column is missing
-  ('exactly one active year', (select count(*) = 1 from available_years y where (to_jsonb(y) ->> 'is_active')::boolean))
-) as t(name, ok);
-```
-
-**C6: logos.** Must read `12|12`, then twelve lines each starting `200`.
-
-```bash
-"$PSQL" "$NEON_DIRECT" -Atc "select count(*) filter (where image like 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/%'), count(*) from events"
-"$PSQL" "$NEON_DIRECT" -Atc "select image from events order by 1" | while read -r u; do curl -s -o /dev/null -w "%{http_code} $u\n" "$u"; done
-```
-
-**C7: invariants.** S22 gives the expected value for each line.
+**C7: invariants.** S22 gives the expected value for each line. The script runs the same four at its end, plus a second folded recount.
 
 ```sql
 select 'claimed', count(*) from users where clerk_id is not null
@@ -503,7 +458,7 @@ union all select 'folded collisions', count(*) from (select 1 from users group b
 union all select 'active years', count(*) from available_years where is_active;
 ```
 
-**C8: drift since a cutoff.** Feed it to psql on stdin (`"$PSQL" "$NEON_DIRECT" -v cutoff='2026-08-14 02:17:25+00' <<'SQL' … SQL`), because psql does not interpolate variables in `-c`.
+**C8: drift since a cutoff.** For S7's optional report, and for R2/R3 with `cutoff=$GOLIVE`. Feed it to psql on stdin (`"$PSQL" "$NEON_DIRECT" -v cutoff='2026-08-14 02:17:25+00' <<'SQL' … SQL`), because psql does not interpolate variables in `-c`.
 
 ```sql
 select table_name,
