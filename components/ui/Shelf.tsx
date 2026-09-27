@@ -14,6 +14,13 @@ import { SectionHead } from './SectionHead';
  *
  * `overflow-x-auto` with `snap-x` and per-item `snap-start`, so a flick lands
  * on a poster edge rather than mid-image.
+ *
+ * 🔴 **`relative` is what makes the scroller clip.** An `overflow` box clips
+ * only descendants whose containing block is inside it, and an absolutely
+ * positioned one's is its nearest *positioned* ancestor. Without `relative`
+ * here, the ledger's `sr-only` spans (`position: absolute`) inside every pick
+ * resolved to an ancestor outside the shelf, so the shelf scrolled and the
+ * document scrolled too — 584px in a 390px viewport on `/leagues/1` (P12.T5).
  */
 export function Shelf({
   as = 'h2',
@@ -58,7 +65,7 @@ export function Shelf({
           heading
         )}
       </SectionHead>
-      <ul className="snap-x scroll-px-1 flex gap-3 overflow-x-auto pb-2 [&>li]:snap-start [&>li]:shrink-0">
+      <ul className="snap-x scroll-px-1 relative flex gap-3 overflow-x-auto pb-2 [&>li]:snap-start [&>li]:shrink-0">
         {children}
       </ul>
     </section>
