@@ -261,21 +261,24 @@ export const nominationRepository = {
   },
 
   /**
-   * Is this film already nominated in this category this year?
+   * This film's nominations in this category this year — usually none or one,
+   * and two when one film is up for two people (*One Battle After Another*,
+   * Best Supporting Actor 2026: Benicio del Toro and Sean Penn).
    *
    * Its own method rather than a filter over `findManyByAwardIds`, because the
-   * caller is asking a yes/no question before a write and should not have to
-   * load a category's whole slate to answer it.
+   * caller is asking a question before a write and should not have to load a
+   * category's whole slate to answer it.
    */
-  async findByAwardMovieYear(
+  async findManyByAwardMovieYear(
     awardId: number,
     movieId: number,
     year: number,
-  ): Promise<Nomination | null> {
-    const row = await db.nomination.findFirst({
+  ): Promise<Nomination[]> {
+    const rows = await db.nomination.findMany({
       where: { awardId: BigInt(awardId), movieId: BigInt(movieId), year },
       select: SELECT,
+      orderBy: { id: 'asc' },
     });
-    return row ? toNomination(row) : null;
+    return rows.map(toNomination);
   },
 };

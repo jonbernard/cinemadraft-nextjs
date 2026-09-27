@@ -6,6 +6,7 @@ import { nominationRepository } from '@/lib/repositories/nominations';
 import { pointRepository } from '@/lib/repositories/points';
 import { winnerRepository } from '@/lib/repositories/winners';
 import { posterUrl } from '@/lib/utils/poster';
+import { entryStatus } from './entry-status';
 
 export type Nominee = {
   nominationId: number;
@@ -23,6 +24,8 @@ export type Nominee = {
   /** The person, for categories that nominate one. */
   detailName: string | null;
   detailCharacter: string | null;
+  /** TMDB's person id, so the admin's picker can tell who is already up. */
+  detailId: number | null;
   isWinner: boolean;
 };
 
@@ -47,9 +50,11 @@ export type AwardShowView = {
   name: string;
   year: number;
   categories: Category[];
-  /** The source's own flags for "this show still needs entering". */
-  needsNominations: boolean;
-  needsWinners: boolean;
+  /**
+   * `events.awards_active`: the ceremony is being broadcast now, so `/live`
+   * streams it. Not "needs winners" — that is derived, on the index page.
+   */
+  onAir: boolean;
   /** The show's mark, a Blob URL since Phase 11. */
   imageUrl: string | null;
 };
@@ -59,6 +64,10 @@ export type AwardShowSummary = {
   abbreviation: string;
   name: string;
   categoryCount: number;
+  /**
+   * Derived from the show's dates and this season's entries
+   * (`./entry-status.ts`) — never from `nom_active`, which nothing sets.
+   */
   needsNominations: boolean;
   needsWinners: boolean;
   /** The show's mark, a Blob URL since Phase 11. */
@@ -92,6 +101,7 @@ function toNominee(
     movieId: number;
     detailName: string | null;
     detailCharacter: string | null;
+    detailId: number | null;
   },
   movie: Movie | undefined,
   winningNominationIds: ReadonlySet<number>,
@@ -104,6 +114,7 @@ function toNominee(
     posterPath: movie?.poster ?? null,
     detailName: nomination.detailName,
     detailCharacter: nomination.detailCharacter,
+    detailId: nomination.detailId,
     isWinner: winningNominationIds.has(nomination.id),
   };
 }
@@ -185,20 +196,59 @@ export async function getAwardShow(
     name: event.name,
     year,
     categories,
-    needsNominations: event.nomActive === true,
-    needsWinners: event.awardsActive === true,
+    onAir: event.awardsActive === true,
     imageUrl: event.image,
   };
 }
 
-/** Every award show, for the index page. */
-export async function getAwardShows(): Promise<AwardShowSummary[]> {
-  const events = await eventRepository.findAll();
-  const awards = await awardRepository.findAll();
+/**
+ * Every award show, for the index page, with what is still to enter for
+ * `season`.
+ *
+ * Two season-wide reads rather than one per show: the index lists all twelve,
+ * and the question for each is only "any nominations yet?" and "any category
+ * with nominees but no winner?".
+ */
+export async function getAwardShows(
+  season: number,
+  now: number = Date.now(),
+): Promise<AwardShowSummary[]> {
+  const [events, awards, nominations, winners] = await Promise.all([
+    eventRepository.findAll(),
+    awardRepository.findAll(),
+    nominationRepository.findByYear(season),
+    winnerRepository.findByYear(season),
+  ]);
 
+  const eventOfAward = new Map(awards.map((award) => [award.id, award.eventId]));
   const countByEvent = new Map<number, number>();
   for (const award of awards) {
     countByEvent.set(award.eventId, (countByEvent.get(award.eventId) ?? 0) + 1);
+  }
+
+  const nominated = new Set(nominations.map((nomination) => nomination.awardId));
+  const decided = new Set(winners.map((winner) => winner.awardId));
+  const entries = new Map<
+    number,
+    { nominations: number; categoriesWithNominees: number; categoriesDecided: number }
+  >();
+  const entriesOf = (eventId: number) => {
+    let entry = entries.get(eventId);
+    if (!entry) {
+      entry = { nominations: 0, categoriesWithNominees: 0, categoriesDecided: 0 };
+      entries.set(eventId, entry);
+    }
+    return entry;
+  };
+  for (const nomination of nominations) {
+    const eventId = eventOfAward.get(nomination.awardId);
+    if (eventId != null) entriesOf(eventId).nominations += 1;
+  }
+  for (const awardId of nominated) {
+    const eventId = eventOfAward.get(awardId);
+    if (eventId == null) continue;
+    entriesOf(eventId).categoriesWithNominees += 1;
+    if (decided.has(awardId)) entriesOf(eventId).categoriesDecided += 1;
   }
 
   return events.map((event: Event) => ({
@@ -206,8 +256,7 @@ export async function getAwardShows(): Promise<AwardShowSummary[]> {
     abbreviation: event.abbreviation,
     name: event.name,
     categoryCount: countByEvent.get(event.id) ?? 0,
-    needsNominations: event.nomActive === true,
-    needsWinners: event.awardsActive === true,
+    ...entryStatus(event, season, entriesOf(event.id), now),
     imageUrl: event.image,
   }));
 }

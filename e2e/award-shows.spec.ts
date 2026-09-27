@@ -114,6 +114,45 @@ async function seedShow(): Promise<{ abbreviation: string }> {
   });
 }
 
+/** Nominate one scratch film in the scratch Best Picture, straight into the table. */
+async function seedNomination(title: string): Promise<void> {
+  await withDb(async (query) => {
+    await query(
+      `insert into nominations (movie_id, award_id, year, created_at, updated_at)
+         select m.id, a.id, $3, now(), now()
+           from movies m, awards a
+          where m.title = $1 and a.name = $2`,
+      [title, `${TAG} Best Picture`, YEAR],
+    );
+  });
+}
+
+/** The controls an admin has on this page — every one of them, by name. */
+const ADMIN_CONTROLS = [
+  'Mark winner',
+  'Clear winner',
+  'Remove',
+  'Put on screen',
+  'Edit this show',
+  'Delete category',
+  'Add category',
+];
+
+/** The show page in one of the admin's modes (`lib/utils/admin-mode.ts`). */
+function inMode(abbreviation: string, mode?: 'view' | 'nominations' | 'winners'): string {
+  return `/award-shows/${abbreviation}?year=${YEAR}${mode ? `&mode=${mode}` : ''}`;
+}
+
+/** Every admin control is absent — and so is the mode selector and the Live switch. */
+async function expectNoAdminControls(page: Page): Promise<void> {
+  for (const name of ADMIN_CONTROLS) {
+    await expect(page.getByRole('button', { name })).toHaveCount(0);
+  }
+  await expect(page.getByRole('group', { name: 'Admin mode' })).toHaveCount(0);
+  await expect(page.getByRole('switch')).toHaveCount(0);
+  await expect(page.getByRole('searchbox')).toHaveCount(0);
+}
+
 /**
  * Seat a throwaway identity and make it an admin.
  *
@@ -184,14 +223,38 @@ test.describe('award shows', () => {
     // D44: the source never guarded these, and they are what a member opens
     // mid-ceremony. This test signs nobody in at all — that is the point of it.
     const { abbreviation } = await seedShow();
+    // 🔴 A nominee on the page, so "no controls on the posters" is a claim
+    // about a poster that exists rather than about an empty grid.
+    await seedNomination(FILMS[0] as string);
 
-    const response = await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+    // 🔴 Asking for an admin mode by URL changes nothing for a visitor; the
+    // source honoured `/nominations` for anyone who typed it.
+    const response = await page.goto(inMode(abbreviation, 'nominations'));
     expect(response?.status()).toBe(200);
 
     await expect(page.getByRole('heading', { name: `${TAG} Show` })).toBeVisible();
     await expect(page.getByText(`${TAG} Best Picture`)).toBeVisible();
-    await expect(page.getByRole('searchbox')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Mark winner' })).toHaveCount(0);
+    await expect(page.getByText(FILMS[0] as string, { exact: true })).toBeVisible();
+    await expectNoAdminControls(page);
+  });
+
+  test('a signed-in member who is not an admin sees the posters and no controls', async ({
+    page,
+  }) => {
+    // The other half of "admin only": a session is not a role. The controls
+    // are hidden for tidiness — the actions refuse on their own — but a
+    // member shown "Mark winner" would reasonably believe they could.
+    const { abbreviation } = await seedShow();
+    await seedNomination(FILMS[0] as string);
+    await signInAs(page, {
+      email: `${TAG}-member-${Date.now()}@example.test`,
+      firstName: 'Member',
+    });
+
+    await page.goto(inMode(abbreviation, 'winners'));
+
+    await expect(page.getByText(FILMS[0] as string, { exact: true })).toBeVisible();
+    await expectNoAdminControls(page);
   });
 
   test('says "1 category", not "1 categories"', async ({ page }) => {
@@ -254,7 +317,7 @@ test.describe('award shows', () => {
     test('nominates a film, marks a winner, then corrects it', async ({ page }) => {
       const { abbreviation } = await seedShow();
       await signInAsAdmin(page);
-      await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+      await page.goto(inMode(abbreviation, 'nominations'));
 
       // Nominate both films. A fragment of the title is enough (§10).
       for (const title of FILMS) {
@@ -268,8 +331,13 @@ test.describe('award shows', () => {
 
       expect((await stateOfShow()).nominations.map((row) => row.title)).toEqual(FILMS);
 
+      // Into Winners, by the selector — the mode is the URL, so the server
+      // renders it and a reload keeps it.
+      await page.getByText('Winners', { exact: true }).click();
+      await expect(page).toHaveURL(/mode=winners/);
+      await expect(page.getByRole('radio', { name: 'Winners' })).toBeChecked();
+
       // Mark the first as winner.
-      await page.reload();
       await page
         .getByRole('listitem')
         .filter({ hasText: FILMS[0] as string })
@@ -305,7 +373,7 @@ test.describe('award shows', () => {
 
       const { abbreviation } = await seedShow();
       await signInAsAdmin(page);
-      await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+      await page.goto(inMode(abbreviation, 'nominations'));
 
       // Absent before.
       const before = await withDb(async (query) =>
@@ -338,14 +406,121 @@ test.describe('award shows', () => {
       );
     });
 
+    test('names the person from the film’s credits — and the same film twice, for two people', async ({
+      page,
+    }) => {
+      // The source app's picker (§12): choose the film, then choose the person
+      // from its TMDB cast and crew, typing to filter. There is no free-text
+      // field for the name, so the credits are the only way in — which is why
+      // this needs TMDB, and skips without it the way the ingest test does.
+      test.skip(!hasTmdb, 'TMDB_API_KEY not configured');
+
+      const { abbreviation } = await seedShow();
+      const category = `${TAG} Best Actor`;
+      const film = `${TAG} Casablanca`;
+      await withDb(async (query) => {
+        await query(
+          `insert into awards (name, event_id, points, requires_nominee_name, created_at, updated_at)
+             select $1, a.event_id, a.points, true, now(), now()
+               from awards a where a.name = $2`,
+          [category, `${TAG} Best Picture`],
+        );
+        // A scratch row carrying a real TMDB id: the credits are TMDB's, and
+        // 289 is Casablanca, which the restored database has never cached.
+        await query(
+          `insert into movies (title, sort_title, tmdb_id, created_at, updated_at)
+             values ($1, $1, '289', now(), now())`,
+          [film],
+        );
+      });
+      const nominated = () =>
+        withDb(
+          async (query) =>
+            (await query(
+              `select n.detail_name, n.detail_character, n.detail_id::int
+                 from nominations n join awards a on a.id = n.award_id
+                where a.name = $1 order by n.id`,
+              [category],
+            )) as {
+              detail_name: string;
+              detail_character: string | null;
+              detail_id: number;
+            }[],
+        );
+
+      await signInAsAdmin(page);
+      await page.goto(inMode(abbreviation, 'nominations'));
+      const section = page
+        .locator('section')
+        .filter({ has: page.getByRole('heading', { name: category }) });
+
+      // The search result, not a poster: once the film is nominated, its
+      // poster's own controls carry the title in their accessible names too.
+      const filmResult = () =>
+        section
+          .getByRole('button', { name: new RegExp(film) })
+          .filter({ hasNotText: /winner|Remove/ });
+
+      // Film first. The person field does not exist until there is a film.
+      await expect(
+        section.getByRole('searchbox', { name: 'Person nominated' }),
+      ).toHaveCount(0);
+      await section.getByRole('searchbox').fill(`${TAG} Casa`);
+      await filmResult().click();
+
+      // Then the credits, filtered as they are typed.
+      const people = section.getByRole('list', { name: 'Cast and crew' });
+      await expect(people.getByRole('button', { name: /Humphrey Bogart/ })).toBeVisible();
+      await expect(people.getByRole('button', { name: /Claude Rains/ })).toBeVisible();
+      await section.getByRole('searchbox', { name: 'Person nominated' }).fill('bogart');
+      await expect(people.getByRole('button', { name: /Claude Rains/ })).toHaveCount(0);
+      await people.getByRole('button', { name: /Humphrey Bogart/ }).click();
+
+      await expect(
+        section.getByText(`Humphrey Bogart nominated for ${film}`),
+      ).toBeVisible();
+      expect(await nominated()).toEqual([
+        {
+          detail_name: 'Humphrey Bogart',
+          detail_character: 'Rick Blaine',
+          detail_id: 4110,
+        },
+      ]);
+      // And the nomination shows the person, on its poster.
+      await expect(
+        section
+          .getByRole('listitem')
+          .filter({ hasText: film })
+          .getByText('Humphrey Bogart as Rick Blaine'),
+      ).toBeVisible();
+
+      // 🔴 The same film again, for somebody else — the Benicio del Toro /
+      // Sean Penn shape. The one already up is named and cannot be chosen.
+      await section.getByRole('searchbox').fill(`${TAG} Casa`);
+      await filmResult().click();
+      const bogart = people.getByRole('button', { name: /Humphrey Bogart/ });
+      await expect(bogart).toBeDisabled();
+      await expect(bogart).toContainText('Nominated');
+      await section.getByRole('searchbox', { name: 'Person nominated' }).fill('rains');
+      await people.getByRole('button', { name: /Claude Rains/ }).click();
+
+      await expect(section.getByText(`Claude Rains nominated for ${film}`)).toBeVisible();
+      expect((await nominated()).map((row) => row.detail_name)).toEqual([
+        'Humphrey Bogart',
+        'Claude Rains',
+      ]);
+      await expect(section.getByRole('listitem').filter({ hasText: film })).toHaveCount(
+        2,
+      );
+    });
+
     test('one film nominated twice in a category: only the nomination that won is the winner', async ({
       page,
     }) => {
       // The owner's report: *One Battle After Another* for Benicio del Toro and
-      // for Sean Penn, one win, and both showed "Winner" — in the grid, and in
-      // this list, where both also offered "Clear winner". Seeded in SQL
-      // because `attachNominee` refuses a film's second nomination in one
-      // category; the shape reaches production through the importer.
+      // for Sean Penn, one win, and both showed "Winner" and both offered
+      // "Clear winner". Seeded in SQL so the shape is exact; entering it
+      // through the picker is the TMDB-backed test below.
       const { abbreviation } = await seedShow();
       const people = ['Benicio del Toro', 'Sean Penn'] as const;
       await withDb(async (query) => {
@@ -385,26 +560,24 @@ test.describe('award shows', () => {
         );
 
       await signInAsAdmin(page);
-      await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
-      // The admin list names the film only, so its two rows read the same; they
-      // come in nomination order, which is the order they were seeded in. The
-      // database says which person the click recorded.
-      const rows = page
+      await page.goto(inMode(abbreviation, 'winners'));
+      // One poster each, told apart by the person line under it — which is
+      // what the controls on each poster are scoped by here.
+      const posters = page
         .getByRole('listitem')
         .filter({ hasText: FILMS[0] as string })
-        .filter({ has: page.getByRole('button', { name: 'Remove' }) });
-      const [benicio, sean] = [rows.nth(0), rows.nth(1)];
-      await expect(rows).toHaveCount(2);
+        .filter({ has: page.getByRole('button', { name: /winner/ }) });
+      await expect(posters).toHaveCount(2);
+      const benicio = posters.filter({ hasText: 'Benicio del Toro' });
+      const sean = posters.filter({ hasText: 'Sean Penn' });
 
       await sean.getByRole('button', { name: 'Mark winner' }).click();
       await expect.poll(winningPerson).toEqual(['Sean Penn']);
 
       await page.reload();
-      // One chip in the grid and one in the list — four if both were crowned.
-      await expect(page.getByText('Winner', { exact: true })).toHaveCount(2);
-      await expect(
-        page.getByRole('listitem').filter({ hasText: 'Sean Penn' }).getByText('Winner'),
-      ).toBeVisible();
+      // One chip, on the one poster that won — two if both were crowned.
+      await expect(page.getByText('Winner', { exact: true })).toHaveCount(1);
+      await expect(sean.getByText('Winner', { exact: true })).toBeVisible();
       await expect(sean.getByRole('button', { name: 'Clear winner' })).toBeVisible();
       await expect(benicio.getByRole('button', { name: 'Mark winner' })).toBeVisible();
 
@@ -413,13 +586,8 @@ test.describe('award shows', () => {
       await expect.poll(winningPerson).toEqual(['Benicio del Toro']);
 
       await page.reload();
-      await expect(page.getByText('Winner', { exact: true })).toHaveCount(2);
-      await expect(
-        page
-          .getByRole('listitem')
-          .filter({ hasText: 'Benicio del Toro' })
-          .getByText('Winner'),
-      ).toBeVisible();
+      await expect(page.getByText('Winner', { exact: true })).toHaveCount(1);
+      await expect(benicio.getByText('Winner', { exact: true })).toBeVisible();
       await expect(benicio.getByRole('button', { name: 'Clear winner' })).toBeVisible();
       await expect(sean.getByRole('button', { name: 'Mark winner' })).toBeVisible();
     });
@@ -429,7 +597,7 @@ test.describe('award shows', () => {
       // keeps scoring for a nomination the app no longer believes in.
       const { abbreviation } = await seedShow();
       await signInAsAdmin(page);
-      await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+      await page.goto(inMode(abbreviation, 'nominations'));
 
       await page.getByRole('searchbox').fill(FILMS[0] as string);
       await page
@@ -438,15 +606,109 @@ test.describe('award shows', () => {
         .click();
       await expect(page.getByText(`${FILMS[0]} nominated`)).toBeVisible();
 
-      await page.reload();
+      await page.goto(inMode(abbreviation, 'winners'));
       await page.getByRole('button', { name: 'Mark winner' }).click();
       await expect.poll(async () => (await stateOfShow()).winners.length).toBe(1);
 
-      await page.reload();
+      await page.goto(inMode(abbreviation, 'nominations'));
       await page.getByRole('button', { name: 'Remove' }).click();
+      // 🔴 It asks first, and says the win goes too. Nothing is removed until
+      // the dialog is answered.
+      const confirm = page.getByRole('dialog');
+      await expect(confirm).toContainText('Its win goes with it.');
+      expect((await stateOfShow()).nominations).toHaveLength(1);
+      await confirm.getByRole('button', { name: 'Remove' }).click();
 
       await expect.poll(async () => (await stateOfShow()).winners.length).toBe(0);
       await expect.poll(async () => (await stateOfShow()).nominations.length).toBe(0);
+    });
+
+    test('each mode shows its own job and nothing else', async ({ page }) => {
+      // The source's View / Nominations / Pick Winners, kept apart the same
+      // way: a "Remove" one poster-width from "Mark winner" on the night is
+      // a slip waiting to happen.
+      const { abbreviation } = await seedShow();
+      await seedNomination(FILMS[0] as string);
+      await signInAsAdmin(page);
+      const poster = page.getByRole('listitem').filter({ hasText: FILMS[0] as string });
+      const selector = page.getByRole('group', { name: 'Admin mode' });
+
+      // View — off air, the default — is what a reader sees, plus the selector
+      // and the show's settings.
+      await page.goto(inMode(abbreviation));
+      await expect(selector.getByRole('radio', { name: 'View' })).toBeChecked();
+      await expect(poster).toBeVisible();
+      for (const name of ['Mark winner', 'Remove', 'Put on screen', 'Delete category']) {
+        await expect(page.getByRole('button', { name })).toHaveCount(0);
+      }
+      await expect(page.getByRole('searchbox')).toHaveCount(0);
+      await expect(page.getByRole('switch')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Edit this show' })).toBeVisible();
+
+      // Nominations — add, remove, set up categories.
+      await page.goto(inMode(abbreviation, 'nominations'));
+      await expect(poster.getByRole('button', { name: /^Remove/ })).toBeVisible();
+      await expect(
+        page.getByRole('searchbox', { name: /Nominate a film/ }),
+      ).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Add category' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Delete category' })).toBeVisible();
+      await expect(page.getByRole('button', { name: /winner/i })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: /on screen/i })).toHaveCount(0);
+      await expect(page.getByRole('switch')).toHaveCount(0);
+
+      // Winners — mark, clear, put on screen, go on air.
+      await page.goto(inMode(abbreviation, 'winners'));
+      await expect(poster.getByRole('button', { name: /^Mark winner/ })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Put on screen' })).toBeVisible();
+      await expect(page.getByRole('switch', { name: 'Live' })).toBeVisible();
+      await expect(page.getByRole('button', { name: /^Remove/ })).toHaveCount(0);
+      await expect(page.getByRole('searchbox')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Add category' })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Delete category' })).toHaveCount(0);
+    });
+
+    test('the Live switch puts the show on air, and on air an admin lands in Winners', async ({
+      page,
+    }) => {
+      const { abbreviation } = await seedShow();
+      await seedNomination(FILMS[0] as string);
+      await signInAsAdmin(page);
+      const onAir = async () =>
+        (
+          (await withDb((query) =>
+            query('select awards_active from events where abbreviation = $1', [
+              abbreviation,
+            ]),
+          )) as { awards_active: boolean | null }[]
+        )[0]?.awards_active === true;
+
+      // Choosing Winners is not going on air: the mode is this admin's view.
+      await page.goto(inMode(abbreviation, 'winners'));
+      expect(await onAir()).toBe(false);
+      const live = page.getByRole('switch', { name: 'Live' });
+      await expect(live).not.toBeChecked();
+
+      // The switch is. Pressed where a person presses it — the drawn track and
+      // its label; the native box under them is visually hidden.
+      const track = page.locator('label').filter({ has: live });
+      await track.click();
+      await expect.poll(onAir).toBe(true);
+
+      // 🔴 On air, the page with no `?mode=` opens in Winners — from the
+      // dashboard banner, a bookmark, a reload after the laptop slept.
+      await page.goto(inMode(abbreviation));
+      await expect(page.getByRole('radio', { name: 'Winners' })).toBeChecked();
+      await expect(page.getByRole('button', { name: 'Mark winner' })).toBeVisible();
+      // An explicit View is still View.
+      await page.goto(inMode(abbreviation, 'view'));
+      await expect(page.getByRole('button', { name: 'Mark winner' })).toHaveCount(0);
+
+      // And off again.
+      await page.goto(inMode(abbreviation, 'winners'));
+      await expect(live).toBeChecked();
+      await track.click();
+      await expect.poll(onAir).toBe(false);
     });
   });
 });

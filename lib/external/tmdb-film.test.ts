@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import fixture from '@/fixtures/movie-by-id.json';
 import { clearCacheForTests } from './cache';
-import { fetchTmdbFilmPage } from './tmdb-film';
+import { fetchTmdbFilmPage, fetchTmdbFilmPeople } from './tmdb-film';
 
 /**
  * The contract here is `fixtures/movie-by-id.json` — La La Land, captured from
@@ -384,5 +384,93 @@ describe('failure never reaches the caller', () => {
     mockTmdb({ results: [] });
 
     expect(await fetchTmdbFilmPage('313369')).toBeNull();
+  });
+});
+
+/**
+ * The nominee picker's list (§12): who a nomination can name.
+ *
+ * Asserted against the same captured response as the page, so the ids here are
+ * TMDB's real person ids — the values `nominations.detail_id` stores.
+ */
+describe('fetchTmdbFilmPeople', () => {
+  beforeEach(() => {
+    process.env.TMDB_API_KEY = KEY;
+  });
+
+  it('returns null without a key, like the page', async () => {
+    delete process.env.TMDB_API_KEY;
+    expect(await fetchTmdbFilmPeople('313369')).toBeNull();
+  });
+
+  it('lists the cast first, in billing order, with their characters and ids', async () => {
+    mockTmdb(asTmdbWouldRespond());
+    const people = (await fetchTmdbFilmPeople('313369')) ?? [];
+
+    expect(people.slice(0, 2)).toEqual([
+      {
+        id: 30614,
+        name: 'Ryan Gosling',
+        kind: 'cast',
+        character: 'Sebastian',
+        jobs: null,
+      },
+      {
+        id: expect.any(Number),
+        name: 'Emma Stone',
+        kind: 'cast',
+        character: 'Mia',
+        jobs: null,
+      },
+    ]);
+    const firstCrew = people.findIndex((person) => person.kind === 'crew');
+    expect(people.slice(firstCrew).every((person) => person.kind === 'crew')).toBe(true);
+  });
+
+  it('gives each crew member one entry, their jobs joined, directing first', async () => {
+    // Three crew rows for Damien Chazelle are one person to choose, and the
+    // job an award names him for leads.
+    mockTmdb(asTmdbWouldRespond());
+    const people = (await fetchTmdbFilmPeople('313369')) ?? [];
+
+    const chazelle = people.filter((person) => person.name === 'Damien Chazelle');
+    expect(chazelle).toEqual([
+      expect.objectContaining({
+        kind: 'crew',
+        character: null,
+        jobs: 'Director, Writer, Lyricist',
+      }),
+    ]);
+    // Directing and Writing lead the crew; the cinematographer and the editor
+    // (Camera, Editing) come after, not in TMDB's array order.
+    const at = (name: string) => people.findIndex((person) => person.name === name);
+    expect(at('Damien Chazelle')).toBeLessThan(at('Linus Sandgren'));
+    expect(at('Damien Chazelle')).toBeLessThan(at('Tom Cross'));
+    expect(at('Linus Sandgren')).toBeLessThan(at('Tom Cross'));
+  });
+
+  it('keeps someone who acted and crewed as two choices, so a crew pick stores no character', async () => {
+    // The source deduped by name and kept the cast row, which is how a
+    // director's nomination came to be stored with a cameo's character.
+    mockTmdb(asTmdbWouldRespond());
+    const people = (await fetchTmdbFilmPeople('313369')) ?? [];
+
+    expect(
+      people
+        .filter((person) => person.name === 'John Legend')
+        .map(({ kind, character, jobs }) => ({ kind, character, jobs })),
+    ).toEqual([
+      { kind: 'cast', character: 'Keith', jobs: null },
+      { kind: 'crew', character: null, jobs: 'Executive Producer' },
+    ]);
+  });
+
+  it('shares the film page’s request and its cache entry', async () => {
+    const fetchMock = mockTmdb(asTmdbWouldRespond());
+
+    await fetchTmdbFilmPage('313369');
+    await fetchTmdbFilmPeople('313369');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

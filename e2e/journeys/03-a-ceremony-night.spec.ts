@@ -270,17 +270,22 @@ test.describe('journey 3 — a ceremony night', () => {
     });
 
     await beat(page, 'The show is renamed, and given a ceremony date', async () => {
-      // The one editing surface that exists: `components/EventAdmin.tsx`.
-      await page.getByLabel('Name', { exact: true }).fill(`${TAG} Show of Shows`);
+      // The one editing surface that exists: `components/EventAdmin.tsx`,
+      // behind "Edit this show" in a modal dialog.
+      await page.getByRole('button', { name: 'Edit this show' }).click();
+      const edit = page.getByRole('dialog', { name: 'Edit this show' });
+      await edit.getByLabel('Name', { exact: true }).fill(`${TAG} Show of Shows`);
       // 🔴 Scoped to the Awards fieldset. "Announced" is the label of *two*
       // fields on this form — nominations and awards — so an unscoped
       // `getByLabel` is ambiguous and fails the locator, not the assertion.
-      await page
+      await edit
         .getByRole('group', { name: 'Awards' })
         .getByLabel('Announced')
         .fill(`${YEAR}-03-14T20:00`);
-      await page.getByRole('button', { name: 'Save show' }).click();
-      await expect(page.getByText('Saved')).toBeVisible();
+      await edit.getByRole('button', { name: 'Save show' }).click();
+      await expect(edit.getByText('Saved')).toBeVisible();
+      await edit.getByRole('button', { name: 'Close' }).click();
+      await expect(edit).toBeHidden();
 
       await page.reload();
       await expect(
@@ -289,6 +294,10 @@ test.describe('journey 3 — a ceremony night', () => {
     });
 
     await beat(page, 'A category is added, worth seven points', async () => {
+      // Setting the slate up is Nominations work — the admin's selector, the
+      // source's View / Nominations / Pick Winners (`lib/utils/admin-mode.ts`).
+      await page.getByText('Nominations', { exact: true }).click();
+      await expect(page).toHaveURL(/mode=nominations/);
       await page.getByLabel('New category').fill(CATEGORY);
       // The tier is chosen from the real points table, never typed: the column
       // is a foreign key, so a typed number would attach the wrong tier (D41).
@@ -338,7 +347,7 @@ test.describe('journey 3 — a ceremony night', () => {
     );
 
     await beat(page, 'The envelope is opened — the first film wins', async () => {
-      await page.goto(`/award-shows/${SHOW}?year=${YEAR}`);
+      await page.goto(`/award-shows/${SHOW}?year=${YEAR}&mode=winners`);
       await page
         .getByRole('listitem')
         .filter({ hasText: FIRST_FILM })
@@ -379,7 +388,7 @@ test.describe('journey 3 — a ceremony night', () => {
       async () => {
         // 🔴 The ordinary case during a live ceremony (§12): the old winner is
         // replaced, not joined by a second one.
-        await page.goto(`/award-shows/${SHOW}?year=${YEAR}`);
+        await page.goto(`/award-shows/${SHOW}?year=${YEAR}&mode=winners`);
         await page
           .getByRole('listitem')
           .filter({ hasText: SECOND_FILM })

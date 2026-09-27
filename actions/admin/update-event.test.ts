@@ -246,7 +246,7 @@ describe('updateEvent', () => {
     expect(row?.nomTime).toBe(1000n);
   });
 
-  it('writes all thirteen whitelisted fields, each distinguishable from every other', async () => {
+  it('writes all twelve whitelisted fields, each distinguishable from every other', async () => {
     // F1: the repository's `update` hand-assembles the six schedule columns
     // one by one. A copy-paste swap (e.g. `awardsDate: toBigInt(nomDate)`) or
     // a dropped line must fail this test — so every column here gets its own
@@ -268,7 +268,6 @@ describe('updateEvent', () => {
       awardsDate: Date.UTC(2026, 1, 2),
       awardsTime: 22_000,
       awardsDuration: 222_000,
-      liveResults: true,
     } as const;
 
     const result = await updateEvent(input);
@@ -280,7 +279,6 @@ describe('updateEvent', () => {
     expect(row?.image).toBe(input.image);
     expect(row?.nomActive).toBe(input.nomActive);
     expect(row?.awardsActive).toBe(input.awardsActive);
-    expect(row?.liveResults).toBe(input.liveResults);
     expect(row?.nomDate).toBe(BigInt(input.nomDate));
     expect(row?.nomTime).toBe(BigInt(input.nomTime));
     expect(row?.nomDuration).toBe(BigInt(input.nomDuration));
@@ -294,6 +292,26 @@ describe('updateEvent', () => {
     expect(row?.nomTime).not.toBe(row?.awardsTime);
     expect(row?.nomDuration).not.toBe(row?.awardsDuration);
     expect(row?.nomActive).not.toBe(row?.awardsActive);
+  });
+
+  it('no longer writes live_results, and leaves what is stored alone', async () => {
+    // Removed from the whitelist with the "Live results" box beside the Live
+    // switch: nothing reads the column. A payload that still carries it is
+    // dropped like any other unknown field, and the stored value survives.
+    const event = await makeEvent();
+    await db.event.update({ where: { id: event.id }, data: { liveResults: true } });
+    signInAs(await makeUser('admin'));
+
+    const result = await updateEvent({
+      eventId: event.id,
+      name: 'Renamed',
+      ...({ liveResults: false } as Record<string, unknown>),
+    });
+
+    expect(result.ok).toBe(true);
+    const row = await db.event.findUnique({ where: { id: event.id } });
+    expect(row?.name).toBe('Renamed');
+    expect(row?.liveResults).toBe(true);
   });
 
   it('revalidates the show page and the index', async () => {

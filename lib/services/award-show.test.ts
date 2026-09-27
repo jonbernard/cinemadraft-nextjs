@@ -19,7 +19,7 @@ afterAll(async () => {
  */
 describe('getAwardShows', () => {
   it('lists every show with its category count', async () => {
-    const shows = await getAwardShows();
+    const shows = await getAwardShows(2026);
 
     expect(shows).toHaveLength(12);
     const oscars = shows.find((show) => show.abbreviation === 'oscars');

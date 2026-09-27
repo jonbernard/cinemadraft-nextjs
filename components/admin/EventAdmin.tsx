@@ -10,15 +10,12 @@ export type AdminEvent = {
   name: string;
   abbreviation: string;
   image: string | null;
-  nomActive: boolean | null;
   nomDate: number | null;
   nomTime: number | null;
   nomDuration: number | null;
-  awardsActive: boolean | null;
   awardsDate: number | null;
   awardsTime: number | null;
   awardsDuration: number | null;
-  liveResults: boolean | null;
 };
 
 /** Local midnight of a `Date`, in epoch milliseconds — what `nomDate` stores. */
@@ -44,7 +41,7 @@ function fromLocalInput(value: string): { date: number; time: number } | null {
 }
 
 /**
- * Edit a show's dates and live flags (T26).
+ * Edit a show's name, mark and dates (T26).
  *
  * 🔴 Desktop-first, the stated exception (D49): an admin sets ceremony dates
  * once a season, from a laptop.
@@ -64,19 +61,16 @@ export function EventAdmin({
   const [name, setName] = useState(event.name);
   const [abbreviation, setAbbreviation] = useState(event.abbreviation);
   const [image, setImage] = useState(event.image ?? '');
-  const [nomActive, setNomActive] = useState(event.nomActive === true);
   const [nomAt, setNomAt] = useState(toLocalInput(event.nomDate, event.nomTime));
   const [nomMinutes, setNomMinutes] = useState(
     event.nomDuration == null ? '' : String(Math.round(event.nomDuration / 60_000)),
   );
-  const [awardsActive, setAwardsActive] = useState(event.awardsActive === true);
   const [awardsAt, setAwardsAt] = useState(
     toLocalInput(event.awardsDate, event.awardsTime),
   );
   const [awardsMinutes, setAwardsMinutes] = useState(
     event.awardsDuration == null ? '' : String(Math.round(event.awardsDuration / 60_000)),
   );
-  const [liveResults, setLiveResults] = useState(event.liveResults === true);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -103,36 +97,29 @@ export function EventAdmin({
           name: trimmedName,
           abbreviation: trimmedAbbr,
           image: image.trim() === '' ? null : image.trim(),
-          nomActive,
           nomDate: nom?.date ?? null,
           nomTime: nom?.time ?? null,
           nomDuration,
-          awardsActive,
           awardsDate: awards?.date ?? null,
           awardsTime: awards?.time ?? null,
           awardsDuration,
-          liveResults,
         });
         setMessage(result.ok ? 'Saved' : result.message);
       });
     },
-    [
-      event.id,
-      name,
-      abbreviation,
-      image,
-      nomActive,
-      nomAt,
-      nomMinutes,
-      awardsActive,
-      awardsAt,
-      awardsMinutes,
-      liveResults,
-    ],
+    [event.id, name, abbreviation, image, nomAt, nomMinutes, awardsAt, awardsMinutes],
   );
 
   return (
     <form onSubmit={submit} className={cn('flex flex-col gap-4', className)}>
+      {/* 🔴 No live controls here. On air (`awards_active`) is the switch in
+          Winners mode, beside the categories it is about. `nom_active` is not
+          written: in the source it was a side effect of entering Nominations
+          mode, and nothing in the port reads it now — "still needs
+          nominations" is derived from dates (`lib/services/entry-status.ts`).
+          `live_results` is not written: no source UI ever
+          set it, and nothing in the port reads it. All three columns keep
+          whatever is stored. */}
       <div className="flex flex-wrap gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Name</span>
@@ -165,14 +152,6 @@ export function EventAdmin({
 
       <fieldset className="flex flex-wrap items-end gap-3">
         <legend className="text-text-dim mb-1 text-xs">Nominations</legend>
-        <label className="flex min-h-11 items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={nomActive}
-            onChange={(e) => setNomActive(e.target.checked)}
-          />
-          <span className="text-text-dim">Live now</span>
-        </label>
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Announced</span>
           <input
@@ -196,14 +175,6 @@ export function EventAdmin({
 
       <fieldset className="flex flex-wrap items-end gap-3">
         <legend className="text-text-dim mb-1 text-xs">Awards</legend>
-        <label className="flex min-h-11 items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={awardsActive}
-            onChange={(e) => setAwardsActive(e.target.checked)}
-          />
-          <span className="text-text-dim">Live now</span>
-        </label>
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Announced</span>
           <input
@@ -222,14 +193,6 @@ export function EventAdmin({
             onChange={(e) => setAwardsMinutes(e.target.value)}
             className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-24 border px-3 text-sm"
           />
-        </label>
-        <label className="flex min-h-11 items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={liveResults}
-            onChange={(e) => setLiveResults(e.target.checked)}
-          />
-          <span className="text-text-dim">Live results</span>
         </label>
       </fieldset>
 

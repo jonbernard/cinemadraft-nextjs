@@ -23,6 +23,8 @@ const Input = z
     /** The person, for categories that nominate one. */
     detailName: z.string().trim().min(1).max(200).optional(),
     detailCharacter: z.string().trim().min(1).max(200).optional(),
+    /** TMDB's person id, when the person was chosen from the film's credits. */
+    detailId: z.int().positive().optional(),
   })
   .refine((input) => input.movieId != null || input.tmdbId != null, {
     message: 'a film is required',
@@ -63,16 +65,22 @@ export async function attachNominee(
       throw new ConflictError(`${award.name} needs the name of the person nominated`);
     }
 
-    const existing = await nominationRepository.findByAwardMovieYear(
+    // 🔴 A duplicate is the same film for the same PERSON, not the same film.
+    // One film can hold two nominations in one category — *One Battle After
+    // Another*, Best Supporting Actor 2026, for Benicio del Toro and for Sean
+    // Penn — and refusing the second made that shape impossible to enter here.
+    // What is still refused is a double-click during a live announcement,
+    // which would double that film's points for this category.
+    const existing = await nominationRepository.findManyByAwardMovieYear(
       award.id,
       movie.id,
       year,
     );
-    if (existing) {
-      // A double-click during a live announcement, which would otherwise
-      // double that film's points for this category.
+    const duplicate = existing.find((nomination) => samePerson(nomination, parsed.data));
+    if (duplicate) {
+      const who = duplicate.detailName ? ` for ${duplicate.detailName}` : '';
       throw new ConflictError(
-        `${movie.title ?? 'That film'} is already nominated for ${award.name}`,
+        `${movie.title ?? 'That film'} is already nominated${who} for ${award.name}`,
       );
     }
 
@@ -82,6 +90,7 @@ export async function attachNominee(
       year,
       detailName: parsed.data.detailName ?? null,
       detailCharacter: parsed.data.detailCharacter ?? null,
+      detailId: parsed.data.detailId ?? null,
     });
 
     revalidatePath(`/award-shows/${abbreviation}`, 'layout');
@@ -89,4 +98,24 @@ export async function attachNominee(
   } catch (error) {
     return toActionResult(error);
   }
+}
+
+/**
+ * Whether an existing nomination names the person being attached.
+ *
+ * By TMDB person id when both have one — two people can share a name, and one
+ * person's name can be spelled two ways across seasons. By name otherwise,
+ * case-insensitively, because 3 of the restored named rows carry no id. Two
+ * nominations naming nobody are the same person: that is the film-only
+ * category's double-click.
+ */
+function samePerson(
+  existing: { detailId: number | null; detailName: string | null },
+  input: { detailId?: number; detailName?: string },
+): boolean {
+  if (existing.detailId != null && input.detailId != null) {
+    return existing.detailId === input.detailId;
+  }
+  const name = (value: string | null | undefined) => value?.trim().toLowerCase() ?? '';
+  return name(existing.detailName) === name(input.detailName);
 }

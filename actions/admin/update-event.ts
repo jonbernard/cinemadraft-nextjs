@@ -31,7 +31,6 @@ const Input = z.object({
   awardsDate: z.number().nullable().optional(),
   awardsTime: z.number().nullable().optional(),
   awardsDuration: z.number().nullable().optional(),
-  liveResults: z.boolean().optional(),
 });
 
 export type UpdateEventInput = z.infer<typeof Input>;
@@ -42,7 +41,9 @@ export type UpdateEventInput = z.infer<typeof Input>;
  * 🔴 Admin-only, checked before the input is even parsed — `restrictToAdmin`
  * guarded the source route the same way.
  *
- * `nomActive` / `awardsActive` are what decide whether a ceremony is live.
+ * `awardsActive` is what decides whether a ceremony is live; `nomActive` is
+ * still accepted but read by nothing (needs-nominations is derived from dates,
+ * `lib/services/entry-status.ts`), and the app's own form no longer sends it.
  * The source also had `resetActiveEvents`, which cleared every show's active
  * flags at once to keep one live at a time — but nothing in the schema
  * enforces that, and this action does not invent a constraint that was never

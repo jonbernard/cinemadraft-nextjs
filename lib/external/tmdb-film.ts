@@ -27,12 +27,13 @@ type TmdbVideo = {
   official?: boolean;
 };
 type TmdbCastMember = {
+  id?: number;
   name?: string;
   character?: string;
   profile_path?: string | null;
   order?: number | null;
 };
-type TmdbCrewMember = { name?: string; job?: string; department?: string };
+type TmdbCrewMember = { id?: number; name?: string; job?: string; department?: string };
 type TmdbSimilar = { id?: number; title?: string; poster_path?: string | null };
 
 type TmdbFilmResponse = {
@@ -72,6 +73,23 @@ export type FilmCrewGroup = {
   people: { name: string; job: string }[];
 };
 export type FilmSimilar = { tmdbId: string; title: string; posterPath: string | null };
+
+/**
+ * One person who can be nominated for a film: a cast credit, or everything one
+ * person did on the crew.
+ *
+ * `id` is TMDB's person id, which is what `nominations.detail_id` has always
+ * held (1,180 of the restored 1,183 named nominations carry one).
+ */
+export type FilmPerson = {
+  id: number;
+  name: string;
+  kind: 'cast' | 'crew';
+  /** The character, for a cast credit. Null for crew. */
+  character: string | null;
+  /** Every job one person held on the crew, joined. Null for cast. */
+  jobs: string | null;
+};
 
 export type TmdbFilmPage = {
   tmdbId: string;
@@ -282,7 +300,16 @@ function similarOf(detail: TmdbFilmResponse): FilmSimilar[] {
  * has no local half to fall back on, so an empty object here would render a page
  * about nothing — and the caller's job is to `notFound()` instead.
  */
-export async function fetchTmdbFilmPage(tmdbId: string): Promise<TmdbFilmPage | null> {
+/**
+ * The one request, shared by the film page and the nominee picker.
+ *
+ * 🔴 Same path, same params, same cache key: the picker's credits are the film
+ * page's credits, so an admin nominating a film someone has already opened
+ * costs TMDB nothing, and one that nobody has opened warms the page for them.
+ */
+async function fetchDetail(
+  tmdbId: string,
+): Promise<(TmdbFilmResponse & { id: number; title: string }) | null> {
   const detail = await tmdbFetch<TmdbFilmResponse>(
     `/movie/${tmdbId}`,
     {
@@ -294,10 +321,82 @@ export async function fetchTmdbFilmPage(tmdbId: string): Promise<TmdbFilmPage | 
       name: 'tmdb-film-page',
     },
   );
+  if (typeof detail?.id !== 'number' || typeof detail?.title !== 'string') return null;
+  return detail as TmdbFilmResponse & { id: number; title: string };
+}
 
-  if (typeof detail?.id !== 'number' || typeof detail?.title !== 'string') {
-    return null;
+/**
+ * Everyone credited on a film, for choosing who a nomination names (§12).
+ *
+ * The source app offered cast and crew in one list, sorted by name and deduped
+ * **by name** (`panelNominations.js`) — so someone both acting and directing
+ * kept only their cast row, and a Best Director nomination was stored with the
+ * character they played in it ("Chloé Zhao as Globe Patron (uncredited)" is in
+ * the restored data). Here a person has at most one cast entry and one crew
+ * entry, so choosing the crew one stores no character.
+ *
+ * Cast in billing order, then crew with Directing and Writing first — the
+ * order the film page already reads in — rather than alphabetical: typing
+ * filters the list, and with nothing typed the leads are what an acting
+ * category wants at the top.
+ *
+ * Null when TMDB cannot answer, for the same reason as the page.
+ */
+export async function fetchTmdbFilmPeople(tmdbId: string): Promise<FilmPerson[] | null> {
+  const detail = await fetchDetail(tmdbId);
+  if (!detail) return null;
+
+  const cast: FilmPerson[] = [];
+  const seenCast = new Set<number>();
+  for (const person of detail.credits?.cast ?? []) {
+    if (typeof person.id !== 'number' || !person.name || seenCast.has(person.id))
+      continue;
+    seenCast.add(person.id);
+    cast.push({
+      id: person.id,
+      name: person.name,
+      kind: 'cast',
+      character: person.character || null,
+      jobs: null,
+    });
   }
+
+  // One entry per person, their jobs in department order: "Director, Writer"
+  // is one person to choose, not two rows that store the same thing.
+  const lead = ['Directing', 'Writing'];
+  const rank = (department = '') =>
+    lead.includes(department) ? lead.indexOf(department) : lead.length;
+  const ordered = (detail.credits?.crew ?? [])
+    .filter((person) => typeof person.id === 'number' && Boolean(person.name))
+    .sort(
+      (a, b) =>
+        rank(a.department) - rank(b.department) ||
+        (a.department ?? '').localeCompare(b.department ?? ''),
+    );
+  const crew = new Map<number, { name: string; jobs: string[] }>();
+  for (const person of ordered) {
+    const id = person.id as number;
+    const entry = crew.get(id);
+    if (!entry) crew.set(id, { name: person.name as string, jobs: [] });
+    const jobs = crew.get(id)?.jobs as string[];
+    if (person.job && !jobs.includes(person.job)) jobs.push(person.job);
+  }
+
+  return [
+    ...cast,
+    ...[...crew].map(([id, entry]) => ({
+      id,
+      name: entry.name,
+      kind: 'crew' as const,
+      character: null,
+      jobs: entry.jobs.join(', ') || null,
+    })),
+  ];
+}
+
+export async function fetchTmdbFilmPage(tmdbId: string): Promise<TmdbFilmPage | null> {
+  const detail = await fetchDetail(tmdbId);
+  if (!detail) return null;
 
   const primaryYear = detail.release_date
     ? Number.parseInt(detail.release_date.slice(0, 4), 10)

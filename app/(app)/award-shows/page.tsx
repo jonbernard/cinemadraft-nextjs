@@ -32,10 +32,10 @@ async function requestOrigin(): Promise<string> {
  * Public (D44) — the source app never guarded these, and they are the pages a
  * member opens during a ceremony to see what a film is up for.
  *
- * Admins additionally see which shows still need entering. That list is not
- * derived or guessed: `nom_active` and `awards_active` are the source's own
- * flags for exactly this, set when a show's nominations or winners are being
- * worked on.
+ * Admins additionally see which shows still need entering for the active
+ * season, derived from each show's dates and what is already in
+ * (`lib/services/entry-status.ts`) — the source's "Events needing updates"
+ * card did the same. It is not `nom_active`: nothing in the port sets that.
  *
  * 🔴 The calendar feed (T25) is reachable from here, not just from a route
  * that happens to exist. `InviteLink` gives it exactly the shape it needs: a
@@ -43,9 +43,9 @@ async function requestOrigin(): Promise<string> {
  * download.
  */
 export default async function AwardShowsPage() {
-  const [shows, year, user, origin] = await Promise.all([
-    getAwardShows(),
-    getActiveYear(),
+  const year = await getActiveYear();
+  const [shows, user, origin] = await Promise.all([
+    getAwardShows(year),
     getCurrentUser(),
     requestOrigin(),
   ]);
