@@ -15,7 +15,7 @@ const Input = z.int().positive();
  *
  * 🔴 Admin-only; the source app left this open to anyone with curl.
  *
- * If the film being removed was the recorded winner, its win goes with it.
+ * If the nomination being removed was the recorded winner, its win goes with it.
  * Leaving the winner row behind would mean a category won by a film that is
  * not nominated in it — and since a win pays the award's points a *second*
  * time on top of the nomination (D41), the film would keep scoring for a
@@ -35,7 +35,9 @@ export async function removeNominee(nominationId: number): Promise<ActionResult>
         [nomination.awardId],
         year,
       );
-      if (winners.some((winner) => winner.movieId === nomination.movieId)) {
+      // By nomination: removing the losing half of a film's two nominations in
+      // one category must not take the other half's win with it.
+      if (winners.some((winner) => winner.nominationId === nomination.id)) {
         await winnerRepository.clearForAward(nomination.awardId, year);
       }
     }

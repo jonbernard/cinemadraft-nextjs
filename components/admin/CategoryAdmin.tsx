@@ -108,11 +108,12 @@ export function CategoryAdmin({
       setMessage(null);
       startTransition(async () => {
         // Clicking the current winner clears it — the announcement was
-        // misheard and for a moment nobody has won.
+        // misheard and for a moment nobody has won. By nomination, not film:
+        // one film can hold two nominations here, and only one of them won.
         const result = await setWinner({
           awardId,
           year,
-          movieId: nominee.isWinner ? null : nominee.movieId,
+          nominationId: nominee.isWinner ? null : nominee.nominationId,
         });
         if (!result.ok) setMessage(result.message);
       });

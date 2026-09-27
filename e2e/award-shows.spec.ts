@@ -338,6 +338,92 @@ test.describe('award shows', () => {
       );
     });
 
+    test('one film nominated twice in a category: only the nomination that won is the winner', async ({
+      page,
+    }) => {
+      // The owner's report: *One Battle After Another* for Benicio del Toro and
+      // for Sean Penn, one win, and both showed "Winner" — in the grid, and in
+      // this list, where both also offered "Clear winner". Seeded in SQL
+      // because `attachNominee` refuses a film's second nomination in one
+      // category; the shape reaches production through the importer.
+      const { abbreviation } = await seedShow();
+      const people = ['Benicio del Toro', 'Sean Penn'] as const;
+      await withDb(async (query) => {
+        const rows = (await query(
+          `select a.event_id, a.points, m.id as movie_id
+             from awards a join events e on e.id = a.event_id, movies m
+            where e.abbreviation = $1 and m.title = $2`,
+          [abbreviation, FILMS[0]],
+        )) as { event_id: number; points: number; movie_id: number }[];
+        const seed = rows[0];
+        if (!seed) throw new Error('the scratch show has no category');
+        const awards = (await query(
+          `insert into awards (name, event_id, points, requires_nominee_name, created_at, updated_at)
+             values ($1, $2, $3, true, now(), now()) returning id`,
+          [`${TAG} Supporting Actor`, seed.event_id, seed.points],
+        )) as { id: number }[];
+        for (const person of people) {
+          await query(
+            `insert into nominations (movie_id, award_id, year, detail_name, created_at, updated_at)
+               values ($1, $2, $3, $4, now(), now())`,
+            [seed.movie_id, awards[0]?.id, YEAR, person],
+          );
+        }
+      });
+      const winningPerson = () =>
+        withDb(async (query) =>
+          (
+            (await query(
+              `select n.detail_name
+                 from winners w
+                 join nominations n on n.id = w.nomination_id
+                 join awards a on a.id = w.award_id
+                where a.name = $1`,
+              [`${TAG} Supporting Actor`],
+            )) as { detail_name: string }[]
+          ).map((row) => row.detail_name),
+        );
+
+      await signInAsAdmin(page);
+      await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+      // The admin list names the film only, so its two rows read the same; they
+      // come in nomination order, which is the order they were seeded in. The
+      // database says which person the click recorded.
+      const rows = page
+        .getByRole('listitem')
+        .filter({ hasText: FILMS[0] as string })
+        .filter({ has: page.getByRole('button', { name: 'Remove' }) });
+      const [benicio, sean] = [rows.nth(0), rows.nth(1)];
+      await expect(rows).toHaveCount(2);
+
+      await sean.getByRole('button', { name: 'Mark winner' }).click();
+      await expect.poll(winningPerson).toEqual(['Sean Penn']);
+
+      await page.reload();
+      // One chip in the grid and one in the list — four if both were crowned.
+      await expect(page.getByText('Winner', { exact: true })).toHaveCount(2);
+      await expect(
+        page.getByRole('listitem').filter({ hasText: 'Sean Penn' }).getByText('Winner'),
+      ).toBeVisible();
+      await expect(sean.getByRole('button', { name: 'Clear winner' })).toBeVisible();
+      await expect(benicio.getByRole('button', { name: 'Mark winner' })).toBeVisible();
+
+      // Correcting to the other half of the same film's pair.
+      await benicio.getByRole('button', { name: 'Mark winner' }).click();
+      await expect.poll(winningPerson).toEqual(['Benicio del Toro']);
+
+      await page.reload();
+      await expect(page.getByText('Winner', { exact: true })).toHaveCount(2);
+      await expect(
+        page
+          .getByRole('listitem')
+          .filter({ hasText: 'Benicio del Toro' })
+          .getByText('Winner'),
+      ).toBeVisible();
+      await expect(benicio.getByRole('button', { name: 'Clear winner' })).toBeVisible();
+      await expect(sean.getByRole('button', { name: 'Mark winner' })).toBeVisible();
+    });
+
     test('removing the winning nominee takes its win with it', async ({ page }) => {
       // Otherwise the category is won by a film it does not list, and that film
       // keeps scoring for a nomination the app no longer believes in.

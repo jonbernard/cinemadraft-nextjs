@@ -144,6 +144,15 @@ async function winnersFor(awardId: number) {
   return rows.map((row) => ({ ...row, movieId: Number(row.movieId) }));
 }
 
+/** The id of a film's nomination in a category — what a win is recorded against. */
+async function nominationOf(movieId: number, awardId = fixture.category.id) {
+  const row = await db.nomination.findFirstOrThrow({
+    where: { awardId: BigInt(awardId), movieId: BigInt(movieId) },
+    select: { id: true },
+  });
+  return row.id;
+}
+
 async function cleanup() {
   const events = await db.event.findMany({
     where: { abbreviation: { startsWith: TAG } },
@@ -365,7 +374,7 @@ describe('removeNominee', () => {
     await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: nomination.movieId,
+      nominationId: await nominationOf(nomination.movieId),
     });
     expect(await winnersFor(fixture.category.id)).toHaveLength(1);
 
@@ -392,7 +401,7 @@ describe('setWinner — refusals', () => {
     const result = await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: fixture.films[0]?.id as number,
+      nominationId: await nominationOf(fixture.films[0]?.id as number),
     });
 
     expect(result.ok).toBe(false);
@@ -406,27 +415,45 @@ describe('setWinner — refusals', () => {
     const result = await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: fixture.films[0]?.id as number,
+      nominationId: await nominationOf(fixture.films[0]?.id as number),
     });
 
     expect(result.ok).toBe(false);
     expect(await winnersFor(fixture.category.id)).toEqual([]);
   });
 
-  it('refuses a film that is not nominated in the category', async () => {
+  it('refuses a nomination that is not in the category', async () => {
     // A win pays the award's points on top of the nomination's, so a winner
-    // that was never nominated would hold points no page could explain.
+    // that was never nominated would hold points no page could explain. The
+    // admin check is for `awardId`, so another category's nomination is the
+    // way to try to slip one past it.
     await nominateAll();
     signInAs(fixture.admin);
-
-    const result = await setWinner({
-      awardId: fixture.category.id,
-      year: YEAR,
+    await attachNominee({
+      awardId: fixture.actingCategory.id,
       movieId: fixture.films[2]?.id as number,
+      year: YEAR,
+      detailName: 'Someone Else',
     });
 
-    expect(result).toMatchObject({ ok: false, code: 'CONFLICT' });
+    const elsewhere = await setWinner({
+      awardId: fixture.category.id,
+      year: YEAR,
+      nominationId: await nominationOf(
+        fixture.films[2]?.id as number,
+        fixture.actingCategory.id,
+      ),
+    });
+    const nowhere = await setWinner({
+      awardId: fixture.category.id,
+      year: YEAR,
+      nominationId: 999_999_999,
+    });
+
+    expect(elsewhere).toMatchObject({ ok: false, code: 'CONFLICT' });
+    expect(nowhere).toMatchObject({ ok: false, code: 'CONFLICT' });
     expect(await winnersFor(fixture.category.id)).toEqual([]);
+    expect(await winnersFor(fixture.actingCategory.id)).toEqual([]);
   });
 });
 
@@ -444,7 +471,7 @@ describe('setWinner', () => {
     const result = await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: fixture.films[0]?.id as number,
+      nominationId: await nominationOf(fixture.films[0]?.id as number),
     });
 
     expect(result).toMatchObject({ ok: true });
@@ -461,13 +488,13 @@ describe('setWinner', () => {
     await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: fixture.films[0]?.id as number,
+      nominationId: await nominationOf(fixture.films[0]?.id as number),
     });
 
     await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: fixture.films[1]?.id as number,
+      nominationId: await nominationOf(fixture.films[1]?.id as number),
     });
 
     expect(await winnersFor(fixture.category.id)).toEqual([
@@ -480,13 +507,13 @@ describe('setWinner', () => {
     await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: fixture.films[0]?.id as number,
+      nominationId: await nominationOf(fixture.films[0]?.id as number),
     });
 
     const result = await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: null,
+      nominationId: null,
     });
 
     expect(result).toMatchObject({ ok: true });
@@ -500,7 +527,7 @@ describe('setWinner', () => {
     await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: fixture.films[0]?.id as number,
+      nominationId: await nominationOf(fixture.films[0]?.id as number),
     });
 
     expect(revalidatePath).toHaveBeenCalledWith(
@@ -533,7 +560,7 @@ describe('the phase gate — a correction leaves no stale points', () => {
     await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: alpha?.id as number,
+      nominationId: await nominationOf(alpha?.id as number),
     });
     const before = await pointsForMovieIds(ids, YEAR);
 
@@ -544,7 +571,7 @@ describe('the phase gate — a correction leaves no stale points', () => {
     await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: bravo?.id as number,
+      nominationId: await nominationOf(bravo?.id as number),
     });
     const after = await pointsForMovieIds(ids, YEAR);
 
@@ -563,10 +590,10 @@ describe('the phase gate — a correction leaves no stale points', () => {
     await setWinner({
       awardId: fixture.category.id,
       year: YEAR,
-      movieId: alpha?.id as number,
+      nominationId: await nominationOf(alpha?.id as number),
     });
 
-    await setWinner({ awardId: fixture.category.id, year: YEAR, movieId: null });
+    await setWinner({ awardId: fixture.category.id, year: YEAR, nominationId: null });
     const after = await pointsForMovieIds([alpha?.id as number], YEAR);
 
     expect(after.get(alpha?.id as number)).toBe(fixture.points.points);
@@ -767,5 +794,72 @@ describe('a film nominated twice in one category', () => {
         .map((nominee) => nominee.nominationId),
     ).toEqual([second.id]);
     expect(view.resolved).toBe(1);
+  });
+
+  it('setWinner records the nomination the admin clicked, not one picked by film', async () => {
+    // Both halves, because a by-film lookup returns *one* of the two, and a
+    // test that clicked only one would pass whenever it happened to be that one.
+    const { first, second } = await twoNominations();
+    signInAs(fixture.admin);
+    const recorded = async () =>
+      (
+        await db.winner.findMany({
+          where: { awardId: BigInt(fixture.actingCategory.id) },
+          select: { nominationId: true },
+        })
+      ).map((row) => Number(row.nominationId));
+
+    for (const clicked of [first, second]) {
+      const result = await setWinner({
+        awardId: fixture.actingCategory.id,
+        year: YEAR,
+        nominationId: clicked.id,
+      });
+
+      expect(result).toMatchObject({ ok: true });
+      expect(await recorded()).toEqual([clicked.id]);
+      expect((await winningNominations()).map((n) => n.nominationId)).toEqual([
+        clicked.id,
+      ]);
+    }
+  });
+
+  it('correcting moves the win from one nomination to the other', async () => {
+    const { first, second } = await twoNominations();
+    signInAs(fixture.admin);
+
+    await setWinner({
+      awardId: fixture.actingCategory.id,
+      year: YEAR,
+      nominationId: first.id,
+    });
+    await setWinner({
+      awardId: fixture.actingCategory.id,
+      year: YEAR,
+      nominationId: second.id,
+    });
+
+    expect((await winningNominations()).map((n) => n.nominationId)).toEqual([second.id]);
+    expect(await winnersFor(fixture.actingCategory.id)).toHaveLength(1);
+  });
+
+  it('removing the nomination that lost leaves the win in place', async () => {
+    const { film, first, second } = await twoNominations();
+    await recordWin(film.id, second.id);
+    signInAs(fixture.admin);
+
+    expect(await removeNominee(first.id)).toMatchObject({ ok: true });
+
+    expect((await winningNominations()).map((n) => n.nominationId)).toEqual([second.id]);
+  });
+
+  it('removing the nomination that won takes the win with it', async () => {
+    const { film, second } = await twoNominations();
+    await recordWin(film.id, second.id);
+    signInAs(fixture.admin);
+
+    await removeNominee(second.id);
+
+    expect(await winnersFor(fixture.actingCategory.id)).toEqual([]);
   });
 });

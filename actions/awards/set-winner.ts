@@ -12,8 +12,14 @@ import { authorizeAward } from './guard';
 const Input = z.object({
   awardId: z.int().positive(),
   year: z.int().positive(),
-  /** Null clears the winner — the announcement was misheard. */
-  movieId: z.int().positive().nullable(),
+  /**
+   * The nomination that won, not the film. One film can hold two nominations
+   * in one category (Benicio del Toro and Sean Penn, both for *One Battle After
+   * Another*), and a film id cannot say which of them the stage named.
+   *
+   * Null clears the winner — the announcement was misheard.
+   */
+  nominationId: z.int().positive().nullable(),
 });
 
 export type SetWinnerInput = z.infer<typeof Input>;
@@ -48,7 +54,7 @@ export async function setWinner(input: SetWinnerInput): Promise<ActionResult> {
   try {
     const { award, abbreviation } = await authorizeAward(parsed.data.awardId);
 
-    if (parsed.data.movieId == null) {
+    if (parsed.data.nominationId == null) {
       await winnerRepository.clearForAward(award.id, parsed.data.year);
       revalidatePath(`/award-shows/${abbreviation}`, 'layout');
       return ok();
@@ -57,20 +63,24 @@ export async function setWinner(input: SetWinnerInput): Promise<ActionResult> {
     // 🔴 The winner has to be one of this category's nominees. A win pays the
     // award's points on top of the nomination's, so a winner that was never
     // nominated scores for a nomination that does not exist — the film would
-    // hold points no page could explain.
-    const nomination = await nominationRepository.findByAwardMovieYear(
-      award.id,
-      parsed.data.movieId,
-      parsed.data.year,
-    );
-    if (!nomination) {
-      throw new ConflictError(`that film is not nominated for ${award.name}`);
+    // hold points no page could explain. And the nomination has to be *this*
+    // award's and *this* season's: the admin check above was for `awardId`,
+    // so a nomination from another category would slip a win past it.
+    const nomination = await nominationRepository
+      .findManyByIds([parsed.data.nominationId])
+      .then((rows) => rows[0]);
+    if (
+      !nomination ||
+      nomination.awardId !== award.id ||
+      nomination.year !== parsed.data.year
+    ) {
+      throw new ConflictError(`that nomination is not one of ${award.name}'s`);
     }
 
     await winnerRepository.setForAward({
       awardId: award.id,
       year: parsed.data.year,
-      movieId: parsed.data.movieId,
+      movieId: nomination.movieId,
       nominationId: nomination.id,
     });
 
