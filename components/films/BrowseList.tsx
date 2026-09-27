@@ -32,16 +32,28 @@ import type { BrowseMonth as BrowseMonthData, BrowsePage } from '@/lib/services/
  *   scroll to the bottom of a finished list fires a request that returns
  *   nothing.
  */
-export function BrowseList({
-  when,
-  initial,
-  isSignedIn,
-}: {
+type BrowseListProps = {
   when: BrowseWhen;
   /** The first page, rendered on the server so the shelf exists before hydration. */
   initial: BrowsePage;
   isSignedIn: boolean;
-}) {
+};
+
+/**
+ * 🔴 **Keyed by side, so switching sides starts the list over.** The past/future
+ * pills are links to the same route, so the switch is a soft navigation and
+ * React keeps this component where it was — with the months, the page counter
+ * and the "ended" flag of the side just left. `useState` reads `initial` once,
+ * so the future's first page arrived as a prop nobody looked at, and the next
+ * scroll appended future page N+1 under the past's N pages. A new key is a new
+ * instance: every piece of paged state resets together, including the refs,
+ * and none of it needs a reset of its own to be remembered.
+ */
+export function BrowseList(props: BrowseListProps) {
+  return <Shelf key={props.when} {...props} />;
+}
+
+function Shelf({ when, initial, isSignedIn }: BrowseListProps) {
   const [months, setMonths] = useState<BrowseMonthData[]>(initial.months);
   const [page, setPage] = useState(initial.page);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +72,21 @@ export function BrowseList({
   const loaded = useRef(initial.page);
   const loading = useRef(false);
   const sentinel = useRef<HTMLDivElement>(null);
+  /**
+   * 🔴 A page still in flight when the reader switches sides resolves into an
+   * instance that is gone. Its state updates are no-ops, but `replaceState` is
+   * not — it would write the old side back into the address bar under the new
+   * side's list. A server action takes no `AbortSignal`, so the response is
+   * ignored instead of cancelled. Set in the effect, not only initialised, so
+   * StrictMode's mount-unmount-mount leaves it true.
+   */
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const pageCount = initial.pageCount;
   // No sentinel while an error is showing: the retry button is the way back,
@@ -77,6 +104,7 @@ export function BrowseList({
 
     try {
       const result = await loadBrowsePage({ when, page: next });
+      if (!mounted.current) return;
 
       if (!result.ok) {
         setError(result.message);

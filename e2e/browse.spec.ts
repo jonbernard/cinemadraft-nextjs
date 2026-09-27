@@ -140,6 +140,39 @@ test.describe('browse', () => {
     await expect(past).toHaveAttribute('aria-current', 'true');
   });
 
+  test('switching sides starts the list over', async ({ page }) => {
+    // 🔴 The pills are links to the same route, so the switch is a soft
+    // navigation and the list component survives it. It used to keep the
+    // past's appended months and page counter, show the future's films after
+    // them, and carry on from the past's page number.
+    const films = page.locator('a[href^="/films/"]');
+    const hrefs = () => films.evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+
+    await page.goto('/browse?when=future');
+    const futureTop = (await hrefs()).slice(0, 5);
+    expect(futureTop.length).toBeGreaterThan(0);
+
+    await page.goto('/browse?when=past');
+    for (const cursor of [2, 3]) {
+      const before = await films.count();
+      await page.getByTestId('browse-sentinel').scrollIntoViewIfNeeded();
+      await expect.poll(() => films.count(), { timeout: 15_000 }).toBeGreaterThan(before);
+      await expect(page).toHaveURL(new RegExp(`[?&]page=${cursor}`));
+    }
+    const past = new Set(await hrefs());
+
+    await page.getByRole('link', { name: 'The future' }).click();
+    await expect(page).toHaveURL(/\?when=future$/);
+
+    // Only the future's films, from its own first page.
+    await expect.poll(async () => (await hrefs()).slice(0, 5)).toEqual(futureTop);
+    expect((await hrefs()).filter((href) => past.has(href))).toEqual([]);
+
+    // And paging restarts at 2, not at the past's 4.
+    await page.getByTestId('browse-sentinel').scrollIntoViewIfNeeded();
+    await expect(page).toHaveURL(/[?&]when=future&page=2$/, { timeout: 15_000 });
+  });
+
   test('groups films by release month', async ({ page }) => {
     await page.goto('/browse');
 
