@@ -32,10 +32,26 @@ import { posterUrl } from '@/lib/utils/poster';
  * and everything else on the page comes from TMDB.
  */
 
-export type FilmScoring = {
-  /** The season these numbers belong to. Stated because a film can have two. */
+/** How a film scored in one season. */
+export type FilmSeasonScoring = {
   year: number;
   total: number;
+  /** Highest-contributing award show first. */
+  byEvent: { abbreviation: string; name: string; total: number }[];
+  /** The award-by-award breakdown, for the disclosure beneath the totals. */
+  ledger: MovieLedger;
+};
+
+export type FilmScoring = {
+  /**
+   * Newest first: one entry per season the film scored in, **never summed**.
+   *
+   * 🔴 D126. A pick counts only the nominations of its own draft's season, so a
+   * film nominated in two seasons is worth a different amount in each — *Elle*
+   * is 30 to a 2017 pick and 5 to a 2018 one. A single cross-season total would
+   * be a number no seat ever scored.
+   */
+  seasons: FilmSeasonScoring[];
   /**
    * Null when nobody has drafted it.
    *
@@ -44,10 +60,6 @@ export type FilmScoring = {
    * of never picked.
    */
   averageDraftPosition: number | null;
-  /** Highest-contributing award show first. */
-  byEvent: { abbreviation: string; name: string; total: number }[];
-  /** The award-by-award breakdown, for the disclosure beneath the totals. */
-  ledger: MovieLedger;
 };
 
 export type FilmPage = {
@@ -90,7 +102,7 @@ export type FilmPage = {
  * alphabetically (`server/routes/points.js:157`), which answers a different
  * question.
  */
-function byEventFrom(ledger: MovieLedger): FilmScoring['byEvent'] {
+function byEventFrom(ledger: MovieLedger): FilmSeasonScoring['byEvent'] {
   const totals = new Map<string, { abbreviation: string; name: string; total: number }>();
 
   for (const line of ledger.lines) {
@@ -110,41 +122,52 @@ function byEventFrom(ledger: MovieLedger): FilmScoring['byEvent'] {
 }
 
 /**
- * How this film has scored, or null if it has never been nominated.
+ * How this film has scored, season by season, or null if it has never been
+ * nominated for anything worth points.
  *
- * Takes the **most recent** season a film was nominated in, and says so in the
- * returned value. Most films have exactly one — *Elle* has two, 2017 and 2018,
- * being a foreign-language film recognised by different bodies a year apart
- * (D58). The source read the year off whichever nomination row came back first,
- * so its page scored such a film for an arbitrary season and could report a
- * different total on a different day.
+ * Every season the film was nominated in, newest first, each scored on its own
+ * (D126). Most films have exactly one; six on the restored data have two —
+ * *Elle* is 2017 and 2018, a foreign-language film recognised by different
+ * bodies a year apart (D58). This used to show the latest season only, so
+ * *Elle* read 5 and its 30 from 2017 was nowhere on the page. The source app
+ * summed every season into one total (35) under whichever year its first row
+ * carried; that sum is what no pick was ever worth, so it is not reproduced.
+ *
+ * A season whose nominations all lack a point tier has no ledger and is left
+ * out, like a film with nothing else: a row reading 0 would call the category
+ * worthless when it is only unconfigured.
  */
 async function scoringFor(movieId: number): Promise<FilmScoring | null> {
   const years = await nominationRepository.findYearsByMovieId(movieId);
-  const year = years.at(0);
-  if (year == null) return null;
+  if (years.length === 0) return null;
 
-  const [ledgers, picks] = await Promise.all([
+  const [perSeason, picks] = await Promise.all([
     // D41: the one scoring path. A second implementation here could disagree
     // with the league board about the same film.
-    ledgerForMovies([movieId], year),
+    // ponytail: one ledger load per season — at most two on real data. Batch
+    // across seasons in `loadScoringInputs` if a film ever carries many.
+    Promise.all(
+      years.map(async (year) => ({
+        year,
+        ledger: (await ledgerForMovies([movieId], year)).get(movieId),
+      })),
+    ),
     draftPickRepository.findByMovieId(movieId),
   ]);
 
-  const ledger = ledgers.get(movieId);
-  if (!ledger) return null;
+  const seasons = perSeason.flatMap(({ year, ledger }) =>
+    ledger ? [{ year, total: ledger.total, byEvent: byEventFrom(ledger), ledger }] : [],
+  );
+  if (seasons.length === 0) return null;
 
   const orders = picks.flatMap((pick) => (pick.order == null ? [] : [pick.order]));
 
   return {
-    year,
-    total: ledger.total,
+    seasons,
     averageDraftPosition:
       orders.length === 0
         ? null
         : orders.reduce((sum, order) => sum + order, 0) / orders.length,
-    byEvent: byEventFrom(ledger),
-    ledger,
   };
 }
 

@@ -96,10 +96,12 @@ describe('scoring', () => {
     mockRemotes();
   });
 
-  it('scores the most recent season the film was nominated in', async () => {
+  it('scores a one-season film as that season alone', async () => {
     const page = await loadFilmPage(LA_LA_LAND);
 
-    expect(page?.scoring).toMatchObject({ year: 2017, total: 335 });
+    expect(page?.scoring?.seasons.map(({ year, total }) => ({ year, total }))).toEqual([
+      { year: 2017, total: 335 },
+    ]);
   });
 
   it('agrees with the captured per-event totals', async () => {
@@ -107,7 +109,10 @@ describe('scoring', () => {
     // are the numbers a member would notice changing.
     const page = await loadFilmPage(LA_LA_LAND);
     const byEvent = new Map(
-      (page?.scoring?.byEvent ?? []).map((event) => [event.abbreviation, event.total]),
+      (page?.scoring?.seasons[0]?.byEvent ?? []).map((event) => [
+        event.abbreviation,
+        event.total,
+      ]),
     );
 
     expect(byEvent.get('oscars')).toBe(170);
@@ -121,17 +126,17 @@ describe('scoring', () => {
     // The same guarantee `MovieLedger.total` makes, for the same reason: two
     // numbers on one page that disagree make the app look like it is guessing.
     // byEvent is a regrouping of `ledger.lines`, never a second query.
-    const scoring = (await loadFilmPage(LA_LA_LAND))?.scoring;
-    const summed = (scoring?.byEvent ?? []).reduce((sum, event) => sum + event.total, 0);
+    const season = (await loadFilmPage(LA_LA_LAND))?.scoring?.seasons[0];
+    const summed = (season?.byEvent ?? []).reduce((sum, event) => sum + event.total, 0);
 
-    expect(summed).toBe(scoring?.ledger.total);
-    expect(summed).toBe(scoring?.total);
+    expect(summed).toBe(season?.ledger.total);
+    expect(summed).toBe(season?.total);
   });
 
   it('orders events by what they contributed, descending', async () => {
     // The question behind opening this panel is "where did most of it come
     // from". The source sorted alphabetically, which answers a different one.
-    const byEvent = (await loadFilmPage(LA_LA_LAND))?.scoring?.byEvent ?? [];
+    const byEvent = (await loadFilmPage(LA_LA_LAND))?.scoring?.seasons[0]?.byEvent ?? [];
 
     expect(byEvent.map((event) => event.total)).toEqual(
       [...byEvent.map((event) => event.total)].sort((a, b) => b - a),
@@ -155,18 +160,23 @@ describe('scoring', () => {
     const scoring = (await loadFilmPage(SALESMAN))?.scoring;
 
     expect(scoring).not.toBeNull();
-    expect(scoring?.total).toBeGreaterThan(0);
+    expect(scoring?.seasons.length).toBeGreaterThan(0);
     expect(scoring?.averageDraftPosition).toBeNull();
   });
 
-  it('scores the later season for a film nominated in two', async () => {
-    // *The Salesman* was nominated in 2017 and 2018. The source read the year
-    // off whichever nomination row the database returned first, so a film like
-    // this scored for an arbitrary season and its total could move between
-    // page loads.
+  it('shows each season of a film nominated in two, newest first, never summed', async () => {
+    // 🔴 D126. *The Salesman* was nominated in 2017 and 2018. The page used to
+    // show 2018's 5 and drop 2017's 15; the source summed them into 20, which
+    // no pick was ever worth. Each figure is the source's own film × season
+    // total (`/points/year/:y`), so these are real, not this service restated.
     mockRemotes({ tmdb: { ...tmdbBody(), id: 375_315, title: 'The Salesman' } });
 
-    expect((await loadFilmPage(SALESMAN))?.scoring?.year).toBe(2018);
+    const seasons = (await loadFilmPage(SALESMAN))?.scoring?.seasons ?? [];
+
+    expect(seasons.map(({ year, total }) => ({ year, total }))).toEqual([
+      { year: 2018, total: 5 },
+      { year: 2017, total: 15 },
+    ]);
   });
 
   it('renders without a scoring panel for a drafted but never nominated film', async () => {

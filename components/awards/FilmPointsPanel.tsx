@@ -19,6 +19,11 @@ import type { FilmScoring } from '@/lib/services/film';
  * claimed to have gone first overall in every league — the exact opposite of the
  * truth. `lib/services/film.ts` returns null; this omits the row.
  *
+ * 🔴 **One block per season, never a sum (D126).** A film nominated in two
+ * seasons shows each season's total under its own year, because that is what
+ * a pick in each season was worth. The source summed them into one figure no
+ * seat ever scored; this page used to show the latest season and drop the rest.
+ *
  * The per-show rows link to that show's page, as the source's did. The season is
  * carried in the query string because an award show page defaults to the active
  * season, and a film's points belong to *its* season — following the link
@@ -33,12 +38,19 @@ export function FilmPointsPanel({
   /** The film, for the ledger's accessible name. */
   title: string;
 }) {
+  const several = scoring.seasons.length > 1;
   return (
     <section className="flex flex-col gap-4">
       <SectionHead as="h2">League points</SectionHead>
 
       <div className="flex flex-wrap gap-6">
-        <Stat label={`Total, ${scoring.year} season`} value={String(scoring.total)} />
+        {scoring.seasons.map((season) => (
+          <Stat
+            key={season.year}
+            label={`Total, ${season.year} season`}
+            value={String(season.total)}
+          />
+        ))}
         {scoring.averageDraftPosition == null ? null : (
           <Stat
             label="Average draft position"
@@ -52,31 +64,52 @@ export function FilmPointsPanel({
         )}
       </div>
 
-      <ul className="flex flex-col">
-        {scoring.byEvent.map((event) => (
-          <li
-            key={event.abbreviation}
-            className="border-border-rule border-b last:border-b-0"
-          >
-            <Link
-              href={`/award-shows/${event.abbreviation}?year=${scoring.year}`}
-              className="focus-visible:outline-accent-fill hover:bg-bg-surface flex min-h-11 items-center justify-between gap-4 px-2 text-sm focus-visible:outline-2"
-            >
-              <span className="text-accent-text">{event.name}</span>
-              <span className="text-text-primary tabular font-mono">{event.total}</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {several ? (
+        <p className="text-text-secondary text-sm">
+          Each season is scored on its own: a pick counts only the nominations from its
+          draft’s season.
+        </p>
+      ) : null}
 
-      {/* The award-by-award detail, one level deeper. Reuses the ledger the
-          league board uses (D41) rather than a second breakdown — the two would
-          otherwise be able to disagree about the same film. */}
-      <PointsLedger
-        total={scoring.ledger.total}
-        lines={scoring.ledger.lines}
-        label={title}
-      />
+      {scoring.seasons.map((season) => (
+        <div key={season.year} className="flex flex-col gap-2">
+          {/* Named only when there is more than one, so a single-season film
+              reads exactly as it always has. */}
+          {several ? (
+            <SectionHead as="h3" className="pb-0">
+              {season.year} season
+            </SectionHead>
+          ) : null}
+
+          <ul className="flex flex-col">
+            {season.byEvent.map((event) => (
+              <li
+                key={event.abbreviation}
+                className="border-border-rule border-b last:border-b-0"
+              >
+                <Link
+                  href={`/award-shows/${event.abbreviation}?year=${season.year}`}
+                  className="focus-visible:outline-accent-fill hover:bg-bg-surface flex min-h-11 items-center justify-between gap-4 px-2 text-sm focus-visible:outline-2"
+                >
+                  <span className="text-accent-text">{event.name}</span>
+                  <span className="text-text-primary tabular font-mono">
+                    {event.total}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* The award-by-award detail, one level deeper. Reuses the ledger the
+              league board uses (D41) rather than a second breakdown — the two
+              would otherwise be able to disagree about the same film. */}
+          <PointsLedger
+            total={season.ledger.total}
+            lines={season.ledger.lines}
+            label={several ? `${title}, ${season.year} season` : title}
+          />
+        </div>
+      ))}
     </section>
   );
 }

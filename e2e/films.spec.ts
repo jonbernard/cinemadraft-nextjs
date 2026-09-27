@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+import { skipWithoutRestoredCorpus } from './support/corpus';
+
 /**
  * The film page, in a real browser.
  *
@@ -16,6 +18,9 @@ const LA_LA_LAND = '313369';
 
 /** 77 posters and 32 trailers — the film that made the overflow measurable. */
 const PARASITE = '496243';
+
+/** Nominated in 2017 (30 points) and 2018 (5) — one of six such films (D126). */
+const ELLE = '337674';
 
 /** A TMDB id nothing will ever own. */
 const UNKNOWN = '999999999';
@@ -105,6 +110,26 @@ test.describe('a film page', () => {
     // The season is carried in the link, so following it lands on the year these
     // points belong to rather than the active one.
     await expect(oscars).toHaveAttribute('href', '/award-shows/oscars?year=2017');
+  });
+
+  test('shows each season of a two-season film under its own year', async ({ page }) => {
+    // 🔴 D126. The page used to show Elle's 2018 figure (5) and drop 2017's 30;
+    // the source summed them into 35, which no pick was ever worth.
+    await skipWithoutRestoredCorpus();
+    await page.goto(`/films/${ELLE}`);
+
+    const panel = page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: 'League points' }) });
+    await expect(panel.getByText('Total, 2018 season')).toBeVisible();
+    await expect(panel.getByText('Total, 2017 season')).toBeVisible();
+    await expect(
+      panel.getByRole('heading', { level: 3, name: '2017 season' }),
+    ).toBeVisible();
+    await expect(panel.getByText('35', { exact: true })).toHaveCount(0);
+    await expect(
+      panel.getByRole('link', { name: /Academy of Motion Picture Arts and Sciences/ }),
+    ).toHaveAttribute('href', '/award-shows/oscars?year=2017');
   });
 
   test('a credits disclosure opens from the keyboard', async ({ page }) => {
