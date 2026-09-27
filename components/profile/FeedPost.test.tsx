@@ -28,8 +28,10 @@ const DRAFTED: FeedItem = {
         film(3, 'Killers of the Flower Moon'),
         film(4, 'Anatomy of a Fall'),
         film(5, 'The Zone of Interest'),
+        film(6, 'Past Lives'),
+        film(7, 'May December'),
+        film(8, 'The Holdovers'),
       ],
-      more: 2,
     },
   ],
 };
@@ -59,13 +61,19 @@ describe('a feed post', () => {
     expect(screen.getByText('December 2, 2023')).toBeInTheDocument();
   });
 
-  it('links each drafted film to its own page, and says how many are not shown', () => {
+  it('shows every film of an eight-film roster, in pick order, each linked to its page', () => {
     render(<FeedPost item={DRAFTED} />);
 
-    const links = screen.getAllByRole('link');
-    expect(links).toHaveLength(5);
-    expect(links[0]).toHaveAttribute('href', '/films/1001');
-    expect(screen.getByText('and 2 more films')).toBeInTheDocument();
+    // 🔴 The source showed five and "and N more films", which read as a member
+    // having drafted five. Eight in, eight out.
+    const roster = screen.getByRole('list', { name: 'Drafted films, in draft order' });
+    const links = within(roster).getAllByRole('link');
+    expect(links).toHaveLength(8);
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(
+      [1, 2, 3, 4, 5, 6, 7, 8].map((id) => `/films/${1000 + id}`),
+    );
+    expect(within(roster).getByText('The Holdovers')).toBeInTheDocument();
+    expect(screen.queryByText(/more films?$/)).toBeNull();
   });
 
   it('renders a review attachment with its rating and its words', () => {

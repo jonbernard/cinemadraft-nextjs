@@ -27,8 +27,11 @@ const drafted: FeedItem = {
         film(3, 'Killers of the Flower Moon'),
         film(4, 'Anatomy of a Fall'),
         film(5, 'The Zone of Interest'),
+        film(6, 'Past Lives'),
+        film(7, 'May December'),
+        film(8, 'The Holdovers'),
+        film(9, 'American Fiction'),
       ],
-      more: 4,
     },
   ],
 };
