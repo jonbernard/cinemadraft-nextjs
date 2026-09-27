@@ -103,11 +103,15 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
   the worktree, hardlinks `node_modules` and `generated`, starts a Postgres of
   its own on the first free port from 5440, restores `.local/baseline.dump`,
   brings the schema current with `prisma migrate deploy`, and prints the
-  `export` lines to `eval`. `npm run agent:down <name> --env-only` is what the
+  `export` lines to `eval`. `npm run agent:down -- <name> --env-only` is what the
   AGENT runs when it finishes — it removes that database and frees the ports but
   keeps the worktree and branch, which still hold the work; the plain form is
   what the orchestrator runs after merging, and it refuses while the branch has
-  commits `dev` does not.
+  commits `dev` does not. 🔴 **The `--` is load-bearing.** Without it npm eats
+  `--env-only` as its own config flag, the script sees only `<name>`, and runs the
+  full teardown — deleting the worktree and branch if the branch is merged. Two
+  agents hit this on 2026-09-27. `bash scripts/agent-down.sh <name> --env-only`
+  works too.
 
   That removes the ceiling of two. `lib/db.test.ts` used to pin ports 5433/5434,
   so a third database failed its assertion and the failure read as "the new
