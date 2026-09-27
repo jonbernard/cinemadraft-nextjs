@@ -2,23 +2,10 @@
 
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 
 import { db } from '@/lib/db';
 import { GET } from './route';
-
-/**
- * 🔴 The feed carries a session gate it should probably not have — see the
- * route's own note — and none of these tests are about it. Every one asks a
- * question about the calendar body, so the gate is mocked to a signed-in
- * reader and gets out of the way. That the gate exists at all is
- * `test/route-protection.test.ts`'s job; that it turns a stranger away is
- * `e2e/route-protection.spec.ts`'s.
- *
- * It also has to be mocked rather than merely unused: `lib/auth.ts` imports
- * Clerk's `currentUser`, which pulls in `server-only` and refuses to load here.
- */
-vi.mock('@/lib/auth', () => ({ requirePageUser: vi.fn(async () => ({ id: 1 })) }));
 
 const DOMAIN = '@icaltest.example';
 
@@ -26,8 +13,9 @@ function request(path: string) {
   return new NextRequest(`https://next.cinemadraft.com${path}`);
 }
 
-function params(slug: string[]) {
-  return { params: Promise.resolve({ slug }) };
+/** What Next passes: `slug` is absent for the bare `/api/ical`, not `[]`. */
+function params(slug?: string[]) {
+  return { params: Promise.resolve(slug === undefined ? {} : { slug }) };
 }
 
 async function cleanup() {
@@ -56,10 +44,16 @@ describe('GET /api/ical', () => {
       },
     });
 
-    const response = await GET(request('/api/ical'), params([]));
+    const response = await GET(request('/api/ical'), params());
     const body = await response.text();
 
+    expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('text/calendar; charset=utf-8');
+    expect(response.headers.get('Content-Disposition')).toBe(
+      'inline; filename="cinemadraft-award-shows.ics"',
+    );
+    expect(response.headers.get('Cache-Control')).toBe('public, max-age=3600');
+    expect(body.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true);
     expect(body).toContain('SUMMARY:Ical Test Awards Nominations');
     expect(body).toContain(
       `URL:https://next.cinemadraft.com/award-shows/${event.abbreviation}`,
@@ -92,6 +86,9 @@ describe('GET /api/ical', () => {
     const response = await GET(request(`/api/ical/${abbr}`), params([abbr]));
     const body = await response.text();
 
+    expect(response.headers.get('Content-Disposition')).toBe(
+      `inline; filename="cinemadraft-${abbr}.ics"`,
+    );
     expect(body).toContain('SUMMARY:Ical Test Scoped Show Awards');
     expect(body).not.toContain(other.name);
   });
@@ -146,7 +143,7 @@ describe('GET /api/ical', () => {
       },
     });
 
-    const response = await GET(request('/api/ical'), params([]));
+    const response = await GET(request('/api/ical'), params());
     const body = await response.text();
 
     expect(body).not.toContain('Secret');

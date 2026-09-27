@@ -71,6 +71,7 @@ describe('route protection', () => {
       '/api/live/[abbr]/stream',
       '/api/leagues/[id]/board/stream',
       '/members/[uuid]',
+      '/api/ical/[[...slug]]',
       '/robots.txt',
       '/sitemap.xml',
       '/opengraph-image',
@@ -100,7 +101,7 @@ describe('route protection', () => {
     ).toEqual([]);
   });
 
-  it('names the eleven routes that are protected today', () => {
+  it('names the ten routes that are protected today', () => {
     // The other direction, and the reason it is worth spelling out: the test
     // above passes vacuously if `discoverRoutes()` ever stops discovering
     // anything — a rename of `app/`, a walk that throws and is caught, a glob
@@ -120,12 +121,6 @@ describe('route protection', () => {
       '/admin/broadcast',
       '/admin/relink',
       '/admin/season',
-      // 🔴 Protected only because the proxy's default caught it — its own
-      // docstring says it is public and always did. A calendar client sends no
-      // session, so the feed has never worked for the one audience it has.
-      // Kept protected here because a migration may not move a route across the
-      // boundary; see the note in the route handler.
-      '/api/ical/[...slug]',
       '/leagues',
       // 🔴 Added by P12.T5. It was public, with a comment conceding that it was
       // listed only because that is what the proxy answered — and the page then
