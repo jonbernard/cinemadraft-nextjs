@@ -27,7 +27,7 @@ export type NavLink = {
 };
 
 /**
- * The seven destinations, as the source app has them.
+ * The destinations, as the source app has them, plus one.
  *
  * 🔴 Seven, not the four of spec §6.9 — **the owner overrode that** (D62).
  * §6.9 proposed consolidating Browse, Watchlist and Draft List into one Films
@@ -85,6 +85,16 @@ export const NAV_LINKS: NavLink[] = [
     label: 'Draft list',
     ready: true,
     path: 'M4 6h16M4 12h16M4 18h10M18 16v5M15.5 18.5h5',
+    group: 'yours',
+  },
+  {
+    href: '/profile',
+    label: 'Your profile',
+    ready: true,
+    // A head and shoulders, as an arc plus a shoulder line — the same glyph
+    // `AccountControl` draws, expressed as one path because `NavLink.path` is
+    // a single `d` string.
+    path: 'M12 4.4a3.6 3.6 0 1 1 0 7.2 3.6 3.6 0 0 1 0-7.2M5 20a7 7 0 0 1 14 0',
     group: 'yours',
   },
   {

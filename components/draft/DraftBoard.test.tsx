@@ -230,6 +230,71 @@ describe('DraftBoard', () => {
     expect(four.style.maxWidth).not.toBe(grid.style.maxWidth);
   });
 
+  it('squats the poster on a television, and leaves it alone everywhere else', () => {
+    // 🔴 The binding constraint on this board is HEIGHT — four seats down 1080
+    // — so the poster's height is settled by arithmetic no matter what ratio
+    // it is drawn at, and the only thing the ratio buys is width. `3/4` buys
+    // 12.5% of it for an 11% centre crop under `object-cover`, which is the
+    // trade the owner asked for in as many words: "if you need to scale things
+    // down vertically, scale down the posters."
+    //
+    // This is also the test that catches `tv` not being handed to `PickCell`
+    // at all: the board would size its columns from a 3:4 poster and then draw
+    // a 2:3 one, and every row would overflow the screen it was fitted to.
+    const art = (container: HTMLElement) =>
+      container.querySelector('tbody td div') as HTMLElement;
+
+    const tv = render(
+      <DraftBoard tv rounds={1} seats={[seat({ draftId: 1, picks: [pick(1, 'A')] })]} />,
+    );
+    expect(art(tv.container).className).toMatch(/aspect-\[3\/4\]/);
+    expect(art(tv.container).className).not.toMatch(/aspect-\[2\/3\]/);
+
+    const ordinary = render(
+      <DraftBoard rounds={1} seats={[seat({ draftId: 1, picks: [pick(1, 'A')] })]} />,
+    );
+    expect(art(ordinary.container).className).toMatch(/aspect-\[2\/3\]/);
+  });
+
+  it('drops the points disclosure on a television, keeping the number', () => {
+    // 🔴 `PointsLedger` opens a `<details>` panel in flow. Every row of this
+    // board is sized to the pixel from the viewport's height, so one opened
+    // disclosure blows the layout apart — and a reader on a television has a
+    // remote, no pointer and no obvious way to shut it again. The total still
+    // prints, which is the whole of what anyone reads from across a room.
+    const scored = {
+      ...pick(1, 'A'),
+      ledger: [
+        {
+          nominationId: 1,
+          awardId: 2,
+          awardName: 'Best Picture',
+          eventAbbreviation: 'AMPAS',
+          eventName: 'Academy Awards',
+          points: 10,
+          won: false,
+          earned: 10,
+        },
+      ],
+    };
+
+    const tv = render(
+      <DraftBoard tv rounds={1} seats={[seat({ draftId: 1, picks: [scored] })]} />,
+    );
+    expect(tv.container.querySelector('tbody details')).toBeNull();
+    expect(
+      within(tv.container.querySelector('tbody') as HTMLElement).getAllByText('10')
+        .length,
+    ).toBeGreaterThan(0);
+
+    // And off a television it is still there, so the line above is a change
+    // rather than a description of what `PickCell` always did.
+    const ordinary = render(
+      <DraftBoard rounds={1} seats={[seat({ draftId: 1, picks: [scored] })]} />,
+    );
+    expect(ordinary.container.querySelector('tbody details')).not.toBeNull();
+  });
+
   it('still renders every seat and every round in tv mode', () => {
     // 4 seats × 10 rounds is the measured production ceiling. "Fits" must
     // never be bought by dropping content — the owner's requirement is that

@@ -282,6 +282,10 @@ function FilmBanner({
             title={film.title}
             watched={watched}
             onChange={setWatched}
+            // One film, a whole header's worth of room, and the surface the
+            // owner complained about: the words go on the control itself. No
+            // tooltip beside them — two mechanisms saying the same thing.
+            hint="label"
           />
         ) : null}
       </div>

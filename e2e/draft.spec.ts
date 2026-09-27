@@ -206,6 +206,20 @@ test.describe('draft', () => {
 
     await expect(list.getByRole('listitem').first()).toContainText(FILMS[1] as string);
 
+    // 🔴 Wait for the write, THEN reload — the assertion above is of the
+    // OPTIMISTIC order. `onReorder` is a server action the drop fires and does
+    // not await, and a reload cancels whatever is still in flight: held the
+    // POST past a `page.reload()` deliberately and the new order never reached
+    // the database at all, four seconds later. So on a loaded runner the
+    // reload outruns the commit, the server renders the OLD order, and nothing
+    // is coming to fix it — which is exactly how this went red on CI
+    // (2026-09-13, run 34798741232: twice, "01e2e-draft Alpha" for the whole
+    // five seconds, green only on the second retry). Same bug, same path, as
+    // journey 5's beat.
+    await expect
+      .poll(async () => (await picksInLeague(leagueId))[0]?.title)
+      .toBe(FILMS[1]);
+
     await page.reload();
     // A fresh page opens on whoever is up, which is Grace — so ask for Ada's
     // list again. What is being tested is that the new order came back from

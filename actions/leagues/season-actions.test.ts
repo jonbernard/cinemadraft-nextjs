@@ -51,7 +51,8 @@ async function seed() {
           createdAt: now,
           updatedAt: now,
         },
-        select: { id: true, email: true, clerkId: true },
+        // `uuid` because `profile_feeds` is keyed by it, not by the user id.
+        select: { id: true, email: true, clerkId: true, uuid: true },
       }),
     ),
   );
@@ -123,6 +124,23 @@ async function cleanup() {
   });
   await db.draft.deleteMany({ where: { leagueId: { in: ids } } });
   await db.league.deleteMany({ where: { id: { in: ids } } });
+  // 🔴 Feed rows BEFORE the users, and by uuid — `profile_feeds` is keyed by
+  // `user_uuid` with no foreign key, so deleting the users first strands the
+  // rows with nothing left to identify them by. `completeDraft` now writes one
+  // per seated member (P12.T5 follow-up), and rows left behind break
+  // `lib/db.test.ts`'s exact counts and
+  // `lib/services/profile.production.test.ts` in the next run — which reads as
+  // a code regression and is scratch data.
+  const uuids = (
+    await db.user.findMany({
+      where: { email: { contains: `${TAG}-` } },
+      select: { uuid: true },
+    })
+  ).flatMap((user) => (user.uuid == null ? [] : [user.uuid]));
+  if (uuids.length > 0) {
+    await db.profileFeed.deleteMany({ where: { userUuid: { in: uuids } } });
+  }
+
   await db.user.deleteMany({ where: { email: { contains: `${TAG}-` } } });
   await db.movie.deleteMany({ where: { title: { startsWith: TAG } } });
 }
@@ -432,6 +450,61 @@ describe('draft status', () => {
     expect((await leagueRepository.findById(fixture.league.id)).draftingStatus).toBe(
       'complete',
     );
+  });
+
+  it('posts each seated member their roster', async () => {
+    /**
+     * 🔴 The capability PARITY.md carried as an italic aside for four phases.
+     * Every one of the 125 feed rows in the restored production data came from
+     * this write; the manual composer produced none of them. A member's profile
+     * would have stayed empty after every season without it.
+     */
+    signInAs(fixture.owner);
+    const before = await db.profileFeed.count();
+
+    await completeDraft({ leagueId: fixture.league.id, year: YEAR });
+
+    const posts = await db.profileFeed.findMany({
+      // `uuid` is nullable in the schema; the fixture always sets one, so the
+      // nulls are filtered rather than asserted away with a cast.
+      where: {
+        userUuid: {
+          in: [fixture.owner.uuid, fixture.member.uuid].filter(
+            (uuid): uuid is string => uuid != null,
+          ),
+        },
+      },
+      orderBy: { id: 'desc' },
+    });
+
+    expect(await db.profileFeed.count()).toBeGreaterThan(before);
+    expect(posts.length).toBeGreaterThan(0);
+
+    const post = posts[0];
+    if (!post) throw new Error('expected a roster post');
+    expect(post.message).toContain(String(YEAR));
+    // 🔴 The pointer, not just the sentence. `lib/services/profile.ts` expands
+    // `['draft', id]` into the member's films; a post without it renders as a
+    // bare line of text and the roster — the whole point — never appears.
+    expect(post.components).toMatch(/\[\s*\[\s*"draft"\s*,\s*\d+/);
+    expect(post.icon).toBe('eva:calendar-fill');
+  });
+
+  it('does not post twice when the draft is finished twice', async () => {
+    /**
+     * 🔴 The source re-posted on every update, which is why the SAME roster
+     * appears twice in the production data. A feed is the one surface where a
+     * duplicate is visible forever, and pressing "Finish the draft" twice is an
+     * ordinary thing to do.
+     */
+    signInAs(fixture.owner);
+
+    await completeDraft({ leagueId: fixture.league.id, year: YEAR });
+    const after = await db.profileFeed.count();
+
+    await completeDraft({ leagueId: fixture.league.id, year: YEAR });
+
+    expect(await db.profileFeed.count()).toBe(after);
   });
 });
 

@@ -244,6 +244,7 @@ function WatchedFilms({
                   title={film.title}
                   watched
                   onChange={setWatched}
+                  hint="label"
                 />
               ) : null}
             </li>
@@ -311,7 +312,15 @@ function Shows({ shows, year }: { shows: ShowProgress[]; year: number }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    // 🔴 One column at every width — the owner's call in `7064de9`, which
+    // replaced the two columns from `lg` that `224b8d9` introduced.
+    //
+    // `lg:items-start` is kept so that a second column, if one ever returns,
+    // does not stretch: a grid row is as tall as its tallest cell, so without
+    // it a closed `<details>` would inflate to match an open neighbour.
+    // `columns-2` is worse still — CSS multi-column reflows items between
+    // columns as one grows, so opening a show makes *other* shows jump.
+    <div className="grid gap-3 lg:grid-cols-1 lg:items-start">
       {shows.map((show) => (
         // A native <details>: it opens with a keyboard, before hydration, and
         // without a line of JavaScript. Closed by default because the summary
@@ -339,10 +348,10 @@ function Shows({ shows, year }: { shows: ShowProgress[]; year: number }) {
                   {award.nominees.map((nominee) => (
                     <li
                       key={nominee.nominationId}
-                      className="flex items-center justify-between gap-3"
+                      className="flex items-center justify-between gap-3 hover:bg-accent-fill/5"
                     >
                       <FilmTitle film={nominee} />
-                      <SeenChip watched={nominee.watched} />
+                      <NomineeToggle film={nominee} />
                     </li>
                   ))}
                 </ul>
@@ -388,7 +397,7 @@ function MostNominated({
               <span className="min-w-0 flex-1">
                 <FilmTitle film={film} />
               </span>
-              <SeenChip watched={film.watched} />
+              <NomineeToggle film={film} />
             </li>
           ))}
         </ul>
@@ -426,7 +435,7 @@ function Drafted({ leagues, year }: { leagues: LeagueProgress[]; year: number })
                 className="flex items-center justify-between gap-3 py-1"
               >
                 <FilmTitle film={film} />
-                <SeenChip watched={film.watched} />
+                <NomineeToggle film={film} />
               </li>
             ))}
           </ul>
@@ -451,9 +460,47 @@ function FilmTitle({ film }: { film: Pick<WatchlistFilm, 'title' | 'tmdbId'> }) 
   );
 }
 
-function SeenChip({ watched }: { watched: boolean }) {
-  if (!watched) return null;
+/**
+ * The one control the three progress views were missing.
+ *
+ * 🔴 **It replaces `SeenChip`, which rendered *nothing* when the film was
+ * unwatched** — so the row a reader most wanted to act on was the one row with
+ * no affordance at all, and the only way to mark a nominee seen was to go and
+ * find it on /browse. Membership of the watchlist *is* the record of having
+ * seen a film (D64), so the chip and the control are the same fact and there is
+ * no reason for the page to show one without the other.
+ *
+ * The words carry it rather than a tooltip: "Watched" is what the chip already
+ * said, and 526 nominees is not a page to hang 526 MUI poppers off.
+ *
+ * A film nominated in four categories renders four of these, which is correct —
+ * they are four separate rows a reader can act on — and they converge because
+ * the action states an end state and `revalidatePath` re-renders all of them.
+ * It does mean `data-testid` is not unique on this page; the e2e locators for
+ * it take `.first()`.
+ */
+function NomineeToggle({
+  film,
+}: {
+  film: Pick<WatchlistFilm, 'title' | 'tmdbId' | 'watched'>;
+}) {
+  // A nominee with no TMDB id cannot be marked — `setWatched` takes one — so it
+  // keeps the read-only statement of fact rather than a button that would fail.
+  if (!film.tmdbId) return film.watched ? <SeenChip /> : null;
 
+  return (
+    <WatchedToggle
+      tmdbId={film.tmdbId}
+      title={film.title}
+      watched={film.watched}
+      onChange={setWatched}
+      hint="label"
+    />
+  );
+}
+
+/** The fallback for a row with no TMDB id: seen, and nothing to press. */
+function SeenChip() {
   return (
     <StatusChip
       tone="neutral"

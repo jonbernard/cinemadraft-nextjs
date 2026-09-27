@@ -348,3 +348,20 @@
 body:has([data-tv-mode]) [data-app-chrome] {
   display: none;
 }
+
+/* The shell's own padding, on a television (D124).
+ *
+ * `<main>` is `xl:px-8 xl:pb-8 xl:pt-10` — 72px down the page at the width a
+ * television actually is, which the draft board's poster arithmetic then has
+ * to give back. Reading room is what that padding is for and a television has
+ * no reader within arm's reach of it, so it collapses to a hairline and the
+ * 56px goes to the posters.
+ *
+ * 🔴 Unlayered, exactly like the rule above and for the same reason (D29): it
+ * has to beat Tailwind's `utilities` layer without `!important`, and the
+ * cascade's layer ordering is the mechanism for that. It is keyed on
+ * `data-tv-mode`, so no page that has not asked for TV mode can see it.
+ */
+body:has([data-tv-mode]) main {
+  padding: 0.5rem;
+}

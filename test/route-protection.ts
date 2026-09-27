@@ -176,11 +176,20 @@ export const PUBLIC_ROUTES = [
   '/leagues/[id]/draft',
   // Same shape: the page resolves the session and 404s a stranger.
   '/leagues/[id]/setup',
-  // 🔴 Public to the proxy, and gated by the page anyway — it calls
-  // `requireUser()`, because creating a league writes the caller's id into the
-  // owner column. Listed here because that is what the proxy answered, not
-  // because a signed-out visitor gets anything from it.
-  '/leagues/new',
+  // 🔴 `/leagues/new` is deliberately NOT here, as of P12.T5.
+  //
+  // It was, with a comment conceding "listed here because that is what the
+  // proxy answered, not because a signed-out visitor gets anything from it" —
+  // and the page then gated itself with `requireUser()`, which THROWS. A page
+  // turns that into an error boundary, so a stranger tapping "Start a league"
+  // got a **500**, confirmed on the deployed site by P12.T2's sweep.
+  //
+  // Creating a league writes the caller's id into the owner column, so there is
+  // no version of this page a signed-out visitor can use. A route that needs a
+  // session is a protected route, and letting the proxy redirect it is both the
+  // established mechanism and the better answer — it carries `?redirect_url=`,
+  // so the person lands back here once they are in. The page keeps
+  // `requirePageUser()` as a second line rather than the only one.
   // `/leagues` itself — the list of leagues *you* are in — is deliberately
   // absent. A league board is shareable; the list of your own is about you.
   //

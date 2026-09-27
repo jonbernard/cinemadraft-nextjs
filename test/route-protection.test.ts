@@ -58,7 +58,6 @@ describe('route protection', () => {
       '/leagues/[id]',
       '/leagues/[id]/draft',
       '/leagues/[id]/setup',
-      '/leagues/new',
       '/award-shows',
       '/award-shows/[abbr]',
       '/award-shows/[abbr]/opengraph-image',
@@ -101,7 +100,7 @@ describe('route protection', () => {
     ).toEqual([]);
   });
 
-  it('names the nine routes that are protected today', () => {
+  it('names the eleven routes that are protected today', () => {
     // The other direction, and the reason it is worth spelling out: the test
     // above passes vacuously if `discoverRoutes()` ever stops discovering
     // anything — a rename of `app/`, a walk that throws and is caught, a glob
@@ -128,7 +127,21 @@ describe('route protection', () => {
       // boundary; see the note in the route handler.
       '/api/ical/[...slug]',
       '/leagues',
+      // 🔴 Added by P12.T5. It was public, with a comment conceding that it was
+      // listed only because that is what the proxy answered — and the page then
+      // gated itself by THROWING, which a page turns into a 500. A stranger
+      // tapping "Start a league" got an error boundary, confirmed on the
+      // deployed site. Creating a league writes the caller's id into the owner
+      // column, so there is no version of it a signed-out visitor can use: it
+      // is a protected route, and the proxy's redirect carries `?redirect_url=`
+      // so they land back here once they are in.
+      '/leagues/new',
       '/list',
+      // 🔴 Protected because it cannot answer without a session: it resolves
+      // the reader's own uuid and redirects to `/members/<uuid>`. Signed out
+      // there is nothing to resolve, so the proxy's redirect is the right
+      // answer and `requirePageUser` is the second line.
+      '/profile',
       '/watchlist',
     ]);
   });

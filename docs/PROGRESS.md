@@ -2186,7 +2186,63 @@ Plan: `docs/superpowers/plans/2026-09-12-phase-19-journey-suites.md`
 
 ## Phase 12 — Parallel run
 
-- [ ] P12 not started
+Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
+
+- [x] **P12.T1** Deployed to `next.cinemadraft.com` against the Neon copy — verified 2026-09-14: `/`, `/award-shows` and `/how-it-works` all 200, and `?tv=1` on a league renders `data-tv-mode`, so the deployed build carries Phase 14 tranche 2. Owner still to confirm in the dashboard which Neon branch it points at, and that `events.image` still holds the twelve Blob URLs
+- [x] **P12.T1 confirmed 2026-09-14.** Vercel Production points at Neon endpoint
+  **`ep-morning-block-aus9jqrt`** (`-pooler`, `c-10.us-east-1.aws.neon.tech`),
+  database `neondb`, user `neondb_owner`, `sslmode=require` +
+  `channel_binding=require` — the same endpoint as the local reference in
+  `.env.neon`. 🔴 The credential itself lives only in Vercel (Sensitive, so it
+  cannot be read back or `vercel env pull`ed) and in `.env.neon`, which the
+  `.env*` ignore rule covers. Never record it here.
+
+  **Confirmed from the running system, not from config**, which is the check
+  that actually matters: `/leagues/1` renders 26 member links, `/award-shows`
+  lists all 12 shows, and all 12 of Phase 11's Blob logos resolve
+  (`ace adg afi asc bafta dga gg oscars pga raz sag wga`). So the deployed app
+  is on the restored production copy and `events.image` has **not** been
+  clobbered — the hazard Phase 13 T3 exists for has not happened yet.
+
+  🔴 A counting trap worth not repeating: grepping the page for
+  `blob.vercel-storage.com` returns **1**, not 12, because Next's image
+  optimizer URL-encodes the host into `_next/image?url=…`. The raw string
+  survives once. Count the encoded form.
+
+  🔴 **It is the POOLED endpoint**, which is consistent with D102: Neon's pooler
+  does not support `LISTEN`/`NOTIFY`, which is why the live stream polls rather
+  than subscribing.
+
+- [ ] **P12.T2** The capability sweep — `PARITY.md` is at **0 deficient**, so this starts from zero known gaps for the first time
+- [x] **P12.T3** Free-tier headroom and the cold-start decision — **D123**.
+  Burn is 2.32 CU-hrs in 14 days → ~5 CU-hrs/month, **5% of the 100 CU-hr
+  allowance**; storage 36 MB of 512 MB. A 3h ceremony costs 0.75 CU-hrs at
+  Neon's 0.25 CU floor and 6 at the 2 CU ceiling, so a twelve-show season is
+  9–72 and fits even at the ceiling. The ~3s cold start is **accepted**: a
+  keep-warm is `0.25 × 730 = 182 CU-hrs/month`, 1.8× the whole allowance before
+  a single ceremony. 🔴 Runtime Cache: `lib/external/cache.ts` is the only
+  caching layer and it fronts **TMDB, not the database** — there is no
+  meaningful cache on the database path, which is what the code says and what
+  the 5% burn is consistent with
+- [ ] **P12.T4** Load-test draft-day search
+- [ ] **P12.T5** Fix what the above finds
+
+### Phase 12 measurements (2026-09-14)
+
+Recorded so nobody re-measures them, and so the plan's thresholds have a baseline.
+
+| Probe | Result |
+|---|---|
+| Cold `/` (first hit after idle) | **2.98s**, TTFB 2.94s |
+| Warm `/` | 0.68 / 0.65 / 0.50 / **0.44s** |
+| `/leagues/1` (16 seats, picks, ledger) | 1.00 → 0.77 → **0.62s** |
+| `/how-it-works` | 0.46s |
+
+🔴 **The cold number is the finding.** Neon Free scales to zero, so the first
+visitor after an idle period waits ~3 seconds — and this product's shape is a
+link pasted into a group chat, which makes the *first* visitor the common case
+rather than the rare one. P12.T3 decides whether that is accepted or bought off
+with a keep-warm, and records the reason either way.
 
 ### Phase 12 notes
 

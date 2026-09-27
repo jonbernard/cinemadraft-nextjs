@@ -65,6 +65,43 @@ export default async function globalTeardown(): Promise<void> {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
   try {
+    // 🔴 Feed rows FIRST, and by uuid, because `profile_feeds` has no foreign
+    // key to `users` — delete the accounts first and the rows are stranded with
+    // nothing left to identify them by.
+    //
+    // `completeDraft` writes one roster post per seated member (ad2d58f), so
+    // any spec that finishes a draft now leaves rows behind. Four survived a
+    // run and turned `lib/db.test.ts` and `profile.production.test.ts` red on
+    // 129 vs 125 — which reads as a code regression and is scratch data. Found
+    // by an agent measuring something unrelated, not by the suite that made it.
+    // 🔴 Roster posts, matched on the MESSAGE rather than on the owner.
+    //
+    // `completeDraft` writes one `profile_feeds` row per seated member
+    // (ad2d58f), so any spec that finishes a draft leaves rows behind — eight
+    // survived and turned `lib/db.test.ts` and `profile.production.test.ts`
+    // red on 133 vs 125, which reads as a code regression and is scratch data.
+    //
+    // Three things ruled out before landing on the message, each of which
+    // looked right first:
+    //
+    //   - Joining `users` cannot work. Every spec's own `afterAll` deletes its
+    //     accounts BEFORE this runs, so by now the rows are orphans with
+    //     nothing to join to.
+    //   - `uuid::text` is needed for any such join anyway — `users.uuid` is a
+    //     `uuid` column and `profile_feeds.user_uuid` is `text`, the source
+    //     app's schema — and without the cast Postgres throws
+    //     `operator does not exist: uuid = text`, which Playwright reports as
+    //     "1 error was not a part of any test" and which aborts every delete
+    //     below it.
+    //   - 🔴 Deleting orphans outright would destroy real data: **6 of the 125
+    //     restored production rows are themselves orphaned**, written by
+    //     members whose accounts no longer exist.
+    //
+    // The message carries the scratch league's name, and that name carries the
+    // suites' `e2e-` tag. Measured on the restored copy: `e2e-` matches all 8
+    // scratch rows and 0 of the 125 real ones.
+    await client.query("delete from profile_feeds where message like '%e2e-%'");
+
     await client.query("delete from users where email like '%+clerk_test@%'");
     // `e2e/signed-in.spec.ts`'s accounts. Here rather than in that file's own
     // `afterAll`, which runs per worker and deleted users other workers were

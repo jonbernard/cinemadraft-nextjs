@@ -22,9 +22,9 @@ fifteen deliberate refusals, each carrying its reason.
 | Verdict | Count |
 |---|---|
 | **ported** | 69 |
-| **deficient** | 0 |
+| **deficient** | 1 |
 | **dropped** | 15 |
-| **total capabilities** | 84 |
+| **total capabilities** | 85 |
 
 🔴 **Recompute these from the table; never increment them.** The counts drifted
 by one during Phase 10 and went unnoticed for four batches, because each task
@@ -72,6 +72,16 @@ dropping is a decision rather than a debt.
 - **ported** — a person can do this in the new app today, cited by file.
 - **deficient** — they cannot, and they should be able to. Carries a `P10.Tn`.
 - **dropped** — they cannot, and that is intended. Carries a reason.
+
+🔴 **A deferral does not get to live inside another row's prose.** This one did,
+and it cost the matrix its headline number. "Posting picks to each member's feed
+waits for the feed itself (T40–42)" was an *italic aside inside a row marked
+ported*, and a second like it sat in the reviews row. T40–42 shipped, the
+deferral expired, and nobody re-read the asides — because both host rows were
+green, the missing workflow was invisible to the verdict column and the matrix
+read **0 deficient** while a whole workflow had no owner. Found 2026-09-14 by a
+review against the source app, not by anything in this file. A deferral gets its
+own row, or it does not exist.
 
 🔴 **There is no "partial".** Something that half works is **deficient**, so
 that a green row can be read as "yes, that works" without qualification.
@@ -138,7 +148,8 @@ which is why so many rows are cheap and a few are not.
 | **Set up groups before a draft** | **ported** | `league/orderAndGroups/`, `PUT /draft/:leagueId/:id` | `app/(app)/leagues/[id]/setup` + `lib/services/group-assignment.ts`. Assignment is a select per seat, not drag-only, so it works by keyboard; the randomiser deals round-robin, keeping groups balanced | ✓ |
 | Add a seat, including a placeholder for someone with no account | **ported** | `POST /draft/add` (`routes/draft.js:51`) | `actions/leagues/manage-seats.ts` — owner-gated, closing source bug 4 | ✓ |
 | Remove or rename a seat | **ported** | `DELETE /draft/:id`, `PUT /draft/:leagueId/:id` | `actions/leagues/manage-seats.ts` — owner-gated (closing source bug 5), and refuses a seat holding picks, which would orphan them | ✓ |
-| Start the draft / mark it complete | **ported** | Start/Complete buttons, `PUT /league/:id`, `/status` | `actions/leagues/manage-league.ts` — status only, closing source bug 6. *Posting picks to each member's feed waits for the feed itself (T40–42)* | ✓ |
+| Start the draft / mark it complete | **ported** | Start/Complete buttons, `PUT /league/:id`, `/status` | `actions/leagues/manage-league.ts` — status only, closing source bug 6. 🔴 The feed post it also wrote is **its own row below**, not an aside here — see "A finished league posts each member's roster" | ✓ |
+| **A finished league posts each member's roster to their profile feed** | **deficient** | `PUT /league/:id` → `server/routes/league.js:62-86` — on `draftingStatus === 'complete'`, one `profile_feeds` row per seated member: *"Micah drafted these movies in the 2024 Racso award league."*, icon `eva:calendar-fill`, `components: [["draft", <draftId>]]` so it renders the whole roster | 🔴 **Nothing writes it.** `actions/leagues/manage-league.ts` sets the status and revalidates; the only feed write in the port is `actions/profile/post-feed-item.ts`, the manual composer. The port *renders* this attachment kind already (`lib/services/profile.ts:242`, `components/profile/FeedPost.tsx`) — it will simply never have one to render | ✓ |
 | Stage next season's draft | **ported** | "Stage next draft" adornment on the year select | `actions/leagues/manage-league.ts` — idempotent, carries placeholders forward | ✓ |
 | League settings | **ported** | `PUT /league/:id` | `actions/leagues/manage-league.ts` — named fields through a Zod allowlist, so the source's take-the-league bug (6) is impossible | ✓ |
 
