@@ -296,7 +296,7 @@ describe('eventRepository.findActive', () => {
 
     const expected = await db.$queryRaw<{ id: number }[]>`
       select id from events
-      where nom_active is true or awards_active is true
+      where awards_active is true
       order by name asc
     `;
 

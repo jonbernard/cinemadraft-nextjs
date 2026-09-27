@@ -180,7 +180,12 @@ export const eventRepository = {
   },
 
   /**
-   * The shows currently announcing nominations or handing out awards.
+   * The shows on air — handing out awards right now (`awards_active`).
+   *
+   * 🔴 Not `nom_active` as well, as it once was: the only caller, the
+   * dashboard's live banner, already kept `awards_active` only (D118), and
+   * `nom_active` is read by nothing now — "needs nominations" is derived from
+   * dates (`lib/services/entry-status.ts`).
    *
    * An array, not the single row the source app's `getLiveEvent` returned:
    * nothing in the schema stops two shows being live at once, and the
@@ -189,7 +194,7 @@ export const eventRepository = {
    */
   async findActive(): Promise<Event[]> {
     const events = await db.event.findMany({
-      where: { OR: [{ nomActive: true }, { awardsActive: true }] },
+      where: { awardsActive: true },
       select: SELECT,
       orderBy: { name: 'asc' },
     });

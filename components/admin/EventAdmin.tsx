@@ -115,8 +115,9 @@ export function EventAdmin({
       {/* 🔴 No live controls here. On air (`awards_active`) is the switch in
           Winners mode, beside the categories it is about. `nom_active` is not
           written: in the source it was a side effect of entering Nominations
-          mode, and here it means "still needs nominations" to the index page
-          and the importer. `live_results` is not written: no source UI ever
+          mode, and nothing in the port reads it now — "still needs
+          nominations" is derived from dates (`lib/services/entry-status.ts`).
+          `live_results` is not written: no source UI ever
           set it, and nothing in the port reads it. All three columns keep
           whatever is stored. */}
       <div className="flex flex-wrap gap-3">

@@ -138,11 +138,10 @@ export default async function AwardShowPage({
               handed this link during a ceremony being able to follow it is the
               whole point of the route.
 
-              🔴 `needsWinners` is `events.awards_active` — the source's own
-              flag for "the winners are being worked on", i.e. the broadcast
-              window. The prop name reads admin-ish because that is the only
-              thing it fed until now; it is the right column. */}
-        {show.needsWinners ? (
+              🔴 `onAir` is `events.awards_active` — the broadcast window, which
+              the source's Pick Winners view switched on. Not "needs winners":
+              that is derived from dates, for the index page's list. */}
+        {show.onAir ? (
           <Link
             href={`/live/${show.abbreviation}?year=${show.year}`}
             className="text-accent-text hover:text-text-primary focus-visible:outline-accent-fill w-fit text-sm focus-visible:outline-2"

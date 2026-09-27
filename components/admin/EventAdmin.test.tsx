@@ -25,8 +25,8 @@ const EVENT = {
  * that goes live. On air is the switch in Winners mode (`OnAirSwitch`).
  * `nom_active` and `live_results` are written by nothing here: the source's UI
  * never had a box for either (its selector wrote `nom_active`; nothing wrote
- * `live_results`), and the port's readers of `nom_active` are the index page
- * and the importer.
+ * `live_results`), and nothing in the port reads either — "still needs
+ * nominations" is derived from dates (`lib/services/entry-status.ts`).
  */
 describe('EventAdmin', () => {
   beforeEach(() => {
