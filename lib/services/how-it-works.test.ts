@@ -241,12 +241,12 @@ describe('the rule the page states in words', () => {
     const nominated = scoreMovies({
       nominations: [{ id: 1, movieId: 1, awardId: 9 }],
       pointsByAward: new Map([[9, 7]]),
-      winnersByAward: new Map(),
+      winningNominationIds: new Set(),
     });
     const won = scoreMovies({
       nominations: [{ id: 1, movieId: 1, awardId: 9 }],
       pointsByAward: new Map([[9, 7]]),
-      winnersByAward: new Map([[9, new Set([1])]]),
+      winningNominationIds: new Set([1]),
     });
 
     expect(nominated.get(1)).toBe(7);

@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { db } from '@/lib/db';
 import { draftPickRepository } from '@/lib/repositories/draft-picks';
+import { winnerRepository } from '@/lib/repositories/winners';
 import { loadFixture } from '@/test/fixtures';
 import { getLeagueBoard } from './draft';
 import { ledgerForMovies, pointsForMovieIds } from './scoring';
@@ -11,6 +12,35 @@ import { ledgerForMovies, pointsForMovieIds } from './scoring';
 afterAll(async () => {
   await db.$disconnect();
 });
+
+/**
+ * 🔴 Deliberate deviations from the pinned 2025 fixtures (D125).
+ *
+ * The source app paid a win on every nomination of the winning film, so a film
+ * nominated twice in one category with one win earned 4P. The owner ruled that
+ * the win belongs to the nomination that won: P + P + P = 3P. These are the
+ * only 2025 films that held such a pair, with the source's figure and ours.
+ * Every other film, and every other seat, must still match the fixture exactly.
+ */
+const FILM_DEVIATIONS = [
+  // Four pairs, one win each: Oscars and Globes Original Song, Globes and
+  // BAFTA Supporting Actress. −(10 + 5 + 10 + 5).
+  { movieId: 1056, title: 'Emilia Pérez', source: 445, ours: 415 },
+  // Razzies Worst Supporting Actor, worth −15: two nominations, one "win".
+  { movieId: 1048, title: 'Megalopolis', source: -140, ours: -125 },
+] as const;
+
+/**
+ * The league 1 seats those two films move, identified by our draft id because
+ * the fixture's names and uuids were scrubbed. Derived, not trusted: the test
+ * recomputes each seat's move from `FILM_DEVIATIONS` and its own picks.
+ */
+const SEAT_DEVIATIONS = [
+  { draftId: 128, source: 1160, ours: 1130 }, // Emilia Pérez −30
+  { draftId: 131, source: 930, ours: 900 }, // Emilia Pérez −30
+  { draftId: 134, source: 930, ours: 900 }, // Emilia Pérez −30
+  { draftId: 135, source: 1020, ours: 1005 }, // Emilia Pérez −30, Megalopolis +15
+] as const;
 
 /**
  * The loader, against restored production data — excluded from `test:ci`.
@@ -56,8 +86,24 @@ describe('pointsForMovieIds', () => {
     const movieIds = fixture.points.map((entry) => Number(entry.movieId));
     const totals = await pointsForMovieIds(movieIds, 2025);
 
+    // Each deviation must name a film the fixture holds at exactly its source
+    // figure — otherwise the list could drift away from what it documents.
+    const byId = new Map(fixture.points.map((entry) => [Number(entry.movieId), entry]));
+    for (const deviation of FILM_DEVIATIONS) {
+      expect({
+        title: deviation.title,
+        total: byId.get(deviation.movieId)?.total,
+      }).toEqual({
+        title: deviation.title,
+        total: deviation.source,
+      });
+    }
+
+    const expectedTotal = (entry: { movieId: string; total: number }) =>
+      FILM_DEVIATIONS.find((d) => d.movieId === Number(entry.movieId))?.ours ??
+      entry.total;
     const wrong = fixture.points.filter(
-      (entry) => (totals.get(Number(entry.movieId)) ?? 0) !== entry.total,
+      (entry) => (totals.get(Number(entry.movieId)) ?? 0) !== expectedTotal(entry),
     );
 
     // Named rather than counted: a bare count tells you something broke, this
@@ -65,7 +111,7 @@ describe('pointsForMovieIds', () => {
     expect(
       wrong.map((entry) => ({
         title: entry.title,
-        expected: entry.total,
+        expected: expectedTotal(entry),
         actual: totals.get(Number(entry.movieId)) ?? 0,
       })),
     ).toEqual([]);
@@ -81,15 +127,38 @@ describe('pointsForMovieIds', () => {
     expect(fixture.length).toBe(12);
 
     const board = await getLeagueBoard(1, 2025);
-    const ours = board.groups
-      .flatMap((group) => group.seats)
-      .map((seat) => seat.total)
-      .sort((a, b) => b - a);
+    const seats = board.groups.flatMap((group) => group.seats);
+
+    // Each seat's move, derived from the film deviations and the seat's picks.
+    const moved = seats.flatMap((seat) => {
+      const delta = seat.picks.reduce((sum, pick) => {
+        const film = FILM_DEVIATIONS.find((d) => d.movieId === pick.movie.id);
+        return sum + (film ? film.ours - film.source : 0);
+      }, 0);
+      return delta === 0
+        ? []
+        : [{ draftId: seat.draftId, source: seat.total - delta, ours: seat.total }];
+    });
+    const byDraft = (a: { draftId: number }, b: { draftId: number }) =>
+      a.draftId - b.draftId;
+    expect(moved.sort(byDraft)).toEqual([...SEAT_DEVIATIONS].sort(byDraft));
 
     // Compared as a sorted multiset of totals, not by name: the fixture's
     // display names were scrubbed when it was captured, so the names in it are
-    // not the names in the database. The totals are the real evidence.
-    expect(ours).toEqual(fixture.map((team) => team.total).sort((a, b) => b - a));
+    // not the names in the database. The totals are the real evidence. Each
+    // deviated seat's source figure is swapped for ours, once, and everything
+    // else must match as captured.
+    const expected = fixture.map((team) => team.total);
+    for (const seat of SEAT_DEVIATIONS) {
+      const at = expected.indexOf(seat.source);
+      expect({ draftId: seat.draftId, source: at >= 0 }).toEqual({
+        draftId: seat.draftId,
+        source: true,
+      });
+      expected[at] = seat.ours;
+    }
+    const byTotal = (a: number, b: number) => b - a;
+    expect(seats.map((seat) => seat.total).sort(byTotal)).toEqual(expected.sort(byTotal));
   });
 
   it('returns an empty map for no movies rather than querying', async () => {
@@ -194,6 +263,14 @@ describe('ledgerForMovies', () => {
 
     expect(won.length).toBeGreaterThan(0);
     for (const line of won) expect(line.earned).toBe(line.points * 2);
+
+    // 🔴 D125: the lines marked won are exactly the nominations the winners
+    // table names — one line per win, never every nomination of the film.
+    // Emilia Pérez and Megalopolis hold pairs where only one line may say won.
+    const winners = await winnerRepository.findManyByMovieIds(ids, 2025);
+    expect(won.map((line) => line.nominationId).sort((a, b) => a - b)).toEqual(
+      winners.map((winner) => winner.nominationId).sort((a, b) => a - b),
+    );
   });
 
   it('returns nothing for a film with no nominations that season', async () => {

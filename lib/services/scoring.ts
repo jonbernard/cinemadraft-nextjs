@@ -20,27 +20,26 @@ export type ScoringInput = {
   /** award id → the resolved point value, from `points.points` */
   pointsByAward: ReadonlyMap<number, number>;
   /**
-   * award id → the movie ids that won it.
+   * The ids of the nominations that won — `winners.nomination_id`.
    *
-   * 🔴 By film, on purpose, unlike the award-show page, which matches by
-   * nomination. For a film nominated twice in one category with one win, this
-   * pays the win on **both** nominations (4P, not 3P) — which is what the
-   * source app did (`server/routes/points.js` compares `nom.movieId` to
-   * `winner.movieId` per nomination) and what the pinned 2025 fixture holds:
-   * Emilia Pérez 445, Megalopolis −140. Per nomination they would be 415 and
-   * −125. Changing it is the owner's call, not a bug fix.
+   * 🔴 By nomination, not by film (D125). A film nominated twice in one
+   * category with one win earns P + P + P = 3P: each nomination pays P, and
+   * the win pays P once, on the nomination that won. Matching by film paid it
+   * on both (4P), which is what the source app did (`server/routes/points.js`
+   * compares `nom.movieId` to `winner.movieId` per nomination row).
    */
-  winnersByAward: ReadonlyMap<number, ReadonlySet<number>>;
+  winningNominationIds: ReadonlySet<number>;
 };
 
 /**
- * The scoring rule, ported exactly from `server/routes/points.js` (D19, D41).
+ * The scoring rule, ported from `server/routes/points.js` (D19, D41, D125).
  *
- *   movie total = Σ over its nominations of  P + (P again if it won that award)
+ *   movie total = Σ over its nominations of  P + (P again if that nomination won)
  *   team total  = Σ movie totals
  *
  * So a nomination is worth P and a win is worth **2P**, because a winner was
- * necessarily also nominated.
+ * necessarily also nominated. The one departure from the source is D125: the
+ * win pays on the nomination that won, not on every nomination of its film.
  *
  * Pure and synchronous on purpose. Phase 9 adds materialized results and
  * bounded recompute; it calls this same function, so there is exactly one
@@ -64,8 +63,7 @@ export function scoreMovies(input: ScoringInput): Map<number, number> {
     // silent zero is easier to spot than a total that reads "NaN".
     if (value == null) continue;
 
-    const won =
-      input.winnersByAward.get(nomination.awardId)?.has(nomination.movieId) === true;
+    const won = input.winningNominationIds.has(nomination.id);
 
     totals.set(
       nomination.movieId,
@@ -90,10 +88,10 @@ export function sumTotals(
  * Every lookup is batched by id. The source dashboard queried per movie inside
  * a loop, which is invisible with three films and painful with a full league.
  *
- * 🔴 A win is a `winners` row whose award **and** movie both match. The source
- * app declared `Awards.hasOne(Movies, { foreignKey: 'id' })`, which joins
- * `movies.id = winners.id` and nests an unrelated movie — that bug is recorded
- * in PROGRESS and must not be ported.
+ * 🔴 A win is the nomination a `winners` row names by `nomination_id` (D125).
+ * The source app declared `Awards.hasOne(Movies, { foreignKey: 'id' })`, which
+ * joins `movies.id = winners.id` and nests an unrelated movie — that bug is
+ * recorded in PROGRESS and must not be ported.
  */
 export async function pointsForMovieIds(
   movieIds: readonly number[],
@@ -153,15 +151,11 @@ async function loadScoringInputs(
     if (value != null) pointsByAward.set(award.id, value);
   }
 
-  const winnersByAward = new Map<number, Set<number>>();
-  for (const winner of winners) {
-    if (winner.year !== year) continue;
-    const existing = winnersByAward.get(winner.awardId);
-    if (existing) existing.add(winner.movieId);
-    else winnersByAward.set(winner.awardId, new Set([winner.movieId]));
-  }
+  const winningNominationIds = new Set(
+    winners.flatMap((winner) => (winner.year === year ? [winner.nominationId] : [])),
+  );
 
-  return { nominations: forYear, pointsByAward, winnersByAward, awards };
+  return { nominations: forYear, pointsByAward, winningNominationIds, awards };
 }
 
 export type LedgerLine = {
@@ -236,8 +230,7 @@ export async function ledgerForMovies(
 
     const award = awardById.get(nomination.awardId);
     const event = award ? eventById.get(award.eventId) : undefined;
-    const won =
-      inputs.winnersByAward.get(nomination.awardId)?.has(nomination.movieId) === true;
+    const won = inputs.winningNominationIds.has(nomination.id);
 
     const line: LedgerLine = {
       nominationId: nomination.id,

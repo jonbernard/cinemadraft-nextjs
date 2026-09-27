@@ -99,10 +99,12 @@ async function extremesFromDatabase(): Promise<Extremes | null> {
               n.movie_id,
               sum(
                 coalesce(p.points, 0)
+                -- By nomination, not by film (D125): a film holding two
+                -- nominations in one category with one win doubles only the
+                -- line that won.
                 * case when exists (
                     select 1 from winners w
-                     where w.award_id = n.award_id
-                       and w.movie_id = n.movie_id
+                     where w.nomination_id = n.id
                        and w.year = n.year
                   ) then 2 else 1 end
               )::int as total
