@@ -19,7 +19,17 @@ export type ScoringInput = {
   nominations: readonly { id: number; movieId: number; awardId: number }[];
   /** award id → the resolved point value, from `points.points` */
   pointsByAward: ReadonlyMap<number, number>;
-  /** award id → the movie ids that won it */
+  /**
+   * award id → the movie ids that won it.
+   *
+   * 🔴 By film, on purpose, unlike the award-show page, which matches by
+   * nomination. For a film nominated twice in one category with one win, this
+   * pays the win on **both** nominations (4P, not 3P) — which is what the
+   * source app did (`server/routes/points.js` compares `nom.movieId` to
+   * `winner.movieId` per nomination) and what the pinned 2025 fixture holds:
+   * Emilia Pérez 445, Megalopolis −140. Per nomination they would be 415 and
+   * −125. Changing it is the owner's call, not a bug fix.
+   */
   winnersByAward: ReadonlyMap<number, ReadonlySet<number>>;
 };
 
