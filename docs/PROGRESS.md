@@ -2249,7 +2249,7 @@ Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
   report queries per request, on purpose: reading `pg_stat_database.xact_commit`
   either side gave 2.79 against a true 3.00, because a pooled connection does
   not commit per statement. `test/query-count.ts` is the instrument
-- [ ] **P12.T5** Fix what the above finds. Findings, one commit each:
+- [x] **P12.T5** Fix what the above finds — four findings, every one fixed and none carried. Findings, one commit each:
   - `/leagues/new` answered **500** to a signed-out visitor (T2a's sweep;
     confirmed against the deployed site) — `692875f`. Reclassified as a
     protected route, so the proxy redirects with `?redirect_url=`; the page
@@ -2278,7 +2278,26 @@ Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
     poll **visible**: both routes' `catch` had swallowed it, so an outage left
     nothing in the log; it now logs `[live stream] poll failed; keeping the
     last frame` (or `[board stream]`) and still keeps the connection
-  - `/leagues/[id]` overflows horizontally at 390px (Open questions) — open
+  - **`/leagues/[id]` scrolled sideways at 390px** (was an Open question) —
+    fixed in the third P12.T5 commit. Still there when re-measured in a
+    production build, signed out, league 1: `scrollingElement.scrollWidth`
+    **584** in a 390 viewport. The note's cause was half stale — `PosterFrame`
+    is `relative` now, so its `<img>` and pick number were already contained —
+    and walking containing blocks (not the DOM) found the rest: **38
+    `sr-only` spans** in the pick ledgers' `<summary>`, `position: absolute`
+    with no positioned ancestor inside `Shelf`'s `overflow-x-auto`. `relative`
+    on `Shelf`'s list, the note's suggested fix, in the shared component:
+    **390 / 390**, 0 escaping, and 1024 and 1440 unchanged at their viewport.
+    Pinned by `e2e/leagues.spec.ts` "does not scroll sideways at 390, signed
+    out" (restored-corpus only, so it skips on CI), watched red at 584 with
+    the class reverted
+
+🔴 **Gate: open.** Three of its four lines are met — free-tier headroom is a
+number with its ceiling (D123), draft-day search is inside its threshold
+(T4), and every finding is fixed (T5). The fourth, "every ported row
+confirmed on the deployed build", is **P12.T2b, the owner's manual walk**, and
+Phase 13 waits on it. The fixes in T5 reach `next.cinemadraft.com` only when
+`dev` is merged to `main`, so walk the deployed build after that deploy.
 
 ### Phase 12 measurements (2026-09-14)
 
@@ -2476,22 +2495,6 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
   before T1 too, and T1 changed neither number — but it is now the only visible
   size inversion in the app. Sizes outside `SectionHead` are tranche 4's
   (T18/T33); left alone on purpose so that sweep's diff stays readable.
-- **🔴 Found by P17.T1's browser pass, not fixed — `/leagues/[id]` overflows
-  horizontally at 390px.** `document.scrollingElement.scrollWidth` is **582**
-  in a 390px viewport, signed out, on league 1. Not introduced by T1 (its only
-  rendering change is heading font-size, and headings shrink-wrap) and not named
-  by any tranche: tranche 2's T10 owns `/films/[tmdbId]`'s overflow, which
-  measures **2304px** at 390px in the same pass, but nothing owns the league
-  page. Same class of defect, one owner short.
-  🔴 **Cause, found by the tranche-1 gate pass and still 582 in a production
-  build** (so not a dev artefact; the document really scrolls, `scrollLeft` maxes
-  at **192.5**): the roster shelves' `overflow-x-auto` does clip, but **134
-  `position: absolute` descendants escape it** — `PosterFrame`'s poster `<img>`
-  and the `text-[0.65rem]` pick number — because no ancestor inside the scroller
-  is positioned, so their containing block is outside it. Their right edges run
-  to 673px; the furthest that counts toward the document is an `sr-only` span at
-  exactly **582**. No *in-flow* element exceeds 390 at any depth. The fix is
-  `relative` on the scroller (or on each shelf cell), not a width.
 
 - **Raise the past side's `vote_count.gte` from 200 to ~400?** It would sharpen
   "films anybody has heard of" and would also thin out genuinely good
