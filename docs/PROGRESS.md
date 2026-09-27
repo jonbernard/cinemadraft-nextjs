@@ -2336,6 +2336,13 @@ with a keep-warm, and records the reason either way.
 
 ### Phase 12 notes
 
+- **Staging can be reset to a fresh copy of the live site at any time** during
+  the manual walk: `scripts/restore-from-heroku.sh <dump> <neon-unpooled-url>`.
+  It wipes Neon and every staging claim, changes nothing on Heroku, and is the
+  same command as the cutover's S17. Procedure, costs and what a re-claim does:
+  `docs/superpowers/plans/2026-09-27-phase-13-cutover.md` § Resetting staging
+  during testing.
+
 - 🔴 **The parity matrix is clean as of 2026-09-13, so T2's manual pass starts
   from zero known gaps.** Phase 14's two tranches closed the last four rows
   (P10.T3, T21, T31, T32) and `docs/PARITY.md` reads **69 ported / 0 deficient

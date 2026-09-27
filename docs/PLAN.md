@@ -619,6 +619,8 @@ audit, and it is still the last thing that happens.
 
 ### Phase 13 — Cutover
 
+**Runbook:** `docs/superpowers/plans/2026-09-27-phase-13-cutover.md` — the ordered OWNER/AGENT steps, their checks and rollbacks; it corrects T2/T3b below (normalize.sql, wipe before restore, `resolve 0_init`).
+
 - T1: Swap Clerk to its Production instance — create it for `cinemadraft.com`, add DNS records, set `pk_live_`/`sk_live_` in Vercel Production, recreate the webhook and its signing secret (all per-instance)
 - T2: Final `pg_dump` from Heroku → Neon
 - T3: **Restore the twelve award-show logo URLs that T2 just clobbered.**
@@ -633,22 +635,9 @@ audit, and it is still the last thing that happens.
   retires, not guaranteed to exist here. The Blob objects, though, are
   untouched — Phase 11 uploaded them to deterministic paths — so this is a
   plain, idempotent SQL update against the twelve rows, run before T4's
-  verification pass:
-
-  ```sql
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/ace.jpg'    WHERE abbreviation = 'ace';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/adg.jpg'    WHERE abbreviation = 'adg';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/afi.png'    WHERE abbreviation = 'afi';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/asc.jpg'    WHERE abbreviation = 'asc';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/bafta.jpg'  WHERE abbreviation = 'bafta';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/dga.jpg'    WHERE abbreviation = 'dga';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/gg.jpg'     WHERE abbreviation = 'gg';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/oscars.jpg' WHERE abbreviation = 'oscars';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/pga.jpg'    WHERE abbreviation = 'pga';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/raz.jpg'    WHERE abbreviation = 'raz';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/sag.jpg'    WHERE abbreviation = 'sag';
-  UPDATE events SET image = 'https://5d9wubvvsbkemktm.public.blob.vercel-storage.com/award-shows/wga.jpg'    WHERE abbreviation = 'wga';
-  ```
+  verification pass. It lives in **`prisma/award-logos.sql`** (the only copy),
+  and `scripts/restore-from-heroku.sh` applies it and then checks that 12 of 12
+  events point at Blob.
 
   These URLs were read back from the local restored database on 2026-08-24,
   after Phase 11's upload ran against it — verify a couple against Neon (or
