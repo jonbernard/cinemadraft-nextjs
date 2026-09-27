@@ -33,28 +33,28 @@ const PROPS = {
  * colour. An admin running a show off a laptop on a sofa is the reader here,
  * and "which one is up" must not depend on telling carmine from a border.
  */
-describe('CategoryAdmin — put on screen', () => {
+describe('CategoryAdmin — put on screen (Winners mode)', () => {
   beforeEach(() => {
     focusAward.mockReset();
     focusAward.mockResolvedValue({ ok: true, data: null });
   });
 
   it('offers to put the category up when nothing of it is on screen', () => {
-    render(<CategoryAdmin {...PROPS} onScreen={false} />);
+    render(<CategoryAdmin {...PROPS} mode="winners" onScreen={false} />);
 
     const button = screen.getByRole('button', { name: 'Put on screen' });
     expect(button).toHaveAttribute('aria-pressed', 'false');
   });
 
   it('says it is up, and is pressed, when it is the one on screen', () => {
-    render(<CategoryAdmin {...PROPS} onScreen={true} />);
+    render(<CategoryAdmin {...PROPS} mode="winners" onScreen={true} />);
 
     const button = screen.getByRole('button', { name: 'On screen' });
     expect(button).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('puts it on screen', async () => {
-    render(<CategoryAdmin {...PROPS} onScreen={false} />);
+    render(<CategoryAdmin {...PROPS} mode="winners" onScreen={false} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Put on screen' }));
 
@@ -65,7 +65,7 @@ describe('CategoryAdmin — put on screen', () => {
     // Not a second control: the same button toggles, because there is one
     // selection per show and "nothing on screen" is a state between
     // announcements.
-    render(<CategoryAdmin {...PROPS} onScreen={true} />);
+    render(<CategoryAdmin {...PROPS} mode="winners" onScreen={true} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'On screen' }));
 
@@ -78,7 +78,7 @@ describe('CategoryAdmin — put on screen', () => {
       code: 'FORBIDDEN',
       message: 'not an admin',
     });
-    render(<CategoryAdmin {...PROPS} onScreen={false} />);
+    render(<CategoryAdmin {...PROPS} mode="winners" onScreen={false} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Put on screen' }));
 
@@ -166,7 +166,7 @@ describe('CategoryAdmin — nominating', () => {
   });
 
   it('attaches a film straight away where the category names nobody', async () => {
-    render(<CategoryAdmin {...PROPS} onScreen={false} />);
+    render(<CategoryAdmin {...PROPS} mode="nominations" onScreen={false} />);
 
     await chooseTheFilm();
 
@@ -178,7 +178,14 @@ describe('CategoryAdmin — nominating', () => {
   });
 
   it('where it names someone, loads the film’s credits instead, and offers no text field', async () => {
-    render(<CategoryAdmin {...PROPS} requiresNomineeName onScreen={false} />);
+    render(
+      <CategoryAdmin
+        {...PROPS}
+        mode="nominations"
+        requiresNomineeName
+        onScreen={false}
+      />,
+    );
 
     await chooseTheFilm();
 
@@ -193,7 +200,14 @@ describe('CategoryAdmin — nominating', () => {
   });
 
   it('attaches the person chosen, with their TMDB id and character', async () => {
-    render(<CategoryAdmin {...PROPS} requiresNomineeName onScreen={false} />);
+    render(
+      <CategoryAdmin
+        {...PROPS}
+        mode="nominations"
+        requiresNomineeName
+        onScreen={false}
+      />,
+    );
     await chooseTheFilm();
 
     await userEvent.type(
@@ -220,7 +234,14 @@ describe('CategoryAdmin — nominating', () => {
   });
 
   it('stores no character for a crew credit', async () => {
-    render(<CategoryAdmin {...PROPS} requiresNomineeName onScreen={false} />);
+    render(
+      <CategoryAdmin
+        {...PROPS}
+        mode="nominations"
+        requiresNomineeName
+        onScreen={false}
+      />,
+    );
     await chooseTheFilm();
 
     await userEvent.click(
@@ -238,7 +259,13 @@ describe('CategoryAdmin — nominating', () => {
 
   it('marks a person already nominated for this film here, and will not attach them twice', async () => {
     render(
-      <CategoryAdmin {...PROPS} nominees={PAIR} requiresNomineeName onScreen={false} />,
+      <CategoryAdmin
+        {...PROPS}
+        mode="nominations"
+        nominees={PAIR}
+        requiresNomineeName
+        onScreen={false}
+      />,
     );
     await chooseTheFilm();
 
@@ -257,7 +284,14 @@ describe('CategoryAdmin — nominating', () => {
       code: 'NOT_FOUND',
       message: 'TMDB did not answer for that film — try again',
     });
-    render(<CategoryAdmin {...PROPS} requiresNomineeName onScreen={false} />);
+    render(
+      <CategoryAdmin
+        {...PROPS}
+        mode="nominations"
+        requiresNomineeName
+        onScreen={false}
+      />,
+    );
 
     await chooseTheFilm();
 
@@ -268,7 +302,14 @@ describe('CategoryAdmin — nominating', () => {
   });
 
   it('goes back to the film search on "Change film"', async () => {
-    render(<CategoryAdmin {...PROPS} requiresNomineeName onScreen={false} />);
+    render(
+      <CategoryAdmin
+        {...PROPS}
+        mode="nominations"
+        requiresNomineeName
+        onScreen={false}
+      />,
+    );
     await chooseTheFilm();
 
     await userEvent.click(await screen.findByRole('button', { name: 'Change film' }));
@@ -280,20 +321,25 @@ describe('CategoryAdmin — nominating', () => {
 });
 
 /**
- * Winner and removal live on each poster now. The text list that repeated the
- * nominees under the form is gone, and the pair's two posters are told apart by
- * the person — on screen and in each control's accessible name.
+ * The controls on each poster, one job at a time. Winners mode marks and
+ * clears; Nominations mode removes. The text list that repeated the nominees
+ * under the form is gone, and the pair's two posters are told apart by the
+ * person — on screen and in each control's accessible name.
  */
-describe('CategoryAdmin — the controls on each poster', () => {
+describe('CategoryAdmin — Winners mode', () => {
   beforeEach(() => {
     setWinner.mockReset();
     setWinner.mockResolvedValue({ ok: true, data: null });
-    removeNominee.mockReset();
-    removeNominee.mockResolvedValue({ ok: true, data: null });
   });
 
-  it('puts the controls on the posters, with no second list of the nominees', () => {
-    render(<CategoryAdmin {...PROPS} nominees={PAIR} onScreen={false} />);
+  function renderWinners() {
+    return render(
+      <CategoryAdmin {...PROPS} mode="winners" nominees={PAIR} onScreen={false} />,
+    );
+  }
+
+  it('puts Mark or Clear winner on each poster, and nothing to remove or add', () => {
+    renderWinners();
 
     const posters = screen.getAllByRole('listitem');
     expect(posters).toHaveLength(2);
@@ -306,12 +352,18 @@ describe('CategoryAdmin — the controls on each poster', () => {
     expect(
       within(posters[1] as HTMLElement).getByRole('button', { name: /Clear winner/ }),
     ).toBeInTheDocument();
+    // 🔴 Not one poster-width from "Mark winner" on the night.
+    expect(screen.queryByRole('button', { name: /Remove/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Delete category' }),
+    ).not.toBeInTheDocument();
     // The title appears once per poster — in the frame's caption — and nowhere else.
     expect(screen.getAllByText('One Battle After Another')).toHaveLength(2);
   });
 
   it('names who each control is for, so the pair are two different buttons', () => {
-    render(<CategoryAdmin {...PROPS} nominees={PAIR} onScreen={false} />);
+    renderWinners();
 
     expect(
       screen.getByRole('button', {
@@ -319,12 +371,14 @@ describe('CategoryAdmin — the controls on each poster', () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Remove: Sean Penn, One Battle After Another' }),
+      screen.getByRole('button', {
+        name: 'Clear winner: Sean Penn, One Battle After Another',
+      }),
     ).toBeInTheDocument();
   });
 
   it('marks the nomination clicked, and clears the one that already won', async () => {
-    render(<CategoryAdmin {...PROPS} nominees={PAIR} onScreen={false} />);
+    renderWinners();
 
     await userEvent.click(screen.getByRole('button', { name: /Mark winner: Benicio/ }));
     expect(setWinner).toHaveBeenLastCalledWith({
@@ -340,9 +394,36 @@ describe('CategoryAdmin — the controls on each poster', () => {
       nominationId: null,
     });
   });
+});
+
+describe('CategoryAdmin — Nominations mode', () => {
+  beforeEach(() => {
+    removeNominee.mockReset();
+    removeNominee.mockResolvedValue({ ok: true, data: null });
+  });
+
+  function renderNominations() {
+    return render(
+      <CategoryAdmin {...PROPS} mode="nominations" nominees={PAIR} onScreen={false} />,
+    );
+  }
+
+  it('puts Remove on each poster, with the nominate field and Delete category, and no winner or screen controls', () => {
+    renderNominations();
+
+    for (const poster of screen.getAllByRole('listitem')) {
+      expect(within(poster).getByRole('button', { name: /^Remove/ })).toBeInTheDocument();
+    }
+    expect(
+      screen.getByRole('searchbox', { name: /Nominate a film/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete category' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /winner/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /on screen/i })).not.toBeInTheDocument();
+  });
 
   it('asks before removing, and removes nothing on Cancel', async () => {
-    render(<CategoryAdmin {...PROPS} nominees={PAIR} onScreen={false} />);
+    renderNominations();
 
     await userEvent.click(screen.getByRole('button', { name: /Remove: Sean Penn/ }));
     const dialog = screen.getByRole('dialog');
@@ -356,7 +437,7 @@ describe('CategoryAdmin — the controls on each poster', () => {
   });
 
   it('removes the nomination confirmed', async () => {
-    render(<CategoryAdmin {...PROPS} nominees={PAIR} onScreen={false} />);
+    renderNominations();
 
     await userEvent.click(screen.getByRole('button', { name: /Remove: Benicio/ }));
     await userEvent.click(

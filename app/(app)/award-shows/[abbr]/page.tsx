@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { AdminModeSwitch } from '@/components/admin/AdminModeSwitch';
 import { CategoryAdmin } from '@/components/admin/CategoryAdmin';
 import { CategoryCreate } from '@/components/admin/CategoryCreate';
 import { EventAdminDialog } from '@/components/admin/EventAdminDialog';
+import { OnAirSwitch } from '@/components/admin/OnAirSwitch';
 import { NomineeGrid } from '@/components/awards/NomineeGrid';
 import { ShowLogo } from '@/components/awards/ShowLogo';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,6 +20,7 @@ import { pointRepository } from '@/lib/repositories/points';
 import { canonical } from '@/lib/seo';
 import { getAwardShow } from '@/lib/services/award-show';
 import { getActiveYear, getSeasons } from '@/lib/services/season';
+import { type AdminMode, resolveAdminMode } from '@/lib/utils/admin-mode';
 
 /**
  * One award show: its categories, what each is worth, and who is nominated
@@ -68,10 +71,10 @@ export default async function AwardShowPage({
   searchParams,
 }: {
   params: Promise<{ abbr: string }>;
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<{ year?: string; mode?: string }>;
 }) {
   const { abbr } = await params;
-  const { year } = await searchParams;
+  const { year, mode: requestedMode } = await searchParams;
 
   const requested = Number(year);
   const season =
@@ -98,6 +101,16 @@ export default async function AwardShowPage({
         pointRepository.findAll(),
       ])
     : [null, []];
+
+  // 🔴 Everyone who is not an admin is in View, whatever `?mode=` says, and
+  // an admin with no `?mode=` lands in Winners while the show is on air
+  // (`lib/utils/admin-mode.ts`).
+  const mode = resolveAdminMode(requestedMode, {
+    isAdmin: isAdmin && event != null,
+    onAir: event?.awardsActive === true,
+  });
+  const modeHref = (next: AdminMode) =>
+    `/award-shows/${show.abbreviation}?year=${show.year}&mode=${next}`;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-10">
@@ -138,28 +151,6 @@ export default async function AwardShowPage({
           </Link>
         ) : null}
 
-        {isAdmin && event ? (
-          // In a dialog rather than a panel above the categories: it is opened
-          // once a season, and as a panel it pushed the categories — what an
-          // admin is actually working in on the night — below the fold.
-          <EventAdminDialog
-            className="w-fit"
-            event={{
-              id: event.id,
-              name: event.name,
-              abbreviation: event.abbreviation,
-              image: event.image,
-              nomDate: event.nomDate,
-              nomTime: event.nomTime,
-              nomDuration: event.nomDuration,
-              awardsActive: event.awardsActive,
-              awardsDate: event.awardsDate,
-              awardsTime: event.awardsTime,
-              awardsDuration: event.awardsDuration,
-            }}
-          />
-        ) : null}
-
         {seasons.length > 1 ? (
           <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
             {seasons.map((entry) => (
@@ -178,6 +169,44 @@ export default async function AwardShowPage({
             ))}
           </nav>
         ) : null}
+
+        {isAdmin && event ? (
+          // The admin's toolbar, after everything a reader's header holds, so
+          // that in View the page above it is exactly the reader's: which job,
+          // and the show's own settings. The settings are in a dialog because
+          // they are opened once a season, and as a panel they pushed the
+          // categories below the fold.
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <AdminModeSwitch
+                mode={mode}
+                hrefs={{
+                  view: modeHref('view'),
+                  nominations: modeHref('nominations'),
+                  winners: modeHref('winners'),
+                }}
+              />
+              <EventAdminDialog
+                className="w-fit"
+                event={{
+                  id: event.id,
+                  name: event.name,
+                  abbreviation: event.abbreviation,
+                  image: event.image,
+                  nomDate: event.nomDate,
+                  nomTime: event.nomTime,
+                  nomDuration: event.nomDuration,
+                  awardsDate: event.awardsDate,
+                  awardsTime: event.awardsTime,
+                  awardsDuration: event.awardsDuration,
+                }}
+              />
+            </div>
+            {mode === 'winners' ? (
+              <OnAirSwitch eventId={event.id} onAir={event.awardsActive === true} />
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       {show.categories.length === 0 ? (
@@ -193,8 +222,9 @@ export default async function AwardShowPage({
               {category.name}
             </SectionHead>
 
-            {isAdmin ? (
+            {mode !== 'view' ? (
               <CategoryAdmin
+                mode={mode}
                 awardId={category.awardId}
                 categoryName={category.name}
                 year={show.year}
@@ -222,7 +252,7 @@ export default async function AwardShowPage({
         ))
       )}
 
-      {isAdmin && event ? (
+      {mode === 'nominations' && event ? (
         <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
           <SectionHead as="h2" className="pb-0">
             Add a category

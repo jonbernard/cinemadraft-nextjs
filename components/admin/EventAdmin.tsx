@@ -3,7 +3,6 @@
 import { useCallback, useState, useTransition } from 'react';
 
 import { updateEvent } from '@/actions/admin/update-event';
-import { LiveSwitch } from '@/components/admin/LiveSwitch';
 import { cn } from '@/lib/utils/cn';
 
 export type AdminEvent = {
@@ -14,7 +13,6 @@ export type AdminEvent = {
   nomDate: number | null;
   nomTime: number | null;
   nomDuration: number | null;
-  awardsActive: boolean | null;
   awardsDate: number | null;
   awardsTime: number | null;
   awardsDuration: number | null;
@@ -43,7 +41,7 @@ function fromLocalInput(value: string): { date: number; time: number } | null {
 }
 
 /**
- * Edit a show's dates and live flags (T26).
+ * Edit a show's name, mark and dates (T26).
  *
  * 🔴 Desktop-first, the stated exception (D49): an admin sets ceremony dates
  * once a season, from a laptop.
@@ -67,7 +65,6 @@ export function EventAdmin({
   const [nomMinutes, setNomMinutes] = useState(
     event.nomDuration == null ? '' : String(Math.round(event.nomDuration / 60_000)),
   );
-  const [awardsActive, setAwardsActive] = useState(event.awardsActive === true);
   const [awardsAt, setAwardsAt] = useState(
     toLocalInput(event.awardsDate, event.awardsTime),
   );
@@ -103,7 +100,6 @@ export function EventAdmin({
           nomDate: nom?.date ?? null,
           nomTime: nom?.time ?? null,
           nomDuration,
-          awardsActive,
           awardsDate: awards?.date ?? null,
           awardsTime: awards?.time ?? null,
           awardsDuration,
@@ -111,39 +107,18 @@ export function EventAdmin({
         setMessage(result.ok ? 'Saved' : result.message);
       });
     },
-    [
-      event.id,
-      name,
-      abbreviation,
-      image,
-      nomAt,
-      nomMinutes,
-      awardsActive,
-      awardsAt,
-      awardsMinutes,
-    ],
+    [event.id, name, abbreviation, image, nomAt, nomMinutes, awardsAt, awardsMinutes],
   );
 
   return (
     <form onSubmit={submit} className={cn('flex flex-col gap-4', className)}>
-      {/* 🔴 One switch, for the ceremony. There used to be a "Live now" box
-          under Nominations too, writing `nom_active` — but nominations are
-          never live, and that column actually means "this show still needs
-          nominations entered" (the award-shows index reads it that way, and
-          `scripts/award-import.mjs` clears it when a nominations run
-          finishes). So this form no longer writes it at all, and leaves
-          whatever is stored alone.
-
-          🔴 Nor `live_results`: its "Live results" box sat beside this switch
-          as a second, contradictory "live", and nothing in the app, the
-          importer or the e2e suite reads the column — it was only loaded into
-          this form and written back. The column and its data stay. */}
-      <LiveSwitch
-        checked={awardsActive}
-        onChange={setAwardsActive}
-        description="On air, /live streams this show and the dashboard links to it. Saved with the show."
-      />
-
+      {/* 🔴 No live controls here. On air (`awards_active`) is the switch in
+          Winners mode, beside the categories it is about. `nom_active` is not
+          written: in the source it was a side effect of entering Nominations
+          mode, and here it means "still needs nominations" to the index page
+          and the importer. `live_results` is not written: no source UI ever
+          set it, and nothing in the port reads it. All three columns keep
+          whatever is stored. */}
       <div className="flex flex-wrap gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Name</span>

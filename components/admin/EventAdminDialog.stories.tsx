@@ -14,7 +14,6 @@ const meta = {
       nomDate: null,
       nomTime: null,
       nomDuration: null,
-      awardsActive: false,
       awardsDate: null,
       awardsTime: null,
       awardsDuration: 10_800_000,

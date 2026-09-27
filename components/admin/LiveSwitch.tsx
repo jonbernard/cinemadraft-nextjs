@@ -22,9 +22,12 @@ export function LiveSwitch({
   onChange,
   label = 'Live',
   description,
+  disabled = false,
   className,
 }: {
   checked: boolean;
+  /** While the change is being saved. */
+  disabled?: boolean;
   onChange: (checked: boolean) => void;
   label?: string;
   description?: string;
@@ -34,12 +37,18 @@ export function LiveSwitch({
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      <label className="flex min-h-11 w-fit cursor-pointer items-center gap-3">
+      <label
+        className={cn(
+          'flex min-h-11 w-fit items-center gap-3',
+          disabled ? 'cursor-wait opacity-60' : 'cursor-pointer',
+        )}
+      >
         <input
           type="checkbox"
           role="switch"
           checked={checked}
           aria-checked={checked}
+          disabled={disabled}
           onChange={(event) => onChange(event.target.checked)}
           aria-describedby={description ? descriptionId : undefined}
           className="peer sr-only"

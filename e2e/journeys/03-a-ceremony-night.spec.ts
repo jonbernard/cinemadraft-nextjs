@@ -294,6 +294,10 @@ test.describe('journey 3 — a ceremony night', () => {
     });
 
     await beat(page, 'A category is added, worth seven points', async () => {
+      // Setting the slate up is Nominations work — the admin's selector, the
+      // source's View / Nominations / Pick Winners (`lib/utils/admin-mode.ts`).
+      await page.getByText('Nominations', { exact: true }).click();
+      await expect(page).toHaveURL(/mode=nominations/);
       await page.getByLabel('New category').fill(CATEGORY);
       // The tier is chosen from the real points table, never typed: the column
       // is a foreign key, so a typed number would attach the wrong tier (D41).
@@ -343,7 +347,7 @@ test.describe('journey 3 — a ceremony night', () => {
     );
 
     await beat(page, 'The envelope is opened — the first film wins', async () => {
-      await page.goto(`/award-shows/${SHOW}?year=${YEAR}`);
+      await page.goto(`/award-shows/${SHOW}?year=${YEAR}&mode=winners`);
       await page
         .getByRole('listitem')
         .filter({ hasText: FIRST_FILM })
@@ -384,7 +388,7 @@ test.describe('journey 3 — a ceremony night', () => {
       async () => {
         // 🔴 The ordinary case during a live ceremony (§12): the old winner is
         // replaced, not joined by a second one.
-        await page.goto(`/award-shows/${SHOW}?year=${YEAR}`);
+        await page.goto(`/award-shows/${SHOW}?year=${YEAR}&mode=winners`);
         await page
           .getByRole('listitem')
           .filter({ hasText: SECOND_FILM })

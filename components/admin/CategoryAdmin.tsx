@@ -88,6 +88,7 @@ export function CategoryAdmin({
   nominees,
   requiresNomineeName,
   onScreen,
+  mode,
   children,
   className,
 }: {
@@ -99,6 +100,14 @@ export function CategoryAdmin({
   requiresNomineeName: boolean;
   /** This is the category every watcher's screen is currently showing (P10.T32). */
   onScreen: boolean;
+  /**
+   * Which job the admin is doing (`lib/utils/admin-mode.ts`). Nominations adds
+   * and removes nominees and deletes the category; Winners marks and clears the
+   * winner and puts the category on screen. Neither shows the other's controls
+   * — the source kept them apart the same way, and on the night a "Remove" one
+   * poster-width from "Mark winner" is a slip waiting to happen.
+   */
+  mode: 'nominations' | 'winners';
   /** The category's status chips, which share a row with "Put on screen". */
   children?: ReactNode;
   className?: string;
@@ -284,23 +293,26 @@ export function CategoryAdmin({
             reader who is not looking at the colour. Up here beside the chips
             because on the night it is pressed before the envelope is opened,
             and the envelope is the grid directly below. */}
-        <Button
-          disableFocusRipple
-          onClick={putOnScreen}
-          disabled={pending}
-          loading={acting === 'screen'}
-          aria-pressed={onScreen}
-          variant={onScreen ? 'contained' : 'outlined'}
-          className={cn('min-h-11', FOCUS)}
-        >
-          {onScreen ? 'On screen' : 'Put on screen'}
-        </Button>
+        {mode === 'winners' ? (
+          <Button
+            disableFocusRipple
+            onClick={putOnScreen}
+            disabled={pending}
+            loading={acting === 'screen'}
+            aria-pressed={onScreen}
+            variant={onScreen ? 'contained' : 'outlined'}
+            className={cn('min-h-11', FOCUS)}
+          >
+            {onScreen ? 'On screen' : 'Put on screen'}
+          </Button>
+        ) : null}
       </div>
 
       <NomineeGrid
         nominees={nominees}
         actions={(nominee) => (
           <NomineeControls
+            mode={mode}
             nominee={nominee}
             disabled={pending}
             acting={acting}
@@ -316,85 +328,92 @@ export function CategoryAdmin({
         {pending ? null : (message ?? '')}
       </p>
 
-      {/* Capped: a title field 1,000px wide is a long way to read back what
+      {mode === 'nominations' ? (
+        <>
+          {/* Capped: a title field 1,000px wide is a long way to read back what
           was typed, and the result rows under it are as wide as it is. */}
-      {film ? (
-        <div className="flex max-w-xl flex-col gap-4">
-          <div className="flex items-center gap-3">
-            {film.posterUrl ? (
-              <RemoteImage
-                src={film.posterUrl}
-                alt=""
-                width={32}
-                height={48}
-                className="h-12 w-8 rounded-sm object-cover"
-              />
-            ) : null}
-            <span className="text-text-primary flex-1 font-serif text-sm">
-              {film.title}
-              {film.year ? (
-                <span className="text-text-secondary tabular font-mono">
-                  {' '}
-                  {film.year}
+          {film ? (
+            <div className="flex max-w-xl flex-col gap-4">
+              <div className="flex items-center gap-3">
+                {film.posterUrl ? (
+                  <RemoteImage
+                    src={film.posterUrl}
+                    alt=""
+                    width={32}
+                    height={48}
+                    className="h-12 w-8 rounded-sm object-cover"
+                  />
+                ) : null}
+                <span className="text-text-primary flex-1 font-serif text-sm">
+                  {film.title}
+                  {film.year ? (
+                    <span className="text-text-secondary tabular font-mono">
+                      {' '}
+                      {film.year}
+                    </span>
+                  ) : null}
                 </span>
+                <Button
+                  disableFocusRipple
+                  variant="text"
+                  onClick={backToFilm}
+                  disabled={pending && acting === 'attach'}
+                  className={cn('min-h-11', FOCUS)}
+                  sx={{ color: 'var(--color-text-secondary)', ...QUIET_HOVER }}
+                >
+                  Change film
+                </Button>
+              </div>
+
+              {people ? (
+                <PersonPicker
+                  people={people}
+                  onSelect={(person) => attach(film, person)}
+                  onCancel={backToFilm}
+                  isUnavailable={(person) => alreadyNominated(nominees, film, person)}
+                  busy={pending}
+                  autoFocus
+                />
               ) : null}
-            </span>
-            <Button
-              disableFocusRipple
-              variant="text"
-              onClick={backToFilm}
-              disabled={pending && acting === 'attach'}
-              className={cn('min-h-11', FOCUS)}
-              sx={{ color: 'var(--color-text-secondary)', ...QUIET_HOVER }}
-            >
-              Change film
-            </Button>
-          </div>
-
-          {people ? (
-            <PersonPicker
-              people={people}
-              onSelect={(person) => attach(film, person)}
-              onCancel={backToFilm}
-              isUnavailable={(person) => alreadyNominated(nominees, film, person)}
+            </div>
+          ) : (
+            <FilmSearch
+              onSearch={search}
+              onSelect={chooseFilm}
+              label={
+                requiresNomineeName
+                  ? 'Nominate a film, then its person'
+                  : 'Nominate a film'
+              }
               busy={pending}
-              autoFocus
+              debounceMs={250}
+              resetSignal={resetSignal}
+              className="max-w-xl"
             />
-          ) : null}
-        </div>
-      ) : (
-        <FilmSearch
-          onSearch={search}
-          onSelect={chooseFilm}
-          label={
-            requiresNomineeName ? 'Nominate a film, then its person' : 'Nominate a film'
-          }
-          busy={pending}
-          debounceMs={250}
-          resetSignal={resetSignal}
-          className="max-w-xl"
-        />
-      )}
+          )}
 
-      <Button
-        disableFocusRipple
-        variant="text"
-        onClick={removeCategory}
-        disabled={pending}
-        loading={acting === 'delete'}
-        // Pulled out by its own padding so the word lines up with the field
-        // above it rather than 8px inside it.
-        className={cn('-ml-2 min-h-11 self-start', FOCUS)}
-        sx={QUIET_HOVER}
-      >
-        Delete category
-      </Button>
+          <Button
+            disableFocusRipple
+            variant="text"
+            onClick={removeCategory}
+            disabled={pending}
+            loading={acting === 'delete'}
+            // Pulled out by its own padding so the word lines up with the field
+            // above it rather than 8px inside it.
+            className={cn('-ml-2 min-h-11 self-start', FOCUS)}
+            sx={QUIET_HOVER}
+          >
+            Delete category
+          </Button>
+        </>
+      ) : null}
     </div>
   );
 }
 
 /**
- * The two controls under one poster.
+ * The control under one poster: "Mark winner" or "Clear winner" in Winners
+ * mode, "Remove" in Nominations.
  *
  * The visible label is the act; the accessible name adds who it is for, so a
  * screen reader walking five "Mark winner" buttons hears five different
@@ -402,12 +421,14 @@ export function CategoryAdmin({
  * said twice. The visible words start the name, as WCAG 2.5.3 asks.
  */
 function NomineeControls({
+  mode,
   nominee,
   disabled,
   acting,
   onMarkWinner,
   onRemove,
 }: {
+  mode: 'nominations' | 'winners';
   nominee: AdminNominee;
   disabled: boolean;
   acting: string | null;
@@ -422,44 +443,47 @@ function NomineeControls({
           (D69/D99). Outlined rather than filled, because a category shows
           five of these at once and a wall of brass fills would outshout the
           one "Winner" chip it exists to produce. */}
-      <Button
-        disableFocusRipple
-        variant="outlined"
-        size="small"
-        onClick={() => onMarkWinner(nominee)}
-        disabled={disabled}
-        loading={acting === `winner-${nominee.nominationId}`}
-        className={cn('min-h-11 grow', FOCUS)}
-        sx={
-          nominee.isWinner
-            ? {
-                color: 'var(--color-text-secondary)',
-                borderColor: 'var(--color-border-rule)',
-                ...QUIET_HOVER,
-              }
-            : {
-                color: 'var(--color-brass-text)',
-                borderColor: 'var(--color-brass-text)',
-                ...QUIET_HOVER,
-              }
-        }
-      >
-        {nominee.isWinner ? 'Clear winner' : 'Mark winner'}
-        {who}
-      </Button>
-      <Button
-        disableFocusRipple
-        variant="text"
-        size="small"
-        onClick={() => onRemove(nominee)}
-        disabled={disabled}
-        loading={acting === `remove-${nominee.nominationId}`}
-        className={cn('min-h-11 grow', FOCUS)}
-        sx={QUIET_HOVER}
-      >
-        Remove
-        {who}
-      </Button>
+      {mode === 'winners' ? (
+        <Button
+          disableFocusRipple
+          variant="outlined"
+          size="small"
+          onClick={() => onMarkWinner(nominee)}
+          disabled={disabled}
+          loading={acting === `winner-${nominee.nominationId}`}
+          className={cn('min-h-11 grow', FOCUS)}
+          sx={
+            nominee.isWinner
+              ? {
+                  color: 'var(--color-text-secondary)',
+                  borderColor: 'var(--color-border-rule)',
+                  ...QUIET_HOVER,
+                }
+              : {
+                  color: 'var(--color-brass-text)',
+                  borderColor: 'var(--color-brass-text)',
+                  ...QUIET_HOVER,
+                }
+          }
+        >
+          {nominee.isWinner ? 'Clear winner' : 'Mark winner'}
+          {who}
+        </Button>
+      ) : (
+        <Button
+          disableFocusRipple
+          variant="text"
+          size="small"
+          onClick={() => onRemove(nominee)}
+          disabled={disabled}
+          loading={acting === `remove-${nominee.nominationId}`}
+          className={cn('min-h-11 grow', FOCUS)}
+          sx={QUIET_HOVER}
+        >
+          Remove
+          {who}
+        </Button>
+      )}
     </div>
   );
 }
