@@ -2261,7 +2261,23 @@ Plan: `docs/superpowers/plans/2026-09-14-phase-12-parallel-run.md`
     member can reach their own. PARITY row flipped to **ported** in the P12.T5
     ledger commit, after re-running its mutation (remove the `postRosters` call
     → "posts each seated member their roster" red)
-  - Streams log an error on every normal disconnect (Phase 14 note) — open
+  - **`⨯ Error: The destination stream closed early.` in the server log** (Phase
+    14 note) — fixed in the second P12.T5 commit, and the note's diagnosis was
+    wrong. 🔴 **The SSE routes never produced it**: in a production build a
+    curl timeout, `reader.cancel()`, navigation, a hidden tab, a closed context
+    and the 50s self-close all logged **nothing**. A temporary
+    `onRequestError` hook caught the real source — `routeType: 'render'`,
+    `renderSource: 'react-server-components-payload'`, path
+    `/live/…?tv=1&_rsc=…`: an **RSC navigation the browser abandoned
+    mid-render**. React's Flight renderer aborts with a plain `Error`, Next's
+    abort filter matches only `name === 'AbortError'`, and it is printed at
+    error level with a digest. Any page does it — 4 of 20 aborted
+    `/live/[abbr]?tv=1` navigations and 8 of 20 aborted `/` navigations logged
+    it before; **0 of 40** after. `instrumentation.ts` drops exactly that
+    message and passes everything else through. The same commit made a failed
+    poll **visible**: both routes' `catch` had swallowed it, so an outage left
+    nothing in the log; it now logs `[live stream] poll failed; keeping the
+    last frame` (or `[board stream]`) and still keeps the connection
   - `/leagues/[id]` overflows horizontally at 390px (Open questions) — open
 
 ### Phase 12 measurements (2026-09-14)
@@ -2390,7 +2406,7 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
 
 ### Phase 14 notes
 
-- 🔴 **Every viewer disconnect logs an error line, and nothing is wrong.** Cancelling a stream reader makes Next log `⨯ Error: The destination stream closed early.` at error level. That is what a tab being hidden, a navigation, a close and each of the route's own ~36 self-closes per viewer per three-hour ceremony will each produce, so a ceremony's log will carry hundreds of error lines describing normal behaviour. Nothing breaks and the route's teardown is correct — it is logging hygiene in the `cancel`/abort path, found by the T7 agent and left deliberately rather than redesigned inside a gate task. Worth fixing before the first real ceremony, if only so a genuine error is still findable.
+- ✅ **Fixed in P12.T5, and the diagnosis below was wrong** — the streams never logged it; an abandoned RSC navigation did. See P12.T5's findings. The original note, kept for the record: 🔴 **Every viewer disconnect logs an error line, and nothing is wrong.** Cancelling a stream reader makes Next log `⨯ Error: The destination stream closed early.` at error level. That is what a tab being hidden, a navigation, a close and each of the route's own ~36 self-closes per viewer per three-hour ceremony will each produce, so a ceremony's log will carry hundreds of error lines describing normal behaviour. Nothing breaks and the route's teardown is correct — it is logging hygiene in the `cancel`/abort path, found by the T7 agent and left deliberately rather than redesigned inside a gate task. Worth fixing before the first real ceremony, if only so a genuine error is still findable.
 - **The league picker in TV mode** shipped dropping `?tv=1` and was caught by the gate rather than by the task that built it (D114). The link-building was in the room; the mode was on the page.
 
 ## Phase 16 — New features
