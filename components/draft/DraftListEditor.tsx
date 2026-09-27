@@ -252,7 +252,7 @@ function EntryRow({
         <select
           value={entry.status}
           onChange={changeStatus}
-          className="border-border-rule bg-bg-surface text-text-secondary focus-visible:outline-accent-fill min-h-11 rounded-sm border px-2 text-xs focus-visible:outline-2"
+          className="border-border-rule bg-bg-surface text-text-secondary focus-visible:outline-accent-fill min-h-11 rounded-sm border text-xs focus-visible:outline-2"
         >
           {STATUSES.map((status) => (
             <option key={status} value={status}>

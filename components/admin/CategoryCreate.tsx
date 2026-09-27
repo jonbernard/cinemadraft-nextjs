@@ -97,7 +97,7 @@ export function CategoryCreate({
         <select
           value={tierId}
           onChange={(event) => setTierId(event.target.value)}
-          className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-2 text-sm"
+          className="border-border-rule bg-bg-surface text-text-primary min-h-11 border text-sm"
         >
           <option value="">No tier yet</option>
           {tiers.map((tier) => (

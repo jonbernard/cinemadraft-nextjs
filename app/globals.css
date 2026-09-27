@@ -319,6 +319,64 @@
   --color-score-low: #8c2f39;
 }
 
+/* Every native <select>, once (the owner's "No mark" report on /list).
+ *
+ * 🔴 `appearance: none` is the fix, not a style choice. With the native
+ * control, Chrome paints its chevron ~5px from the right edge whatever the
+ * padding says while the text sits ~14px in, so every select looked lopsided;
+ * and WebKit ignores padding and `min-height` altogether, collapsing a 44px
+ * `min-h-11` select to 19-24px. With it gone, the box is ours in all three
+ * engines and the chevron is drawn here.
+ *
+ * The chevron is two gradient strokes in `currentColor` — so it follows the
+ * select's own text token and the colour scheme with nothing to keep in sync.
+ * A `data:` SVG cannot read `currentColor`, and `<select>` has no pseudo-element
+ * to mask, so this is the one way that needs no wrapper at the call site.
+ *
+ * `padding-inline-end` reserves inset + chevron + gap, so the longest option
+ * stops short of the chevron instead of running under it. Base layer on
+ * purpose (D29): a utility still overrides any of this without `!important`,
+ * which is also why the selects no longer carry their own `px-*`.
+ */
+@layer base {
+  select {
+    --select-inset: 0.75rem;
+    --select-chevron: 5px;
+    appearance: none;
+    padding-inline: var(--select-inset)
+      calc(var(--select-inset) + 2 * var(--select-chevron) + 0.5rem);
+    background-image:
+      linear-gradient(
+        45deg,
+        transparent calc(50% - 0.75px),
+        currentColor calc(50% - 0.75px) calc(50% + 0.75px),
+        transparent calc(50% + 0.75px)
+      ),
+      linear-gradient(
+        -45deg,
+        transparent calc(50% - 0.75px),
+        currentColor calc(50% - 0.75px) calc(50% + 0.75px),
+        transparent calc(50% + 0.75px)
+      );
+    background-size: var(--select-chevron) var(--select-chevron);
+    background-repeat: no-repeat;
+    background-position:
+      right calc(var(--select-inset) + var(--select-chevron)) center,
+      right var(--select-inset) center;
+  }
+
+  select:dir(rtl) {
+    background-position:
+      left var(--select-inset) center,
+      left calc(var(--select-inset) + var(--select-chevron)) center;
+  }
+
+  /* The native control dimmed itself when disabled; ours has to say so. */
+  select:disabled {
+    opacity: 0.6;
+  }
+}
+
 /* TV mode (P14.T6). `?tv=1` puts `data-tv-mode` on the live page's root and
  * this hides the shell's chrome — the rail, the utility strip and the phone
  * tab bar — so a full-screen browser shows nothing but the room. It hides
