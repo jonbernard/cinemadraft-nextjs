@@ -66,7 +66,16 @@ every show — ask which one.
    category's points and the page renders it without a hint anything is wrong.
 3. **Find each film on TMDB** and put its id in `tmdbId`. For a category with
    `requiresNomineeName: true`, `detailName` is the person; it is required and
-   `apply` refuses without it.
+   `apply` refuses without it. `detailId` is optional; include it only when
+   you have the person's id.
+
+   **One film can appear twice in one category** — 2026 Best Supporting Actor
+   had *One Battle After Another* for both Benicio del Toro and Sean Penn. List
+   it once per person. `apply` skips a nominee only if the same film **and the
+   same person** is already entered (or already earlier in the plan). Same
+   person means the same `detailId` when both rows have one, otherwise the same
+   `detailName` ignoring case and surrounding spaces. A second person on the
+   same film is a new nomination.
 4. **Write the plan** to `.local/award-plans/<abbr>-<year>-nominations.json`
    (gitignored; it names films before the site does):
 
@@ -147,6 +156,20 @@ Same as nominations with `"kind": "winners"`. The film must already be
 nominated in that category or `apply` refuses — that refusal is load-bearing: a
 win pays the category's points a second time, so a winner that was never
 nominated holds points no page can explain.
+
+**A winner in a person category must name the person** in `detailName`, the
+same way its nomination did. The app records the winning *nomination*, not just
+the film, so for a film nominated twice in the category the person decides who
+is shown as the winner. `apply` finds the nomination by category, film, season
+and person. It refuses if:
+
+- the named person does not hold a nomination for that film in that category
+  (the error lists the people who do), or
+- no person is named and the film has more than one nomination in the
+  category (the error lists the candidates). It never guesses.
+
+A film with a single nomination in a category with no nominee names, such as
+Best Picture, needs no `detailName`.
 
 `finish` takes `--winners`, which clears `awards_active` instead of
 `nom_active`.

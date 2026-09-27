@@ -91,6 +91,21 @@ export function yearCheck({ nominatedYears, seasonYears }) {
   };
 }
 
+/** A nominee's person, as the duplicate rule compares it. */
+const folded = (name) => (name ?? '').trim().toLowerCase();
+
+/**
+ * Do two nominations name the same person? `detail_id` when both carry one,
+ * otherwise the name, case-folded and trimmed. Two with no person at all are
+ * the same (absent) person — Best Picture cannot hold one film twice.
+ */
+export function samePerson(a, b) {
+  if (a.detailId != null && b.detailId != null) {
+    return String(a.detailId) === String(b.detailId);
+  }
+  return folded(a.detailName) === folded(b.detailName);
+}
+
 import { Client } from 'pg';
 
 /**
@@ -159,7 +174,7 @@ export async function loadContext(client, abbreviation) {
   if (activeYear == null) throw new Error('no seasons exist in available_years');
 
   const existing = await client.query(
-    `SELECT n.award_id, n.movie_id, m.title
+    `SELECT n.award_id, n.movie_id, n.detail_name, n.detail_id, m.title
        FROM nominations n
        JOIN awards a ON a.id = n.award_id
        LEFT JOIN movies m ON m.id = n.movie_id
@@ -197,6 +212,8 @@ export async function loadContext(client, abbreviation) {
       awardId: Number(row.award_id),
       movieId: Number(row.movie_id),
       title: row.title,
+      detailName: row.detail_name,
+      detailId: row.detail_id == null ? null : Number(row.detail_id),
     })),
     seasonYears: picks.rows.map((row) => row.year).filter((year) => year != null),
   };
@@ -379,11 +396,16 @@ export async function applyNominations(client, plan, context, { commit }) {
   });
   if (!check.ok) throw new Error(check.reason);
 
-  const already = new Set(
-    context.existingNominations.map(
-      (row) => `${row.awardId}:${row.movieId}:${context.activeYear}`,
-    ),
-  );
+  // 🔴 One film may hold two nominations in a category — 2026 Supporting
+  // Actor had One Battle After Another for Benicio del Toro and Sean Penn. A
+  // duplicate is the same film AND the same person. Every row here is
+  // `activeYear`, which is `plan.year`, so the year needs no comparing.
+  const already = context.existingNominations.map((row) => ({
+    awardId: row.awardId,
+    filmKey: row.movieId,
+    detailName: row.detailName,
+    detailId: row.detailId,
+  }));
   const report = { inserted: [], skipped: [], created: [] };
 
   for (const { category, nominee, film } of resolved) {
@@ -392,16 +414,28 @@ export async function applyNominations(client, plan, context, { commit }) {
     // fallback every uncached nominee in a category collides into one key and
     // the report hides all but the first from approval.
     const filmKey = film.movieId ?? `tmdb:${nominee.tmdbId}`;
-    const key = `${category.awardId}:${filmKey}:${plan.year}`;
-    if (already.has(key)) {
+    const entry = {
+      awardId: category.awardId,
+      filmKey,
+      detailName: nominee.detailName ?? null,
+      detailId: nominee.detailId ?? null,
+    };
+    const duplicate = already.some(
+      (row) =>
+        row.awardId === entry.awardId &&
+        row.filmKey === entry.filmKey &&
+        samePerson(row, entry),
+    );
+    if (duplicate) {
       report.skipped.push({
         awardId: category.awardId,
         title: film.title,
+        detailName: entry.detailName,
         reason: 'already nominated in this category for this season',
       });
       continue;
     }
-    already.add(key);
+    already.push(entry);
     report.inserted.push({
       awardId: category.awardId,
       awardName: category.awardName,
@@ -409,6 +443,7 @@ export async function applyNominations(client, plan, context, { commit }) {
       movieId: film.movieId,
       detailName: nominee.detailName ?? null,
       detailCharacter: nominee.detailCharacter ?? null,
+      detailId: nominee.detailId ?? null,
     });
   }
 
@@ -420,9 +455,17 @@ export async function applyNominations(client, plan, context, { commit }) {
     for (const row of report.inserted) {
       await client.query(
         `INSERT INTO nominations
-           (movie_id, award_id, year, detail_name, detail_character, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $6)`,
-        [row.movieId, row.awardId, plan.year, row.detailName, row.detailCharacter, now],
+           (movie_id, award_id, year, detail_name, detail_character, detail_id, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
+        [
+          row.movieId,
+          row.awardId,
+          plan.year,
+          row.detailName,
+          row.detailCharacter,
+          row.detailId,
+          now,
+        ],
       );
     }
     await client.query('COMMIT');
@@ -438,6 +481,11 @@ export async function applyNominations(client, plan, context, { commit }) {
  * Declare winners. Mirrors `winnerRepository.setForAward` and the refusal in
  * `actions/awards/set-winner.ts`: the winner must already be nominated, and
  * setting replaces rather than adds.
+ *
+ * 🔴 The nomination is resolved by film AND person. One film can hold two
+ * nominations in a category, the app crowns whoever `winners.nomination_id`
+ * points at, and a lookup by film alone would pick one arbitrarily. With no
+ * person named and more than one candidate, this refuses — it never guesses.
  *
  * No year check here — the nominations it resolves against were already
  * checked when they were written, and requiring it again would block a live
@@ -474,18 +522,45 @@ export async function applyWinners(client, plan, context, { commit }) {
         });
         continue;
       }
-      const nomination = await client.query(
-        'SELECT id FROM nominations WHERE award_id = $1 AND movie_id = $2 AND year = $3 LIMIT 1',
+      const nominations = await client.query(
+        `SELECT id, detail_name, detail_id FROM nominations
+          WHERE award_id = $1 AND movie_id = $2 AND year = $3
+          ORDER BY id`,
         [category.awardId, film.movieId, plan.year],
       );
-      const row = nomination.rows[0];
-      if (!row) {
+      const rows = nominations.rows.map((row) => ({
+        id: Number(row.id),
+        detailName: row.detail_name,
+        detailId: row.detail_id,
+      }));
+      const person = { detailName: nominee.detailName, detailId: nominee.detailId };
+      const named = folded(person.detailName) !== '' || person.detailId != null;
+      const candidates = named ? rows.filter((row) => samePerson(row, person)) : rows;
+      const who = named ? ` for ${person.detailName ?? `person ${person.detailId}`}` : '';
+
+      if (candidates.length === 0) {
         throw new Error(
-          `"${film.title}" is not nominated for ${category.awardName} in ${plan.year} — ` +
-            'enter the nomination first, or fix the title',
+          `"${film.title}" is not nominated${who} for ${category.awardName} in ${plan.year} — ` +
+            'enter the nomination first, or fix the title' +
+            (rows.length > 0
+              ? `. Its nominations here: ${rows.map((row) => row.detailName ?? '(no name)').join(', ')}`
+              : ''),
         );
       }
-      pending.push({ category, film, nominationId: Number(row.id) });
+      if (candidates.length > 1) {
+        throw new Error(
+          `"${film.title}" has ${candidates.length} nominations${who} for ${category.awardName} ` +
+            `in ${plan.year}: ${candidates
+              .map((row) => `${row.detailName ?? '(no name)'} [#${row.id}]`)
+              .join(', ')} — name the winner with detailName; refusing to guess`,
+        );
+      }
+      pending.push({
+        category,
+        film,
+        nominationId: candidates[0].id,
+        detailName: candidates[0].detailName ?? null,
+      });
     }
   }
 
@@ -494,6 +569,7 @@ export async function applyWinners(client, plan, context, { commit }) {
       awardId: entry.category.awardId,
       awardName: entry.category.awardName,
       title: entry.film.title,
+      detailName: entry.detailName,
     })),
     skipped: [],
     unverifiable,
@@ -1001,9 +1077,12 @@ async function main(argv) {
       const wrote = report.inserted ?? report.set;
 
       console.log(commit ? 'WROTE:' : 'DRY RUN — nothing written:');
-      for (const row of wrote) console.log(`  + ${row.awardName}: ${row.title}`);
+      const person = (row) => (row.detailName ? ` — ${row.detailName}` : '');
+      for (const row of wrote)
+        console.log(`  + ${row.awardName}: ${row.title}${person(row)}`);
       const created = report.created ?? [];
-      for (const row of report.skipped) console.log(`  = ${row.title} (${row.reason})`);
+      for (const row of report.skipped)
+        console.log(`  = ${row.title}${person(row)} (${row.reason})`);
       if (created.length > 0) {
         console.log(`  films newly cached from TMDB: ${created.join(', ')}`);
       }
