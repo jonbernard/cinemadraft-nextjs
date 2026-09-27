@@ -18,7 +18,6 @@ export type AdminEvent = {
   awardsDate: number | null;
   awardsTime: number | null;
   awardsDuration: number | null;
-  liveResults: boolean | null;
 };
 
 /** Local midnight of a `Date`, in epoch milliseconds — what `nomDate` stores. */
@@ -75,7 +74,6 @@ export function EventAdmin({
   const [awardsMinutes, setAwardsMinutes] = useState(
     event.awardsDuration == null ? '' : String(Math.round(event.awardsDuration / 60_000)),
   );
-  const [liveResults, setLiveResults] = useState(event.liveResults === true);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -109,7 +107,6 @@ export function EventAdmin({
           awardsDate: awards?.date ?? null,
           awardsTime: awards?.time ?? null,
           awardsDuration,
-          liveResults,
         });
         setMessage(result.ok ? 'Saved' : result.message);
       });
@@ -124,7 +121,6 @@ export function EventAdmin({
       awardsActive,
       awardsAt,
       awardsMinutes,
-      liveResults,
     ],
   );
 
@@ -136,7 +132,12 @@ export function EventAdmin({
           nominations entered" (the award-shows index reads it that way, and
           `scripts/award-import.mjs` clears it when a nominations run
           finishes). So this form no longer writes it at all, and leaves
-          whatever is stored alone. */}
+          whatever is stored alone.
+
+          🔴 Nor `live_results`: its "Live results" box sat beside this switch
+          as a second, contradictory "live", and nothing in the app, the
+          importer or the e2e suite reads the column — it was only loaded into
+          this form and written back. The column and its data stay. */}
       <LiveSwitch
         checked={awardsActive}
         onChange={setAwardsActive}
@@ -216,14 +217,6 @@ export function EventAdmin({
             onChange={(e) => setAwardsMinutes(e.target.value)}
             className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-24 border px-3 text-sm"
           />
-        </label>
-        <label className="flex min-h-11 items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={liveResults}
-            onChange={(e) => setLiveResults(e.target.checked)}
-          />
-          <span className="text-text-dim">Live results</span>
         </label>
       </fieldset>
 

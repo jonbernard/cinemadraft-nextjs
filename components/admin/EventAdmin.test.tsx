@@ -19,7 +19,6 @@ const EVENT = {
   awardsDate: null,
   awardsTime: null,
   awardsDuration: null,
-  liveResults: false,
 };
 
 /**
@@ -40,6 +39,10 @@ describe('EventAdmin — going live', () => {
     expect(screen.getAllByRole('switch')).toHaveLength(1);
     expect(screen.getByRole('switch', { name: 'Live' })).not.toBeChecked();
     expect(screen.queryByRole('checkbox', { name: 'Live now' })).not.toBeInTheDocument();
+    // 🔴 Nor "Live results": beside the switch it read as a second "live"
+    // that could disagree with it ("Off air", and "Live results" ticked).
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Live results/)).not.toBeInTheDocument();
   });
 
   it('saves the ceremony on air, and leaves nom_active out of the write', async () => {
@@ -52,6 +55,7 @@ describe('EventAdmin — going live', () => {
     const input = updateEvent.mock.calls[0]?.[0];
     expect(input).toMatchObject({ eventId: 7, awardsActive: true });
     expect(input).not.toHaveProperty('nomActive');
+    expect(input).not.toHaveProperty('liveResults');
   });
 
   it('starts from the stored state', () => {

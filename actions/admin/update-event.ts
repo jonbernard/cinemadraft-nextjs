@@ -31,7 +31,6 @@ const Input = z.object({
   awardsDate: z.number().nullable().optional(),
   awardsTime: z.number().nullable().optional(),
   awardsDuration: z.number().nullable().optional(),
-  liveResults: z.boolean().optional(),
 });
 
 export type UpdateEventInput = z.infer<typeof Input>;

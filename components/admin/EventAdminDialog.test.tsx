@@ -45,7 +45,6 @@ const EVENT = {
   awardsDate: null,
   awardsTime: null,
   awardsDuration: null,
-  liveResults: false,
 };
 
 describe('EventAdminDialog', () => {

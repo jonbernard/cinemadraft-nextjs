@@ -156,7 +156,6 @@ export default async function AwardShowPage({
               awardsDate: event.awardsDate,
               awardsTime: event.awardsTime,
               awardsDuration: event.awardsDuration,
-              liveResults: event.liveResults,
             }}
           />
         ) : null}

@@ -18,7 +18,6 @@ const meta = {
       awardsDate: null,
       awardsTime: null,
       awardsDuration: 10_800_000,
-      liveResults: true,
     },
   },
 } satisfies Meta<typeof EventAdminDialog>;
