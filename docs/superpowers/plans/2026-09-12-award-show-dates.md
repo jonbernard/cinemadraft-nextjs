@@ -44,7 +44,7 @@ The pure core. This is where the risk lives: an evening ceremony's time column e
   - `isInSeason(instantMs: number | null, year: number): boolean`
   - `formatEt(instantMs: number | null): string` — for the report's human column.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `scripts/award-import.test.mjs`:
 
@@ -188,12 +188,12 @@ describe('formatEt', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `npx vitest run scripts/award-import.test.mjs`
 Expected: FAIL — `toDateTimeSplit is not a function`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `scripts/award-import.mjs`:
 
@@ -313,12 +313,12 @@ export function formatEt(instantMs) {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npx vitest run scripts/award-import.test.mjs`
 Expected: PASS — the whole file, including the 10 round-trip cases.
 
-- [ ] **Step 5: Mutation-check the daylight-saving correction**
+- [x] **Step 5: Mutation-check the daylight-saving correction**
 
 Replace the two-pass body of `toInstant` with the single pass — `return naive - zoneOffsetMs(naive, tz);` — and re-run. Expected: the suite goes RED on at least one March case. Restore and confirm green.
 
@@ -326,7 +326,7 @@ Then replace `toDateTimeSplit`'s `midnight` with `instant - (instant % DAY)` (UT
 
 If either mutation leaves the suite green, the tests do not pin the behaviour — say so and add the case that does.
 
-- [ ] **Step 6: Lint and commit**
+- [x] **Step 6: Lint and commit**
 
 ```bash
 npm run lint

@@ -613,6 +613,119 @@ export async function refresh({
   return { revalidated, missing };
 }
 
+const ET = 'America/New_York';
+
+/**
+ * A zone's offset from UTC at a given instant, in milliseconds, positive east.
+ *
+ * 🔴 Derived from `Intl`, not from a table. The alternative — assuming ET is
+ * UTC−5 — is wrong for every ceremony held after US daylight saving begins in
+ * March, which is the Oscars every year.
+ *
+ * `formatToParts` with `timeZone` gives the wall-clock reading in that zone;
+ * re-reading it as if it were UTC and subtracting gives the offset.
+ */
+export function zoneOffsetMs(instantMs, tz) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(instantMs));
+
+  const at = (type) => Number(parts.find((part) => part.type === type)?.value);
+  const asUtc = Date.UTC(
+    at('year'),
+    at('month') - 1,
+    at('day'),
+    at('hour'),
+    at('minute'),
+    at('second'),
+  );
+  return asUtc - instantMs;
+}
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_PATTERN = /^\d{2}:\d{2}$/;
+
+/**
+ * A wall-clock time in a zone → the epoch instant it names.
+ *
+ * Two passes, not one: the offset depends on the instant, and the instant is
+ * what is being solved for. The first pass uses the offset at the naive
+ * reading; the second corrects it if that reading fell on the far side of a
+ * daylight-saving transition.
+ */
+export function toInstant({ date, time, tz = ET }) {
+  if (!DATE_PATTERN.test(date ?? '')) {
+    throw new Error(`date must be YYYY-MM-DD, got "${date}"`);
+  }
+  if (!TIME_PATTERN.test(time ?? '')) {
+    throw new Error(`time must be HH:MM, got "${time}"`);
+  }
+
+  const naive = Date.parse(`${date}T${time}:00Z`);
+  if (Number.isNaN(naive))
+    throw new Error(`date "${date}" and time "${time}" are not real`);
+
+  const first = naive - zoneOffsetMs(naive, tz);
+  return naive - zoneOffsetMs(first, tz);
+}
+
+/**
+ * The two columns `events` actually stores.
+ *
+ * 🔴 `date` is UTC midnight of the event's **local** calendar day, and `time`
+ * is everything else — which for an evening ceremony is more than 24 hours.
+ * An 8pm ET ceremony on 11 January is 01:00Z on the 12th; storing the 12th
+ * would move it a day in the calendar feed and on the show page. Every
+ * restored row follows this, and the round-trip tests pin all twelve.
+ */
+export function toDateTimeSplit({ date, time, tz = ET }) {
+  const instant = toInstant({ date, time, tz });
+  const midnight = Date.parse(`${date}T00:00:00Z`);
+  return { date: midnight, time: instant - midnight };
+}
+
+/**
+ * When a season's dates live: 1 August of the prior year to 31 July.
+ *
+ * The 2026 season really runs from AFI's nominations on 4 December 2025 to the
+ * Oscars on 15 March 2026, so this has months of margin at both ends and
+ * cannot be confused with an adjacent season.
+ */
+export function seasonWindow(year) {
+  return {
+    start: Date.parse(`${year - 1}-08-01T00:00:00Z`),
+    end: Date.parse(`${year}-07-31T23:59:59.999Z`),
+  };
+}
+
+/** Is this instant part of that season? A null never is. */
+export function isInSeason(instantMs, year) {
+  if (instantMs == null) return false;
+  const { start, end } = seasonWindow(year);
+  return instantMs >= start && instantMs <= end;
+}
+
+/** An instant as a person reads it, for the report. */
+export function formatEt(instantMs) {
+  if (instantMs == null) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: ET,
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(new Date(instantMs));
+}
+
 import { pathToFileURL } from 'node:url';
 
 const COMMANDS = ['context', 'apply', 'finish', 'refresh'];
