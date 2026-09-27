@@ -132,9 +132,10 @@ every show — ask which one.
    Titles are derived from what is in the database for that show and season —
    no need to pass `--titles` by hand; it is only an override.
 
-   `refresh` runs after `finish`, not before: `finish` is what flips
-   `nom_active`, which drives `needsNominations` on the show page, so running
-   `refresh` earlier would clear the cache before that last change lands.
+   `refresh` runs after `finish`, not before, so the cache is cleared after
+   the last write lands. (`finish` still clears `nom_active`, but nothing reads
+   it any more: "still to enter" on `/award-shows` is derived from the show's
+   dates and what is entered — `lib/services/entry-status.ts`.)
    `refresh` is not optional. It is the only thing that clears the cache the
    server actions clear, and it fails loudly if the nominees are not actually
    on the live page.
