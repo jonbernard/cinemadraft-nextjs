@@ -23,7 +23,11 @@ export type AdminNominee = GridNominee & {
   detailId: number | null;
 };
 
-/** The focus ring every control here shares — the app's own, not MUI's ripple. */
+/**
+ * The focus ring every control here shares — the app's own. Every Button here
+ * also takes `disableFocusRipple`: MUI's focus ripple is a pulsing disc inside
+ * the button, and drawn under this ring it read as a stain on the label.
+ */
 const FOCUS =
   'focus-visible:outline-accent-fill focus-visible:outline-2 focus-visible:outline-offset-2';
 
@@ -281,6 +285,7 @@ export function CategoryAdmin({
             because on the night it is pressed before the envelope is opened,
             and the envelope is the grid directly below. */}
         <Button
+          disableFocusRipple
           onClick={putOnScreen}
           disabled={pending}
           loading={acting === 'screen'}
@@ -335,6 +340,7 @@ export function CategoryAdmin({
               ) : null}
             </span>
             <Button
+              disableFocusRipple
               variant="text"
               onClick={backToFilm}
               disabled={pending && acting === 'attach'}
@@ -371,6 +377,7 @@ export function CategoryAdmin({
       )}
 
       <Button
+        disableFocusRipple
         variant="text"
         onClick={removeCategory}
         disabled={pending}
@@ -416,6 +423,7 @@ function NomineeControls({
           five of these at once and a wall of brass fills would outshout the
           one "Winner" chip it exists to produce. */}
       <Button
+        disableFocusRipple
         variant="outlined"
         size="small"
         onClick={() => onMarkWinner(nominee)}
@@ -440,6 +448,7 @@ function NomineeControls({
         {who}
       </Button>
       <Button
+        disableFocusRipple
         variant="text"
         size="small"
         onClick={() => onRemove(nominee)}
