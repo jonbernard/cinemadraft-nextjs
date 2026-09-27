@@ -1,17 +1,18 @@
 ---
 name: award-entry
-description: Use when entering an award show's nominations or winners — "DGA nominations", "Oscars winners", "run the SAG show live". Researches the listing, proposes every nomination for approval, writes to production, clears the cache, and broadcasts one notification.
+description: Use when entering an award show's nominations or winners — "DGA nominations", "Oscars winners", "run the SAG show live", "update the award show dates", "when are the Oscars this year". Researches the listing, proposes every nomination (or date) for approval, writes to production, clears the cache, and broadcasts one notification.
 ---
 
 # Entering an award show
 
-Three modes, one procedure. Mode comes from the ask:
+Four modes, one procedure. Mode comes from the ask:
 
 | Ask | Mode |
 |---|---|
 | "DGA nominations" | nominations — research a listing, enter every category |
 | "Oscars winners" | winners — one listing, every category at once |
 | "run the Oscars live" | live — one category at a time, as they are announced |
+| "update the award show dates" | dates — research each season's schedule and record it |
 
 ## One-time setup
 
@@ -158,6 +159,97 @@ seconds. Run `finish --winners --commit` once, at the end of the night, then
 `refresh` once more — `finish` is the last write of the night and the cache
 should reflect it too.
 
+## Dates
+
+The twelve shows announce next season's schedule one at a time across about
+four months, so this is run every few weeks from autumn onward and only ever
+looks at what is still outstanding. No notification is sent — a schedule is not
+something to page every member about.
+
+1. **Read what is already known.** This decides what to research:
+
+   ```bash
+   DATABASE_URL="$PROD" node scripts/award-import.mjs dates
+   ```
+
+   Every show is marked `skip` or `RESEARCH`, and each half says `current` or
+   `not this season`. A show whose nominations date is current but whose
+   ceremony is not gets researched for the ceremony only.
+
+2. **Search for each outstanding show.** Prefer the organisation's own press
+   release over an aggregator — aggregators repeat last year's date more often
+   than they report this year's. Record every URL in `sources`.
+
+3. **Write the plan** to `.local/award-plans/dates-<year>.json`:
+
+   ```json
+   {
+     "kind": "dates",
+     "year": 2026,
+     "sources": ["https://…"],
+     "shows": [
+       {
+         "abbreviation": "dga",
+         "nominations": { "date": "2026-01-08", "time": "08:00" },
+         "awards": { "date": "2026-02-07", "time": "20:00" }
+       }
+     ]
+   }
+   ```
+
+   - `year` is the active season `dates` printed, never the one in an
+     article's headline.
+   - `time` is `HH:MM` in the show's local zone, 24-hour. Omit it and the show's
+     existing wall-clock time is reused, which is almost always right — these
+     hold steady year over year. A show with no prior time falls back to 08:00
+     for nominations and 20:00 for a ceremony, and the dry run says so.
+   - `tz` defaults to `America/New_York`. Only set it if a show genuinely
+     announces on another clock — BAFTA's London ceremony is stored in ET like
+     the rest.
+   - Name only the half that was announced. An entry without `awards` leaves
+     the ceremony columns exactly as they are.
+   - **A show that has not announced is left out of the plan entirely.** Never
+     guess a date from last year's, and never write "mid-January".
+
+4. **Dry run**, and show the owner the `current → proposed` table:
+
+   ```bash
+   DATABASE_URL="$PROD" node scripts/award-import.mjs set-dates .local/award-plans/dates-2026.json
+   ```
+
+   It refuses the whole plan — writing nothing — if `year` is not the active
+   season, a show is unknown, no source is recorded, or any date falls outside
+   the season (1 August of the prior year to 31 July). A refusal on the season
+   window almost always means last year's announcement; go and find this
+   year's.
+
+5. **STOP. Wait for approval.**
+
+6. **Commit:**
+
+   ```bash
+   DATABASE_URL="$PROD" REVALIDATE_SECRET="$(grep -m1 '^REVALIDATE_SECRET' .env.local | cut -d= -f2-)" \
+     node scripts/award-import.mjs set-dates .local/award-plans/dates-2026.json --commit
+   ```
+
+   This revalidates each changed show itself, so the show page's schedule is
+   current. Without the secret the dates are still written but it exits 1 and
+   says no cache was cleared — set it and run `refresh <ABBR>` for each show.
+
+### What to know about the shows
+
+- **AFI has no ceremony.** It names ten films and declares no winners, so its
+  `awards` half is permanently blank and `dates` will always list its ceremony
+  as `not this season`. That is correct — never invent one, and do not report
+  it as outstanding.
+- **A date that moves.** If a show reschedules, its date is already "current"
+  and will be skipped. Set `"recheck": true` on that show's entry to write it
+  anyway.
+- **Ceremonies are evening events**, so their stored time exceeds 24 hours —
+  an 8pm ET show on the 11th is 01:00Z on the 12th but belongs on the 11th.
+  The script handles this, daylight saving included; do not try to
+  pre-compute it in the plan.
+
 ## Never
 
 - Never create an `awards` row. Categories are set up once per show in the
@@ -166,3 +258,6 @@ should reflect it too.
 - Never skip `refresh` — a correct write nobody can see is not done.
 - Never run any of this against `localhost:5433` expecting it to matter, or
   against `$PROD` expecting it not to.
+- Never guess an unannounced date from last season's, and never null a date
+  that is merely stale — leave it and report it.
+- Never write durations. Nothing announces one and the existing values are right.

@@ -936,7 +936,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `dates` and `set-dates` from Tasks 2–3.
 - Produces: the invocation surface — "update the award show dates", "when are the Oscars this year".
 
-- [ ] **Step 1: Add the mode to the skill's mode table**
+- [x] **Step 1: Add the mode to the skill's mode table**
 
 Add a row to the table at the top of `.claude/skills/award-entry/SKILL.md`:
 
@@ -944,7 +944,7 @@ Add a row to the table at the top of `.claude/skills/award-entry/SKILL.md`:
 | "update the award show dates" | dates — research each season's schedule and record it |
 ```
 
-- [ ] **Step 2: Add the section**
+- [x] **Step 2: Add the section**
 
 Add before the `## Never` section:
 
@@ -1025,7 +1025,7 @@ looks at what is still outstanding.
   The script handles this; do not try to pre-compute it in the plan.
 ```
 
-- [ ] **Step 3: Add the never**
+- [x] **Step 3: Add the never**
 
 Append to the `## Never` list:
 
@@ -1035,7 +1035,7 @@ Append to the `## Never` list:
 - Never write durations. Nothing announces one and the existing values are right.
 ```
 
-- [ ] **Step 4: Verify the skill still parses**
+- [x] **Step 4: Verify the skill still parses**
 
 Confirm the YAML frontmatter is intact and `name:` is still exactly
 `award-entry`. Confirm the mode table has four rows and every command named in
@@ -1046,7 +1046,7 @@ grep -o "award-import.mjs [a-z-]*" .claude/skills/award-entry/SKILL.md | sort -u
 ```
 Expected: only `context`, `apply`, `finish`, `refresh`, `dates`, `set-dates`.
 
-- [ ] **Step 5: Full verification and commit**
+- [x] **Step 5: Full verification and commit**
 
 ```bash
 npm run verify
