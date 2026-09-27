@@ -459,6 +459,52 @@ test.describe('navigation', () => {
     await expect(trigger).toBeFocused();
   });
 
+  /**
+   * The close button, for everyone who does not already know Escape — at both
+   * widths, because the phone opens the panel from the More sheet and focus has
+   * to land on the sheet's trigger, not on a row inside a closed sheet.
+   */
+  test('the close button puts the search panel away, and focus goes back to the trigger', async ({
+    page,
+  }) => {
+    for (const size of [DESKTOP, PHONE]) {
+      await page.setViewportSize(size);
+      await page.goto('/');
+      await openSearchPanel(page, size.width);
+
+      const panel = page.getByRole('dialog', { name: 'Search films' });
+      const close = panel.getByRole('button', { name: 'Close search' });
+      await expect(close).toBeVisible();
+      // The 44px target, measured rather than read off a class name.
+      const box = await close.boundingBox();
+      expect(box?.width).toBeGreaterThanOrEqual(44);
+      expect(box?.height).toBeGreaterThanOrEqual(44);
+
+      await page.getByRole('searchbox', { name: 'Find a film' }).fill('sinners');
+      await close.click();
+
+      await expect(panel).toBeHidden();
+      await expect(
+        size.width >= 640
+          ? page.getByRole('button', { name: 'Search' }).first()
+          : page.getByRole('button', { name: 'More', exact: true }),
+      ).toBeFocused();
+    }
+  });
+
+  test('a click on the backdrop puts the search panel away too', async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto('/');
+    await openSearchPanel(page, DESKTOP.width);
+
+    const panel = page.getByRole('dialog', { name: 'Search films' });
+    // Bottom-left corner: outside the panel, which is centred and top-aligned.
+    await page.mouse.click(8, DESKTOP.height - 8);
+
+    await expect(panel).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Search' }).first()).toBeFocused();
+  });
+
   test('the panel opens from the More sheet, and one Escape closes it there too', async ({
     page,
   }) => {

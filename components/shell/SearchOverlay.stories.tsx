@@ -10,6 +10,10 @@ import { SearchOverlay } from './SearchOverlay';
  * The search itself hits the live Server Action, so results only appear where
  * Storybook is running against a database. The empty panel is the state worth
  * reviewing here anyway — it is what every reader sees for the first keystroke.
+ *
+ * The close button in the top-right corner is live: clicking it really calls
+ * `close()`, so the panel disappears and the story has to be reloaded. Hover it
+ * and Tab to it to review the hover colour and the focus ring.
  */
 const meta = {
   title: 'Existing/SearchOverlay',
