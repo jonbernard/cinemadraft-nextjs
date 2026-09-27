@@ -238,7 +238,13 @@ test.describe('how it works', () => {
     // each list holds exactly one entry.
     expect(headline.map((level) => level.tiers[0])).toContain(toNumber(nomination));
     expect(headline.map((level) => (level.tiers[0] ?? 0) * 2)).toContain(toNumber(win));
-    expect(penalty.map((level) => level.tiers[0])).toContain(toNumber(cost));
+    // 🔴 Levels but no negative one is a real table, and on CI it is what
+    // this test reads whenever a parallel spec's scratch rows are in it: the
+    // database starts empty, and award-shows.spec.ts's level pays 7, not a
+    // penalty. The page prints a dash there; `toContain` on an empty list
+    // could only ever fail, whatever the page printed.
+    if (penalty.length === 0) expect(cost).toBe('—');
+    else expect(penalty.map((level) => level.tiers[0])).toContain(toNumber(cost));
   });
 
   test("the season's best ledger is the one the scoring rule produces", async ({
