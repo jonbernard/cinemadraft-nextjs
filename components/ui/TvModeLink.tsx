@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { cn } from '@/lib/utils/cn';
+
 /**
  * The way in and out of TV mode (P14.T6).
  *
@@ -20,13 +22,29 @@ import Link from 'next/link';
  * A plain server component: no hooks, no `useSearchParams`, nothing that could
  * re-render the tree the live room's `EventSource` is mounted in.
  */
-export function TvModeLink({ href, active }: { href: string; active: boolean }) {
+export function TvModeLink({
+  href,
+  active,
+  className,
+}: {
+  href: string;
+  active: boolean;
+  /** Placement only — `/live` pushes it to the end of its row with `ml-auto`. */
+  className?: string;
+}) {
   return (
     <Link
       href={href}
-      // The strip's "Start a league" treatment, verbatim — a 44px bordered
-      // target, which is also the smallest thing worth aiming a remote at.
-      className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill ml-auto flex min-h-11 items-center gap-2 border px-4 text-sm focus-visible:outline-2"
+      // 🔴 The league page's `SecondaryAction` treatment, verbatim, and the
+      // `Button` primitive's 6px radius with it. It used to be the strip's
+      // square "Start a league" box, and on the league page it sat beside
+      // three rounded controls as the one squared button in the row — which
+      // the Phase 3.5 brief forbids by name. 44px, the smallest thing worth
+      // aiming a remote at.
+      className={cn(
+        'border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm border px-4 text-sm focus-visible:outline-2',
+        className,
+      )}
     >
       {active ? 'Leave TV mode' : 'TV mode'}
     </Link>

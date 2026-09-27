@@ -237,10 +237,16 @@ export default async function LeaguePage({
               console and the setup wizard — acts you perform at a keyboard, in
               the other tab, while the league watches this one. Every row of
               them is 60px off the board's height budget. */}
-        {canManage && !tvMode ? (
+        {/* 🔴 One row, TV mode last. It used to be a row of its own under this
+              one, right-aligned by an `ml-auto` it carried for `/live` — the
+              owner reported it as a stray square button on a line by itself.
+              A reader who manages nothing still gets the row, holding only TV
+              mode, left-aligned where the owner's actions would start. */}
+        {tvMode ? null : (
           <div className="flex flex-wrap items-center gap-3">
-            {view.groups.length === 0 || isPending ? (
-              /* 🔴 One action while the season is not running, and it is NOT
+            {canManage ? (
+              view.groups.length === 0 || isPending ? (
+                /* 🔴 One action while the season is not running, and it is NOT
                  "Run the draft".
 
                  With no groups, `getDraftConsole` throws `NotFoundError` and
@@ -254,23 +260,24 @@ export default async function LeaguePage({
 
                  The way in is setup, which is where "Start the draft" lives —
                  and pressing it now lands on the console directly. */
-              <PrimaryAction href={`/leagues/${view.leagueId}/setup?year=${view.year}`}>
-                Set up the season
-              </PrimaryAction>
-            ) : (
-              <>
-                <SecondaryAction
-                  href={`/leagues/${view.leagueId}/draft?year=${view.year}`}
-                >
-                  Run the draft
-                </SecondaryAction>
-                <SecondaryAction
-                  href={`/leagues/${view.leagueId}/setup?year=${view.year}`}
-                >
+                <PrimaryAction href={`/leagues/${view.leagueId}/setup?year=${view.year}`}>
                   Set up the season
-                </SecondaryAction>
-              </>
-            )}
+                </PrimaryAction>
+              ) : (
+                <>
+                  <SecondaryAction
+                    href={`/leagues/${view.leagueId}/draft?year=${view.year}`}
+                  >
+                    Run the draft
+                  </SecondaryAction>
+                  <SecondaryAction
+                    href={`/leagues/${view.leagueId}/setup?year=${view.year}`}
+                  >
+                    Set up the season
+                  </SecondaryAction>
+                </>
+              )
+            ) : null}
 
             {/* 🔴 Owners only, and only while there is somebody to invite.
                   The uuid is the join credential — anyone holding it can seat
@@ -288,8 +295,13 @@ export default async function LeaguePage({
                   defect the owner reported. The top layer leaves this row
                   alone. */}
             {inviteUrl ? <InviteDialog url={inviteUrl} /> : null}
+
+            {/* The way in, and only the way in. The way *out* is the floating
+                  stack below, which is the only one of the two that a reader
+                  with a remote and no address bar can ever need. */}
+            <TvModeLink href={pageUrl({ group: activeGroup, tv: true })} active={false} />
           </div>
-        ) : null}
+        )}
 
         {seasons.length > 1 && !tvMode ? (
           <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
@@ -309,15 +321,6 @@ export default async function LeaguePage({
             ))}
           </nav>
         ) : null}
-
-        {/* The way in, and only the way in. The way *out* is the floating
-              stack below, which is the only one of the two that a reader with
-              a remote and no address bar can ever need. */}
-        {tvMode ? null : (
-          <div className="flex flex-wrap items-center gap-3">
-            <TvModeLink href={pageUrl({ group: activeGroup, tv: true })} active={false} />
-          </div>
-        )}
       </header>
 
       {/* 🔴 The controls float, and they never go away (D124, D112).

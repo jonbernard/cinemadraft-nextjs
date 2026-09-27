@@ -1,9 +1,24 @@
 import { ConflictError, NotFoundError } from '@/lib/errors';
 import { availableYearRepository } from '@/lib/repositories/available-years';
+import { draftPickRepository, type SeasonTaker } from '@/lib/repositories/draft-picks';
 import { type ListStatus, listRepository } from '@/lib/repositories/lists';
 import { movieRepository } from '@/lib/repositories/movies';
 import { posterUrl } from '@/lib/utils/poster';
+import { seatName } from './draft';
 import { resolveFilm } from './film-ingest';
+
+/**
+ * What this season's drafts say about a film on the list. It outranks the
+ * member's own manual mark (`status`), which stays for drafts the app never
+ * saw.
+ *
+ * - `yours`: the reader drafted it, in any of their leagues.
+ * - otherwise `by` names who did, and `gone` is whether it is gone in *every*
+ *   league the reader is seated in this season — a member in two leagues can
+ *   lose a film in one and still draft it in the other, and fading it there
+ *   would tell them to skip a film they can still have.
+ */
+export type Drafted = { yours: true } | { yours: false; by: string; gone: boolean };
 
 export type DraftListEntry = {
   entryId: number;
@@ -12,6 +27,8 @@ export type DraftListEntry = {
   posterUrl: string | null;
   releaseYear: number | null;
   status: ListStatus;
+  /** Absent when nobody in the reader's leagues has drafted it this season. */
+  drafted?: Drafted;
 };
 
 /**
@@ -30,11 +47,16 @@ export async function getDraftList(
   const movieIds = entries.flatMap((entry) =>
     entry.movieId == null ? [] : [entry.movieId],
   );
-  const movies = await movieRepository.findManyByIds(movieIds);
+  const [movies, takers] = await Promise.all([
+    movieRepository.findManyByIds(movieIds),
+    draftPickRepository.findSeasonTakersForReader(userId, year, movieIds),
+  ]);
   const byId = new Map(movies.map((movie) => [movie.id, movie]));
+  const drafted = draftedByMovie(userId, takers);
 
   return entries.map((entry) => {
     const movie = entry.movieId == null ? undefined : byId.get(entry.movieId);
+    const state = entry.movieId == null ? undefined : drafted.get(entry.movieId);
     return {
       entryId: entry.id,
       movieId: entry.movieId,
@@ -45,8 +67,42 @@ export async function getDraftList(
       posterUrl: posterUrl(movie?.poster ?? null, 'w185'),
       releaseYear: movie?.releaseDate?.getUTCFullYear() ?? null,
       status: entry.status ?? 'none',
+      ...(state ? { drafted: state } : {}),
     };
   });
+}
+
+function draftedByMovie(userId: number, takers: readonly SeasonTaker[]) {
+  const byMovie = new Map<number, SeasonTaker[]>();
+  for (const taker of takers) {
+    byMovie.set(taker.movieId, [...(byMovie.get(taker.movieId) ?? []), taker]);
+  }
+
+  const result = new Map<number, Drafted>();
+  for (const [movieId, picks] of byMovie) {
+    if (picks.some((pick) => pick.seatUserId === userId)) {
+      result.set(movieId, { yours: true });
+      continue;
+    }
+    const readerLeagues = picks[0]?.readerLeagues ?? 0;
+    // A league name only when there is more than one to tell apart.
+    const by = picks
+      .map((pick) => {
+        const name = seatName(
+          { dummy: pick.dummy, dummyName: pick.dummyName, userId: pick.seatUserId },
+          pick.email == null
+            ? undefined
+            : { firstName: pick.firstName, lastName: pick.lastName, email: pick.email },
+        );
+        return readerLeagues > 1
+          ? `${name} in ${pick.leagueName ?? 'another league'}`
+          : name;
+      })
+      .join(', ');
+    const gone = new Set(picks.map((pick) => pick.leagueId)).size >= readerLeagues;
+    result.set(movieId, { yours: false, by, gone });
+  }
+  return result;
 }
 
 /**

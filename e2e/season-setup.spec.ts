@@ -202,4 +202,72 @@ test.describe('season setup', () => {
 
     await expect.poll(async () => (await seats(leagueId))[0]?.group).toBe(1);
   });
+
+  test('a select has even insets: its chevron sits as far in as its text', async ({
+    page,
+  }) => {
+    // The owner's "No mark" report: the native chevron sat ~5px from the right
+    // edge while the text sat ~14px in. The rule lives in app/globals.css and
+    // covers every <select>; this page is the one with a select a fresh
+    // account can reach.
+    await register(page);
+    const leagueId = await createLeague(page);
+    await page.goto(`/leagues/${leagueId}/setup`);
+    const select = page.getByRole('combobox').first();
+
+    const style = await select.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        appearance: cs.appearance,
+        start: Number.parseFloat(cs.paddingInlineStart),
+        end: Number.parseFloat(cs.paddingInlineEnd),
+      };
+    });
+    expect(style.appearance).toBe('none');
+    expect(style.end).toBeGreaterThanOrEqual(style.start);
+
+    // The chevron is a background, so it has no box to ask for — read the
+    // pixels instead. Ink is any column that differs from the fill; the first
+    // is the text's left edge and the last is the chevron's right edge.
+    const png = (await select.screenshot()).toString('base64');
+    const ink = await page.evaluate(async (data) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${data}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('no canvas');
+      context.drawImage(image, 0, 0);
+      const {
+        data: px,
+        width,
+        height,
+      } = context.getImageData(0, 0, image.width, image.height);
+      const at = (x: number, y: number) =>
+        px.slice((y * width + x) * 4, (y * width + x) * 4 + 3);
+      // Skip the 1px border and a pixel of antialiasing; sample the fill just inside it.
+      const edge = 3;
+      const fill = at(edge, edge);
+      const columns: number[] = [];
+      for (let x = edge; x < width - edge; x++) {
+        for (let y = edge; y < height - edge; y++) {
+          const p = at(x, y);
+          if ([0, 1, 2].some((k) => Math.abs((p[k] ?? 0) - (fill[k] ?? 0)) > 60)) {
+            columns.push(x);
+            break;
+          }
+        }
+      }
+      return { first: columns[0] ?? -1, last: columns.at(-1) ?? -1, width };
+    }, png);
+
+    const textInset = ink.first;
+    const chevronInset = ink.width - 1 - ink.last;
+    expect(textInset).toBeGreaterThan(0);
+    // Text ink carries a pixel or two of side bearing, so not exact — but the
+    // native chevron missed by ~9px, which this cannot mistake for even.
+    expect(Math.abs(chevronInset - textInset)).toBeLessThanOrEqual(3);
+  });
 });

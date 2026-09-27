@@ -75,30 +75,32 @@ function Attachment({ attachment }: { attachment: FeedAttachment }) {
     );
   }
 
+  // Every pick, wrapping, the way `RosterStrip` lays out a seat: rosters run
+  // 7 to 10 films and no count is assumed (D34). A scroller hid everything past
+  // the panel's edge, and the old five-and-a-count made a member look as if
+  // they had drafted five. The 5.5rem floor fits seven across the 3xl column at
+  // about the old 6rem poster, so a common roster is one row; `1fr` closes the
+  // ragged right edge, and a longer one wraps rather than hiding.
   return (
-    <div className="flex flex-col gap-2">
-      <ul className="flex gap-3 overflow-x-auto pb-1">
-        {attachment.films.map((film) => (
-          <li key={film.movieId} className="w-24 shrink-0">
-            {film.tmdbId ? (
-              <Link
-                href={`/films/${film.tmdbId}`}
-                className="focus-visible:outline-accent-fill block rounded-sm focus-visible:outline-2"
-              >
-                <PosterFrame title={film.title} posterUrl={film.posterUrl} />
-              </Link>
-            ) : (
+    <ul
+      className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-3"
+      aria-label="Drafted films, in draft order"
+    >
+      {attachment.films.map((film) => (
+        <li key={film.movieId}>
+          {film.tmdbId ? (
+            <Link
+              href={`/films/${film.tmdbId}`}
+              className="focus-visible:outline-accent-fill block rounded-sm focus-visible:outline-2"
+            >
               <PosterFrame title={film.title} posterUrl={film.posterUrl} />
-            )}
-          </li>
-        ))}
-      </ul>
-      {attachment.more > 0 ? (
-        <p className="text-text-dim text-xs">
-          and {attachment.more} more {attachment.more === 1 ? 'film' : 'films'}
-        </p>
-      ) : null}
-    </div>
+            </Link>
+          ) : (
+            <PosterFrame title={film.title} posterUrl={film.posterUrl} />
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
 

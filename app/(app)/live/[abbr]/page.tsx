@@ -180,7 +180,7 @@ export default async function LivePage({
               hides. A control that goes away with the thing it turned on
               leaves the reader with no way back but the address bar, and the
               reader is holding a remote. */}
-          <TvModeLink href={toggle} active={tvMode} />
+          <TvModeLink href={toggle} active={tvMode} className="ml-auto" />
         </div>
       </header>
 

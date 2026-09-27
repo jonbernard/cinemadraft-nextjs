@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { db } from '@/lib/db';
 import { parseComponents, profileFeedRepository } from '@/lib/repositories/profile-feeds';
+import { countQueries } from '@/test/query-count';
 import { loadMemberProfile, loadProfileMember } from './profile';
 
 /**
@@ -72,7 +73,7 @@ async function seed() {
     select: { id: true },
   });
 
-  // Seven, so the five-poster cap has two films to leave out.
+  // Seven, past the five the source used to cap a roster post at.
   const films = [];
   for (const title of ['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven']) {
     films.push(await createFilm(title));
@@ -276,7 +277,7 @@ describe('loadMemberProfile', () => {
     expect(await loadProfileMember('not-a-uuid')).toBeNull();
   });
 
-  it('resolves a draft component to the seat’s films, capped at five', async () => {
+  it('resolves a draft component to every film of the seat, in pick order', async () => {
     const row = await profileFeedRepository.create({
       userUuid: fixture.alpha.uuid as string,
       message: 'alpha drafted these',
@@ -295,11 +296,48 @@ describe('loadMemberProfile', () => {
       `${TAG} Three`,
       `${TAG} Four`,
       `${TAG} Five`,
+      `${TAG} Six`,
+      `${TAG} Seven`,
     ]);
-    expect(attachment.more).toBe(2);
     expect(attachment.films[0].posterUrl).toBe(
       'https://image.tmdb.org/t/p/w185/poster.jpg',
     );
+  });
+
+  it('costs the same number of queries for two whole rosters as for one', async () => {
+    // Showing every pick must not turn into a read per roster post.
+    await profileFeedRepository.create({
+      userUuid: fixture.alpha.uuid as string,
+      message: 'alpha drafted these',
+      components: [['draft', fixture.draft.id]],
+    });
+    const one = await countQueries(() => loadMemberProfile(fixture.alpha.uuid as string));
+
+    const now = new Date();
+    const second = await db.draft.create({
+      data: { userId: fixture.alpha.id, year: 2098, createdAt: now, updatedAt: now },
+      select: { id: true },
+    });
+    await db.draftPick.createMany({
+      data: fixture.films.map((film, order) => ({
+        draftId: second.id,
+        movieId: film.id,
+        userId: fixture.alpha.id,
+        order,
+        createdAt: now,
+        updatedAt: now,
+      })),
+    });
+    await profileFeedRepository.create({
+      userUuid: fixture.alpha.uuid as string,
+      message: 'alpha drafted these too',
+      components: [['draft', second.id]],
+    });
+    const two = await countQueries(() => loadMemberProfile(fixture.alpha.uuid as string));
+
+    expect(one.queries).toBeGreaterThan(0);
+    expect(two.queries).toBe(one.queries);
+    expect(two.queries).toBeLessThanOrEqual(5);
   });
 
   it('drops a component whose kind it does not know', async () => {

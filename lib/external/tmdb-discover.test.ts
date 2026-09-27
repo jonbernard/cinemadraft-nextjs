@@ -27,24 +27,28 @@ function lastQuery(fetchMock: ReturnType<typeof mockDiscover>): URLSearchParams 
 const EMPTY = { page: 1, total_pages: 0, results: [] };
 
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
   clearCacheForTests();
   process.env.TMDB_API_KEY = KEY;
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   delete process.env.TMDB_API_KEY;
 });
 
 describe('the past side', () => {
-  it('asks for released films, newest first', async () => {
+  it('asks for the most notable films in the current partial month', async () => {
     const fetchMock = mockDiscover(EMPTY);
 
     await discoverFilms({ when: 'past', page: 1 });
     const query = lastQuery(fetchMock);
 
-    expect(query.get('sort_by')).toBe('release_date.desc');
-    expect(query.get('release_date.lte')).toBe(new Date().toISOString().slice(0, 10));
+    expect(query.get('sort_by')).toBe('popularity.desc');
+    expect(query.get('release_date.gte')).toBe('2026-09-01');
+    expect(query.get('release_date.lte')).toBe('2026-09-27');
   });
 
   it('keeps the source’s vote floors', async () => {
@@ -74,21 +78,15 @@ describe('the past side', () => {
 });
 
 describe('the future side', () => {
-  it('asks TMDB for primary release dates, not any release date', async () => {
-    // With `with_release_type` set, `release_date.gte` matches *any* theatrical
-    // release — including a re-release. A 2006 film with a 2026 re-issue
-    // therefore landed on "The future" while its card rendered 2006, which is
-    // the bug reported from page 3 of the deployed site. The sort had the same
-    // fault: it ordered by a different date than the one displayed.
+  it('bounds the displayed release date to the current partial month', async () => {
     const fetchMock = mockDiscover(EMPTY);
 
     await discoverFilms({ when: 'future', page: 1 });
     const query = lastQuery(fetchMock);
 
-    expect(query.get('primary_release_date.gte')).toBe(
-      new Date().toISOString().slice(0, 10),
-    );
-    expect(query.has('release_date.gte')).toBe(false);
+    expect(query.get('release_date.gte')).toBe('2026-09-27');
+    expect(query.get('release_date.lte')).toBe('2026-09-30');
+    expect(query.has('primary_release_date.gte')).toBe(false);
   });
 
   it('asks for the most notable upcoming films, not the soonest', async () => {
@@ -104,9 +102,9 @@ describe('the future side', () => {
     expect(lastQuery(fetchMock).get('sort_by')).toBe('popularity.desc');
   });
 
-  it('drops a film whose primary release is in the past, whatever TMDB says', async () => {
-    // Defensive, and cheap. TMDB's date semantics have moved before, and a film
-    // dated in the past has no business on a page titled "The future".
+  it('drops a film whose displayed release date is outside the page month', async () => {
+    // A re-release can satisfy TMDB's theatrical window while the primary date
+    // returned on the card belongs elsewhere. It must not leak across pages.
     mockDiscover({
       page: 1,
       total_pages: 1,
@@ -123,14 +121,14 @@ describe('the future side', () => {
           title: 'Actually unreleased',
           poster_path: '/b.jpg',
           popularity: 90,
-          release_date: '2027-01-08',
+          release_date: '2026-09-28',
         },
       ],
     });
 
     const page = await discoverFilms({ when: 'future', page: 1 });
 
-    expect(page.films.map((film) => film.releaseDate?.getUTCFullYear())).toEqual([2027]);
+    expect(page.films.map((film) => film.title)).toEqual(['Actually unreleased']);
   });
 
   it('holds unreleased films to a LOWER popularity floor than released ones', async () => {
@@ -155,11 +153,11 @@ describe('the future side', () => {
       ],
     });
 
-    mockDiscover(middling('2027-01-01'));
+    mockDiscover(middling('2026-09-28'));
     expect((await discoverFilms({ when: 'future', page: 1 })).films).toHaveLength(1);
 
     clearCacheForTests();
-    mockDiscover(middling('2001-01-01'));
+    mockDiscover(middling('2026-09-01'));
     expect((await discoverFilms({ when: 'past', page: 1 })).films).toHaveLength(0);
   });
 
@@ -175,7 +173,7 @@ describe('the future side', () => {
 
     expect(query.has('vote_count.gte')).toBe(false);
     expect(query.has('vote_average.gte')).toBe(false);
-    expect(query.has('release_date.lte')).toBe(false);
+    expect(query.get('release_date.lte')).toBe('2026-09-30');
   });
 });
 
@@ -220,12 +218,36 @@ describe('what gets dropped, and where', () => {
     // that appeared to do nothing was the visible symptom.
     const fetchMock = mockDiscover({
       page: 1,
-      total_pages: 21,
+      total_pages: 1,
       results: [
-        { id: 1, title: 'No poster', poster_path: null, popularity: 90 },
-        { id: 2, title: 'Unpopular', poster_path: '/b.jpg', popularity: 3 },
-        { id: 3, title: 'Exactly at the floor', poster_path: '/c.jpg', popularity: 10 },
-        { id: 4, title: 'Keeper', poster_path: '/d.jpg', popularity: 90 },
+        {
+          id: 1,
+          title: 'No poster',
+          poster_path: null,
+          popularity: 90,
+          release_date: '2026-09-20',
+        },
+        {
+          id: 2,
+          title: 'Unpopular',
+          poster_path: '/b.jpg',
+          popularity: 3,
+          release_date: '2026-09-20',
+        },
+        {
+          id: 3,
+          title: 'Exactly at the floor',
+          poster_path: '/c.jpg',
+          popularity: 10,
+          release_date: '2026-09-20',
+        },
+        {
+          id: 4,
+          title: 'Keeper',
+          poster_path: '/d.jpg',
+          popularity: 90,
+          release_date: '2026-09-20',
+        },
       ],
     });
 
@@ -248,9 +270,7 @@ describe('what gets dropped, and where', () => {
     expect((await discoverFilms({ when: 'past', page: 1 })).films).toEqual([]);
   });
 
-  it('keeps a film whose release date is missing or unparseable', async () => {
-    // An announced film with no date is still a film, and browse files it under
-    // its own group rather than hiding it.
+  it('drops a film whose release date cannot belong to the calendar page', async () => {
     mockDiscover({
       page: 1,
       total_pages: 1,
@@ -268,28 +288,98 @@ describe('what gets dropped, and where', () => {
 
     const films = (await discoverFilms({ when: 'future', page: 1 })).films;
 
-    expect(films).toHaveLength(2);
-    expect(films.every((film) => film.releaseDate === null)).toBe(true);
+    expect(films).toEqual([]);
   });
 });
 
 describe('paging', () => {
-  it('reports the page and page count TMDB gave', async () => {
+  it.each([
+    {
+      when: 'future' as const,
+      page: 2,
+      gte: '2026-10-01',
+      lte: '2026-10-31',
+    },
+    {
+      when: 'past' as const,
+      page: 2,
+      gte: '2026-08-01',
+      lte: '2026-08-31',
+    },
+  ])(
+    'maps a direct $when page $page load to exactly $gte through $lte',
+    async ({ when, page, gte, lte }) => {
+      const fetchMock = mockDiscover(EMPTY);
+
+      const result = await discoverFilms({ when, page });
+      const query = lastQuery(fetchMock);
+
+      expect(result.page).toBe(page);
+      expect(query.get('release_date.gte')).toBe(gte);
+      expect(query.get('release_date.lte')).toBe(lte);
+    },
+  );
+
+  it('finishes a future month before exposing it as an app page', async () => {
+    const fetchMock = vi.fn(async (input: string | URL | Request) => {
+      const tmdbPage = new URL(String(input)).searchParams.get('page');
+      const results =
+        tmdbPage === '1'
+          ? [
+              {
+                id: 1,
+                title: 'Early October',
+                poster_path: '/a.jpg',
+                popularity: 20,
+                release_date: '2026-10-02',
+              },
+            ]
+          : [
+              {
+                id: 2,
+                title: 'Late October',
+                poster_path: '/b.jpg',
+                popularity: 10,
+                release_date: '2026-10-29',
+              },
+              {
+                id: 3,
+                title: 'Wrong month',
+                poster_path: '/c.jpg',
+                popularity: 9,
+                release_date: '2026-11-01',
+              },
+            ];
+      return {
+        ok: true,
+        json: async () => ({ page: Number(tmdbPage), total_pages: 2, results }),
+      } as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await discoverFilms({ when: 'future', page: 2 });
+
+    expect(result.films.map((film) => film.title)).toEqual([
+      'Early October',
+      'Late October',
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports the app month cursor rather than TMDB’s private sub-page', async () => {
     mockDiscover({ page: 3, total_pages: 21, results: [] });
 
     const result = await discoverFilms({ when: 'past', page: 3 });
 
-    expect(result).toMatchObject({ page: 3, pageCount: 21 });
+    expect(result).toMatchObject({ page: 3, pageCount: 500 });
   });
 
-  it('clamps the page to TMDB’s own limit of 500', async () => {
-    // Above it TMDB answers with an error rather than an empty page, so an
-    // unclamped `?page=99999` would turn a silly URL into a broken one.
-    const fetchMock = mockDiscover(EMPTY);
+  it('clamps the public month cursor to 500', async () => {
+    mockDiscover(EMPTY);
 
-    await discoverFilms({ when: 'past', page: 99_999 });
+    const result = await discoverFilms({ when: 'past', page: 99_999 });
 
-    expect(lastQuery(fetchMock).get('page')).toBe('500');
+    expect(result.page).toBe(500);
   });
 
   it('clamps a zero or negative page to the first', async () => {

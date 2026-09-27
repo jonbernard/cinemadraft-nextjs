@@ -70,7 +70,7 @@ export type BoardView = {
  * them would silently remove seats from a league — changing both the board and
  * the standings.
  */
-function seatName(
+export function seatName(
   draft: { dummy: boolean | null; dummyName: string | null; userId: number | null },
   user: { firstName: string | null; lastName: string | null; email: string } | undefined,
 ): string {

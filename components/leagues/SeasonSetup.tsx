@@ -456,7 +456,7 @@ function SeatRow({
           value={seat.group ?? ''}
           disabled={disabled || !editable}
           onChange={onChange}
-          className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill min-h-11 border px-2 text-sm focus-visible:outline-2"
+          className="border-border-rule bg-bg-surface text-text-primary focus-visible:outline-accent-fill min-h-11 border text-sm focus-visible:outline-2"
         >
           <option value="">Unassigned</option>
           {options.map((group) => (

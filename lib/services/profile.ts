@@ -42,7 +42,7 @@ export type FeedFilm = {
  * than rendered as a stub — the column is free text (`ProfileFeedComponent`).
  */
 export type FeedAttachment =
-  | { kind: 'draft'; key: string; draftId: number; films: FeedFilm[]; more: number }
+  | { kind: 'draft'; key: string; draftId: number; films: FeedFilm[] }
   | {
       kind: 'review';
       key: string;
@@ -64,13 +64,6 @@ export type MemberProfile = {
   member: ProfileMember;
   feed: FeedItem[];
 };
-
-/**
- * The source capped a draft attachment at five posters (`DraftInclude`
- * `maxLength={5}`). Kept: a seat holds a dozen picks and a feed of full rosters
- * buries the messages between them.
- */
-const DRAFT_FILMS_SHOWN = 5;
 
 /**
  * Falls back to "A member", not to the email local part.
@@ -240,17 +233,13 @@ function toAttachment(
   const key = `${kind}-${id}`;
 
   if (kind === 'draft') {
+    // The whole roster, in pick order. The source capped this at five
+    // (`DraftInclude maxLength={5}`) behind "and N more films", which read as
+    // a member having drafted five: a post saying "drafted these movies" has
+    // to show all of them.
     const films = picksByDraft.get(id) ?? [];
     if (films.length === 0) return [];
-    return [
-      {
-        kind: 'draft',
-        key,
-        draftId: id,
-        films: films.slice(0, DRAFT_FILMS_SHOWN),
-        more: Math.max(0, films.length - DRAFT_FILMS_SHOWN),
-      },
-    ];
+    return [{ kind: 'draft', key, draftId: id, films }];
   }
 
   if (kind === 'review') {

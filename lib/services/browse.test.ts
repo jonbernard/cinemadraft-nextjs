@@ -31,7 +31,7 @@ function result(id: number, title: string, releaseDate: string | null) {
   };
 }
 
-function mockDiscover(results: unknown[], totalPages = 3) {
+function mockDiscover(results: unknown[], totalPages = 1) {
   const fetchMock = vi.fn(
     async () =>
       ({
@@ -43,105 +43,82 @@ function mockDiscover(results: unknown[], totalPages = 3) {
   return fetchMock;
 }
 
-/** Three months, deliberately out of order in the response. */
+/** One complete calendar page. */
 const ACROSS_MONTHS = [
-  result(1, 'July film', '2026-07-15'),
-  result(2, 'August film', '2026-08-04'),
-  result(3, 'Another August film', '2026-08-20'),
-  result(4, 'June film', '2026-06-02'),
+  result(1, 'Early film', '2026-09-02'),
+  result(2, 'Watched film', '2026-09-04'),
+  result(3, 'Later film', '2026-09-20'),
+  result(4, 'Middle film', '2026-09-15'),
 ];
 
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
   clearCacheForTests();
   process.env.TMDB_API_KEY = KEY;
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   delete process.env.TMDB_API_KEY;
 });
 
 describe('grouping by month', () => {
-  it('groups the films and labels each group MM/YYYY', async () => {
+  it('groups a complete calendar page and labels it MM/YYYY', async () => {
     mockDiscover(ACROSS_MONTHS);
 
     const page = await loadBrowse({ when: 'past', page: 1, userId: null });
 
-    expect(page.months.map((month) => month.label)).toEqual([
-      '08/2026',
-      '07/2026',
-      '06/2026',
-    ]);
+    expect(page.months.map((month) => month.label)).toEqual(['09/2026']);
     expect(page.months.at(0)?.films.map((film) => film.title)).toEqual([
-      'August film',
-      'Another August film',
+      'Early film',
+      'Watched film',
+      'Later film',
+      'Middle film',
     ]);
   });
 
-  it('orders newest first when looking back', async () => {
-    // The direction the reader is looking is the order of the page. Looking
-    // back, the newest month is the top.
+  it('keeps a past app page to one month', async () => {
     mockDiscover(ACROSS_MONTHS);
 
     const page = await loadBrowse({ when: 'past', page: 1, userId: null });
 
-    expect(page.months.at(0)?.label).toBe('08/2026');
+    expect(page.months.map((month) => month.label)).toEqual(['09/2026']);
   });
 
-  it('orders soonest first when looking forward', async () => {
-    // And looking forward it is the other way round. A single sort would have
-    // put next year's releases above next month's.
-    //
-    // Dated ahead rather than reusing ACROSS_MONTHS: since P15.T9 the future
-    // side drops a film whose release date has already passed, so a fixture
-    // set in the past now yields an empty shelf here — correctly.
+  it('keeps a future app page to one month', async () => {
     mockDiscover([
-      result(1, 'Autumn film', '2099-10-15'),
-      result(2, 'Summer film', '2099-06-04'),
-      result(3, 'Winter film', '2099-12-20'),
+      result(1, 'Monday film', '2026-09-28'),
+      result(2, 'Wednesday film', '2026-09-30'),
     ]);
 
     const page = await loadBrowse({ when: 'future', page: 1, userId: null });
 
-    expect(page.months.map((month) => month.label)).toEqual([
-      '06/2099',
-      '10/2099',
-      '12/2099',
-    ]);
+    expect(page.months.map((month) => month.label)).toEqual(['09/2026']);
   });
 
   it('labels months in UTC', async () => {
     // A film released on the 1st would otherwise fall into the previous month for
     // every reader west of UTC — so the page would group differently depending on
     // who was looking, and disagree with the date on the film's own page.
-    mockDiscover([result(9, 'First of the month', '2026-08-01')]);
+    mockDiscover([result(9, 'First of the month', '2026-09-01')]);
 
     const page = await loadBrowse({ when: 'past', page: 1, userId: null });
 
-    expect(page.months.at(0)?.label).toBe('08/2026');
+    expect(page.months.at(0)?.label).toBe('09/2026');
   });
 });
 
 describe('films with no release date', () => {
-  it('keeps them in their own group rather than dropping them', async () => {
-    // An announced film with no date is still a film, and TMDB has plenty.
+  it('does not mix them into a complete calendar page', async () => {
     mockDiscover([...ACROSS_MONTHS, result(5, 'Announced only', null)]);
 
-    const page = await loadBrowse({ when: 'future', page: 1, userId: null });
+    const page = await loadBrowse({ when: 'past', page: 1, userId: null });
 
-    expect(page.months.map((month) => month.label)).toContain('Undated');
-  });
-
-  it('sorts them last on both sides', async () => {
-    // Not simply reversed with everything else: the label has no month, so an
-    // order value of Infinity multiplied by -1 would put it *first* when looking
-    // back. Both directions are asserted because only one of them catches that.
-    mockDiscover([result(5, 'Announced only', null), ...ACROSS_MONTHS]);
-
-    for (const when of ['past', 'future'] as const) {
-      const page = await loadBrowse({ when, page: 1, userId: null });
-      expect(page.months.at(-1)?.label).toBe('Undated');
-    }
+    expect(
+      page.months.flatMap((month) => month.films.map((film) => film.title)),
+    ).not.toContain('Announced only');
   });
 });
 
@@ -235,7 +212,7 @@ describe('the watched marks', () => {
       clearCacheForTests();
       mockDiscover(
         Array.from({ length: 40 }, (_, index) =>
-          result(1000 + index, `Film ${index}`, '2026-08-04'),
+          result(1000 + index, `Film ${index}`, '2026-09-04'),
         ),
       );
       const many = await countQueries(() =>
@@ -263,11 +240,11 @@ describe('what the shelf carries', () => {
   });
 
   it('reports the page and page count, for the load-more link', async () => {
-    mockDiscover(ACROSS_MONTHS, 21);
+    mockDiscover(ACROSS_MONTHS);
 
     const page = await loadBrowse({ when: 'past', page: 1, userId: null });
 
-    expect(page).toMatchObject({ page: 1, pageCount: 21, when: 'past' });
+    expect(page).toMatchObject({ page: 1, pageCount: 500, when: 'past' });
   });
 
   it('offers the first backdrop it finds as the hero', async () => {
@@ -275,15 +252,15 @@ describe('what the shelf carries', () => {
       // The first film has no backdrop, so the hero has to look past it rather
       // than settle for null — a posterless film is dropped, a backdropless one
       // is not.
-      result(1, 'July film', '2026-07-15'),
-      { ...result(2, 'August film', '2026-08-04'), backdrop_path: '/wide.jpg' },
+      result(1, 'Early film', '2026-09-02'),
+      { ...result(2, 'Watched film', '2026-09-04'), backdrop_path: '/wide.jpg' },
     ]);
 
     const page = await loadBrowse({ when: 'past', page: 1, userId: null });
 
     expect(page.hero).toEqual({
       backdropUrl: 'https://image.tmdb.org/t/p/w1280/wide.jpg',
-      title: 'August film',
+      title: 'Watched film',
     });
   });
 
@@ -299,7 +276,7 @@ describe('what the shelf carries', () => {
     // The band belongs at the top of the page, and page 3 is the middle of a
     // scroll — a second hero appearing mid-list is the bug this prevents.
     mockDiscover([
-      { ...result(2, 'August film', '2026-08-04'), backdrop_path: '/wide.jpg' },
+      { ...result(2, 'July film', '2026-07-04'), backdrop_path: '/wide.jpg' },
     ]);
 
     const page = await loadBrowse({ when: 'past', page: 3, userId: null });
