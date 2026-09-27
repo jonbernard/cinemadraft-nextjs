@@ -44,7 +44,7 @@ The pure core. This is where the risk lives: an evening ceremony's time column e
   - `isInSeason(instantMs: number | null, year: number): boolean`
   - `formatEt(instantMs: number | null): string` — for the report's human column.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `scripts/award-import.test.mjs`:
 
@@ -188,12 +188,12 @@ describe('formatEt', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `npx vitest run scripts/award-import.test.mjs`
 Expected: FAIL — `toDateTimeSplit is not a function`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `scripts/award-import.mjs`:
 
@@ -313,12 +313,12 @@ export function formatEt(instantMs) {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `npx vitest run scripts/award-import.test.mjs`
 Expected: PASS — the whole file, including the 10 round-trip cases.
 
-- [ ] **Step 5: Mutation-check the daylight-saving correction**
+- [x] **Step 5: Mutation-check the daylight-saving correction**
 
 Replace the two-pass body of `toInstant` with the single pass — `return naive - zoneOffsetMs(naive, tz);` — and re-run. Expected: the suite goes RED on at least one March case. Restore and confirm green.
 
@@ -326,7 +326,7 @@ Then replace `toDateTimeSplit`'s `midnight` with `instant - (instant % DAY)` (UT
 
 If either mutation leaves the suite green, the tests do not pin the behaviour — say so and add the case that does.
 
-- [ ] **Step 6: Lint and commit**
+- [x] **Step 6: Lint and commit**
 
 ```bash
 npm run lint
@@ -350,7 +350,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
     `{id, abbreviation, name, nomDate, nomTime, awardsDate, awardsTime, nomInstant, awardsInstant, nomCurrent, awardsCurrent, nomTimeOfDay, awardsTimeOfDay}`
   - CLI: `node scripts/award-import.mjs dates`
 
-- [ ] **Step 1: Implement the loader**
+- [x] **Step 1: Implement the loader**
 
 Append to `scripts/award-import.mjs`:
 
@@ -411,7 +411,7 @@ export async function loadDates(client) {
 }
 ```
 
-- [ ] **Step 2: Add the `dates` branch to `main()`**
+- [x] **Step 2: Add the `dates` branch to `main()`**
 
 Inside `main()`, alongside the other command branches:
 
@@ -446,7 +446,7 @@ Inside `main()`, alongside the other command branches:
   }
 ```
 
-- [ ] **Step 3: Verify against the local database**
+- [x] **Step 3: Verify against the local database**
 
 ```bash
 npm run db:up
@@ -463,7 +463,7 @@ season`**, which is correct: AFI names ten films and declares no winners.
 If any instant renders at an odd time — `3:00 AM`, say — the conversion or the
 sum is wrong; stop and report it rather than continuing.
 
-- [ ] **Step 4: Lint and commit**
+- [x] **Step 4: Lint and commit**
 
 ```bash
 npm run lint
@@ -488,7 +488,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
   - `applyDates(client, plan, state, {commit}): Promise<{changes: Change[], skipped: {abbreviation, field, reason}[]}>` where `Change` is `{abbreviation, field, fromInstant, toInstant, date, time}`
   - CLI: `node scripts/award-import.mjs set-dates <plan.json> [--commit]`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `scripts/award-import.test.mjs`:
 
@@ -660,12 +660,12 @@ describe('applyDates', () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify they fail**
+- [x] **Step 2: Run to verify they fail**
 
 Run: `npx vitest run scripts/award-import.test.mjs`
 Expected: FAIL — `validateDatesPlan is not a function`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Append to `scripts/award-import.mjs`:
 
@@ -823,7 +823,7 @@ export function msToHhmm(ms) {
 }
 ```
 
-- [ ] **Step 4: Wire `set-dates` into `main()`**
+- [x] **Step 4: Wire `set-dates` into `main()`**
 
 ```javascript
   if (command === 'set-dates') {
@@ -882,12 +882,12 @@ export function msToHhmm(ms) {
   }
 ```
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 Run: `npx vitest run scripts/award-import.test.mjs`
 Expected: PASS, the whole file.
 
-- [ ] **Step 6: Mutation-check the two guards that matter**
+- [x] **Step 6: Mutation-check the two guards that matter**
 
 For each, break it, re-run, confirm RED, restore, confirm GREEN — and quote the failure line:
 
@@ -896,7 +896,7 @@ For each, break it, re-run, confirm RED, restore, confirm GREEN — and quote th
 
 If either stays green, the test does not pin the behaviour: say so and add the case that does.
 
-- [ ] **Step 7: Dry run against the local database**
+- [x] **Step 7: Dry run against the local database**
 
 ```bash
 DATABASE_URL='postgresql://cinemadraft:local@localhost:5433/cinemadraft' \
@@ -915,7 +915,7 @@ Expected: a `current → proposed` table with both sides rendered in ET, and
 `SELECT nom_date, awards_date FROM events WHERE abbreviation = '<abbr>'`
 unchanged. Record both readings.
 
-- [ ] **Step 8: Lint and commit**
+- [x] **Step 8: Lint and commit**
 
 ```bash
 npm run lint
@@ -936,7 +936,7 @@ Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>"
 - Consumes: `dates` and `set-dates` from Tasks 2–3.
 - Produces: the invocation surface — "update the award show dates", "when are the Oscars this year".
 
-- [ ] **Step 1: Add the mode to the skill's mode table**
+- [x] **Step 1: Add the mode to the skill's mode table**
 
 Add a row to the table at the top of `.claude/skills/award-entry/SKILL.md`:
 
@@ -944,7 +944,7 @@ Add a row to the table at the top of `.claude/skills/award-entry/SKILL.md`:
 | "update the award show dates" | dates — research each season's schedule and record it |
 ```
 
-- [ ] **Step 2: Add the section**
+- [x] **Step 2: Add the section**
 
 Add before the `## Never` section:
 
@@ -1025,7 +1025,7 @@ looks at what is still outstanding.
   The script handles this; do not try to pre-compute it in the plan.
 ```
 
-- [ ] **Step 3: Add the never**
+- [x] **Step 3: Add the never**
 
 Append to the `## Never` list:
 
@@ -1035,7 +1035,7 @@ Append to the `## Never` list:
 - Never write durations. Nothing announces one and the existing values are right.
 ```
 
-- [ ] **Step 4: Verify the skill still parses**
+- [x] **Step 4: Verify the skill still parses**
 
 Confirm the YAML frontmatter is intact and `name:` is still exactly
 `award-entry`. Confirm the mode table has four rows and every command named in
@@ -1046,7 +1046,7 @@ grep -o "award-import.mjs [a-z-]*" .claude/skills/award-entry/SKILL.md | sort -u
 ```
 Expected: only `context`, `apply`, `finish`, `refresh`, `dates`, `set-dates`.
 
-- [ ] **Step 5: Full verification and commit**
+- [x] **Step 5: Full verification and commit**
 
 ```bash
 npm run verify
