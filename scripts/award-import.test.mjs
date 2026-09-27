@@ -199,7 +199,7 @@ function fakeClient(handlers) {
       ran.push({ text, params });
       for (const [pattern, rows] of handlers) {
         if (pattern.test(text))
-          return { rows: typeof rows === 'function' ? rows(params) : rows };
+          return { rows: typeof rows === 'function' ? rows(params, text) : rows };
       }
       return { rows: [] };
     },
@@ -472,6 +472,147 @@ describe('applyNominations', () => {
     expect(report.inserted).toHaveLength(2);
     expect(report.skipped).toHaveLength(0);
   });
+
+  // 2026 Best Supporting Actor: one film, two nominees. The duplicate rule is
+  // film AND person, never film alone.
+  describe('the same film twice in one category', () => {
+    const personContext = {
+      ...context,
+      awards: [
+        { id: 12, name: 'Supporting Actor', requiresNomineeName: true, points: 3 },
+      ],
+    };
+    const obaa = [
+      [
+        /FROM movies WHERE tmdb_id/,
+        [
+          {
+            id: 77,
+            title: 'One Battle After Another',
+            release_date: new Date('2025-09-26'),
+          },
+        ],
+      ],
+    ];
+    const pairPlan = (names) => ({
+      ...plan,
+      categories: [
+        {
+          awardId: 12,
+          awardName: 'Supporting Actor',
+          nominees: names.map((detailName) => ({
+            title: 'One Battle After Another',
+            tmdbId: '1054867',
+            detailName,
+          })),
+        },
+      ],
+    });
+
+    it('accepts the same film for a different person', async () => {
+      const client = fakeClient(obaa);
+      const report = await applyNominations(
+        client,
+        pairPlan(['Benicio del Toro', 'Sean Penn']),
+        personContext,
+        { commit: true },
+      );
+      expect(report.inserted.map((row) => row.detailName)).toEqual([
+        'Benicio del Toro',
+        'Sean Penn',
+      ]);
+      const inserts = client.ran.filter((call) =>
+        /INSERT INTO nominations/.test(call.text),
+      );
+      expect(inserts.map((call) => call.params[3])).toEqual([
+        'Benicio del Toro',
+        'Sean Penn',
+      ]);
+    });
+
+    it('accepts a second person when the first is already in the database', async () => {
+      const client = fakeClient(obaa);
+      const report = await applyNominations(
+        client,
+        pairPlan(['Sean Penn']),
+        {
+          ...personContext,
+          existingNominations: [
+            {
+              awardId: 12,
+              movieId: 77,
+              title: 'One Battle After Another',
+              detailName: 'Benicio del Toro',
+              detailId: null,
+            },
+          ],
+        },
+        { commit: true },
+      );
+      expect(report.inserted.map((row) => row.detailName)).toEqual(['Sean Penn']);
+    });
+
+    it('refuses the same film and the same person, case-folded and trimmed', async () => {
+      const client = fakeClient(obaa);
+      const report = await applyNominations(
+        client,
+        pairPlan(['Sean Penn', '  sean PENN ']),
+        {
+          ...personContext,
+          existingNominations: [
+            {
+              awardId: 12,
+              movieId: 77,
+              title: 'One Battle After Another',
+              detailName: 'SEAN PENN',
+              detailId: null,
+            },
+          ],
+        },
+        { commit: true },
+      );
+      expect(report.inserted).toHaveLength(0);
+      expect(report.skipped).toHaveLength(2);
+    });
+
+    it('matches on detail_id when both sides carry one', async () => {
+      const client = fakeClient(obaa);
+      const report = await applyNominations(
+        client,
+        {
+          ...plan,
+          categories: [
+            {
+              awardId: 12,
+              awardName: 'Supporting Actor',
+              nominees: [
+                {
+                  title: 'One Battle After Another',
+                  tmdbId: '1054867',
+                  detailName: 'Sean Penn (credited)',
+                  detailId: 2228,
+                },
+              ],
+            },
+          ],
+        },
+        {
+          ...personContext,
+          existingNominations: [
+            {
+              awardId: 12,
+              movieId: 77,
+              title: 'One Battle After Another',
+              detailName: 'Sean Penn',
+              detailId: 2228,
+            },
+          ],
+        },
+        { commit: true },
+      );
+      expect(report.inserted).toHaveLength(0);
+    });
+  });
 });
 
 import { applyWinners } from './award-import.mjs';
@@ -560,6 +701,99 @@ describe('applyWinners', () => {
     expect(report.unverifiable).toHaveLength(1);
     expect(report.set).toHaveLength(0);
     expect(client.ran.some((call) => /INSERT INTO movies/.test(call.text))).toBe(false);
+  });
+
+  // 🔴 2026 Best Supporting Actor: One Battle After Another holds two
+  // nominations. The app scores the winner by winners.nomination_id, so the
+  // wrong id crowns the wrong person.
+  describe('a film with two nominations in the category', () => {
+    const personContext = {
+      ...context,
+      awards: [
+        { id: 12, name: 'Supporting Actor', requiresNomineeName: true, points: 3 },
+      ],
+    };
+    const pair = [
+      [
+        /FROM movies WHERE tmdb_id/,
+        [
+          {
+            id: 77,
+            title: 'One Battle After Another',
+            release_date: new Date('2025-09-26'),
+          },
+        ],
+      ],
+      [
+        /FROM nominations/,
+        // Honours LIMIT, so a lookup that asks for one row gets one — as pg would.
+        (_, text) => {
+          const both = [
+            { id: 901, detail_name: 'Benicio del Toro', detail_id: null },
+            { id: 902, detail_name: 'Sean Penn', detail_id: null },
+          ];
+          return /LIMIT 1/.test(text) ? both.slice(0, 1) : both;
+        },
+      ],
+    ];
+    const winnerPlan = (nominee) => ({
+      ...plan,
+      categories: [
+        {
+          awardId: 12,
+          awardName: 'Supporting Actor',
+          nominees: [
+            { title: 'One Battle After Another', tmdbId: '1054867', ...nominee },
+          ],
+        },
+      ],
+    });
+
+    it("records the named person's nomination", async () => {
+      const client = fakeClient(pair);
+      await applyWinners(
+        client,
+        winnerPlan({ detailName: ' sean penn ' }),
+        personContext,
+        { commit: true },
+      );
+      const insert = client.ran.find((call) => /INSERT INTO winners/.test(call.text));
+      expect(insert.params[2]).toBe(902);
+    });
+
+    it('refuses, naming the candidates, when the plan names no person', async () => {
+      const client = fakeClient(pair);
+      // Bypass validatePlan's person-category rule to reach the lookup itself.
+      await expect(
+        applyWinners(
+          client,
+          winnerPlan({}),
+          {
+            ...personContext,
+            awards: [{ ...personContext.awards[0], requiresNomineeName: false }],
+          },
+          { commit: true },
+        ),
+      ).rejects.toThrow(/Benicio del Toro.*Sean Penn/);
+      expect(client.ran.some((call) => /INSERT|DELETE/.test(call.text))).toBe(false);
+    });
+
+    it('refuses a named person who holds neither nomination', async () => {
+      const client = fakeClient(pair);
+      await expect(
+        applyWinners(client, winnerPlan({ detailName: 'Jacob Elordi' }), personContext, {
+          commit: true,
+        }),
+      ).rejects.toThrow(/not nominated/);
+      expect(client.ran.some((call) => /INSERT|DELETE/.test(call.text))).toBe(false);
+    });
+  });
+
+  it('records the only nomination when the film has one and no person is named', async () => {
+    const client = fakeClient(handlers);
+    await applyWinners(client, plan, context, { commit: true });
+    const insert = client.ran.find((call) => /INSERT INTO winners/.test(call.text));
+    expect(insert.params[2]).toBe(500);
   });
 });
 
