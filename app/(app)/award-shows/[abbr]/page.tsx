@@ -149,7 +149,6 @@ export default async function AwardShowPage({
               name: event.name,
               abbreviation: event.abbreviation,
               image: event.image,
-              nomActive: event.nomActive,
               nomDate: event.nomDate,
               nomTime: event.nomTime,
               nomDuration: event.nomDuration,

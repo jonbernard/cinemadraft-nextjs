@@ -11,7 +11,6 @@ const meta = {
       name: 'Academy of Motion Picture Arts and Sciences',
       abbreviation: 'oscars',
       image: null,
-      nomActive: false,
       nomDate: null,
       nomTime: null,
       nomDuration: null,

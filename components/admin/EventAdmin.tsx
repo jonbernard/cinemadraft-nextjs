@@ -3,6 +3,7 @@
 import { useCallback, useState, useTransition } from 'react';
 
 import { updateEvent } from '@/actions/admin/update-event';
+import { LiveSwitch } from '@/components/admin/LiveSwitch';
 import { cn } from '@/lib/utils/cn';
 
 export type AdminEvent = {
@@ -10,7 +11,6 @@ export type AdminEvent = {
   name: string;
   abbreviation: string;
   image: string | null;
-  nomActive: boolean | null;
   nomDate: number | null;
   nomTime: number | null;
   nomDuration: number | null;
@@ -64,7 +64,6 @@ export function EventAdmin({
   const [name, setName] = useState(event.name);
   const [abbreviation, setAbbreviation] = useState(event.abbreviation);
   const [image, setImage] = useState(event.image ?? '');
-  const [nomActive, setNomActive] = useState(event.nomActive === true);
   const [nomAt, setNomAt] = useState(toLocalInput(event.nomDate, event.nomTime));
   const [nomMinutes, setNomMinutes] = useState(
     event.nomDuration == null ? '' : String(Math.round(event.nomDuration / 60_000)),
@@ -103,7 +102,6 @@ export function EventAdmin({
           name: trimmedName,
           abbreviation: trimmedAbbr,
           image: image.trim() === '' ? null : image.trim(),
-          nomActive,
           nomDate: nom?.date ?? null,
           nomTime: nom?.time ?? null,
           nomDuration,
@@ -121,7 +119,6 @@ export function EventAdmin({
       name,
       abbreviation,
       image,
-      nomActive,
       nomAt,
       nomMinutes,
       awardsActive,
@@ -133,6 +130,19 @@ export function EventAdmin({
 
   return (
     <form onSubmit={submit} className={cn('flex flex-col gap-4', className)}>
+      {/* 🔴 One switch, for the ceremony. There used to be a "Live now" box
+          under Nominations too, writing `nom_active` — but nominations are
+          never live, and that column actually means "this show still needs
+          nominations entered" (the award-shows index reads it that way, and
+          `scripts/award-import.mjs` clears it when a nominations run
+          finishes). So this form no longer writes it at all, and leaves
+          whatever is stored alone. */}
+      <LiveSwitch
+        checked={awardsActive}
+        onChange={setAwardsActive}
+        description="On air, /live streams this show and the dashboard links to it. Saved with the show."
+      />
+
       <div className="flex flex-wrap gap-3">
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Name</span>
@@ -165,14 +175,6 @@ export function EventAdmin({
 
       <fieldset className="flex flex-wrap items-end gap-3">
         <legend className="text-text-dim mb-1 text-xs">Nominations</legend>
-        <label className="flex min-h-11 items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={nomActive}
-            onChange={(e) => setNomActive(e.target.checked)}
-          />
-          <span className="text-text-dim">Live now</span>
-        </label>
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Announced</span>
           <input
@@ -196,14 +198,6 @@ export function EventAdmin({
 
       <fieldset className="flex flex-wrap items-end gap-3">
         <legend className="text-text-dim mb-1 text-xs">Awards</legend>
-        <label className="flex min-h-11 items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={awardsActive}
-            onChange={(e) => setAwardsActive(e.target.checked)}
-          />
-          <span className="text-text-dim">Live now</span>
-        </label>
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Announced</span>
           <input
