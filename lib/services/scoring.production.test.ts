@@ -6,7 +6,6 @@ import { db } from '@/lib/db';
 import { draftPickRepository } from '@/lib/repositories/draft-picks';
 import { winnerRepository } from '@/lib/repositories/winners';
 import { loadFixture } from '@/test/fixtures';
-import { getLeagueBoard } from './draft';
 import { ledgerForMovies, pointsForMovieIds } from './scoring';
 
 afterAll(async () => {
@@ -20,7 +19,7 @@ afterAll(async () => {
  * nominated twice in one category with one win earned 4P. The owner ruled that
  * the win belongs to the nomination that won: P + P + P = 3P. These are the
  * only 2025 films that held such a pair, with the source's figure and ours.
- * Every other film, and every other seat, must still match the fixture exactly.
+ * Every other film must still match the fixture exactly.
  */
 const FILM_DEVIATIONS = [
   // Four pairs, one win each: Oscars and Globes Original Song, Globes and
@@ -28,18 +27,6 @@ const FILM_DEVIATIONS = [
   { movieId: 1056, title: 'Emilia Pérez', source: 445, ours: 415 },
   // Razzies Worst Supporting Actor, worth −15: two nominations, one "win".
   { movieId: 1048, title: 'Megalopolis', source: -140, ours: -125 },
-] as const;
-
-/**
- * The league 1 seats those two films move, identified by our draft id because
- * the fixture's names and uuids were scrubbed. Derived, not trusted: the test
- * recomputes each seat's move from `FILM_DEVIATIONS` and its own picks.
- */
-const SEAT_DEVIATIONS = [
-  { draftId: 128, source: 1160, ours: 1130 }, // Emilia Pérez −30
-  { draftId: 131, source: 930, ours: 900 }, // Emilia Pérez −30
-  { draftId: 134, source: 930, ours: 900 }, // Emilia Pérez −30
-  { draftId: 135, source: 1020, ours: 1005 }, // Emilia Pérez −30, Megalopolis +15
 ] as const;
 
 /**
@@ -117,49 +104,10 @@ describe('pointsForMovieIds', () => {
     ).toEqual([]);
   });
 
-  it('reproduces the source API team totals for a whole league', async () => {
-    // `fixtures/points-league-total.json` is league 1's 2025 standings as the
-    // old app computed them. This checks the *roll-up*: every per-film total
-    // can be right while the sum onto a seat is wrong, and that is the number
-    // people actually argue about.
-    const fixture =
-      loadFixture<{ displayName: string; total: number }[]>('points-league-total');
-    expect(fixture.length).toBe(12);
-
-    const board = await getLeagueBoard(1, 2025);
-    const seats = board.groups.flatMap((group) => group.seats);
-
-    // Each seat's move, derived from the film deviations and the seat's picks.
-    const moved = seats.flatMap((seat) => {
-      const delta = seat.picks.reduce((sum, pick) => {
-        const film = FILM_DEVIATIONS.find((d) => d.movieId === pick.movie.id);
-        return sum + (film ? film.ours - film.source : 0);
-      }, 0);
-      return delta === 0
-        ? []
-        : [{ draftId: seat.draftId, source: seat.total - delta, ours: seat.total }];
-    });
-    const byDraft = (a: { draftId: number }, b: { draftId: number }) =>
-      a.draftId - b.draftId;
-    expect(moved.sort(byDraft)).toEqual([...SEAT_DEVIATIONS].sort(byDraft));
-
-    // Compared as a sorted multiset of totals, not by name: the fixture's
-    // display names were scrubbed when it was captured, so the names in it are
-    // not the names in the database. The totals are the real evidence. Each
-    // deviated seat's source figure is swapped for ours, once, and everything
-    // else must match as captured.
-    const expected = fixture.map((team) => team.total);
-    for (const seat of SEAT_DEVIATIONS) {
-      const at = expected.indexOf(seat.source);
-      expect({ draftId: seat.draftId, source: at >= 0 }).toEqual({
-        draftId: seat.draftId,
-        source: true,
-      });
-      expected[at] = seat.ours;
-    }
-    const byTotal = (a: number, b: number) => b - a;
-    expect(seats.map((seat) => seat.total).sort(byTotal)).toEqual(expected.sort(byTotal));
-  });
+  // League 1's 2025 table, seat by seat and in order, is in
+  // scoring.differential.test.ts with the other 19 league-seasons. It used to
+  // be here as a sorted multiset of totals, which two seats swapping totals
+  // could not fail — the scrubbed live capture has no seat identity to key on.
 
   it('returns an empty map for no movies rather than querying', async () => {
     expect((await pointsForMovieIds([], 2025)).size).toBe(0);
@@ -239,9 +187,9 @@ describe('ledgerForMovies', () => {
     ]);
 
     expect(ledgers.size).toBeGreaterThan(100);
+    // Against `pointsForMovieIds`, not against the ledger's own lines: `total`
+    // is defined as their sum, so comparing the two could not fail.
     for (const [movieId, ledger] of ledgers) {
-      const summed = ledger.lines.reduce((sum, line) => sum + line.earned, 0);
-      expect({ movieId, total: ledger.total }).toEqual({ movieId, total: summed });
       expect({ movieId, total: ledger.total }).toEqual({
         movieId,
         total: totals.get(movieId) ?? 0,

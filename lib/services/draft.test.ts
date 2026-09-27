@@ -91,16 +91,9 @@ describe('getLeagueBoard', () => {
     expect([...rounds]).toEqual([...rounds].sort((a, b) => a - b));
   });
 
-  it('scores each seat as the sum of its picks', async () => {
-    const board = await getLeagueBoard(1, 2026);
-
-    for (const group of board.groups) {
-      for (const seat of group.seats) {
-        const summed = seat.picks.reduce((sum, pick) => sum + pick.points, 0);
-        expect(seat.total).toBe(summed);
-      }
-    }
-  });
+  // Seat totals are pinned against the source for every seat, by draft id, in
+  // scoring.differential.test.ts. A check that `seat.total` is the sum of its
+  // picks restated how `total` is computed, so it could not fail.
 
   it('returns an empty board for a league-year that never drafted', async () => {
     // Not an error: a league created and abandoned, or a season not started.

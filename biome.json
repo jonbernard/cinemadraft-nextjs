@@ -9,6 +9,7 @@
     "includes": [
       "**",
       "!fixtures",
+      "!test/scoring-differential.json",
       "!.next",
       "!generated",
       "!next-env.d.ts",

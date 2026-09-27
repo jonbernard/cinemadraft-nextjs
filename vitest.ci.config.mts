@@ -45,6 +45,13 @@ export default config([
   'lib/services/season.test.ts',
   'lib/services/dashboard.test.ts',
   'lib/services/scoring.production.test.ts',
+  // The port against every figure the source app scored (D125, D126): all
+  // 1,109 film-seasons, 156 seats by draft id, 1,025 picks, 20 league tables
+  // in order and 1,100 film pages, compared with the restored nominations,
+  // winners, drafts and picks those figures came from — none of which CI has.
+  // Every rule it checks also runs here on synthetic rows, in
+  // `scoring.rules.test.ts`.
+  'lib/services/scoring.differential.test.ts',
   // The draft board and the owner's console, both read against league 1's
   // 2026 season — 4 groups of 4 seats, 3 of them dummies. The *rules* they
   // are built on run here: `draft-order.test.ts` (the snake, and the seat
