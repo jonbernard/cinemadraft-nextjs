@@ -2,7 +2,13 @@ import { expect, type Locator, type Page, test } from '@playwright/test';
 
 import { signInAs } from '../support/session';
 import { beat, DEMO_PACE, startJourney } from './support/pace';
-import { assertNoResidue, cleanupUsers, withDb } from './support/scratch';
+import {
+  activeYear,
+  assertNoResidue,
+  cleanupLeague,
+  cleanupUsers,
+  withDb,
+} from './support/scratch';
 
 /**
  * Journey 5: the two pages that belong to one member and nobody else — the
@@ -67,8 +73,38 @@ async function cleanup(): Promise<void> {
   // that point at the films, and a film deleted first leaves them dangling —
   // this schema has no foreign keys, so nothing would complain.
   await cleanupUsers(TAG);
+  // The league's picks, seats and league row, then the films.
+  await cleanupLeague(TAG);
+}
+
+/**
+ * Seat the member in a scratch league this season beside a dummy seat, and
+ * have the dummy draft one of the member's films — what the owner does on the
+ * draft call, done from the database.
+ */
+async function draftAgainst(memberId: number, title: string): Promise<void> {
+  const year = await activeYear();
   await withDb(async (query) => {
-    await query('delete from movies where title like $1', [`${TAG}%`]);
+    const [league] = (await query(
+      `insert into leagues (name, owner, created_at, updated_at)
+         values ($1, 'e2e', now(), now()) returning id`,
+      [`${TAG} League`],
+    )) as { id: number }[];
+    await query(
+      `insert into drafts (league_id, year, user_id, created_at, updated_at)
+         values ($1, $2, $3, now(), now())`,
+      [league?.id, year, memberId],
+    );
+    const [rival] = (await query(
+      `insert into drafts (league_id, year, dummy, dummy_name, created_at, updated_at)
+         values ($1, $2, true, 'Rhoda Vance', now(), now()) returning id`,
+      [league?.id, year],
+    )) as { id: number }[];
+    await query(
+      `insert into draft_picks (draft_id, movie_id, "order", created_at, updated_at)
+         select $1, id, 1, now(), now() from movies where title = $2`,
+      [rival?.id, title],
+    );
   });
 }
 
@@ -249,6 +285,37 @@ test.describe('journey 5 — the member’s own lists', () => {
       // before the beat above.
       await expect(page.getByText(/still on the board/i)).toBeVisible();
     });
+
+    await beat(
+      page,
+      'A film another seat drafts fades, and says who took it',
+      async () => {
+        await draftAgainst(memberId, FILMS[1] as string);
+        await page.reload();
+
+        const taken = rows.filter({ hasText: FILMS[1] as string });
+        await expect(
+          taken.locator('span').filter({ hasText: /^Taken · Rhoda Vance$/ }),
+        ).toBeVisible();
+        // 🔴 Computed style, not a class name: the poster slot is at half
+        // strength, and an untaken row's is not.
+        const opacity = (row: Locator) =>
+          row
+            .locator('[data-slot="poster"]')
+            .evaluate((node) => getComputedStyle(node).opacity);
+        expect(await opacity(taken)).toBe('0.5');
+        expect(await opacity(rows.filter({ hasText: FILMS[0] as string }))).toBe('1');
+        // It keeps its place at the top and stays removable.
+        await expect(rows.first()).toContainText(FILMS[1] as string);
+        await expect(
+          page.getByRole('button', { name: `Remove ${FILMS[1]} from your list` }),
+        ).toBeVisible();
+        // The drafted film and the one marked by hand both count as gone.
+        await expect(page.getByText(/still on the board/)).toHaveText(
+          /^2 of 4 still on the board\.$/,
+        );
+      },
+    );
 
     await beat(page, 'And one is taken off the list entirely', async () => {
       await page

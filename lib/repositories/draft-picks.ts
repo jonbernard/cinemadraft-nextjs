@@ -36,6 +36,21 @@ export type DraftPick = Omit<
   movieId: number;
 };
 
+/** One pick of a film, with enough of its seat to name who made it. */
+export type SeasonTaker = {
+  movieId: number;
+  leagueId: number;
+  leagueName: string | null;
+  /** Null for a dummy seat. */
+  seatUserId: number | null;
+  dummy: boolean | null;
+  dummyName: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  readerLeagues: number;
+};
+
 const SELECT = {
   id: true,
   draftId: true,
@@ -110,6 +125,50 @@ export const draftPickRepository = {
       orderBy: [{ draftId: 'asc' }, ...BY_ORDER],
     });
     return picks.map(toDraftPick);
+  },
+
+  /**
+   * Who has drafted these films this season, in the leagues where the reader
+   * holds a seat this season — the draft list's "taken" marks, in one query.
+   *
+   * Scoped to leagues the reader is seated in **for `year`**, not ever: a
+   * league they played in 2024 and left is not a draft they can lose a film
+   * in. Their own seat's picks are included, flagged by `seatUserId`, so the
+   * caller can tell "you took it" from "someone else did".
+   *
+   * `readerLeagues` is the same number on every row — how many leagues the
+   * reader is seated in this season — carried here so "gone in every one of
+   * them" costs no second round trip.
+   */
+  async findSeasonTakersForReader(
+    userId: number,
+    year: number,
+    movieIds: readonly number[],
+  ): Promise<SeasonTaker[]> {
+    if (movieIds.length === 0) return [];
+    return db.$queryRaw<SeasonTaker[]>`
+      with seated as (
+        select distinct league_id from drafts
+         where user_id = ${userId} and year = ${year} and league_id is not null
+      )
+      select p.movie_id::int         as "movieId",
+             d.league_id             as "leagueId",
+             l.name                  as "leagueName",
+             d.user_id               as "seatUserId",
+             d.dummy                 as "dummy",
+             d.dummy_name            as "dummyName",
+             u.first_name            as "firstName",
+             u.last_name             as "lastName",
+             u.email                 as "email",
+             (select count(*) from seated)::int as "readerLeagues"
+        from draft_picks p
+        join drafts d on d.id = p.draft_id
+        join seated s on s.league_id = d.league_id
+        left join leagues l on l.id = d.league_id
+        left join users u on u.id = d.user_id
+       where d.year = ${year}
+         and p.movie_id = any(${movieIds.map(Number)}::bigint[])
+       order by d.league_id asc, d."group" asc nulls last, d."order" asc nulls last, d.id asc`;
   },
 
   /**

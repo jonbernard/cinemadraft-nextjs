@@ -24,6 +24,12 @@ export type DraftListRow = {
   status: DraftListStatus;
   /** Null only for an entry whose film has left the catalogue. */
   movieId: number | null;
+  /**
+   * What this season's drafts say, which outranks `status`: the reader took it,
+   * or `by` did — `gone` when it is gone in every league the reader drafts in.
+   * Written out for the same reason as the status above.
+   */
+  drafted?: { yours: true } | { yours: false; by: string; gone: boolean };
 };
 
 const STATUS_LABEL: Record<DraftListStatus, string> = {
@@ -202,6 +208,8 @@ function EntryRow({
     [onSetStatus, entry.entryId],
   );
 
+  const { faded, chip } = rowState(entry);
+
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2">
       <div
@@ -213,21 +221,39 @@ function EntryRow({
         <span className="text-text-dim tabular w-6 font-mono text-xs">
           {String(row.index + 1).padStart(2, '0')}
         </span>
-        {entry.posterUrl ? (
-          <RemoteImage
-            src={entry.posterUrl}
-            alt=""
-            width={28}
-            height={40}
-            className="h-10 w-7 object-cover"
-          />
-        ) : (
-          <span className="bg-bg-surface text-text-dim grid h-10 w-7 place-items-center font-mono text-xs">
-            {entry.title.slice(0, 2).toUpperCase()}
-          </span>
-        )}
+        {/* 🔴 The fade is the poster's alone, never the row's. Text at 50% is
+            4.67:1 on the dark panel but 3.37:1 on the light one, and the year
+            and chip fall to about 2:1 in both — so the title steps down to
+            `secondary` ink instead (7.35:1 dark, 6.78:1 light) and the chip
+            says it in words. */}
+        <span data-slot="poster" className={cn(faded && 'opacity-50')}>
+          {entry.posterUrl ? (
+            <RemoteImage
+              src={entry.posterUrl}
+              alt=""
+              width={28}
+              height={40}
+              className="h-10 w-7 object-cover"
+            />
+          ) : (
+            // The title's initials, beside the title: decoration, so hidden.
+            <span
+              aria-hidden
+              className="bg-bg-surface text-text-dim grid h-10 w-7 place-items-center font-mono text-xs"
+            >
+              {entry.title.slice(0, 2).toUpperCase()}
+            </span>
+          )}
+        </span>
         <span className="min-w-0 flex-1 text-sm">
-          <span className="text-text-primary font-serif">{entry.title}</span>
+          <span
+            className={cn(
+              'font-serif',
+              faded ? 'text-text-secondary' : 'text-text-primary',
+            )}
+          >
+            {entry.title}
+          </span>
           {entry.releaseYear ? (
             <span className="text-text-dim tabular font-mono text-xs">
               {' '}
@@ -237,30 +263,28 @@ function EntryRow({
         </span>
         {/* Carmine marks *this one* — the film this member took. Gone to
             somebody else is information rather than urgency, so it is neutral. */}
-        {entry.status === 'selected' ? (
-          <StatusChip tone="carmine">{STATUS_LABEL.selected}</StatusChip>
-        ) : null}
-        {entry.status === 'unavailable' ? (
-          <StatusChip tone="neutral">{STATUS_LABEL.unavailable}</StatusChip>
-        ) : null}
+        {chip ? <StatusChip tone={chip.tone}>{chip.label}</StatusChip> : null}
       </div>
 
-      {/* Sets a state rather than toggling, so a member who marked the wrong row
-          can put it back and two open tabs converge instead of fighting. */}
-      <label className="flex items-center">
-        <span className="sr-only">Mark {entry.title}</span>
-        <select
-          value={entry.status}
-          onChange={changeStatus}
-          className="border-border-rule bg-bg-surface text-text-secondary focus-visible:outline-accent-fill min-h-11 rounded-sm border text-xs focus-visible:outline-2"
-        >
-          {STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {STATUS_LABEL[status]}
-            </option>
-          ))}
-        </select>
-      </label>
+      {/* The manual mark is for drafts the app never saw. Once the board has
+          the pick, a select that could contradict it is only a way to be
+          wrong, so it goes. */}
+      {entry.drafted ? null : (
+        <label className="flex items-center">
+          <span className="sr-only">Mark {entry.title}</span>
+          <select
+            value={entry.status}
+            onChange={changeStatus}
+            className="border-border-rule bg-bg-surface text-text-secondary focus-visible:outline-accent-fill min-h-11 rounded-sm border text-xs focus-visible:outline-2"
+          >
+            {STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {STATUS_LABEL[status]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <button
         type="button"
@@ -272,6 +296,32 @@ function EntryRow({
       </button>
     </div>
   );
+}
+
+/**
+ * The draft's record first, the manual mark second. "Someone else took it" by
+ * hand fades exactly as the automatic kind does — it is the same fact, just
+ * one the app was told rather than saw.
+ */
+function rowState(entry: DraftListRow): {
+  faded: boolean;
+  chip: { tone: 'carmine' | 'neutral'; label: string } | null;
+} {
+  const { drafted } = entry;
+  if (drafted?.yours)
+    return { faded: false, chip: { tone: 'carmine', label: STATUS_LABEL.selected } };
+  if (drafted)
+    return {
+      faded: drafted.gone,
+      chip: { tone: 'neutral', label: `Taken · ${drafted.by}` },
+    };
+  if (entry.status === 'selected') {
+    return { faded: false, chip: { tone: 'carmine', label: STATUS_LABEL.selected } };
+  }
+  if (entry.status === 'unavailable') {
+    return { faded: true, chip: { tone: 'neutral', label: STATUS_LABEL.unavailable } };
+  }
+  return { faded: false, chip: null };
 }
 
 function entryId(entry: DraftListRow): number {

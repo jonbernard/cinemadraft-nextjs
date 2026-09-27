@@ -232,6 +232,101 @@ describe('the marks', () => {
   });
 });
 
+/** The row's poster slot, which is the only thing a taken row fades. */
+function posterOf(row: HTMLElement): HTMLElement {
+  const slot = row.querySelector<HTMLElement>('[data-slot="poster"]');
+  if (!slot) throw new Error('row has no poster slot');
+  return slot;
+}
+
+function titleOf(row: HTMLElement, title: string): HTMLElement {
+  return within(row).getByText(title, { selector: 'span.font-serif' });
+}
+
+describe('a film the drafts say is taken', () => {
+  const TAKEN: DraftListRow[] = [
+    {
+      ...(ENTRIES[0] as DraftListRow),
+      drafted: { yours: false, by: 'Rhoda Vance', gone: true },
+    },
+    { ...(ENTRIES[1] as DraftListRow), status: 'none', drafted: { yours: true } },
+    {
+      ...(ENTRIES[2] as DraftListRow),
+      status: 'none',
+      drafted: { yours: false, by: 'Ada in Oscar Pool', gone: false },
+    },
+    {
+      entryId: 24,
+      movieId: 14,
+      title: 'Nope',
+      posterUrl: null,
+      releaseYear: 2022,
+      status: 'none',
+    },
+  ];
+
+  it('fades the row and says who took it, in words', () => {
+    renderEditor({ entries: TAKEN });
+    const row = rowFor('Arrival');
+
+    expect(within(row).getByText('Taken · Rhoda Vance')).toBeInTheDocument();
+    // 🔴 The poster fades; the title changes ink rather than opacity, because
+    // text at 50% fails AA on the light panel (3.37:1).
+    expect(posterOf(row)).toHaveClass('opacity-50');
+    expect(titleOf(row, 'Arrival')).toHaveClass('text-text-secondary');
+    expect(titleOf(row, 'Arrival')).not.toHaveClass('opacity-50');
+  });
+
+  it('leaves an untaken row at full strength', () => {
+    renderEditor({ entries: TAKEN });
+    const row = rowFor('Nope');
+
+    expect(posterOf(row)).not.toHaveClass('opacity-50');
+    expect(titleOf(row, 'Nope')).toHaveClass('text-text-primary');
+    expect(within(row).queryByText(/^Taken ·/)).toBeNull();
+  });
+
+  it('calls the reader’s own pick theirs, unfaded', () => {
+    renderEditor({ entries: TAKEN });
+    const row = rowFor('Moonlight');
+
+    expect(chipsIn(row, 'You took it')).toHaveLength(1);
+    expect(posterOf(row)).not.toHaveClass('opacity-50');
+  });
+
+  it('names a film gone in one league of two but does not fade it', () => {
+    renderEditor({ entries: TAKEN });
+    const row = rowFor('Paterson');
+
+    expect(within(row).getByText('Taken · Ada in Oscar Pool')).toBeInTheDocument();
+    expect(posterOf(row)).not.toHaveClass('opacity-50');
+  });
+
+  it('drops the manual mark once the drafts know, but keeps remove and reorder', async () => {
+    const onRemove = vi.fn(noop);
+    const onReorder = vi.fn(noop);
+    renderEditor({ entries: TAKEN, onRemove, onReorder });
+
+    expect(screen.queryByLabelText('Mark Arrival')).toBeNull();
+    expect(screen.getByLabelText('Mark Nope')).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Remove Arrival from your list' }),
+    );
+    expect(onRemove).toHaveBeenCalledWith(21);
+
+    moveFirstDown();
+    await waitFor(() => expect(onReorder).toHaveBeenCalledWith([22, 21, 23, 24]));
+  });
+
+  it('fades a film marked gone by hand the same way', () => {
+    renderEditor();
+
+    expect(posterOf(rowFor('Paterson'))).toHaveClass('opacity-50');
+    expect(posterOf(rowFor('Arrival'))).not.toHaveClass('opacity-50');
+  });
+});
+
 describe('adding and removing', () => {
   it('removes the row it was asked to', async () => {
     const onRemove = vi.fn(noop);

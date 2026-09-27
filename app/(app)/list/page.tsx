@@ -28,7 +28,11 @@ export default async function DraftListPage() {
   const year = await getActiveYear();
   const entries = await getDraftList(user.id, year);
 
-  const marked = entries.filter((entry) => entry.status !== 'none').length;
+  // The draft's own record outranks the member's manual mark: a film taken in
+  // one of two leagues is still on the board, whatever the select says.
+  const marked = entries.filter((entry) =>
+    entry.drafted ? entry.drafted.yours || entry.drafted.gone : entry.status !== 'none',
+  ).length;
   const remaining = entries.length - marked;
   const onList = entries.flatMap((entry) =>
     entry.movieId == null ? [] : [entry.movieId],
@@ -68,6 +72,7 @@ export default async function DraftListPage() {
           posterUrl: entry.posterUrl,
           releaseYear: entry.releaseYear,
           status: entry.status,
+          drafted: entry.drafted,
         }))}
         onSearch={async (query: string) => {
           'use server';

@@ -35,6 +35,16 @@ const entries: DraftListRow[] = [
     posterUrl: null,
     releaseYear: 2025,
     status: 'none',
+    drafted: { yours: false, by: 'Rhoda Vance', gone: true },
+  },
+  {
+    entryId: 5,
+    movieId: 15,
+    title: 'Bugonia',
+    posterUrl: null,
+    releaseYear: 2025,
+    status: 'none',
+    drafted: { yours: false, by: 'Ada in Oscar Pool', gone: false },
   },
 ];
 
