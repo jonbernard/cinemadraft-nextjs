@@ -154,10 +154,13 @@ export async function GET(
         let next: string;
         try {
           next = JSON.stringify(await read());
-        } catch {
-          // Neon briefly unreachable is a skipped beat, not an error path: the
-          // client keeps showing its last good state (`lib/external/cache.ts`
-          // takes the same posture).
+        } catch (error) {
+          // Neon briefly unreachable is a skipped beat, not a closed stream:
+          // the client keeps showing its last good state (`lib/external/cache.ts`
+          // takes the same posture). 🔴 But it is logged — a poll that fails is
+          // a real fault, and swallowing it silently meant an outage mid-
+          // ceremony left nothing in the log but viewers on a frozen frame.
+          console.error('[live stream] poll failed; keeping the last frame', error);
           return;
         }
         if (!open) return;

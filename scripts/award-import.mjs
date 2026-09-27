@@ -613,9 +613,359 @@ export async function refresh({
   return { revalidated, missing };
 }
 
+const ET = 'America/New_York';
+const HOUR = 3600000;
+const DAY = 86400000;
+
+/**
+ * A zone's offset from UTC at a given instant, in milliseconds, positive east.
+ *
+ * 🔴 Derived from `Intl`, not from a table. The alternative — assuming ET is
+ * UTC−5 — is wrong for every ceremony held after US daylight saving begins in
+ * March, which is the Oscars every year.
+ *
+ * `formatToParts` with `timeZone` gives the wall-clock reading in that zone;
+ * re-reading it as if it were UTC and subtracting gives the offset.
+ */
+export function zoneOffsetMs(instantMs, tz) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(instantMs));
+
+  const at = (type) => Number(parts.find((part) => part.type === type)?.value);
+  const asUtc = Date.UTC(
+    at('year'),
+    at('month') - 1,
+    at('day'),
+    at('hour'),
+    at('minute'),
+    at('second'),
+  );
+  return asUtc - instantMs;
+}
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_PATTERN = /^\d{2}:\d{2}$/;
+
+/**
+ * A wall-clock time in a zone → the epoch instant it names.
+ *
+ * Two passes, not one: the offset depends on the instant, and the instant is
+ * what is being solved for. The first pass uses the offset at the naive
+ * reading; the second corrects it if that reading fell on the far side of a
+ * daylight-saving transition.
+ */
+export function toInstant({ date, time, tz = ET }) {
+  if (!DATE_PATTERN.test(date ?? '')) {
+    throw new Error(`date must be YYYY-MM-DD, got "${date}"`);
+  }
+  if (!TIME_PATTERN.test(time ?? '')) {
+    throw new Error(`time must be HH:MM, got "${time}"`);
+  }
+
+  const naive = Date.parse(`${date}T${time}:00Z`);
+  if (Number.isNaN(naive))
+    throw new Error(`date "${date}" and time "${time}" are not real`);
+
+  const first = naive - zoneOffsetMs(naive, tz);
+  return naive - zoneOffsetMs(first, tz);
+}
+
+/**
+ * The two columns `events` actually stores.
+ *
+ * 🔴 `date` is UTC midnight of the event's **local** calendar day, and `time`
+ * is everything else — which for an evening ceremony is more than 24 hours.
+ * An 8pm ET ceremony on 11 January is 01:00Z on the 12th; storing the 12th
+ * would move it a day in the calendar feed and on the show page. Every
+ * restored row follows this, and the round-trip tests pin all twelve.
+ */
+export function toDateTimeSplit({ date, time, tz = ET }) {
+  const instant = toInstant({ date, time, tz });
+  const midnight = Date.parse(`${date}T00:00:00Z`);
+  return { date: midnight, time: instant - midnight };
+}
+
+/**
+ * When a season's dates live: 1 August of the prior year to 31 July.
+ *
+ * The 2026 season really runs from AFI's nominations on 4 December 2025 to the
+ * Oscars on 15 March 2026, so this has months of margin at both ends and
+ * cannot be confused with an adjacent season.
+ */
+export function seasonWindow(year) {
+  return {
+    start: Date.parse(`${year - 1}-08-01T00:00:00Z`),
+    end: Date.parse(`${year}-07-31T23:59:59.999Z`),
+  };
+}
+
+/** Is this instant part of that season? A null never is. */
+export function isInSeason(instantMs, year) {
+  if (instantMs == null) return false;
+  const { start, end } = seasonWindow(year);
+  return instantMs >= start && instantMs <= end;
+}
+
+/** An instant as a person reads it, for the report. */
+export function formatEt(instantMs) {
+  if (instantMs == null) return '—';
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: ET,
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  }).format(new Date(instantMs));
+}
+
+/**
+ * Every show's schedule, and whether each half is already current.
+ *
+ * 🔴 Nominations and ceremony are judged separately. A show routinely
+ * announces its nominations date months before its ceremony date, so treating
+ * the show as one unit would either re-research what is already known or skip
+ * what is still missing.
+ */
+export async function loadDates(client) {
+  const active = await client.query(
+    'SELECT year FROM available_years WHERE is_active = true LIMIT 1',
+  );
+  const newest = await client.query(
+    'SELECT year FROM available_years ORDER BY year DESC LIMIT 1',
+  );
+  const activeYear = active.rows[0]?.year ?? newest.rows[0]?.year;
+  if (activeYear == null) throw new Error('no seasons exist in available_years');
+
+  const rows = await client.query(
+    `SELECT id, abbreviation, name, nom_date, nom_time, awards_date, awards_time
+       FROM events
+      ORDER BY abbreviation`,
+  );
+
+  const shows = rows.rows.map((row) => {
+    const nomDate = row.nom_date == null ? null : Number(row.nom_date);
+    const nomTime = row.nom_time == null ? null : Number(row.nom_time);
+    const awardsDate = row.awards_date == null ? null : Number(row.awards_date);
+    const awardsTime = row.awards_time == null ? null : Number(row.awards_time);
+
+    const nomInstant = nomDate == null ? null : nomDate + (nomTime ?? 0);
+    const awardsInstant = awardsDate == null ? null : awardsDate + (awardsTime ?? 0);
+
+    return {
+      id: row.id,
+      abbreviation: row.abbreviation,
+      name: row.name,
+      nomDate,
+      nomTime,
+      awardsDate,
+      awardsTime,
+      nomInstant,
+      awardsInstant,
+      nomCurrent: isInSeason(nomInstant, activeYear),
+      awardsCurrent: isInSeason(awardsInstant, activeYear),
+      // What to reuse when a source gives a date but no time. These are stable
+      // per show — SAG announces at 10:00 ET, WGA at 11:00, most at 8:00.
+      nomTimeOfDay: nomTime,
+      awardsTimeOfDay: awardsTime,
+    };
+  });
+
+  return { activeYear, shows };
+}
+
+/** Default announcement times, used only when a show has no prior value. */
+const DEFAULT_NOM_TIME = '08:00';
+const DEFAULT_AWARDS_TIME = '20:00';
+
+/** Every problem with a dates plan, as sentences. Empty means it may be applied. */
+export function validateDatesPlan(plan, shows) {
+  const problems = [];
+  const known = new Set(shows.map((show) => show.abbreviation.toLowerCase()));
+
+  if (plan.kind !== 'dates') problems.push('kind must be "dates"');
+  if (!Number.isSafeInteger(plan.year) || plan.year <= 0) {
+    problems.push('year must be a positive integer');
+  }
+  if (!Array.isArray(plan.sources) || plan.sources.length === 0) {
+    problems.push('the plan records no source URL');
+  }
+
+  for (const entry of plan.shows ?? []) {
+    const abbreviation = (entry.abbreviation ?? '').toLowerCase();
+    if (!known.has(abbreviation)) {
+      problems.push(`"${entry.abbreviation}" is not a show`);
+      continue;
+    }
+    if (entry.nominations == null && entry.awards == null) {
+      problems.push(
+        `${entry.abbreviation} names neither a nominations date nor an awards date`,
+      );
+    }
+    for (const field of ['nominations', 'awards']) {
+      const given = entry[field];
+      if (given == null) continue;
+      if (!DATE_PATTERN.test(given.date ?? '')) {
+        problems.push(`${entry.abbreviation} ${field} date must be YYYY-MM-DD`);
+      }
+      if (given.time != null && !TIME_PATTERN.test(given.time)) {
+        problems.push(`${entry.abbreviation} ${field} time must be HH:MM`);
+      }
+    }
+  }
+
+  return problems;
+}
+
+/**
+ * Write each season's schedule.
+ *
+ * 🔴 Everything that can refuse does so before the first UPDATE, so a refusal
+ * never leaves half a season's calendar entered.
+ *
+ * 🔴 A field already current for this season is skipped rather than rewritten,
+ * which is what makes this safe to re-run monthly as shows announce. `recheck`
+ * on an entry overrides that, for a date that has moved.
+ *
+ * 🔴 A column is never nulled. An entry that omits `awards` leaves both
+ * ceremony columns exactly as they were — a show that has not announced keeps
+ * last season's value and is reported, rather than losing it.
+ */
+export async function applyDates(client, plan, state, { commit, secret }) {
+  const problems = validateDatesPlan(plan, state.shows);
+  if (problems.length > 0) {
+    throw new Error(`this plan cannot be applied:\n  - ${problems.join('\n  - ')}`);
+  }
+
+  if (plan.year !== state.activeYear) {
+    throw new Error(
+      `plan year ${plan.year} is not the active season ${state.activeYear} — ` +
+        'fix the plan, or change the active season first',
+    );
+  }
+
+  const byAbbreviation = new Map(
+    state.shows.map((show) => [show.abbreviation.toLowerCase(), show]),
+  );
+  const changes = [];
+  const skipped = [];
+
+  for (const entry of plan.shows) {
+    const show = byAbbreviation.get(entry.abbreviation.toLowerCase());
+
+    for (const field of ['nominations', 'awards']) {
+      const given = entry[field];
+      if (given == null) continue;
+
+      const isNominations = field === 'nominations';
+      const alreadyCurrent = isNominations ? show.nomCurrent : show.awardsCurrent;
+      if (alreadyCurrent && entry.recheck !== true) {
+        skipped.push({
+          abbreviation: show.abbreviation,
+          field,
+          reason: `already set for the ${state.activeYear} season`,
+        });
+        continue;
+      }
+
+      const tz = given.tz ?? ET;
+      const existingTime = isNominations ? show.nomTimeOfDay : show.awardsTimeOfDay;
+      const existingDate = isNominations ? show.nomDate : show.awardsDate;
+      let time = given.time;
+      let timeDefaulted = false;
+      if (time == null && existingTime == null) {
+        time = isNominations ? DEFAULT_NOM_TIME : DEFAULT_AWARDS_TIME;
+        timeDefaulted = true;
+      } else if (time == null) {
+        // 🔴 The stored time is ms past UTC midnight, not a wall clock: 8:00 AM
+        // ET is stored as 13h. Read it back in the zone at the instant it was
+        // stored for, so the reused time is the show's wall-clock time and a
+        // January 8pm reused for a March ceremony is 8pm EDT, not 9pm.
+        const stored =
+          (existingDate ?? Date.parse(`${given.date}T00:00:00Z`)) + existingTime;
+        time = msToHhmm(stored + zoneOffsetMs(stored, tz));
+      }
+
+      const split = toDateTimeSplit({ date: given.date, time, tz });
+      const instant = split.date + split.time;
+
+      if (!isInSeason(instant, state.activeYear)) {
+        throw new Error(
+          `${show.abbreviation} ${field} ${formatEt(instant)} is outside the ` +
+            `${state.activeYear} season — this is usually the wrong year's announcement`,
+        );
+      }
+
+      changes.push({
+        abbreviation: show.abbreviation,
+        id: show.id,
+        field,
+        fromInstant: isNominations ? show.nomInstant : show.awardsInstant,
+        toInstant: instant,
+        date: split.date,
+        time: split.time,
+        timeDefaulted,
+      });
+    }
+  }
+
+  if (!commit) return { changes, skipped };
+
+  // 🔴 Before the first write, not after: written-but-not-revalidated leaves
+  // production serving the old schedule with nothing left to say so.
+  if (!secret) {
+    throw new Error(
+      'REVALIDATE_SECRET is not set — refusing to write dates the cache could not be cleared for',
+    );
+  }
+
+  await client.query('BEGIN');
+  try {
+    for (const change of changes) {
+      const columns =
+        change.field === 'nominations'
+          ? 'nom_date = $1, nom_time = $2'
+          : 'awards_date = $1, awards_time = $2';
+      await client.query(
+        `UPDATE events SET ${columns}, updated_at = now() WHERE id = $3`,
+        [change.date, change.time, change.id],
+      );
+    }
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  }
+
+  return { changes, skipped };
+}
+
+/**
+ * A stored time-of-day back into `HH:MM`, so a reused time round-trips through
+ * the same conversion a fresh one does.
+ *
+ * Takes the remainder past a whole day first: an evening ceremony's stored
+ * time exceeds 24 hours, and `25:00` is not a wall clock.
+ */
+export function msToHhmm(ms) {
+  const withinDay = ((ms % DAY) + DAY) % DAY;
+  const hours = Math.floor(withinDay / HOUR);
+  const minutes = Math.floor((withinDay % HOUR) / 60000);
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
 import { pathToFileURL } from 'node:url';
 
-const COMMANDS = ['context', 'apply', 'finish', 'refresh'];
+const COMMANDS = ['context', 'apply', 'finish', 'refresh', 'dates', 'set-dates'];
 
 async function main(argv) {
   const [command, ...rest] = argv;
@@ -737,6 +1087,84 @@ async function main(argv) {
       process.exitCode = 1;
     } else {
       console.log('every title checked is visible on the live page');
+    }
+  }
+
+  if (command === 'dates') {
+    const client = await connect();
+    try {
+      const { activeYear, shows } = await loadDates(client);
+      console.log(`active season: ${activeYear}\n`);
+      for (const show of shows) {
+        const needs = [];
+        if (!show.nomCurrent) needs.push('nominations');
+        if (!show.awardsCurrent) needs.push('ceremony');
+        console.log(
+          `${show.abbreviation.padEnd(7)} ${needs.length === 0 ? 'skip  ' : 'RESEARCH'} ${show.name}`,
+        );
+        console.log(
+          `        nominations ${formatEt(show.nomInstant).padEnd(28)} ${show.nomCurrent ? 'current' : 'not this season'}`,
+        );
+        console.log(
+          `        ceremony    ${formatEt(show.awardsInstant).padEnd(28)} ${show.awardsCurrent ? 'current' : 'not this season'}`,
+        );
+      }
+      const outstanding = shows.filter((show) => !show.nomCurrent || !show.awardsCurrent);
+      console.log(
+        `\n${outstanding.length} of ${shows.length} shows need research: ` +
+          outstanding.map((show) => show.abbreviation).join(', '),
+      );
+    } finally {
+      await client.end();
+    }
+  }
+
+  if (command === 'set-dates') {
+    const planPath = rest.find((arg) => !arg.startsWith('--'));
+    const commit = rest.includes('--commit');
+    const secret = process.env.REVALIDATE_SECRET ?? null;
+    const { readFileSync } = await import('node:fs');
+    const plan = JSON.parse(readFileSync(planPath, 'utf8'));
+
+    const client = await connect();
+    try {
+      const state = await loadDates(client);
+      const report = await applyDates(client, plan, state, { commit, secret });
+
+      console.log(commit ? 'WROTE:' : 'DRY RUN — nothing written:');
+      for (const change of report.changes) {
+        console.log(
+          `  ${change.abbreviation.padEnd(7)} ${change.field.padEnd(12)} ` +
+            `${formatEt(change.fromInstant)}  →  ${formatEt(change.toInstant)}` +
+            (change.timeDefaulted ? '  (no prior time — default used)' : ''),
+        );
+      }
+      for (const skip of report.skipped) {
+        console.log(`  = ${skip.abbreviation} ${skip.field} (${skip.reason})`);
+      }
+      console.log(
+        `${report.changes.length} to change, ${report.skipped.length} skipped` +
+          (commit ? '' : ' — re-run with --commit to write'),
+      );
+
+      if (commit && report.changes.length > 0) {
+        const baseUrl = process.env.SITE_URL ?? 'https://cinemadraft.com';
+        for (const abbreviation of new Set(
+          report.changes.map((change) => change.abbreviation.toLowerCase()),
+        )) {
+          const posted = await fetch(`${baseUrl}/api/revalidate`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ secret, abbreviation }),
+          });
+          console.log(
+            `  revalidate ${abbreviation}: ${posted.ok ? 'ok' : `FAILED ${posted.status}`}`,
+          );
+          if (!posted.ok) process.exitCode = 1;
+        }
+      }
+    } finally {
+      await client.end();
     }
   }
 }

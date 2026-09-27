@@ -164,6 +164,16 @@ export function CategoryAdmin({
       className={cn('border-border-rule flex flex-col gap-3 border-l-2 pl-4', className)}
     >
       {dialog}
+
+      <FilmSearch
+        onSearch={search}
+        onSelect={attach}
+        label="Nominate a film"
+        busy={pending}
+        debounceMs={250}
+        resetSignal={resetSignal}
+      />
+
       {requiresNomineeName ? (
         <label className="flex flex-col gap-1">
           <span className="text-text-dim text-xs">Person nominated</span>
@@ -176,15 +186,6 @@ export function CategoryAdmin({
           />
         </label>
       ) : null}
-
-      <FilmSearch
-        onSearch={search}
-        onSelect={attach}
-        label="Nominate a film"
-        busy={pending}
-        debounceMs={250}
-        resetSignal={resetSignal}
-      />
 
       <p aria-live="polite" className="text-text-secondary min-h-5 text-xs">
         {pending ? 'Saving…' : (message ?? '')}

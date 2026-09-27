@@ -312,20 +312,14 @@ function Shows({ shows, year }: { shows: ShowProgress[]; year: number }) {
   }
 
   return (
-    // 🔴 Two columns from `lg` up, not `sm` (D49). The container is `max-w-4xl`,
-    // so `sm` would give each show ~300px and the summary — a serif show name
-    // plus two meters — already wraps to three lines at that width. At `lg` the
-    // column is ~430px and it wraps to two, which is what it does today.
+    // 🔴 One column at every width — the owner's call in `7064de9`, which
+    // replaced the two columns from `lg` that `224b8d9` introduced.
     //
-    // 🔴 `items-start`, and that is the whole answer to the height-shift
-    // question. A grid row is as tall as its tallest cell and a stretched
-    // `<details>` would grow its neighbour's panel to match when it opens —
-    // the neighbour visibly inflating around unchanged content. `items-start`
-    // lets each panel keep its own height, so opening one moves only the rows
-    // below it, which is what a single column already did. `columns-2` was the
-    // other candidate and is worse: CSS multi-column reflows its items between
-    // columns as one grows, so opening a show makes *other* shows jump from
-    // one column to the other.
+    // `lg:items-start` is kept so that a second column, if one ever returns,
+    // does not stretch: a grid row is as tall as its tallest cell, so without
+    // it a closed `<details>` would inflate to match an open neighbour.
+    // `columns-2` is worse still — CSS multi-column reflows items between
+    // columns as one grows, so opening a show makes *other* shows jump.
     <div className="grid gap-3 lg:grid-cols-1 lg:items-start">
       {shows.map((show) => (
         // A native <details>: it opens with a keyboard, before hydration, and
