@@ -14,6 +14,7 @@ import { getAwardShow } from '@/lib/services/award-show';
 import { getLiveShow } from '@/lib/services/live';
 import { pointsForMovieIds } from '@/lib/services/scoring';
 import { attachNominee } from './attach-nominee';
+import { filmPeopleAction } from './film-people';
 import { focusAward } from './focus-award';
 import { removeNominee } from './remove-nominee';
 import { setWinner } from './set-winner';
@@ -322,6 +323,160 @@ describe('attachNominee', () => {
 
     const [nomination] = await nominationsFor(fixture.actingCategory.id);
     expect(nomination?.detailName).toBe('Cillian Murphy');
+  });
+});
+
+/**
+ * 🔴 The duplicate rule is film AND person, not film. Best Supporting Actor
+ * 2026 nominated *One Battle After Another* twice — Benicio del Toro and Sean
+ * Penn — and the old rule refused the second, so the admin could not enter a
+ * real slate. The double-click it existed to stop is still refused.
+ */
+describe('attachNominee — one film, two people', () => {
+  const BENICIO = { detailName: 'Benicio del Toro', detailId: 1121 };
+  const SEAN = { detailName: 'Sean Penn', detailId: 2228 };
+
+  function attachPerson(person: {
+    detailName: string;
+    detailId?: number;
+    detailCharacter?: string;
+  }) {
+    return attachNominee({
+      awardId: fixture.actingCategory.id,
+      movieId: fixture.films[0]?.id as number,
+      year: YEAR,
+      ...person,
+    });
+  }
+
+  async function peopleNominated() {
+    const rows = await db.nomination.findMany({
+      where: { awardId: BigInt(fixture.actingCategory.id) },
+      select: { detailName: true, detailCharacter: true, detailId: true },
+      orderBy: { id: 'asc' },
+    });
+    return rows.map((row) => ({
+      ...row,
+      detailId: row.detailId == null ? null : Number(row.detailId),
+    }));
+  }
+
+  it('allows the same film for a second person', async () => {
+    signInAs(fixture.admin);
+
+    expect((await attachPerson(BENICIO)).ok).toBe(true);
+    expect((await attachPerson(SEAN)).ok).toBe(true);
+
+    expect(await peopleNominated()).toEqual([
+      { detailName: 'Benicio del Toro', detailCharacter: null, detailId: 1121 },
+      { detailName: 'Sean Penn', detailCharacter: null, detailId: 2228 },
+    ]);
+  });
+
+  it('refuses the same film for the same person, by TMDB id', async () => {
+    // The id decides, not the spelling: TMDB's name for someone can change
+    // between the first entry and the double-click's retry.
+    signInAs(fixture.admin);
+    await attachPerson(SEAN);
+
+    const result = await attachPerson({ detailName: 'Sean J. Penn', detailId: 2228 });
+
+    expect(result).toMatchObject({ ok: false, code: 'CONFLICT' });
+    expect(result.ok ? '' : result.message).toContain('Sean Penn');
+    expect(await peopleNominated()).toHaveLength(1);
+  });
+
+  it('allows two people who share a name when TMDB says they are two people', async () => {
+    signInAs(fixture.admin);
+    await attachPerson({ detailName: 'Chris Evans', detailId: 16828 });
+
+    const result = await attachPerson({ detailName: 'Chris Evans', detailId: 999_999 });
+
+    expect(result.ok).toBe(true);
+    expect(await peopleNominated()).toHaveLength(2);
+  });
+
+  it('falls back to the name when either nomination has no id', async () => {
+    // 3 of the restored named nominations carry no `detail_id`.
+    signInAs(fixture.admin);
+    await attachPerson({ detailName: 'Sean Penn' });
+
+    const refused = await attachPerson({ detailName: '  sean penn ', detailId: 2228 });
+    const allowed = await attachPerson({ detailName: 'Benicio del Toro' });
+
+    expect(refused).toMatchObject({ ok: false, code: 'CONFLICT' });
+    expect(allowed.ok).toBe(true);
+    expect((await peopleNominated()).map((row) => row.detailName)).toEqual([
+      'Sean Penn',
+      'Benicio del Toro',
+    ]);
+  });
+
+  it('stores the character with the person', async () => {
+    signInAs(fixture.admin);
+
+    await attachPerson({ ...BENICIO, detailCharacter: 'Sensei Sergio St. Carlos' });
+
+    expect(await peopleNominated()).toEqual([
+      {
+        detailName: 'Benicio del Toro',
+        detailCharacter: 'Sensei Sergio St. Carlos',
+        detailId: 1121,
+      },
+    ]);
+  });
+});
+
+/**
+ * The picker's credits. The answer is public, but the request spends this
+ * app's TMDB key, so only an admin may make it — and a refusal must come before
+ * the request, not after it.
+ */
+describe('filmPeopleAction', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.TMDB_API_KEY;
+  });
+
+  function stubTmdb() {
+    process.env.TMDB_API_KEY = 'test-key';
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        id: 1,
+        title: `${TAG} film`,
+        credits: { cast: [{ id: 2228, name: 'Sean Penn', character: 'Lockjaw' }] },
+      }),
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  it('refuses a non-admin without asking TMDB', async () => {
+    const fetchMock = stubTmdb();
+    signInAs(fixture.member);
+
+    expect(await filmPeopleAction('1')).toMatchObject({ ok: false, code: 'FORBIDDEN' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses a signed-out caller', async () => {
+    stubTmdb();
+    signInAs(null);
+
+    expect((await filmPeopleAction('1')).ok).toBe(false);
+  });
+
+  it('answers an admin with the film’s people', async () => {
+    stubTmdb();
+    signInAs(fixture.admin);
+
+    expect(await filmPeopleAction('1')).toEqual({
+      ok: true,
+      data: [
+        { id: 2228, name: 'Sean Penn', kind: 'cast', character: 'Lockjaw', jobs: null },
+      ],
+    });
   });
 });
 
