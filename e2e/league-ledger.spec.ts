@@ -232,3 +232,120 @@ test.describe('the standings tab', () => {
     await noSideways(page);
   });
 });
+
+/**
+ * "What moved" moves while a ceremony is entered (P16.T20, D135).
+ *
+ * 🔴 In the site's **active** season, which is the only one on air — so this
+ * is the one case here that is not in 2990, and it reads the season rather
+ * than typing it. Its own tag, so the static cases' cleanup never takes its
+ * rows mid-flow. The show is dated at the very start of the season window, so
+ * it sorts ahead of any other spec's scratch show that is on air at the same
+ * moment; `latest` is the first live step.
+ */
+const ONAIR = 'e2e-onair';
+
+async function activeYear(): Promise<number> {
+  const rows = (await withDb((query) =>
+    query('select year from available_years where is_active limit 1'),
+  )) as { year: number }[];
+  const year = rows[0]?.year;
+  if (year == null) throw new Error('no active season in this database');
+  return year;
+}
+
+async function setOnAir(onAir: boolean): Promise<void> {
+  await withDb((query) =>
+    query('update events set awards_active = $1 where abbreviation = $2', [
+      onAir,
+      `${ONAIR}-show`,
+    ]),
+  );
+}
+
+test.describe('what moved, live', () => {
+  test.describe.configure({ mode: 'serial' });
+  let leagueId = 0;
+  let year = 0;
+
+  test.beforeAll(async () => {
+    year = await activeYear();
+    await cleanupTag(ONAIR);
+    ({ leagueId } = await seedLedger(ONAIR, year, { onAir: true }));
+  });
+  test.afterAll(async () => {
+    await setOnAir(false);
+    await cleanupTag(ONAIR);
+  });
+
+  test('moves when a winner is entered, with no reload', async ({ page }) => {
+    test.setTimeout(60_000);
+    let documents = 0;
+    page.on('load', () => {
+      documents += 1;
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/leagues/${leagueId}/standings`);
+    const moved = page.getByRole('heading', { level: 2, name: /ceremony/ });
+    const beaTotal = page
+      .getByRole('table', { name: 'League standings with points by award show' })
+      .getByRole('row')
+      .filter({ hasText: `${ONAIR} Bea` })
+      .locator('td')
+      .last();
+
+    // Not vacuous: before the winner, nothing is decided and Bea is on 7.
+    await expect(moved).toContainText('ceremony · live · 0 of 2 decided');
+    await expect(beaTotal).toHaveText('7');
+    await expect(page.getByText(`${ONAIR} Ada keeps the lead`)).toBeVisible();
+
+    await page.evaluate(() => {
+      (window as unknown as { __token?: string }).__token = 'the first';
+    });
+    const settled = documents;
+
+    await enterWinner(ONAIR, year);
+
+    // Only the stream can deliver this: the page has not navigated.
+    await expect(moved).toContainText('1 of 2 decided', { timeout: 20_000 });
+    await expect(beaTotal).toHaveText('14');
+    await expect(
+      page.getByText(`${ONAIR} Ada and ${ONAIR} Bea share the lead`),
+    ).toBeVisible();
+
+    expect(documents).toBe(settled);
+    expect(
+      await page.evaluate(() => (window as unknown as { __token?: string }).__token),
+    ).toBe('the first');
+  });
+
+  test('off air, the page opens no stream and the route refuses one', async ({
+    page,
+  }) => {
+    // The budget, at both layers (D116's lesson). The silence is measured
+    // against a positive signal in the same page rather than a clock: off
+    // air first, then on air, and exactly one request, the second.
+    const opened: string[] = [];
+    page.on('request', (request) => {
+      // `eventsource` only: the direct fetch below is the route's check, not the page's.
+      if (request.resourceType() === 'eventsource') opened.push(request.url());
+    });
+
+    await setOnAir(false);
+    await page.goto(`/leagues/${leagueId}/standings`);
+    await expect(
+      page.getByRole('heading', { level: 2, name: /ceremony/ }),
+    ).not.toContainText('live');
+    const status = await page.evaluate(
+      async (url) => (await fetch(url)).status,
+      `/api/leagues/${leagueId}/standings/stream?year=${year}`,
+    );
+    expect(status).toBe(204);
+
+    await setOnAir(true);
+    await page.goto(`/leagues/${leagueId}/standings`);
+    await expect.poll(() => opened.length).toBe(1);
+    expect(opened[0]).toContain(`/api/leagues/${leagueId}/standings/stream`);
+  });
+});

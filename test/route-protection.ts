@@ -260,6 +260,11 @@ export const PUBLIC_ROUTES = [
   // `getLeagueBoardView` the page calls, so a signed-out reader gets no seat of
   // their own and no `isViewer` row. Its own `route.test.ts` pins that.
   '/api/leagues/[id]/board/stream',
+  // 🔴 The standings tab's stream, the same ruling again (P16.T20/D135):
+  // `/leagues/[id]/standings` is public, and without this line a stranger's
+  // `EventSource` is bounced and what moved never moves for them. It calls
+  // the page's own `getStandingsView` with the page's three arguments.
+  '/api/leagues/[id]/standings/stream',
   // 🔴 Member profiles, by the owner's ruling (P17.T37). The league page is the
   // member index — every seat on it links to `/members/<uuid>` — and league
   // pages are public, so without this every name on a shared league page

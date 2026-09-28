@@ -3,9 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { LeagueTabs } from '@/components/leagues/LeagueTabs';
-import { StandingsByShow } from '@/components/leagues/StandingsByShow';
-import { WhatMoved } from '@/components/leagues/WhatMoved';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { StandingsRoom } from '@/components/leagues/StandingsRoom';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
@@ -14,7 +12,6 @@ import { getLeagueSeasons } from '@/lib/services/draft';
 import { getActiveYear } from '@/lib/services/season';
 import { getStandingsView } from '@/lib/services/season-ledger';
 import { leagueTabHref, parseLeagueSegment } from '@/lib/utils/league-href';
-import { showDay, showWeekday } from '@/lib/utils/season-words';
 
 type Params = Promise<{ id: string }>;
 type Query = Promise<Record<string, string | string[] | undefined>>;
@@ -80,6 +77,9 @@ export default async function StandingsPage({
     throw error;
   }
 
+  // The page's own season, so the stream renders what this paint shows.
+  const streamUrl = `/api/leagues/${leagueId}/standings/stream?year=${view.year}`;
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-10">
       <header className="flex flex-col gap-4">
@@ -112,23 +112,8 @@ export default async function StandingsPage({
         ) : null}
       </header>
 
-      {view.whatMoved ? (
-        <>
-          <WhatMoved moved={view.whatMoved} year={view.year} />
-          <section className="flex flex-col gap-3">
-            <SectionHead as="h2" eyebrow="Every show this season">
-              Standings
-            </SectionHead>
-            <StandingsByShow rows={view.rows} shows={view.shows} />
-          </section>
-        </>
-      ) : (
-        <EmptyState title="Nothing has scored yet">
-          {view.firstDate == null
-            ? 'The standings fill in from the season’s first nominations.'
-            : `Nominations start ${showWeekday(view.firstDate)} ${showDay(view.firstDate)}.`}
-        </EmptyState>
-      )}
+      {/* 🔴 Keyed on the stream URL, so a season switch is a new connection. */}
+      <StandingsRoom key={streamUrl} initial={view} streamUrl={streamUrl} />
     </div>
   );
 }

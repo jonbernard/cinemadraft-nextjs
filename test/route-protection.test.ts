@@ -73,6 +73,7 @@ describe('route protection', () => {
       '/live/[abbr]',
       '/api/live/[abbr]/stream',
       '/api/leagues/[id]/board/stream',
+      '/api/leagues/[id]/standings/stream',
       '/members/[uuid]',
       '/api/ical/[[...slug]]',
       '/robots.txt',
