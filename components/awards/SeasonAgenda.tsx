@@ -8,8 +8,10 @@ import { cn } from '@/lib/utils/cn';
 import { ordinal, plural, showDay, showWeekday } from '@/lib/utils/season-words';
 
 /** What a moment says it did, in one line: the phase and its count. */
-function summary(moment: SeasonMoment): string {
+function summary(moment: SeasonMoment, past: boolean): string {
   const phase = moment.phase === 'nominations' ? 'Nominations' : 'Ceremony';
+  // A past season's moment with no rows was never entered, not still to come.
+  if (past && moment.state === 'upcoming') return `${phase} · No results recorded`;
   const decided = `${moment.winners} of ${moment.categories} decided`;
   if (moment.state === 'live') return `${phase} · on air · ${decided}`;
   if (moment.state === 'finished')
@@ -34,11 +36,14 @@ export function SeasonAgenda({
   months,
   year,
   nextKey,
+  past = false,
   aside,
 }: {
   months: SeasonView['months'];
   year: number;
   nextKey: string | null;
+  /** The season is before the active one (`SeasonView.past`). */
+  past?: boolean;
   aside?: ReadonlyMap<string, ReactNode>;
 }) {
   return (
@@ -65,7 +70,7 @@ export function SeasonAgenda({
                     <span className="flex flex-col">
                       {moment.date == null ? (
                         <span className="text-text-dim text-xs">
-                          {moment.state === 'upcoming' ? 'Date TBA' : ''}
+                          {moment.state === 'upcoming' && !past ? 'Date TBA' : ''}
                         </span>
                       ) : (
                         <>
@@ -94,7 +99,7 @@ export function SeasonAgenda({
                         {moment.name}
                       </span>
                       <span className="text-text-secondary text-xs">
-                        {summary(moment)}
+                        {summary(moment, past)}
                       </span>
                       {moment.highlight ? (
                         <span className="text-text-secondary text-xs">

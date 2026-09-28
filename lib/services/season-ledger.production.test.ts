@@ -75,7 +75,8 @@ describe('getSeasonLedger on league 1', () => {
     expect([y2026.steps.length, y2025.steps.length]).toEqual([23, 22]);
     expect([leaderSets(y2026.steps), leaderSets(y2025.steps)]).toEqual([3, 6]);
     // The race's own rule counts fewer: the first lead is not a change, nor
-    // is a tie the draft order breaks.
-    expect([topChanges(y2026.steps), topChanges(y2025.steps)]).toEqual([2, 2]);
+    // is a tie the draft order breaks. 2025 was 2 in 2026's calendar order;
+    // in its own dates (D134, P16.T18) it is 3.
+    expect([topChanges(y2026.steps), topChanges(y2025.steps)]).toEqual([2, 3]);
   });
 });

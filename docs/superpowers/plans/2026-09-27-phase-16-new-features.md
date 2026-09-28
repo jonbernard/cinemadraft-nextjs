@@ -145,7 +145,7 @@ The five inputs most likely to hurt a real person, each pinned by a test in the 
 |---|---|---|---|---|
 | M1 | `20260928090000_event_has_ceremony` | P16.T1 | `events.has_ceremony boolean not null default true`; `afi` → false | row + C5 "afi has no ceremony" |
 | M2 | `20260928120000_movie_merge` | P16.T8 | `merge_duplicate_movies()`, run once; `movies_tmdb_id` → unique `movies_tmdb_id_key` | row + C5 unique index, 0 duplicate `tmdb_id`, 0 orphans + **C7 predicts the merge's deltas** |
-| M3 | `20260929090000_event_dates` | P16.T18 | `event_dates(year, event_id, nom_date, nom_time, awards_date, awards_time)`, unique `(year, event_id)`, 2026 backfilled from literals | row + C5 table and 12 rows for 2026; `norm` excludes the new table |
+| M3 | `20260929090000_event_dates` | P16.T18 | `event_dates(year, event_id, nom_date, nom_time, awards_date, awards_time)`, unique `(year, event_id)`, 2017–2026 backfilled from literals | row + C5 table and 120 rows (12 × 2017–2026); `norm` excludes the new table |
 
 Opening a season (tranche 1) needs **no** migration: a season's status is derived (D130).
 
@@ -160,7 +160,7 @@ Opening a season (tranche 1) needs **no** migration: a season's status is derive
 | D131 | **Nobody carries forward.** Opening a season creates an empty one. It is offered only when the site's active year is the league's newest + 1. The owner re-seats people from earlier seasons one tap at a time. Supersedes the carry-forward in `stageNextSeason` and the proposal's "Start with nobody" | P16.T4–T6 |
 | D132 | **Duplicate films merge into the oldest row, and `tmdb_id` is unique.** Generic by `tmdb_id`. It aborts if one film would appear twice in one league-season-group. `upsertByTmdbId` and award-import become real upserts | P16.T8 |
 | D133 | **Film URLs are title + TMDB id, for every film, and the id is authoritative.** `/films/<slug>-<id>`, with the slug part derived at render from the TMDB title the page already fetches. No column, no migration. A bare id or a stale slug part gets a permanent redirect (308) to the canonical spelling | P16.T9, T10 |
-| D134 | **Show dates are stored per season, from 2026.** `event_dates`. The race chart uses a date axis where every finished moment has a date and an order-only axis otherwise (2017–2025), and says so on the page | P16.T18, T22 |
+| D134 | **Show dates are stored per season, backfilled 2017–2026 from researched public dates.** `event_dates`. The race chart uses a date axis where every finished moment has a date, and an order-only axis only for a season lacking rows, and says so on the page | P16.T18, T22 |
 | D135 | **"What moved" streams during a ceremony.** A new route with its own 204 gate (any show `awards_active`, and the active year), the "new decision with its own budget" D116 asked for | P16.T20 |
 | D136 | **Head-to-head is public, like the board.** The owner reversed "members only" on 2026-09-27. `?vs=` on `/leagues/[id]`, noindex | P16.T24 |
 | D137 | **No league is featured on `/`; the signed-out league page is a follower's read-only view**, with the measured audit of what it still withholds and why | P16.T26 |
@@ -1166,7 +1166,7 @@ export const UP_NEXT_FILMS = 8;
   - a `highlight` on finished moments: the most-nominated film at a nominations moment ("*One Battle After Another*, 9"), and the film with the most wins at a ceremony;
   - an **Up next** panel: the countdown in words ("in 3 days"), and the films most nominated at that show, capped at `UP_NEXT_FILMS` with "and N more".
   - Before nominations are out, Up next names no films and says when they are due.
-- Undated moments sit under "Not yet scheduled" at the end. (Settled in P16.T15: an undated moment that has *finished*, which is every moment of a past season before D134's dates, sits under "Date not recorded" instead, because "not yet scheduled" would be false. "Up next" prefers the first unfinished *dated* moment, since before the dates are set every show's undated moment keeps its calendar place. A headline film is named only when one stands out: more than one, alone at the top.)
+- Undated moments sit under "Not yet scheduled" at the end. (Settled in P16.T15: an undated moment that has *finished*, which is every moment of a past season before D134's dates, sits under "Date not recorded" instead, because "not yet scheduled" would be false. "Up next" prefers the first unfinished *dated* moment, since before the dates are set every show's undated moment keeps its calendar place. A headline film is named only when one stands out: more than one, alone at the top.) (Corrected in P16.T18: a season before the active one has no Up next, since nothing in it is still coming; a moment in it with no rows reads "No results recorded" and never "Date TBA" or "Next", and the page eyebrow counts moments *recorded*.)
 
 - [ ] **Step 1: Service tests (DB, own tagged event and nominations in year 2989, CI)**
   - `months` groups by the month of `date`.
@@ -1233,9 +1233,9 @@ The league gains tabs: **Board** (`/leagues/[id]`, unchanged), **Standings** (`/
 
 ### Task P16.T18: Show dates per season (M3)
 
-**How history is handled (D134).** Seasons 2017–2025 have no stored dates, and no dates are invented for them. `event_dates` starts with 2026, which is backfilled from literal values (the dates held on the restored copy on 2026-09-27, listed below). From 2027 the award-entry skill's `set-dates` writes it.
+**How history is handled (D134).** (Changed by the owner, 2026-09-27: history is no longer undated.) `event_dates` is backfilled for **every season 2017–2026**, 12 shows × 10 seasons, from literal values: researched public announcement dates (`.context/phase-16/dates/historical-dates-research.md` in the owner's workspace), the season being the ceremony year. The 2026 rows equal what `events` held on 2026-09-27, times included; history has no times. AFI's "nominations" date is its honorees announcement and it has no awards date (D129); the 2020 Razzies' is Mar 16 (winners posted after the cancelled ceremony); BAFTA 2021's is Apr 11. From 2027 the award-entry skill's `set-dates` writes it.
 - For a season with no row for a show, `moments` falls back to `events`' columns only when they fall inside that season's window (T13's rule). Otherwise the moment is undated and ordered by this year's calendar.
-- The race chart (T22) uses a **date axis only when every finished moment in the season has a date**, and an **order-only axis otherwise**, with the caption "Dates weren't recorded before 2026, so the moments are in this year's order, evenly spaced."
+- The race chart (T22) uses a **date axis only when every finished moment in the season has a date**, and an **order-only axis otherwise** — which, with the backfill, is only a season lacking rows (a scratch year, or one `set-dates` has not reached) — with the caption "This season's dates weren't recorded, so the moments are in this year's order, evenly spaced."
 
 **Files:**
 - Create: `prisma/migrations/20260929090000_event_dates/migration.sql`, `lib/repositories/event-dates.ts` (+ test, DB, CI)
@@ -1250,56 +1250,20 @@ The league gains tabs: **Board** (`/leagues/[id]`, unchanged), **Standings** (`/
   - `findByYear(2025)` is empty.
   - `award-import.test.mjs`: a committed `set-dates` for year Y writes one `event_dates` row per show and updates it on re-run, with no duplicate.
 
-- [ ] **Step 2: M3**
+- [ ] **Step 2: M3.** `prisma/migrations/20260929090000_event_dates/migration.sql`: the table, `event_dates_year_event_id_key`, and one `INSERT … SELECT … FROM events JOIN (VALUES …)` of 120 rows, one per line, as `DATE` literals converted to epoch ms of UTC midnight (`extract(epoch FROM date) * 1000`), NOT copied from `events` (by the time it runs, the skill may have written 2027 there). The migration is the listing; it is not repeated here. 🔴 CI's database has no `events`, so the JOIN inserts nothing there: `lib/repositories/event-dates.test.ts` parses the VALUES list itself and asserts 12 shows × 10 seasons, every date `inSeason` of its year, and nominations before awards.
 
-```sql
--- prisma/migrations/20260929090000_event_dates/migration.sql
--- Each show's dates for each season (D134). events.nom_date/awards_date are
--- overwritten every year, so before this nothing said when a past season's
--- moments happened. No FK, like every table here (the schema has none).
-CREATE TABLE "event_dates" (
-  "id" SERIAL PRIMARY KEY,
-  "year" INTEGER NOT NULL,
-  "event_id" INTEGER NOT NULL,
-  "nom_date" BIGINT, "nom_time" BIGINT,
-  "awards_date" BIGINT, "awards_time" BIGINT,
-  "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now(),
-  "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT now()
-);
-CREATE UNIQUE INDEX "event_dates_year_event_id_key" ON "event_dates" ("year", "event_id");
-
--- 2026, from literals, NOT copied from events: by the time this runs the
--- skill may already have written 2027's dates into those columns. UTC
--- midnight of each announcement day, epoch ms, as read on 2026-09-27.
-INSERT INTO "event_dates" ("year", "event_id", "nom_date", "awards_date")
-SELECT 2026, e.id, v.nom, v.awards FROM "events" e JOIN (VALUES
-  ('afi',    1764806400000, NULL::bigint),
-  ('gg',     1765152000000, 1768089600000),
-  ('adg',    1767744000000, 1772236800000),
-  ('sag',    1767744000000, 1772323200000),
-  ('asc',    1767830400000, 1772928000000),
-  ('dga',    1767830400000, 1770422400000),
-  ('pga',    1767916800000, 1772236800000),
-  ('raz',    1768953600000, 1773446400000),
-  ('oscars', 1769040000000, 1773532800000),
-  ('bafta',  1769472000000, 1771718400000),
-  ('wga',    1769472000000, 1772928000000),
-  ('ace',    1769472000000, 1772150400000)
-) AS v(abbr, nom, awards) ON e.abbreviation = v.abbr;
-```
-(The values are 2025-12-04 to 2026-03-15, from `events` on 5433. Before writing the migration, re-read them with `select abbreviation, nom_date, awards_date from events order by nom_date`, and confirm each is inside `inSeason(…, 2026)`.)
-
-- [ ] **Step 3: Apply M3 to all three databases**, verifying `select count(*) from event_dates where year = 2026` (**12** on each). Regenerate with the private-copy recipe.
+- [ ] **Step 3: Apply M3 to all three databases**, verifying `select year, count(*) from event_dates group by year` (**12** for each of 2017–2026, on each). Regenerate with the private-copy recipe.
 - [ ] **Step 4: Implement the repository, the `moments` wiring and the script. Run and confirm PASS.**
 - [ ] **Step 5: Cutover**
-  - T3b row: `| 20260929090000_event_dates | event_dates, with 2026 backfilled (D134). Without it every past season's race is undated, and 2026 is too |`.
+  - T3b row: `| 20260929090000_event_dates | event_dates, with 2017–2026 backfilled, 12 shows × 10 seasons (D134). Without it every past season's race is undated, and 2026 is too |`.
   - C5:
     ```sql
-    ('event_dates 2026', coalesce((select count(*) = 12 from event_dates where year = 2026), false)),
+    ('event_dates: 12 shows x 2017-2026', coalesce((select count(*) = 120 and count(distinct year) = 10
+        and min(year) = 2017 and max(year) = 2026 from event_dates), false)),
     ```
   - Add `-e '^event_dates'` to `norm`'s `grep -v`: the dump has no such table, so C3/C7 would read it as a stray.
-  - Mutation-test by dropping the INSERT against a scratch port. Expect C5 red on "event_dates 2026".
-- [ ] **Step 6: 🔴 Mutation.** Make `getSeasonMoments` ignore `datesForYear`. Expect red at a `moments.test.ts` case added here: "a stored 2025 date wins over the events columns".
+  - Mutation-test by dropping the INSERT against a scratch port. Expect C5 red on "event_dates: 12 shows x 2017-2026".
+- [ ] **Step 6: 🔴 Mutation.** Make `getSeasonMoments` ignore `datesForYear`. Expect red at `event-dates.test.ts` "dates a season from its stored row, not the events columns" (through `getSeasonMoments` on the database: `moments.test.ts` calls `toMoments` directly, so it cannot see the wiring).
 - [ ] **Step 7: Record D134 and commit.** `git commit -m "feat(season): keep each show's dates per season (P16.T18)"`
 
 ---
@@ -1461,11 +1425,11 @@ export function toRace(ledger: SeasonLedger): Race;
   - Tokens only, so layering's hex guard holds.
 - **The same data as a `<table>`** follows the chart: seats × steps, cumulative. The chart is `aria-hidden` and the table carries it.
 - Below the chart: lead changes as sentences ("Robert Bernard takes the lead from Jon Bernard · Oscar nominations"), then the biggest moments.
-- On the order axis, the caption is D134's sentence.
+- On the order axis, the caption is T18's sentence ("This season's dates weren't recorded…"). With the 2017–2026 backfill (D134) that is only a season lacking rows.
 
 - [ ] **Step 1: Failing pure tests**
   - `axis` is `'order'` when one step is undated, and `'date'` when all are dated.
-  - `leadChanges` counts a change only when `standings[0].draftId` differs from the previous step's. A tie at the top that `rankSeats` orders by draft order is not a change. (Measured in P16.T14: this gives 2 for league 1's 2025, not the proposal's 6, which counted leader sets; the `OrderOnlyPastSeason` story and T23's check should expect 2, or T22 should adopt the leader-set rule and say so.)
+  - `leadChanges` counts a change only when `standings[0].draftId` differs from the previous step's. A tie at the top that `rankSeats` orders by draft order is not a change. (Measured in P16.T14: this gives 2 for league 1's 2025, not the proposal's 6, which counted leader sets. Re-measured in P16.T18: with 2025 in its own dates (D134) it is **3**, and leader sets are still 6; T23's check should expect 3, or T22 should adopt the leader-set rule and say so. 2025 is no longer an order-only season, so the `OrderOnlyPastSeason` story needs a season lacking rows instead.)
   - The last point of each line equals the seat's total.
 - [ ] **Step 2: Component test.** The table has one row per seat, and its last column equals the totals. The SVG has one `path` per seat.
 - [ ] **Step 3: Implement. Stories:** `DatedSeason` (2026-shaped), `OrderOnlyPastSeason` (2025-shaped, 6 lead changes), `FlatSeason`.
