@@ -389,6 +389,24 @@ jobs:
           fi
           echo "no retired surface token names"
 
+      - name: League URLs are spelled by leagueHref
+        run: |
+          set -uo pipefail
+          # D139: the season and group are path segments, and `leagueHref` is
+          # the one place a league page URL is spelled. A hand-built
+          # `/leagues/${id}?year=` is the legacy form: a 308 on every click,
+          # and in TV mode the way `tv=1` gets dropped (D114). Mirrored in
+          # scripts/layering.sh.
+          offenders=$(git grep -nE '/leagues/\$\{[^}]*\}([`?]|/\$\{)' -- app components lib actions \
+            ':!lib/utils/league-href.ts' ':!*.test.ts' ':!*.test.tsx' 2>/dev/null \
+            | grep -v 'revalidatePath(' || true)
+          if [ -n "$offenders" ]; then
+            echo "::error::build league page URLs with leagueHref (lib/utils/league-href.ts)"
+            echo "$offenders"
+            exit 1
+          fi
+          echo "league URLs are spelled by leagueHref"
+
       - name: No 🔴 in test titles
         run: |
           set -uo pipefail

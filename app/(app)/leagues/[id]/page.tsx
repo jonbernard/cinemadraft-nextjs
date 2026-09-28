@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect, redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { InviteDialog } from '@/components/leagues/InviteDialog';
@@ -21,6 +21,11 @@ import { canManageLeague } from '@/lib/services/league-access';
 import { getLeagueBoardView } from '@/lib/services/league-view';
 import { getActiveYear } from '@/lib/services/season';
 import { cn } from '@/lib/utils/cn';
+import {
+  leagueHref,
+  legacyLeagueRedirect,
+  parseLeagueSegment,
+} from '@/lib/utils/league-href';
 
 /**
  * The origin an invite link should carry.
@@ -94,18 +99,28 @@ function SecondaryAction({ href, children }: { href: string; children: ReactNode
  * paste into a group chat has to open for whoever taps it (D44/D45) — but a
  * private league's board has no business in a stranger's search results.
  */
+/**
+ * The params of all three routes this file serves (D139): `/leagues/[id]`,
+ * `/leagues/[id]/[year]` and `/leagues/[id]/[year]/group/[group]`. The two
+ * deeper `page.tsx` files re-export this one, so there is one page.
+ */
+type LeagueParams = Promise<{ id: string; year?: string; group?: string }>;
+
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: LeagueParams;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { id, year } = await params;
   const leagueId = Number(id);
   if (!Number.isSafeInteger(leagueId) || leagueId <= 0)
     return { title: 'Not here', robots: NOINDEX };
 
   try {
-    const board = await getLeagueBoard(leagueId, await getActiveYear());
+    const board = await getLeagueBoard(
+      leagueId,
+      parseLeagueSegment(year) ?? (await getActiveYear()),
+    );
     return { title: board.leagueName ?? `League ${leagueId}`, robots: NOINDEX };
   } catch {
     return { title: 'Not here', robots: NOINDEX };
@@ -116,11 +131,12 @@ export default async function LeaguePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ year?: string; group?: string; tv?: string }>;
+  params: LeagueParams;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { id } = await params;
-  const { year, group, tv } = await searchParams;
+  const { id, year, group } = await params;
+  const query = await searchParams;
+  const { tv } = query;
 
   // 🔴 TV mode is a URL, not state (P14.T6/T19): one person opens the link and
   // casts it, and a reload two hours into a draft comes back the same way it
@@ -132,14 +148,39 @@ export default async function LeaguePage({
   const leagueId = Number(id);
   if (!Number.isSafeInteger(leagueId) || leagueId <= 0) notFound();
 
-  const requested = Number(year);
-  const season =
-    Number.isSafeInteger(requested) && requested > 0 ? requested : await getActiveYear();
+  const activeYear = await getActiveYear();
+
+  // 🔴 D139: the season and group are path segments. A pre-D139 link —
+  // `?year=2027&group=1&tv=1`, and the league's group chats are full of them —
+  // is redirected rather than rendered, so it never becomes a second spelling
+  // of the page. Only the bare route has these to read; the deeper two ignore a
+  // stray `?year=`, since their path already says which season.
+  if (year === undefined) {
+    const legacy = legacyLeagueRedirect(leagueId, query, activeYear);
+    if (legacy) (legacy.permanent ? permanentRedirect : redirect)(legacy.href);
+  }
+
+  // A year segment that is not canonical digits is a 404, not the current
+  // season: `/leagues/70/draft` is a static route and wins before this runs,
+  // so anything non-numeric that reaches here is a URL nobody built.
+  const requestedYear = year === undefined ? null : parseLeagueSegment(year);
+  if (year !== undefined && requestedYear == null) notFound();
+  const season = requestedYear ?? activeYear;
+
+  // The current season is the bare URL. 307, never 308: see `leagueHref`.
+  if (group === undefined && requestedYear === activeYear) {
+    redirect(leagueHref(leagueId, { tv: tvMode }));
+  }
 
   const [seasons, user] = await Promise.all([
     getLeagueSeasons(leagueId),
     getCurrentUser(),
   ]);
+
+  // A season this league never had is a 404. The current season always
+  // exists, seated or not — it is what the bare URL shows, and where D131's
+  // "open the season" lives.
+  if (season !== activeYear && !seasons.includes(season)) notFound();
 
   // 🔴 One definition of what this page shows (P14.T9). The seat, the
   // roster, the standings and the status flags used to be derived here and
@@ -172,21 +213,20 @@ export default async function LeaguePage({
       : null;
   const boardless = unopened || notice != null;
 
-  // 🔴 Built from the page's own `?year=`, so the stream renders the view the
+  // 🔴 Built from the page's own season, so the stream renders the view the
   // first paint already showed. A stream asked for different parameters is a
   // second, disagreeing page (the note on `LiveRoom`'s `streamUrl`).
   const streamUrl = `/api/leagues/${view.leagueId}/board/stream?year=${view.year}`;
 
-  // 🔴 `?group=` validated against the groups this league-year actually has,
-  // the way the console validates its own, and defaulting to the first. A
-  // remote can land on any number; an unknown one must show a board, not an
-  // empty screen.
-  const requestedGroup = Number(group);
-  const activeGroup =
-    Number.isSafeInteger(requestedGroup) &&
-    view.groups.some((entry) => entry.group === requestedGroup)
-      ? requestedGroup
-      : (view.groups[0]?.group ?? null);
+  // 🔴 The group segment validated against the groups this league-year
+  // actually has, the way the console validates its own; one it does not have
+  // is a 404 (D139). With no segment, TV mode shows the first group. The nav
+  // below only ever links groups that exist, so a remote cannot land on one
+  // that does not.
+  const requestedGroup = group === undefined ? null : parseLeagueSegment(group);
+  if (group !== undefined && !view.groups.some((entry) => entry.group === requestedGroup))
+    notFound();
+  const activeGroup = requestedGroup ?? view.groups[0]?.group ?? null;
 
   /**
    * This page's own URL, with one thing changed.
@@ -195,12 +235,15 @@ export default async function LeaguePage({
    * live room's league picker shipped dropping it and stranded a reader who
    * had a remote and no address bar. The group nav below is the same control
    * in the same trap, so both it and the toggle are built from here rather
-   * than assembled twice.
+   * than assembled twice — and from `leagueHref` beneath that (D139).
    */
   const pageUrl = (next: { group?: number | null; tv?: boolean }) =>
-    `/leagues/${view.leagueId}?year=${view.year}` +
-    (next.group == null ? '' : `&group=${next.group}`) +
-    (next.tv ? '&tv=1' : '');
+    leagueHref(view.leagueId, {
+      year: view.year,
+      group: next.group,
+      tv: next.tv,
+      activeYear,
+    });
 
   // Hoisted out of the JSX: `inviteBase()` used to be awaited inside a
   // conditional JSX expression, which is now inside two conditionals.
@@ -320,7 +363,10 @@ export default async function LeaguePage({
             {/* The way in, and only the way in. The way *out* is the floating
                   stack below, which is the only one of the two that a reader
                   with a remote and no address bar can ever need. */}
-            <TvModeLink href={pageUrl({ group: activeGroup, tv: true })} active={false} />
+            <TvModeLink
+              href={pageUrl({ group: requestedGroup, tv: true })}
+              active={false}
+            />
           </div>
         )}
 
@@ -329,7 +375,7 @@ export default async function LeaguePage({
             {seasons.map((entry) => (
               <Link
                 key={entry}
-                href={`/leagues/${view.leagueId}?year=${entry}`}
+                href={leagueHref(view.leagueId, { year: entry, activeYear })}
                 aria-current={entry === view.year ? 'page' : undefined}
                 className={
                   entry === view.year
@@ -385,7 +431,7 @@ export default async function LeaguePage({
               ))}
             </nav>
           ) : null}
-          <TvModeLink href={pageUrl({ group: activeGroup, tv: false })} active />
+          <TvModeLink href={pageUrl({ group: requestedGroup, tv: false })} active />
         </div>
       ) : null}
 
@@ -403,7 +449,7 @@ export default async function LeaguePage({
             title={`The ${view.year} season hasn’t been set up yet`}
             action={{
               label: `See ${notice}`,
-              href: `/leagues/${view.leagueId}?year=${notice}`,
+              href: leagueHref(view.leagueId, { year: notice, activeYear }),
             }}
           >
             The league’s owner opens each season and seats everyone before the draft. The{' '}

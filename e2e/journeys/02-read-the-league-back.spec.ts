@@ -251,7 +251,7 @@ test.describe('journey 2 — reading the league back', () => {
     });
 
     await beat(page, 'And the board for the season', async () => {
-      await page.goto(`/leagues/${seeded.leagueId}?year=${YEAR}`);
+      await page.goto(`/leagues/${seeded.leagueId}/${YEAR}`);
       await expect(page.getByRole('heading', { name: LEAGUE })).toBeVisible();
       // The draft is over, so the board is a board rather than a running order.
       await expect(page.getByText(`${YEAR} · complete`)).toBeVisible();
@@ -317,7 +317,7 @@ test.describe('journey 2 — reading the league back', () => {
     });
 
     await beat(page, 'All four surfaces moved together', async () => {
-      await page.goto(`/leagues/${seeded.leagueId}?year=${YEAR}`);
+      await page.goto(`/leagues/${seeded.leagueId}/${YEAR}`);
       const after = await totalOnBoard(page, MINE);
       // 🔴 The relationship, never a number: a nomination earns the category's
       // points and a win earns them a second time (DECISIONS.md), so a win is
@@ -339,7 +339,7 @@ test.describe('journey 2 — reading the league back', () => {
       page,
       'And the ledger names the win rather than only doubling',
       async () => {
-        await page.goto(`/leagues/${seeded.leagueId}?year=${YEAR}`);
+        await page.goto(`/leagues/${seeded.leagueId}/${YEAR}`);
         const cell = boardCell(page, MINE);
         await cell.locator('summary').click();
         await expect(cell.getByText('Won')).toBeVisible();

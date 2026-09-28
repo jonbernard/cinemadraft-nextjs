@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useConfirm } from '@/components/ui/ConfirmDialog';
 import { Panel } from '@/components/ui/Panel';
 import { SectionHead } from '@/components/ui/SectionHead';
+import { leagueHref } from '@/lib/utils/league-href';
 
 /**
  * Opening the next season (D131): "Open 2027" on the league page's Seasons
@@ -112,7 +113,7 @@ export function OpenSeasonPanel({
           Open {year}
         </Button>
         <Link
-          href={`/leagues/${leagueId}?year=${fromYear}`}
+          href={leagueHref(leagueId, { year: fromYear })}
           className="text-text-secondary hover:text-text-primary flex min-h-11 items-center text-sm underline"
         >
           See {fromYear}

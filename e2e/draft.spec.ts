@@ -253,7 +253,7 @@ test.describe('draft', () => {
     const stranger = await browser.newContext();
     const strangerPage = await stranger.newPage();
     try {
-      await strangerPage.goto(`/leagues/${leagueId}?year=${YEAR}`);
+      await strangerPage.goto(`/leagues/${leagueId}/${YEAR}`);
 
       // The board renders, including the pick.
       // Scoped to the desktop grid: the board renders both presentations

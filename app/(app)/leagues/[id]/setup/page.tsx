@@ -7,6 +7,7 @@ import { NotFoundError } from '@/lib/errors';
 import { canManageLeague } from '@/lib/services/league-access';
 import { getActiveYear } from '@/lib/services/season';
 import { getReturningPeople, getSeasonSetup } from '@/lib/services/season-setup';
+import { leagueHref } from '@/lib/utils/league-href';
 
 /**
  * The owner's season setup (P10.T14–T19).
@@ -54,7 +55,7 @@ export default async function SeasonSetupPage({
           {view.leagueName}
         </SectionHead>
         <p className="text-text-secondary text-sm">
-          <Link href={`/leagues/${view.leagueId}`} className="underline">
+          <Link href={leagueHref(view.leagueId)} className="underline">
             the board
           </Link>
         </p>

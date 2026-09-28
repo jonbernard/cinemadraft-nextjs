@@ -11,6 +11,7 @@ import { NotFoundError } from '@/lib/errors';
 import { getDraftConsole } from '@/lib/services/draft-console';
 import { canManageLeague } from '@/lib/services/league-access';
 import { getActiveYear } from '@/lib/services/season';
+import { leagueHref } from '@/lib/utils/league-href';
 
 /**
  * The owner's draft console.
@@ -70,7 +71,7 @@ export default async function DraftConsolePage({
           {view.leagueName ?? 'Draft'}
         </SectionHead>
         <p className="text-text-secondary text-sm">
-          <Link href={`/leagues/${view.leagueId}`} className="underline">
+          <Link href={leagueHref(view.leagueId)} className="underline">
             the board the league is watching
           </Link>
         </p>
