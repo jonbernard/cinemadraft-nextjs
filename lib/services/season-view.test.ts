@@ -1,5 +1,7 @@
 // @vitest-environment node
 
+import { randomUUID } from 'node:crypto';
+
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/lib/db';
@@ -18,9 +20,24 @@ vi.mock('@/lib/services/season', async (real) => ({
   getActiveYear: vi.fn(async () => activeYear.value),
 }));
 
-import { getSeasonView, UP_NEXT_FILMS } from './season-view';
+import { getSeasonView, getSeasonViewer, UP_NEXT_FILMS } from './season-view';
 
 async function cleanup() {
+  const leagues = await db.league.findMany({
+    where: { name: { startsWith: TAG } },
+    select: { id: true },
+  });
+  const drafts = await db.draft.findMany({
+    where: { leagueId: { in: leagues.map((league) => league.id) } },
+    select: { id: true },
+  });
+  await db.draftPick.deleteMany({ where: { draftId: { in: drafts.map((d) => d.id) } } });
+  await db.draft.deleteMany({ where: { id: { in: drafts.map((d) => d.id) } } });
+  await db.league.deleteMany({
+    where: { id: { in: leagues.map((league) => league.id) } },
+  });
+  await db.user.deleteMany({ where: { email: { startsWith: `${TAG}-` } } });
+  await db.point.deleteMany({ where: { level: { startsWith: TAG } } });
   const events = await db.event.findMany({
     where: { abbreviation: { startsWith: TAG } },
     select: { id: true },
@@ -197,5 +214,133 @@ describe('getSeasonView', () => {
     await seed({ nominations: false });
     const view = await getSeasonView(null);
     expect(view).toMatchObject({ year: YEAR, offSeason: false });
+  });
+});
+
+/**
+ * P16.T16: a league with the reader and a rival in 2989, and a show whose
+ * nominations are in: the reader's film once (10), the rival's twice (20).
+ */
+async function seedLeague({ rival = true } = {}) {
+  const now = new Date();
+  const stamp = { createdAt: now, updatedAt: now };
+  const point = await db.point.create({
+    data: { level: `${TAG}-level`, tier: 1, points: 10, ...stamp },
+    select: { id: true },
+  });
+  const event = await db.event.create({
+    data: {
+      name: `${TAG} Viewer Show`,
+      abbreviation: `${TAG}-viewer`,
+      nomDate: BigInt(Date.UTC(YEAR, 0, 10)),
+      awardsDate: BigInt(Date.UTC(YEAR, 2, 1)),
+      ...stamp,
+    },
+    select: { id: true },
+  });
+  const [picture, director] = await Promise.all(
+    ['Picture', 'Director'].map((name) =>
+      db.award.create({
+        data: { name, eventId: event.id, points: point.id, ...stamp },
+        select: { id: true },
+      }),
+    ),
+  );
+  const film = (title: string) =>
+    db.movie.create({
+      data: { title, sortTitle: title, ...stamp },
+      select: { id: true },
+    });
+  const mine = await film(`${TAG} mine`);
+  const theirs = await film(`${TAG} theirs`);
+  const nominate = (movieId: number, awardId: number) =>
+    db.nomination.create({
+      data: { movieId: BigInt(movieId), awardId: BigInt(awardId), year: YEAR, ...stamp },
+      select: { id: true },
+    });
+  const myNomination = await nominate(mine.id, picture?.id as number);
+  await nominate(theirs.id, picture?.id as number);
+  await nominate(theirs.id, director?.id as number);
+
+  const user = (role: string) =>
+    db.user.create({
+      data: {
+        uuid: randomUUID(),
+        email: `${TAG}-${role}-${randomUUID()}@example.test`,
+        ...stamp,
+      },
+      select: { id: true },
+    });
+  const reader = await user('reader');
+  const league = await db.league.create({
+    data: {
+      name: `${TAG} League`,
+      owner: JSON.stringify([reader.id]),
+      uuid: randomUUID(),
+      ...stamp,
+    },
+    select: { id: true },
+  });
+  const seat = async (userId: number, movieId: number, order: number) => {
+    const draft = await db.draft.create({
+      data: { leagueId: league.id, year: YEAR, userId, group: 1, order },
+      select: { id: true },
+    });
+    await db.draftPick.create({
+      data: { draftId: draft.id, movieId: BigInt(movieId), order: 1, ...stamp },
+    });
+  };
+  await seat(reader.id, mine.id, 1);
+  if (rival) await seat((await user('rival')).id, theirs.id, 2);
+
+  /** Mark the reader's nomination the winner, and put the show on air. */
+  async function onAirWithMyWin() {
+    await db.winner.create({
+      data: {
+        awardId: BigInt(picture?.id as number),
+        movieId: BigInt(mine.id),
+        nominationId: BigInt(myNomination.id),
+        year: YEAR,
+        ...stamp,
+      },
+    });
+    await db.event.update({ where: { id: event.id }, data: { awardsActive: true } });
+  }
+  return { readerId: reader.id, leagueId: league.id, eventId: event.id, onAirWithMyWin };
+}
+
+describe('getSeasonViewer', () => {
+  it('says what a finished moment did to the reader: its points and rankSeats position', async () => {
+    const { readerId, leagueId, eventId } = await seedLeague();
+    const viewer = await getSeasonViewer(readerId, YEAR);
+    expect(viewer.leagues.map((league) => league.leagueId)).toEqual([leagueId]);
+    const line = viewer.leagues[0]?.byMoment.get(`${eventId}-nominations`);
+    // One nomination worth 10; the rival's two put them first.
+    expect(line).toEqual({ points: 10, position: 2, move: 0 });
+    expect(viewer.leagues[0]?.byMoment.has(`${eventId}-ceremony`)).toBe(false);
+  });
+
+  it('puts the reader’s undecided nominations at stake for the next ceremony', async () => {
+    const { readerId } = await seedLeague();
+    const viewer = await getSeasonViewer(readerId, YEAR);
+    expect(viewer.atStake).toEqual({
+      films: [{ title: `${TAG} mine`, tmdbId: null, category: 'Picture' }],
+      points: 10,
+      more: 0,
+    });
+  });
+
+  it('gives a live ceremony no line, even with a winner already in', async () => {
+    const { readerId, eventId, onAirWithMyWin } = await seedLeague();
+    await onAirWithMyWin();
+    const viewer = await getSeasonViewer(readerId, YEAR);
+    expect(viewer.leagues[0]?.byMoment.has(`${eventId}-ceremony`)).toBe(false);
+    expect(viewer.leagues[0]?.byMoment.get(`${eventId}-nominations`)?.points).toBe(10);
+    expect(viewer.atStake).toBeNull();
+  });
+
+  it('leaves out a league where the reader has no rival', async () => {
+    const { readerId } = await seedLeague({ rival: false });
+    expect((await getSeasonViewer(readerId, YEAR)).leagues).toEqual([]);
   });
 });

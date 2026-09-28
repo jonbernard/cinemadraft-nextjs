@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 
-import { SeasonAgenda } from './SeasonAgenda';
+import { LeagueMomentLine, SeasonAgenda } from './SeasonAgenda';
 import { DAY_BEFORE_OSCARS, season2026 } from './season-fixtures';
 
 /**
@@ -38,11 +38,13 @@ export const SignedIn: Story = {
         .filter((moment) => moment.state === 'finished')
         .map((moment, index) => [
           moment.key,
-          <span key={moment.key} className="text-text-secondary tabular text-xs">
-            Racso award{' '}
-            <span className="text-text-primary font-mono">+{(index * 7) % 40}</span>
-            {' · '}16th
-          </span>,
+          <LeagueMomentLine
+            key={moment.key}
+            name="Racso award"
+            points={(index * 35) % 180}
+            position={index < 2 ? 13 : 16}
+            move={index === 1 ? -3 : 0}
+          />,
         ]),
     ),
   },

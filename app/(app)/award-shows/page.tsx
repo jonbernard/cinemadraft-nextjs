@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { SeasonAgenda } from '@/components/awards/SeasonAgenda';
-import { SeasonUpNext } from '@/components/awards/SeasonUpNext';
+import type { ReactNode } from 'react';
+import { LeagueMomentLine, SeasonAgenda } from '@/components/awards/SeasonAgenda';
+import { AtStake, SeasonUpNext } from '@/components/awards/SeasonUpNext';
 import { InviteLink } from '@/components/leagues/InviteLink';
 import { Panel } from '@/components/ui/Panel';
 import { SectionHead } from '@/components/ui/SectionHead';
@@ -8,7 +9,7 @@ import { StatusChip } from '@/components/ui/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { getAwardShows } from '@/lib/services/award-show';
 import { getSeasons } from '@/lib/services/season';
-import { getSeasonView } from '@/lib/services/season-view';
+import { getSeasonView, getSeasonViewer } from '@/lib/services/season-view';
 
 /**
  * The origin the calendar subscribe URL should carry.
@@ -62,6 +63,19 @@ export default async function AwardShowsPage({
     requestOrigin(),
     getSeasons(),
   ]);
+
+  // 🔴 Signed in only (P16.T16): a stranger's request loads no board.
+  const viewer = user ? await getSeasonViewer(user.id, view.year) : null;
+  const aside = new Map<string, ReactNode>();
+  for (const moment of view.months.flatMap((month) => month.moments)) {
+    const lines = (viewer?.leagues ?? []).flatMap((league) => {
+      const line = league.byMoment.get(moment.key);
+      return line
+        ? [<LeagueMomentLine key={league.leagueId} name={league.name} {...line} />]
+        : [];
+    });
+    if (lines.length > 0) aside.set(moment.key, lines);
+  }
 
   const isAdmin = user?.role === 'admin';
   const shows = isAdmin ? await getAwardShows(view.activeYear) : [];
@@ -130,12 +144,21 @@ export default async function AwardShowsPage({
         </Panel>
       ) : null}
 
-      <SeasonUpNext view={view} now={Date.now()} />
+      <SeasonUpNext view={view} now={Date.now()}>
+        {viewer?.atStake && view.next ? (
+          <AtStake
+            atStake={viewer.atStake}
+            year={view.year}
+            abbreviation={view.next.abbreviation}
+          />
+        ) : null}
+      </SeasonUpNext>
 
       <SeasonAgenda
         months={view.months}
         year={view.year}
         nextKey={view.next?.key ?? null}
+        aside={aside}
       />
 
       <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">

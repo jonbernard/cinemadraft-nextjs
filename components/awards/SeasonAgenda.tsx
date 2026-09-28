@@ -5,7 +5,7 @@ import { SectionHead } from '@/components/ui/SectionHead';
 import { StatusChip } from '@/components/ui/StatusChip';
 import type { SeasonMoment, SeasonView } from '@/lib/services/season-view';
 import { cn } from '@/lib/utils/cn';
-import { plural, showDay, showWeekday } from '@/lib/utils/season-words';
+import { ordinal, plural, showDay, showWeekday } from '@/lib/utils/season-words';
 
 /** What a moment says it did, in one line: the phase and its count. */
 function summary(moment: SeasonMoment): string {
@@ -132,5 +132,45 @@ export function SeasonAgenda({
         </section>
       ))}
     </div>
+  );
+}
+
+/**
+ * What one finished moment did to the reader in one league (P16.T16):
+ * "Racso award +170 · 16th ▼3". The arrow is decoration; the direction is
+ * read out in words.
+ */
+export function LeagueMomentLine({
+  name,
+  points,
+  position,
+  move,
+}: {
+  name: string;
+  points: number;
+  position: number;
+  move: number;
+}) {
+  const signed = points > 0 ? `+${points}` : points < 0 ? `−${Math.abs(points)}` : '0';
+  const places = Math.abs(move) === 1 ? 'place' : 'places';
+  return (
+    <span className="text-text-secondary tabular text-xs sm:text-right">
+      <span className="font-serif">{name}</span>{' '}
+      <span className="text-text-primary font-mono">{signed}</span>
+      {' · '}
+      {ordinal(position)}
+      {move !== 0 ? (
+        <>
+          <span aria-hidden="true" className="font-mono">
+            {' '}
+            {move > 0 ? '▲' : '▼'}
+            {Math.abs(move)}
+          </span>
+          <span className="sr-only">
+            , {move > 0 ? 'up' : 'down'} {Math.abs(move)} {places}
+          </span>
+        </>
+      ) : null}
+    </span>
   );
 }

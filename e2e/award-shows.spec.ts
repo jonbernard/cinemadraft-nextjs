@@ -772,6 +772,11 @@ test.describe('award shows', () => {
  */
 const SV = 'e2e-season-view';
 const SV_YEAR = 2989;
+const SV_READER = {
+  email: `${SV}-reader@example.test`,
+  firstName: 'Rhea',
+  lastName: 'Reader',
+};
 const SV_RIVAL = { name: 'Ravi Rival' };
 const SV_LEAGUE = `${SV} League`;
 const svFilm = (i: number) => `${SV} ${String(i).padStart(2, '0')}`;
@@ -889,6 +894,7 @@ async function noSideways(page: Page): Promise<void> {
 test.describe('the season view', () => {
   test.describe.configure({ mode: 'serial' });
   test.beforeAll(svCleanup);
+  test.afterEach(svCleanup);
   test.afterAll(svCleanup);
 
   test('signed out: the season in date order, Up next capped, and nobody’s seat', async ({
@@ -938,6 +944,41 @@ test.describe('the season view', () => {
     const html = await page.content();
     for (const name of ['Rhea Reader', SV_RIVAL.name, SV_LEAGUE]) {
       expect(html.split(name).length - 1).toBe(0);
+    }
+  });
+
+  test('signed in, a finished moment says what it did to your league; signed out, it does not', async ({
+    page,
+    browser,
+  }) => {
+    const readerId = await signInAs(page, SV_READER);
+    await svSeed(readerId);
+    const url = `/award-shows?year=${SV_YEAR}`;
+    const nominations = (reader: Page) =>
+      reader.getByRole('link', {
+        name: new RegExp(`${SV} Show Nominations · 11 nominations`),
+      });
+
+    await page.goto(url);
+    // Two nominations at 10 against the rival's one: +20, and first.
+    await expect(nominations(page)).toContainText(`${SV_LEAGUE} +20 · 1st`);
+    // The ceremony has not happened: no line on it.
+    await expect(
+      page.getByRole('link', { name: new RegExp(`${SV} Show Ceremony`) }),
+    ).not.toContainText(SV_LEAGUE);
+    await expect(
+      page.getByText('2 of your nominations are up for 20 more points'),
+    ).toBeVisible();
+
+    const stranger = await browser.newContext();
+    try {
+      const other = await stranger.newPage();
+      await other.goto(url);
+      await expect(nominations(other)).toBeVisible();
+      await expect(nominations(other)).not.toContainText(SV_LEAGUE);
+      expect((await other.content()).includes(SV_LEAGUE)).toBe(false);
+    } finally {
+      await stranger.close();
     }
   });
 

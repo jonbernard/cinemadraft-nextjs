@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { ShowLogo } from '@/components/awards/ShowLogo';
 import { Panel } from '@/components/ui/Panel';
 import { SectionHead } from '@/components/ui/SectionHead';
-import type { SeasonView } from '@/lib/services/season-view';
+import type { SeasonView, SeasonViewer } from '@/lib/services/season-view';
 import { filmHref } from '@/lib/utils/film-href';
 import { countdown, plural, showDay, showWeekday } from '@/lib/utils/season-words';
 
@@ -152,5 +152,57 @@ export function SeasonUpNext({
 
       {children}
     </Panel>
+  );
+}
+
+/**
+ * The reader's nominations at stake at the next ceremony (P16.T16): a win
+ * pays a nomination's points a second time, so that is the sum. Capped like
+ * the films above, and plain text (D73).
+ */
+export function AtStake({
+  atStake,
+  year,
+  abbreviation,
+}: {
+  atStake: NonNullable<SeasonViewer['atStake']>;
+  year: number;
+  abbreviation: string;
+}) {
+  const count = atStake.films.length + atStake.more;
+  if (count === 0) {
+    return (
+      <p className="text-text-secondary text-sm">None of your films is nominated here.</p>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-text-secondary text-sm">
+        {count === 1
+          ? `1 of your nominations is up for ${atStake.points} more points`
+          : `${count} of your nominations are up for ${atStake.points} more points`}
+      </h3>
+      <ul className="grid gap-x-6 sm:grid-cols-2">
+        {atStake.films.map((film) => (
+          <li
+            key={`${film.title}-${film.category}`}
+            className="flex min-h-11 items-center justify-between gap-3"
+          >
+            <span className="text-text-primary min-w-0 truncate font-serif text-base">
+              {film.title}
+            </span>
+            <span className="text-text-secondary shrink-0 text-xs">{film.category}</span>
+          </li>
+        ))}
+      </ul>
+      {atStake.more > 0 ? (
+        <Link
+          href={`/award-shows/${abbreviation}?year=${year}`}
+          className="text-text-secondary hover:text-text-primary flex min-h-11 w-fit items-center text-sm underline"
+        >
+          and {atStake.more} more
+        </Link>
+      ) : null}
+    </div>
   );
 }

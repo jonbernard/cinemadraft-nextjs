@@ -2499,7 +2499,7 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
 - [x] P16.T13 — `moments`: a season's scoring moments, in order (9 pure tests; mutations: clock-based state → 3 red, drop the active-year half of `live` → 1 red, ignore `datesForYear` → 1 red)
 - [x] P16.T14 — `season-ledger`: every seat's points per moment, and the standings after each (8 pure + 3 restored tests; Sasha Downey 1190, Jacob 1130; lead changes 3/6 by leader set, 2/2 by `standings[0]`)
 - [x] P16.T15 — the season view replaces the logo grid (signed out first). 6 service (DB, CI) + 8 component + 4 words tests; e2e "the season view" (2); mutation `UP_NEXT_FILMS = 20` → service and e2e red
-- [ ] P16.T16 — signed in, each finished moment says what it did to you
+- [x] P16.T16 — signed in, each finished moment says what it did to you. 4 service (DB, CI) + 2 page tests, e2e signed in vs a signed-out context; mutations: lines on live moments → red; viewer loaded signed out → red
 - [ ] P16.T17 — tranche 3 gate
 
 **Tranche 4: the ledger**

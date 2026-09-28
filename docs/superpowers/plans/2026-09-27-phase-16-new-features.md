@@ -1206,7 +1206,7 @@ export async function getSeasonViewer(userId: number, year: number): Promise<Sea
 ```
 - It covers leagues where the reader holds a seat in `year` and the league has ≥ 2 seats, up to `MAX_LEAGUES`, newest league first.
 - A row reads: "Racso award +170 · 16th ▼3". The direction is in words for screen readers ("down 3 places").
-- **Finished moments only.** A live ceremony shows no per-league line (the owner's rule), and `/live` is linked instead.
+- **Finished moments only.** A live ceremony shows no per-league line (the owner's rule), and `/live` is linked instead. (Settled in P16.T16: the link is Up next's "Follow live →" and the row's "On air" chip, because each agenda row is itself a link and cannot hold another. `atStake` counts each undecided nomination once across the reader's leagues, and is null unless the next moment is an upcoming ceremony.)
 
 - [ ] **Step 1: Failing tests.** Seed a league with the reader and a rival, and a tagged show in 2989 with one nomination on each seat's film.
   - The reader's line at that nominations moment has `points` equal to the nomination's points.
