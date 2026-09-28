@@ -717,7 +717,7 @@ Replaces the polling fallback (D13).
 
 ### Phase 16 — New features
 
-**Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`.** The owner's decisions of 2026-09-27 are reproduced there and supersede the bullets below where they differ: nobody carries forward into a new season; head-to-head is public; there is no public board on `/`, and the signed-out league page becomes a follower's read-only view; "what moved" is live during ceremonies; the race chart ships, with per-season dates; every browse result is stored. The research notes below are kept for their measurements. Task IDs are `P16.Tn`, in six tranches.
+**Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`.** The owner's decisions of 2026-09-27 are reproduced there and supersede the bullets below where they differ: nobody carries forward into a new season; head-to-head is public; there is no public board on `/`, and the signed-out league page becomes a follower's read-only view; "what moved" is live during ceremonies; the race chart ships, with per-season dates; film URLs are title + TMDB id for every film (shape 2 below, not the recommended shape 1), with no slug column, and browse results are not stored. The research notes below are kept for their measurements. Task IDs are `P16.Tn`, in six tranches.
 
 
 > **Possible future enhancement, not planned work:** a self-service timed draft (clock, on-the-clock cell, per-turn deadline). The owner confirmed that entering picks during a video call is the intended workflow (D46), so this would be a change in how the product works, not a gap to close. Only build it if the owner asks.

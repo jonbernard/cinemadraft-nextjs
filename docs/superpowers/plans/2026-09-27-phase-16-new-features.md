@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship the seven Phase 16 features the owner decided on 2026-09-27: opening next season, film slugs (and the duplicate-film merge they need), the season view on `/award-shows`, the extended points ledger (standings by show, a live "what moved", a page per seat, a race chart), head-to-head compare, and the signed-out league page as a follower's view.
+**Goal:** Ship the seven Phase 16 features the owner decided on 2026-09-27: opening next season, title-and-id film URLs, the duplicate-film merge, the season view on `/award-shows`, the extended points ledger (standings by show, a live "what moved", a page per seat, a race chart), head-to-head compare, and the signed-out league page as a follower's view.
 
-**Architecture:** Nothing new is scored. Every figure comes from `getLeagueBoard`'s single batched load (D59, D125, D126). Two new pure services turn that load into a season: `lib/services/moments.ts` (the season's 23 scoring moments, in order) and `lib/services/season-ledger.ts` (each seat's points per moment, and the standings after each one). The season view, the standings tab, the live panel, the seat page, the race chart, head-to-head and the stranger's "race at the top" all read those two services. Four migrations: `events.has_ceremony`, the duplicate-film merge with a unique `tmdb_id`, slugs, and a per-season `event_dates` table. Realtime reuses the D102/D110 pattern, as a third route with its own 204 gate, because D116 requires a new decision for anything that streams outside a draft.
+**Architecture:** Nothing new is scored. Every figure comes from `getLeagueBoard`'s single batched load (D59, D125, D126). Two new pure services turn that load into a season: `lib/services/moments.ts` (the season's 23 scoring moments, in order) and `lib/services/season-ledger.ts` (each seat's points per moment, and the standings after each one). The season view, the standings tab, the live panel, the seat page, the race chart, head-to-head and the stranger's "race at the top" all read those two services. Three migrations: `events.has_ceremony`, the duplicate-film merge with a unique `tmdb_id`, and a per-season `event_dates` table. Film URLs need none. Realtime reuses the D102/D110 pattern, as a third route with its own 204 gate, because D116 requires a new decision for anything that streams outside a draft.
 
 **Tech Stack:** Next.js 16.3 App Router (read `node_modules/next/dist/docs/` before writing route code, as AGENTS.md requires), React 19, Prisma 7 on Postgres 17 / Neon, MUI + Tailwind 4 in cascade layers, Vitest (two projects), Playwright against a production build, Storybook, Biome.
 
@@ -14,7 +14,7 @@
 
 ## Owner decisions (2026-09-27, authoritative)
 
-Reproduced verbatim, including the two corrections the owner made the same day: §6 compare became public, and §7 became "followers".
+Reproduced verbatim, including the three corrections the owner made the same day: §2 film URLs became title + id for every film, §6 compare became public, and §7 became "followers".
 
 > ## 1. Stage the next season
 > - Entry: "Open 2027" (films-and-season option B), rollover panel (A) as fallback.
@@ -23,11 +23,11 @@ Reproduced verbatim, including the two corrections the owner made the same day: 
 > - After opening: land on season setup.
 > - Only one season beyond the league's newest can be opened.
 >
-> ## 2. Film addresses (slugs)
-> - `/films/arrival-2016`; TMDB id appended only on a real clash.
-> - **Store every browse result** so every film has a slug (ingest when a film is shown/opened, not only when drafted/nominated). Measure write volume and Neon cost; bound it.
-> - Old numeric links 301 to the slug, forever.
-> - Slug is permanent once assigned (title/year corrections don't change it).
+> ## 2. Film addresses (slugs) — REVISED 2026-09-27
+> - **Title + TMDB id for every film**: `/films/coyote-vs-acme-1204680` (PLAN.md shape 2). Owner: "I just don't like having a different URL for movies we've seen vs movies we haven't."
+> - Same shape for held and unheld films; the id is authoritative; a wrong/stale slug part 301/308-redirects to the canonical spelling; old numeric `/films/1204680` links redirect forever.
+> - No slug column, no slug migration; the slug part is derived from the title at render.
+> - **Do NOT store every browse result** — that was only to give every film a slug; dropped.
 >
 > ## 3. Duplicate films (8 pairs in production)
 > - Older row survives; merged automatically per pair.
@@ -67,13 +67,9 @@ Reproduced verbatim, including the two corrections the owner made the same day: 
 Each question has a default. The plan is written to that default, so work can start without an answer, and each default is one condition in one place, so an answer changes one line.
 
 1. **A league that skipped a season.** The rules "appears when the active year is the next year" and "only one season beyond the league's newest" agree for a league that plays every year. They conflict for a league whose newest season is 2025 when the site is on 2027: newest + 1 is 2026, which is already over. **Default: the offer appears only when `activeYear === newest + 1`.** A league that skipped a year gets no offer and needs the admin. The alternative is to allow opening the active year whenever it is newer than the league's newest. Either way it is one condition in `canOpenSeason` (P16.T4).
-2. **"301" is sent as a 308.** Next's `permanentRedirect()` sends 308 Permanent Redirect. Browsers, crawlers and link unfurlers treat it exactly like 301 for a GET. Sending a literal 301 would move the redirect into `proxy.ts` and need a database lookup there. **Default: 308.** Say so if a literal 301 matters.
-3. **Where "store every browse result" writes.** Measured and bounded in P16.T11. **Default:**
-   - **Written:** every film rendered by `/browse`, plus the "In cinemas now" shelf on `/`, on render and for every reader. Only the films not already held are inserted. A signed-in reader opening an unheld film page by id also writes it.
-   - **Not written:** a **signed-out** reader opening an unheld film by id. D63's crawler bound stays for that one case. Search results and a film page's "similar films" are not written either.
-   - Opening an unheld film by id signed out still works: it renders from TMDB at its numeric address, as today.
-4. **What does "above/below" drive for a seated member?** Option B has no default partner, and the owner's answer names C's above/below rule. **Default:** the reader's "Your roster" panel gains one line, "25 behind Micah Baird · Compare", pointing at the seat directly above (or directly below, for the leader). The rule also picks the stranger's "race at the top" (1st against 2nd). **Nobody gets C's two cards.**
-5. **Does "what moved" also go live on nominations mornings?** The owner said "as winners are entered". The only on-air flag the port sets is `awards_active`; nothing sets `nom_active` (D118). **Default: live only while a show's `awards_active` is on.** A nominations morning appears after the award-entry skill's `refresh`, as today.
+2. **"301" is sent as a 308.** Next's `permanentRedirect()` sends 308 Permanent Redirect. Browsers, crawlers and link unfurlers treat it exactly like 301 for a GET. A literal 301 would move the redirect into `proxy.ts`, which would need the film's TMDB title there. **Default: 308.** Say so if a literal 301 matters.
+3. **What does "above/below" drive for a seated member?** Option B has no default partner, and the owner's answer names C's above/below rule. **Default:** the reader's "Your roster" panel gains one line, "25 behind Micah Baird · Compare", pointing at the seat directly above (or directly below, for the leader). The rule also picks the stranger's "race at the top" (1st against 2nd). **Nobody gets C's two cards.**
+4. **Does "what moved" also go live on nominations mornings?** The owner said "as winners are entered". The only on-air flag the port sets is `awards_active`; nothing sets `nom_active` (D118). **Default: live only while a show's `awards_active` is on.** A nominations morning appears after the award-entry skill's `refresh`, as today.
 
 **Interpretations stated rather than asked:**
 - **Opening a comparison.** The "Compare" link compares the reader's own seat with the row. A reader with no seat that season, which includes every follower, gets the leader against the row, and the leader's own row gets 1st against 2nd. This is the B prototype's rule.
@@ -83,7 +79,7 @@ Each question has a default. The plan is written to that default, so work can st
 
 ## Global Constraints
 
-- 🔴 **AGENTS.md is binding.** Biome, not ESLint. MUI for components, Tailwind for custom styling, and never `!important`. `npm run lock` for any lockfile change. No new dependencies are needed or allowed in this plan: the race chart is hand-drawn SVG and slugs are made in SQL.
+- 🔴 **AGENTS.md is binding.** Biome, not ESLint. MUI for components, Tailwind for custom styling, and never `!important`. `npm run lock` for any lockfile change. No new dependencies are needed or allowed in this plan: the race chart is hand-drawn SVG and film URLs are spelled by one pure function.
 - 🔴 **Databases.** Export `DATABASE_URL` for every test run: 5433/5434, or the port `npm run agent:up` printed. Never use 5432, which is the owner's. Run unit tests with `E2E_TEST_AUTH` **unset**.
 - 🔴 **Every migration is applied to all three databases, by hand**, then verified with `information_schema`, not with the command's own output:
   ```bash
@@ -138,19 +134,18 @@ After that, on the task's own executor, which holds restored data: the full unit
 The five inputs most likely to hurt a real person, each pinned by a test in the task that owns it:
 
 1. **A finished season relabelled when the next one opens.** `drafting_status` is one column for every season. Opening 2027 used to make 2026 read `pending` and let its groups be re-dealt. Pinned in P16.T3 by `randomiseGroups({ year: previous })` being refused after opening.
-2. **Two films with one title and year inserted in one statement.** Browse can surface both *Sing* (2016) films on one page. Without the right volatility on the slug function, both rows compute `sing-2016` and the whole batch fails with a unique violation, so browse shows nothing. Pinned in P16.T9 by a single-statement two-row insert.
+2. **A film whose title is digits, or has no Latin letters.** `/films/1917-530915` must resolve to 530915 and not 1917, and `弟弟` must get a bare-id URL that does not redirect to itself. Pinned in P16.T9 by "reads the id from the end" and "keeps the bare id when nothing Latin survives".
 3. **A ceremony scoring under a viewer who left the tab.** A hidden or off-air standings page must open no stream (D111/D123). Pinned in P16.T20 by the hidden-at-mount case and the off-air budget test.
 4. **A merge that silently rewrites a draft.** Both copies of a film picked in one league, season and group must abort the migration. Pinned in P16.T8 by a CI-runnable, rolled-back transaction that expects the `RAISE`.
 5. **A follower told less than a player.** Pinned in P16.T26 by an e2e test that compares the seat names, picks and totals a stranger's context reads with what a player's context reads, on every league tab.
 
-## Migrations (four)
+## Migrations (three)
 
 | # | Migration | Task | Change | Cutover (T3b table, C5, C7) |
 |---|---|---|---|---|
 | M1 | `20260928090000_event_has_ceremony` | P16.T1 | `events.has_ceremony boolean not null default true`; `afi` → false | row + C5 "afi has no ceremony" |
 | M2 | `20260928120000_movie_merge` | P16.T8 | `merge_duplicate_movies()`, run once; `movies_tmdb_id` → unique `movies_tmdb_id_key` | row + C5 unique index, 0 duplicate `tmdb_id`, 0 orphans + **C7 predicts the merge's deltas** |
-| M3 | `20260928130000_movie_slugs` | P16.T9 | `unaccent`, `movie_slug_base()`, `movie_slug_for()`, `movies.slug` + backfill + `movies_slug_key`, insert trigger | row + C5 column, index, trigger, extension, 0 null slugs among Latin titles |
-| M4 | `20260929090000_event_dates` | P16.T18 | `event_dates(year, event_id, nom_date, nom_time, awards_date, awards_time)`, unique `(year, event_id)`, 2026 backfilled from literals | row + C5 table and 12 rows for 2026; `norm` excludes the new table |
+| M3 | `20260929090000_event_dates` | P16.T18 | `event_dates(year, event_id, nom_date, nom_time, awards_date, awards_time)`, unique `(year, event_id)`, 2026 backfilled from literals | row + C5 table and 12 rows for 2026; `norm` excludes the new table |
 
 Opening a season (tranche 1) needs **no** migration: a season's status is derived (D130).
 
@@ -164,12 +159,11 @@ Opening a season (tranche 1) needs **no** migration: a season's status is derive
 | D130 | **A league's status belongs to its active season.** `seasonStatus(league, year)`: earlier seasons are complete, later ones unopened | P16.T3 |
 | D131 | **Nobody carries forward.** Opening a season creates an empty one. It is offered only when the site's active year is the league's newest + 1. The owner re-seats people from earlier seasons one tap at a time. Supersedes the carry-forward in `stageNextSeason` and the proposal's "Start with nobody" | P16.T4–T6 |
 | D132 | **Duplicate films merge into the oldest row, and `tmdb_id` is unique.** Generic by `tmdb_id`. It aborts if one film would appear twice in one league-season-group. `upsertByTmdbId` and award-import become real upserts | P16.T8 |
-| D133 | **A held film is addressed by a frozen `title-year` slug**, with `-<tmdb>` only on a clash and a permanent redirect from its numeric address. Made in SQL by an insert trigger, so both writers agree | P16.T9 |
-| D134 | **A film shown by browse is stored.** Amends D63 and D56: a row in `movies` no longer means "somebody used this film". Bounded by the discover filters (measured), and by leaving a stranger's open of an unshown id unwritten | P16.T11 |
-| D135 | **Show dates are stored per season, from 2026.** `event_dates`. The race chart uses a date axis where every finished moment has a date and an order-only axis otherwise (2017–2025), and says so on the page | P16.T18, T22 |
-| D136 | **"What moved" streams during a ceremony.** A new route with its own 204 gate (any show `awards_active`, and the active year), the "new decision with its own budget" D116 asked for | P16.T20 |
-| D137 | **Head-to-head is public, like the board.** The owner reversed "members only" on 2026-09-27. `?vs=` on `/leagues/[id]`, noindex | P16.T24 |
-| D138 | **No league is featured on `/`; the signed-out league page is a follower's read-only view**, with the measured audit of what it still withholds and why | P16.T26 |
+| D133 | **Film URLs are title + TMDB id, for every film, and the id is authoritative.** `/films/<slug>-<id>`, with the slug part derived at render from the TMDB title the page already fetches. No column, no migration. A bare id or a stale slug part gets a permanent redirect (308) to the canonical spelling | P16.T9, T10 |
+| D134 | **Show dates are stored per season, from 2026.** `event_dates`. The race chart uses a date axis where every finished moment has a date and an order-only axis otherwise (2017–2025), and says so on the page | P16.T18, T22 |
+| D135 | **"What moved" streams during a ceremony.** A new route with its own 204 gate (any show `awards_active`, and the active year), the "new decision with its own budget" D116 asked for | P16.T20 |
+| D136 | **Head-to-head is public, like the board.** The owner reversed "members only" on 2026-09-27. `?vs=` on `/leagues/[id]`, noindex | P16.T24 |
+| D137 | **No league is featured on `/`; the signed-out league page is a follower's read-only view**, with the measured audit of what it still withholds and why | P16.T26 |
 
 ## Traps, recorded before anyone hits them
 
@@ -180,9 +174,6 @@ Opening a season (tranche 1) needs **no** migration: a season's status is derive
 - 🔴 **The merge changes restored row counts.**
   - `lib/db.test.ts`, `scripts/agent-baseline.sh`, `scripts/agent-up.sh` and AGENTS.md all say 1,355 movies. After M2 the migrated executors hold **1,347** (8 pairs merged, measured by the prototype).
   - `restore-from-heroku.sh`'s C7 compares post-migration counts with the dump's, so without P16.T8's prediction step it goes red on every restore.
-- 🔴 **Store-every-browse-result breaks exact counts again.**
-  - Browsing ingests real films, and they do not match `db.test.ts`'s `e2e-` title exclusion.
-  - P16.T11 moves the movie count to a `created_at` cutoff taken from the baseline dump.
 - 🔴 **`scoring.differential.test.ts` is keyed by the source's ids.** Four merged pairs carry nominations: Allegiant 50/117, Ready Player One 270/331, Solo 258/332, My Life as a Zucchini 60/177. The losers' figures move onto the keepers. P16.T8 derives that deviation. It never hand-lists it.
 - 🔴 **The board stream answers 204 during a ceremony.** It streams only while `drafting_status = 'active'` (D116). The live panel needs its own route (P16.T20). It must not widen that one.
 - 🔴 **`StandingsRow` has no `draftId`.** Its `userId` is `-draftId` for a dummy seat. `?vs=` needs the real id, so P16.T24 adds it.
@@ -653,9 +644,9 @@ Drop the already-seated check. Expect red at "a second seatReturning … is refu
 - [ ] **Step 5:** Tell the owner the tranche is on `dev` and that flipping the active year is now safe. `git commit -m "docs: P16 tranche 1 gate"`
 
 ---
-# Tranche 2 — The duplicate-film merge, slugs, and storing every browse result
+# Tranche 2 — The duplicate-film merge, and title + id film URLs
 
-Merge first: slugs need one row per film, and a unique `tmdb_id` is what makes the browse ingest's `ON CONFLICT` possible.
+Two independent pieces. The merge (T8) is a data fix in its own right: two rows per film means two sets of nominations and two scores. The URLs (T9–T10) need no row and no migration.
 
 ### Task P16.T8: The duplicate-film merge (M2)
 
@@ -774,7 +765,7 @@ SELECT merge_duplicate_movies();
 DROP INDEX IF EXISTS movies_tmdb_id;
 CREATE UNIQUE INDEX movies_tmdb_id_key ON movies (tmdb_id);
 ```
-Update the schema, regenerate using the private-copy recipe, and make `upsertByTmdbId` `db.movie.upsert({ where: { tmdbId }, update: {}, create: { ... } })`. `update: {}` keeps D63's "never refresh a cached title", and a slug never changes.
+Update the schema, regenerate using the private-copy recipe, and make `upsertByTmdbId` `db.movie.upsert({ where: { tmdbId }, update: {}, create: { ... } })`. `update: {}` keeps D63's "never refresh a cached title".
 
 - [ ] **Step 4: Run it and confirm PASS.** Also run `film-ingest.test.ts`: its `Promise.all([ensureFilm, ensureFilm])` case is now guaranteed by the index, not by luck. Add to `award-import.test.mjs` a case where an INSERT for an existing `tmdb_id` returns the existing id.
 
@@ -851,196 +842,186 @@ Mutation-check the derivation: point it at the wrong keeper and watch it go red.
 
 ---
 
-### Task P16.T9: Film slugs (M3), the route, and the permanent redirect
+### Task P16.T9: Title + id film URLs: the `[film]` route, the canonical spelling, and the redirects
+
+**The shape (D133):** `/films/<slug>-<tmdbId>` for **every** film, held or not (`/films/coyote-vs-acme-1204680`). No slug column, no migration.
+- **The id is authoritative.** The route reads the trailing digits and nothing else decides which film it is.
+- **The slug part is derived from a title, at render, by one pure function.** The page's canonical spelling uses the TMDB title `loadFilmPage` already fetches, so there is no extra call and held and unheld films follow one rule. Every link builds from the title it already carries.
+- **Redirects.** A request whose segment is not the canonical spelling (a bare numeric id, a stale or mistyped slug part) gets `permanentRedirect()` to the canonical URL. That is a 308, which the open questions record against the owner's "301".
+- A title with nothing Latin left after folding (`弟弟`) has an empty slug part, so its canonical URL is the bare id. It is not redirected, and it cannot loop.
 
 **Files:**
-- Create: `prisma/migrations/20260928130000_movie_slugs/migration.sql` (the prototype's section 3, with the change below), `lib/utils/film-href.ts` (the prototype's `lib/utils/slug.ts`, renamed so it reads as what it is)
+- Create: `lib/utils/film-href.ts`, `lib/utils/film-href.test.ts` (pure, CI)
 - Rename: `app/(app)/films/[tmdbId]/` → `app/(app)/films/[film]/` (`page.tsx`, `opengraph-image.tsx`)
-- Modify: `prisma/schema.prisma` (`slug String? @unique(map: "movies_slug_key") @db.VarChar(160)`), `lib/repositories/movies.ts` (`slug` in `Movie`; `findByTmdbId` returns it; add `findBySlug(slug)`), `lib/services/film.ts` (`resolveFilmSegment`), `lib/seo.ts`, `app/sitemap.ts`, `test/route-protection.ts`, `test/route-protection.test.ts`, `e2e/route-protection.spec.ts` (`'[film]': '999999999'`, `NOT_REQUESTABLE`), `scripts/sweep-deployed.mjs`
-- Modify: cutover T3b table and `restore-from-heroku.sh` C5
-- Test: `lib/utils/film-href.test.ts` (pure, CI), `lib/repositories/movie-slugs.test.ts` (DB, CI), `lib/repositories/movie-slugs.production.test.ts` (restored, excluded), `lib/services/film.test.ts`, `lib/seo.test.ts`, `app/sitemap.test.ts`, `e2e/films.spec.ts`
+- Modify: `app/(app)/films/[film]/page.tsx` (parse, 404, redirect, canonical), `app/(app)/films/[film]/opengraph-image.tsx` (use `parseFilmSegment`; its looser `/^\d+$/` goes), `lib/seo.ts` (`movieJsonLd` url), `app/sitemap.ts` (film entries via `filmHref`; `listForSitemap` also returns `title`), `components/admin/PersonPicker.tsx:9-14` (import the shared `foldAccents` instead of its local copy), `test/route-protection.ts`, `test/route-protection.test.ts`, `e2e/route-protection.spec.ts` (`'[film]': 'e2e-nope-999999999'`, `NOT_REQUESTABLE`), `scripts/sweep-deployed.mjs`
+- Test: `lib/utils/film-href.test.ts`, `lib/seo.test.ts`, `app/sitemap.test.ts`, `e2e/films.spec.ts`
 
 **Interfaces:**
 - Produces:
-  - `isTmdbId(segment: string): boolean`
-  - `filmHref(film: { tmdbId: string | null; slug?: string | null }): string`
-  - `SLUG_SHAPE = /^[a-z0-9-]{1,160}$/`
-  - `resolveFilmSegment(segment: string): Promise<{ tmdbId: string; slug: string | null } | null>`
-  - `Movie.slug: string | null`
-- 🔴 One change from the prototype: `movie_slug_for` is declared **`VOLATILE`**, not `STABLE`. A STABLE function reads the snapshot taken at the start of the calling statement. So two rows with one title and year inserted by **one** statement (P16.T11's batched browse insert, e.g. both *Sing* 2016s) would both compute `sing-2016`, and the second would fail the unique index and take the batch with it. The test in step 1 decides whether VOLATILE is enough. If it goes red, P16.T11 inserts one row per statement instead, and T11 notes why.
-
-- [ ] **Step 1: Failing tests**
-
 ```ts
-// lib/repositories/movie-slugs.test.ts (DB, CI). Every case inserts inside a rolled-back transaction, as in movie-merge.test.ts.
-it('gives a new film title-year, whichever writer inserts it', ...);          // app upsert AND award-import's raw INSERT columns
-it('adds the TMDB id only on a real clash', ...);                               // 'e2e-slug sing' 2016 twice → base, then base-<tmdb>
-it('gives two clashing films distinct slugs when one statement inserts both', ...); // insert … values (a), (b) in ONE statement
-it('keeps a digits-only title from reading as an id', ...);                     // title '1917', no release date → '1917-<tmdb>'
-it('leaves a title with nothing Latin in it on its numeric address', ...);      // '弟弟' → slug null
-it('never changes a slug after a title correction', ...);                       // update title → slug unchanged
-```
-```ts
-// lib/utils/film-href.test.ts: copy the prototype's slug.test.ts, and add:
-expect(filmHref({ tmdbId: null, slug: null })).toBe('/films'); // a row with neither never links to /films/null
+/** Accent-folded, lowercased, `&` → `and`, apostrophes dropped, other runs → `-`, trimmed, ≤ 80 chars at a word break. */
+export function filmSlugPart(title: string | null | undefined): string;
+/** The one place a film URL is spelled. `/films/<slug>-<id>`, or `/films/<id>` when the slug part is empty. */
+export function filmHref(film: { tmdbId: string | number; title: string | null | undefined }): string;
+/** The trailing id and the slug part it arrived with, or null for anything that is not `[a-z0-9-]*\d{1,12}`. */
+export function parseFilmSegment(segment: string): { tmdbId: string; slugPart: string } | null;
+export function foldAccents(text: string): string; // NFKD + strip \p{Diacritic}
 ```
 
-- [ ] **Step 2: Run them and confirm they fail. Write M3 and apply it to all three databases** (loop as in P16.T8 step 5, verifying `select count(*) filter (where slug is null), count(*) from movies`).
-Expected on the restored copies: the only nulls are titles with no Latin letter. List them in the commit body.
+- [ ] **Step 1: Failing pure tests**
 
-- [ ] **Step 3: Route.**
-  - Take the prototype's `page.tsx` and `opengraph-image.tsx` diffs.
-  - `if (resolved.slug && segment !== resolved.slug) permanentRedirect(filmHref(resolved))` comes before any TMDB request.
-  - The canonical, the JSON-LD `url` and the sitemap use `filmHref`.
-  - The OG route uses `resolveFilmSegment`. Its looser `/^\d+$/` regex goes.
-  - Raise `FILM_LIMIT` in `app/sitemap.ts` from 5,000 to 50,000, the protocol maximum. P16.T11 makes the table outgrow 5,000, and `listForSitemap` orders by id, so the cap would silently drop the newest films.
+```ts
+// lib/utils/film-href.test.ts
+import { describe, expect, it } from 'vitest';
+import { filmHref, filmSlugPart, parseFilmSegment } from './film-href';
 
-- [ ] **Step 4: Route protection.** Rename the two `PUBLIC_ROUTES` entries and the pin. Keep D63's comment, amended to say a stranger still causes no write on this route (P16.T11 keeps that).
+describe('film URLs', () => {
+  it('spells every film title-then-id, held or not', () => {
+    expect(filmHref({ tmdbId: '1204680', title: 'Coyote vs. Acme' })).toBe('/films/coyote-vs-acme-1204680');
+    expect(filmHref({ tmdbId: 329865, title: 'Arrival' })).toBe('/films/arrival-329865');
+  });
+  it('folds accents, ampersands and apostrophes', () => {
+    expect(filmSlugPart('Nǎi Nai & Wài Pó')).toBe('nai-nai-and-wai-po');
+    expect(filmSlugPart('I’m Still Here')).toBe('im-still-here');
+    expect(filmSlugPart('TÁR')).toBe('tar');
+  });
+  it('keeps the bare id when nothing Latin survives', () => {
+    expect(filmHref({ tmdbId: '1158915', title: '弟弟' })).toBe('/films/1158915');
+  });
+  it('reads the id from the end, even when the title is digits', () => {
+    expect(parseFilmSegment('1917-530915')).toEqual({ tmdbId: '530915', slugPart: '1917' });
+    expect(parseFilmSegment('530915')).toEqual({ tmdbId: '530915', slugPart: '' });
+    expect(parseFilmSegment('smile-2-1100782')).toEqual({ tmdbId: '1100782', slugPart: 'smile-2' });
+  });
+  it('refuses anything that is not a slug and an id, before any request', () => {
+    for (const bad of ['arrival', '../..', '%00', 'Arrival-329865', `${'a'.repeat(200)}-1`, '1234567890123'])
+      expect(parseFilmSegment(bad)).toBeNull();
+  });
+  it('never links to /films/null', () => {
+    expect(filmHref({ tmdbId: '313369', title: null })).toBe('/films/313369');
+  });
+});
+```
 
-- [ ] **Step 5: e2e (CI data; `test.skip(!hasTmdb)` like the rest of `films.spec.ts`)**
-  - Insert `('e2e-slug Arrival', tmdb 329865, release 2016-11-11)`. `GET /films/329865` with `maxRedirects: 0` is **308** to `/films/e2e-slug-arrival-2016`.
-  - The slug page is 200. `link[rel=canonical]` ends with the slug, and the JSON-LD `url` does too.
-  - `/films/not-a-film-2099` is 404.
-  - An unheld numeric id (`496243` on CI) is 200 with no redirect.
-  - Delete the row in `afterAll`.
+- [ ] **Step 2: Run it and confirm it fails.** Run: `npx vitest run lib/utils/film-href.test.ts`. Expected: FAIL (module missing).
 
-- [ ] **Step 6: The restored-data test** (excluded on CI, with the comment "reads every restored title")
-  - Every held film with a Latin title has a unique slug.
-  - Both *Sing* 2016s: the lower id has `sing-2016`, the other `sing-2016-<its tmdb id>`.
-  - The twenty sample paths in `films-and-season/proposal.md` § Twenty real URL samples resolve exactly. Copy the table into the test as data.
+- [ ] **Step 3: Implement**
 
-- [ ] **Step 7: Cutover**
-  - T3b row: `| 20260928130000_movie_slugs | unaccent; movies.slug, backfilled, unique; insert trigger (D133). Without it every film page 404s by slug and old links stop redirecting |`.
-  - C5:
-    ```sql
-    ('unaccent installed', exists (select 1 from pg_extension where extname = 'unaccent')),
-    ('movies_slug_key unique', exists (select 1 from pg_indexes where schemaname = 'public' and indexname = 'movies_slug_key' and indexdef like 'CREATE UNIQUE INDEX%')),
-    ('movies_assign_slug trigger', exists (select 1 from pg_trigger where tgname = 'movies_assign_slug')),
-    ('every Latin title has a slug', not exists (select 1 from movies where slug is null and title ~ '[A-Za-z]')),
-    ```
-  - Mutation-test C5 by skipping the backfill `DO` block against a scratch port. Expect it red on "every Latin title has a slug".
+```ts
+// lib/utils/film-href.ts: import-free, so client components can spell a film URL too (D133).
+export function foldAccents(text: string): string {
+  return text.normalize('NFKD').replace(/\p{Diacritic}/gu, '');
+}
+export function filmSlugPart(title: string | null | undefined): string {
+  const slug = foldAccents(title ?? '').toLowerCase()
+    .replace(/&/g, ' and ').replace(/['’‘`]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  if (slug.length <= 80) return slug;
+  const cut = slug.slice(0, 80);
+  return cut.slice(0, cut.lastIndexOf('-') > 0 ? cut.lastIndexOf('-') : 80);
+}
+export function filmHref(film: { tmdbId: string | number; title: string | null | undefined }): string {
+  const slug = filmSlugPart(film.title);
+  return `/films/${slug ? `${slug}-` : ''}${film.tmdbId}`;
+}
+const SEGMENT = /^(?:([a-z0-9-]{1,80})-)?(\d{1,12})$/;
+export function parseFilmSegment(segment: string): { tmdbId: string; slugPart: string } | null {
+  const match = SEGMENT.exec(segment);
+  return match ? { tmdbId: match[2] as string, slugPart: match[1] ?? '' } : null;
+}
+```
+
+- [ ] **Step 4: Run it and confirm PASS.**
+
+- [ ] **Step 5: The route**
+  - `page.tsx` and `generateMetadata`: `const parsed = parseFilmSegment((await params).film); if (!parsed) notFound();` before any TMDB request. That keeps today's "a crawler walking nonsense cannot burn the rate limit".
+  - `const film = await loadFilmPage(parsed.tmdbId); if (!film) notFound();`
+  - `const href = filmHref({ tmdbId: parsed.tmdbId, title: film.title }); if (\`/films/${segment}\` !== href) permanentRedirect(href);`. This covers old numeric links and stale slug parts alike. It lives in the page, not `generateMetadata`.
+  - The canonical is `canonical(href)`, and so is the JSON-LD `url` (`movieJsonLd` takes `title`, which it already has).
+  - The OG image resolves with `parseFilmSegment` and never redirects (an image route answers the image).
+  - The page still **never writes** (D63, unchanged). Keep `lib/services/film.test.ts`'s "renders, and writes nothing".
+  - Sitemap: `filmHref({ tmdbId, title })` from `listForSitemap`, which adds `title` to its select.
+
+- [ ] **Step 6: Route protection.** Rename the two `PUBLIC_ROUTES` entries and their pin. D63's comment there stays true word for word.
+
+- [ ] **Step 7: e2e (`e2e/films.spec.ts`, production build; the `hasTmdb` skip it already has)**
+  - With `maxRedirects: 0`, `GET /films/313369` is **308** with `location` `/films/la-la-land-313369`.
+  - `GET /films/la-la-lamd-313369` (stale slug) is 308 to the same place.
+  - `GET /films/la-la-land-313369` is 200. `link[rel=canonical]` and the JSON-LD `url` both end `/films/la-la-land-313369`.
+  - An unheld film gets the same shape: `/films/496243` redirects to `/films/parasite-496243` (the id the spec already uses), and that is 200 **with no `movies` row created** (a SQL count before and after).
+  - `/films/arrival` (no id) is 404, and so is `/films/e2e-nope-999999999`.
 
 - [ ] **Step 8: 🔴 Mutation**
-  - Make the trigger `BEFORE INSERT OR UPDATE`, recomputing the slug. Expect red at "never changes a slug".
-  - Delete the redirect line. Expect the e2e 308 assertion to go red.
-  - Restore both.
+  - Make `parseFilmSegment` take the *first* digit run. Expect red at "reads the id from the end".
+  - Delete the redirect line. Expect the e2e 308 assertions red.
+  - Compare slugs case-insensitively in the redirect check. Expect "stale slug is 308" red.
+  - Restore all three.
 
 - [ ] **Step 9: Record D133 and commit**
 
-`git commit -m "feat(films): films are addressed by a frozen title-year slug (P16.T9)"`
+D133 is **"Film URLs are title + TMDB id, and the id is authoritative."** It supersedes PLAN.md's recommended shape 1 (the owner: "I just don't like having a different URL for movies we've seen vs movies we haven't"), and records:
+  - the slug is derived at render from the TMDB title the page already fetches;
+  - there is no column, so a title correction simply moves the canonical spelling, and the old spelling redirects;
+  - 308 as the permanent redirect;
+  - the non-Latin case;
+  - **the known ceiling:** a link built from a held film's *cached* title that TMDB has since changed costs one 308 per click, because D63 never refreshes a cached title. T10 measures how often.
+
+`git commit -m "feat(films): film URLs are title + TMDB id, with the id authoritative (P16.T9)"`
 
 ---
 
-### Task P16.T10: Every internal link spells the slug
+### Task P16.T10: Every link spells `title-id`, held or not
 
-A permanent redirect on every internal click is the failure the proposal warned about, so this task finishes before the tranche gate.
+A permanent redirect on every internal click is the failure the films proposal warned about, so this task finishes before the tranche gate.
 
 **Files (every hit, from `git grep -n '/films/'`, 2026-09-27):**
-- Film links: `app/(app)/films/[film]/page.tsx` (similar films), `app/(app)/page.tsx:338` (In cinemas now), `app/(app)/watchlist/page.tsx:455`, `components/films/BrowseMonth.tsx:61,102`, `components/profile/FeedPost.tsx:93,114`, `components/shell/SearchOverlay.tsx:111`
-- Cache refresh: `actions/reviews/save-review.ts:60`, `actions/reviews/delete-review.ts:35`, `actions/watchlist/set-watched.ts:74`. `revalidatePath` must name the slug path *and* the numeric one.
-- Types that gain `slug`: `FilmResult` (search), the browse card, the watchlist row, the feed post film, and the similar-films entry. Similar films are TMDB results; they take slugs from one `findManyByTmdbIds` for the seven ids.
-- Tests asserting numeric URLs: `app/sitemap.production.test.ts:29,35`, `components/films/BrowseMonth.test.tsx:40,60`, `components/shell/SearchOverlay.test.tsx:45`, `components/profile/FeedPost.test.tsx:73,84`, `lib/seo.test.ts:7,49`, `actions/reviews/review-actions.test.ts:266`, `e2e/browse.spec.ts:331`, `e2e/members.spec.ts:213`, and journeys 03 and 04
-- Modify: `scripts/layering.sh`, adding a guard:
+- Film links:
+  - `app/(app)/films/[film]/page.tsx` (similar films; TMDB results, which carry `title`)
+  - `app/(app)/page.tsx:338` ("In cinemas now")
+  - `app/(app)/watchlist/page.tsx:455`
+  - `components/films/BrowseMonth.tsx:61,102`
+  - `components/profile/FeedPost.tsx:93,114`
+  - `components/shell/SearchOverlay.tsx:111` (`router.push(filmHref(film))`)
+  - the board and live poster links, if they link to films. Check `PickCell` and `LiveAward` with the grep in step 1.
+- Cache refresh: `actions/reviews/save-review.ts:60`, `actions/reviews/delete-review.ts:35`, `actions/watchlist/set-watched.ts:74`. These become `revalidatePath('/films/[film]', 'page')`. A path built from a title could miss the spelling a reader has cached, while the route-pattern form revalidates every film page's cache entry and needs no title.
+- Tests asserting numeric URLs: `app/sitemap.production.test.ts:29,35`, `components/films/BrowseMonth.test.tsx:40,60`, `components/shell/SearchOverlay.test.tsx:45`, `components/profile/FeedPost.test.tsx:73,84`, `lib/seo.test.ts:7,49`, `actions/reviews/review-actions.test.ts:266`, `e2e/browse.spec.ts:65,148,265-266,330-331`, `e2e/members.spec.ts:213`, `e2e/inventory.spec.ts:27`, `e2e/visual.spec.ts:62`, `e2e/journeys/03-a-ceremony-night.spec.ts:187`, `e2e/journeys/04-a-reader-browses.spec.ts:85-86,125`, `e2e/films.spec.ts` (its direct `goto`s keep numeric ids on purpose and now follow the 308)
+- Modify: `scripts/layering.sh`, adding:
   ```bash
   check "film URLs are spelled by filmHref" \
     "git grep -nE '/films/\\\$\\{' -- app components lib actions ':!lib/utils/film-href.ts'"
   ```
+- Test: `lib/utils/film-titles.production.test.ts` (restored data, TMDB key; **excluded on CI**: "reads league 1's drafted films and calls TMDB")
 
-**Interfaces:** Consumes `filmHref` (T9).
+**Interfaces:** Consumes `filmHref` (T9). Every link site already has the film's title in hand, so no query is added.
 
-- [ ] **Step 1: Add the layering guard and watch it go red.** It should list every hit above.
-- [ ] **Step 2: Replace each hit, updating its unit test** to expect `filmHref`'s output for a held film (slug) and an unheld one (numeric).
-- [ ] **Step 3: e2e.** In `e2e/browse.spec.ts`, a card for a held film links to its slug, and clicking it produces **no** 308 (assert `response.request().redirectedFrom()` is null).
-- [ ] **Step 4: 🔴 Mutation.** Reintroduce one raw `` `/films/${film.tmdbId}` `` in `BrowseMonth.tsx`. Expect `npm run layering` red naming that line. Restore.
-- [ ] **Step 5: Commit.** `git commit -m "refactor(films): every film link goes through filmHref (P16.T10)"`
+- [ ] **Step 1: Add the layering guard and watch it go red** on every hit above.
+- [ ] **Step 2: Replace each hit, updating its unit test** to expect `/films/<slug>-<id>`, with one unheld (TMDB-only) case per surface that has them (browse, search, similar, in cinemas).
+- [ ] **Step 3: e2e.**
+  - In `e2e/browse.spec.ts`, a card's `href` matches `/^\/films\/[a-z0-9-]+-\d+$/`, and clicking it produces **no** redirect: `response.request().redirectedFrom()` is null.
+  - `e2e/members.spec.ts:213`'s pattern becomes `/^\/films\/e2e-[a-z0-9-]+-99937\d{4}$/`.
+- [ ] **Step 4: Measure the ceiling D133 names.**
+  - For every film drafted by league 1 in 2025–2026 (~70 films, one TMDB call each through the Runtime cache), assert `filmSlugPart(movies.title) === filmSlugPart(tmdb.title)`.
+  - Record the mismatches in D133 with each film named. They are the links that cost one 308 each.
+  - If there are more than a handful, stop and tell the owner rather than changing the rule.
+- [ ] **Step 5: 🔴 Mutation.** Reintroduce one raw `` `/films/${film.tmdbId}` `` in `BrowseMonth.tsx`. Expect `npm run layering` red naming that line, and the browse e2e's no-redirect assertion red. Restore.
+- [ ] **Step 6: Commit.** `git commit -m "refactor(films): every film link is title + id, through filmHref (P16.T10)"`
 
 ---
 
-### Task P16.T11: Store every browse result, measured and bounded
+### Task P16.T11: (dropped 2026-09-27)
 
-**What it writes (open question 3's default, stated in D134):**
-
-| Surface | When | Who | Write |
-|---|---|---|---|
-| `/browse` (the page, and `loadBrowsePage` for infinite scroll) | on render | every reader | the films on the page not already held, in one `INSERT … ON CONFLICT (tmdb_id) DO NOTHING` |
-| "In cinemas now" on `/` | on render | every reader | the same, for ~20 films |
-| `/films/<numeric id>` of an unheld film | on open | **signed-in** reader | `ensureFilm(tmdbId)`, then the 308 to its new slug |
-| the same | on open | signed-out reader | **nothing** (D63 kept). It renders from TMDB at its numeric address |
-| search results, similar films | never | — | — |
-
-**Why list-render and not view.** The owner's reason is "so every film has a slug". A browse card's `href` is decided when the list renders, so a film first stored when it is opened would be linked by number and redirect on every first click (P16.T10's failure). Writing on render is the honest reading.
-
-**The bound** is the discover filters, not the reader count:
-- The past side needs `vote_count ≥ 200` and popularity above 10, across ≤ 500 months. The future side needs popularity above 5.
-- A crawler walking every browse page can therefore store at most that universe. Step 1 measures it.
-- A crawler walking arbitrary `/films/<id>` stores nothing, because that path stays write-free for strangers.
-
-**Files:**
-- Modify: `lib/repositories/movies.ts` (add `ingestListed`), `lib/services/browse.ts` (`loadBrowse`), `lib/services/dashboard.ts:40,144` (the now-playing shelf), `app/(app)/films/[film]/page.tsx` (signed-in ingest), `lib/db.test.ts` (movie count by `created_at` cutoff), `scripts/agent-baseline.sh` and `scripts/agent-up.sh` (the same cutoff), `e2e/award-shows.spec.ts:27` (`UNCACHED` must be a film browse can never surface)
-- Test: `lib/services/browse.test.ts` (DB, CI), `lib/services/film.test.ts` (DB, CI), `lib/repositories/movies.test.ts`
-
-**Interfaces:**
-- Produces: `movieRepository.ingestListed(films: readonly { tmdbId: string; title: string; poster: string | null; backdrop: string | null; releaseDate: Date | null }[]): Promise<Map<string, string | null>>`. It returns tmdbId → slug for **every** film passed in: one `SELECT` for the held ones, and one `INSERT … RETURNING tmdb_id, slug` for the missing ones only (skipped when none are missing).
-
-- [ ] **Step 1: Measure the universe and write the numbers into D134 before writing code**
-  - With `TMDB_API_KEY` set, write a throwaway Vitest file that calls `discoverFilms({ when: 'past', page })` for every 20th page from 1 to 500, and for `'future'` pages 1–12. Record the films per month and extrapolate the total.
-  - Delete the file afterwards; it is never committed.
-  - Record in D134: films per sampled month, the extrapolated total (the explorer's estimate was ~8k–15k), and the measured bytes per row. That is **~950 B** today (`pg_total_relation_size('movies') / count(*)` = 1,256 kB / 1,355 on 5433). Re-measure after M3 adds `slug` and its index.
-  - Also record storage at the ceiling: rows × bytes against Neon Free's 512 MB. 15k rows ≈ 15 MB ≈ 3%, against D123's 36 MB baseline.
-
-- [ ] **Step 2: Record the compute arithmetic in D134**
-  - Neon bills awake time, not statements (D102, D123), so the insert costs nothing while the database is already awake.
-  - 🔴 **The new cost is waking it.** Signed-out `/browse` makes **zero** queries today (`browse.test.ts:136`), so a stranger browsing an idle site never woke Neon. After this change it does: one ~5-minute autosuspend window at the 0.25 CU floor, **0.021 CU-hr per isolated visit**.
-  - Against D123's ~5 CU-hr/month baseline and the 100 CU-hr allowance, that leaves ~4,500 isolated browse wakes a month before the tier is at risk. A visit that follows `/` (which already wakes it) costs nothing extra.
-  - It also brings the ~3 s cold start (D123) to a stranger's first `/browse` after an idle period. That is accepted in D134 and named, not hidden.
-  - **Reopen if** Neon's usage page shows browse wakes above 20 CU-hr in a month.
-
-- [ ] **Step 3: Failing tests**
-
-```ts
-// lib/services/browse.test.ts: replace "zero queries for an anonymous reader"
-it('stores the films it shows, in two statements, and none on a repeat render', async () => {
-  const first = await countQueries(() => loadBrowse({ when: 'past', page: 1, userId: null }));
-  expect(first.queries).toBe(2);                    // select held + insert missing
-  expect(first.result.months.flatMap((m) => m.films).every((f) => f.slug != null)).toBe(true);
-  const again = await countQueries(() => loadBrowse({ when: 'past', page: 1, userId: null }));
-  expect(again.queries).toBe(1);                    // everything is held now
-});
-```
-(Stub `discoverFilms` with two `e2e-browse …` films at tmdb `999100001`/`999100002`, as the file already stubs TMDB. Delete the rows in `afterEach`.)
-```ts
-// lib/services/film.test.ts: keep 'renders, and writes nothing' for a signed-out reader. Add:
-it('stores an unheld film a signed-in reader opens, once', ...);   // movie.count +1, and a second open +0
-```
-
-- [ ] **Step 4: Run them and confirm they fail. Implement `ingestListed`, and call it from `loadBrowse` and the dashboard shelf.** Thread each returned slug onto the card; `filmHref` does the rest. In the film page, after `resolveFilmSegment` returns `slug: null` for a signed-in reader, call `ensureFilm` and then `permanentRedirect`.
-
-- [ ] **Step 5: Exact counts survive browsing.** Browse now ingests real titles on the executors.
-  - `lib/db.test.ts` counts `movies where created_at <= CUTOFF`. `CUTOFF` is `select max(created_at) from movies` on a fresh `npm run agent:up` database, pinned as a literal with that provenance.
-  - `agent-baseline.sh` and `agent-up.sh` use the same predicate.
-  - `e2e/award-shows.spec.ts` picks an `UNCACHED` film below the past side's `vote_count.gte=200`, so browse can never have stored it, and says so in its comment.
-
-- [ ] **Step 6: Search is unchanged, and this says why.** `WEIGHT.local` (`lib/services/search-ranking.ts:63`) boosts a held film. Once browse holds most notable films, the boost means "is a film TMDB lists as notable", which is still the right thing to rank first when drafting. Run `search.test.ts` and `search-ranking.test.ts` on an executor *after* running `e2e/browse.spec.ts` against it. If the ordering assertions move, restrict those tests' fixture to `created_at <= CUTOFF`, not the ranking. Record which happened in the commit body.
-
-- [ ] **Step 7: 🔴 Mutation**
-  - Remove the `ingestListed` call from `loadBrowse`. Expect red at "stores the films it shows".
-  - Ingest for a signed-out reader on the film page. Expect red at "renders, and writes nothing".
-  - Restore both.
-
-- [ ] **Step 8: Record D134 (amends D63 and D56; quote both) and commit**
-
-`git commit -m "feat(films): browse stores what it shows, so every film it lists has a slug (P16.T11)"`
+"Store every browse result" existed only to give every film a slug. Title + id URLs (D133) need no row, so the owner dropped it. D63 stands unamended. The ID is kept so later task numbers do not move.
 
 ---
 
 ### Task P16.T12: Tranche 2 gate
 
 - [ ] **Step 1:** Run § The tranche gate (CI shape, every spec), then the full suites on the executor.
-- [ ] **Step 2:** Run `scripts/restore-from-heroku.sh .local/baseline.dump <scratch agent:up URL> --yes` end to end. It must be GREEN, printing the merge prediction 8/13/0/0 (step 8 of T8), the C5 lines for M2 and M3, and C7.
+- [ ] **Step 2:** Run `scripts/restore-from-heroku.sh .local/baseline.dump <scratch agent:up URL> --yes` end to end. It must be GREEN, printing the merge prediction 8/13/0/0 (step 8 of T8), the C5 lines for M2, and C7.
 - [ ] **Step 3: Production-build browser pass**
-  - `/films/313369` redirects to `/films/la-la-land-2016`. Check that every link on `/browse` page 1, `/watchlist` and a member page is a slug, with no 308s in the network log.
+  - `/films/313369` redirects to `/films/la-la-land-313369`. Check that every film link on `/browse` page 1, `/watchlist`, `/` and a member page is `title-id`, with no 308s in the network log.
   - At 1440 and 390, light and dark.
-- [ ] **Step 4:** PROGRESS: tick T8–T12 and record the counts. `git commit -m "docs: P16 tranche 2 gate"`
+- [ ] **Step 4:** PROGRESS: tick T8–T10 and T12 (T11 is marked dropped) and record the counts. `git commit -m "docs: P16 tranche 2 gate"`
 
 ---
 # Tranche 3 — The season view on `/award-shows`
@@ -1162,7 +1143,7 @@ export type SeasonView = {
   /** True when the active year has nothing yet: the view shows `year` (the finished season) and says dates come in the autumn. */
   offSeason: boolean; activeYear: number;
   months: { label: string; moments: (Moment & { highlight: { title: string; count: number } | null })[] }[];
-  next: (Moment & { films: { title: string; slug: string | null; tmdbId: string | null; count: number }[]; more: number }) | null;
+  next: (Moment & { films: { title: string; tmdbId: string | null; count: number }[]; more: number }) | null;
 };
 export async function getSeasonView(requestedYear: number | null): Promise<SeasonView>;
 export const UP_NEXT_FILMS = 8;
@@ -1211,7 +1192,7 @@ export type SeasonViewer = {
     /** moment.key → { points, position, move } for the reader's seat; finished moments only. */
     byMoment: ReadonlyMap<string, { points: number; position: number; move: number }> }[];
   /** For the next ceremony: the reader's nominations at stake. */
-  atStake: { films: { title: string; slug: string | null; tmdbId: string | null; category: string }[]; points: number; more: number } | null;
+  atStake: { films: { title: string; tmdbId: string | null; category: string }[]; points: number; more: number } | null;
 };
 export const MAX_LEAGUES = 5; // ponytail: one board load per league; raise when someone plays in more than five
 export async function getSeasonViewer(userId: number, year: number): Promise<SeasonViewer>;
@@ -1243,9 +1224,9 @@ export async function getSeasonViewer(userId: number, year: number): Promise<Sea
 
 The league gains tabs: **Board** (`/leagues/[id]`, unchanged), **Standings** (`/leagues/[id]/standings`) and **Race** (`/leagues/[id]/race`). A seat's page, `/leagues/[id]/seats/[draftId]`, opens from any seat name on the Standings and Race tabs. Every one is public and noindexed (§7, D44).
 
-### Task P16.T18: Show dates per season (M4)
+### Task P16.T18: Show dates per season (M3)
 
-**How history is handled (D135).** Seasons 2017–2025 have no stored dates, and no dates are invented for them. `event_dates` starts with 2026, which is backfilled from literal values (the dates held on the restored copy on 2026-09-27, listed below). From 2027 the award-entry skill's `set-dates` writes it.
+**How history is handled (D134).** Seasons 2017–2025 have no stored dates, and no dates are invented for them. `event_dates` starts with 2026, which is backfilled from literal values (the dates held on the restored copy on 2026-09-27, listed below). From 2027 the award-entry skill's `set-dates` writes it.
 - For a season with no row for a show, `moments` falls back to `events`' columns only when they fall inside that season's window (T13's rule). Otherwise the moment is undated and ordered by this year's calendar.
 - The race chart (T22) uses a **date axis only when every finished moment in the season has a date**, and an **order-only axis otherwise**, with the caption "Dates weren't recorded before 2026, so the moments are in this year's order, evenly spaced."
 
@@ -1262,11 +1243,11 @@ The league gains tabs: **Board** (`/leagues/[id]`, unchanged), **Standings** (`/
   - `findByYear(2025)` is empty.
   - `award-import.test.mjs`: a committed `set-dates` for year Y writes one `event_dates` row per show and updates it on re-run, with no duplicate.
 
-- [ ] **Step 2: M4**
+- [ ] **Step 2: M3**
 
 ```sql
 -- prisma/migrations/20260929090000_event_dates/migration.sql
--- Each show's dates for each season (D135). events.nom_date/awards_date are
+-- Each show's dates for each season (D134). events.nom_date/awards_date are
 -- overwritten every year, so before this nothing said when a past season's
 -- moments happened. No FK, like every table here (the schema has none).
 CREATE TABLE "event_dates" (
@@ -1301,10 +1282,10 @@ SELECT 2026, e.id, v.nom, v.awards FROM "events" e JOIN (VALUES
 ```
 (The values are 2025-12-04 to 2026-03-15, from `events` on 5433. Before writing the migration, re-read them with `select abbreviation, nom_date, awards_date from events order by nom_date`, and confirm each is inside `inSeason(…, 2026)`.)
 
-- [ ] **Step 3: Apply M4 to all three databases**, verifying `select count(*) from event_dates where year = 2026` (**12** on each). Regenerate with the private-copy recipe.
+- [ ] **Step 3: Apply M3 to all three databases**, verifying `select count(*) from event_dates where year = 2026` (**12** on each). Regenerate with the private-copy recipe.
 - [ ] **Step 4: Implement the repository, the `moments` wiring and the script. Run and confirm PASS.**
 - [ ] **Step 5: Cutover**
-  - T3b row: `| 20260929090000_event_dates | event_dates, with 2026 backfilled (D135). Without it every past season's race is undated, and 2026 is too |`.
+  - T3b row: `| 20260929090000_event_dates | event_dates, with 2026 backfilled (D134). Without it every past season's race is undated, and 2026 is too |`.
   - C5:
     ```sql
     ('event_dates 2026', coalesce((select count(*) = 12 from event_dates where year = 2026), false)),
@@ -1312,7 +1293,7 @@ SELECT 2026, e.id, v.nom, v.awards FROM "events" e JOIN (VALUES
   - Add `-e '^event_dates'` to `norm`'s `grep -v`: the dump has no such table, so C3/C7 would read it as a stray.
   - Mutation-test by dropping the INSERT against a scratch port. Expect C5 red on "event_dates 2026".
 - [ ] **Step 6: 🔴 Mutation.** Make `getSeasonMoments` ignore `datesForYear`. Expect red at a `moments.test.ts` case added here: "a stored 2025 date wins over the events columns".
-- [ ] **Step 7: Record D135 and commit.** `git commit -m "feat(season): keep each show's dates per season (P16.T18)"`
+- [ ] **Step 7: Record D134 and commit.** `git commit -m "feat(season): keep each show's dates per season (P16.T18)"`
 
 ---
 
@@ -1371,7 +1352,7 @@ SELECT 2026, e.id, v.nom, v.awards FROM "events" e JOIN (VALUES
 
 This is a **third copy of the D110 route and the D111 client, on purpose.** The two existing ones are small and each is proven by its own mutations. A shared helper is a refactor with its own risk, and it is not needed to ship this. Copy `app/api/leagues/[id]/board/stream/route.ts` and `components/leagues/LeagueBoardRoom.tsx`'s effect verbatim, then change only what is listed:
 
-| | Board stream (D116) | Standings stream (D136) |
+| | Board stream (D116) | Standings stream (D135) |
 |---|---|---|
 | frame | `getLeagueBoardView` | `getStandingsView(leagueId, year, user?.id ?? null)` |
 | 204 unless | `view.isDrafting` | `view.onAir`, meaning some event has `awards_active` **and** `year === await getActiveYear()` |
@@ -1380,7 +1361,7 @@ This is a **third copy of the D110 route and the D111 client, on purpose.** The 
 
 Everything else is unchanged: `runtime = 'nodejs'`, `maxDuration = 60` (layering guard), 2s poll, write on change, a heartbeat after 10 quiet polls, self-close at 50s, the whole state in every frame, no `id:`, and the three stop conditions (off air, hidden at mount, `visibilitychange`). `StandingsView` carries `onAir: boolean`.
 
-**Cost (in D136).**
+**Cost (in D135).**
 - It streams only while a show is on air, which is the ceremony nights. Neon is already awake then for `/live` and the admin's entry, so each extra viewer costs a connection, not awake time. The measured ceremony budget is 0.75–6 CU-hr (D123).
 - It never streams in the months between ceremonies, the case D116 refused to widen for. A forgotten tab closes on hidden (D111), and a finished show answers 204, which the browser does not retry.
 - **Reopen if** Neon's usage on a ceremony night exceeds the D123 ceiling.
@@ -1410,7 +1391,7 @@ Everything else is unchanged: `runtime = 'nodejs'`, `maxDuration = 60` (layering
   - (b) Make the route's 204 condition `false`. The client guard still keeps the budget e2e green, so assert the route's 204 in `route.test.ts`, which must go red. This is D116's lesson: two guards, each with its own test.
   - (c) Drop the `year === activeYear` half. Expect red at "204 for a past year".
   - Restore all.
-- [ ] **Step 6: Record D136 and commit.** `git commit -m "feat(leagues): what moved updates live while a ceremony is entered (P16.T20)"`
+- [ ] **Step 6: Record D135 and commit.** `git commit -m "feat(leagues): what moved updates live while a ceremony is entered (P16.T20)"`
 
 ---
 
@@ -1459,7 +1440,7 @@ Everything else is unchanged: `runtime = 'nodejs'`, `maxDuration = 60` (layering
 ```ts
 export type RaceAxis = 'date' | 'order';
 export type Race = {
-  axis: RaceAxis;                                  // 'date' iff every step's moment has a date (D135)
+  axis: RaceAxis;                                  // 'date' iff every step's moment has a date (D134)
   x: number[];                                     // per step: the date, or the step index
   lines: { draftId: number; name: string; points: number[]; isLeader: boolean; isViewer: boolean }[];
   leadChanges: { stepIndex: number; from: string; to: string; moment: Moment }[];
@@ -1473,7 +1454,7 @@ export function toRace(ledger: SeasonLedger): Race;
   - Tokens only, so layering's hex guard holds.
 - **The same data as a `<table>`** follows the chart: seats × steps, cumulative. The chart is `aria-hidden` and the table carries it.
 - Below the chart: lead changes as sentences ("Robert Bernard takes the lead from Jon Bernard · Oscar nominations"), then the biggest moments.
-- On the order axis, the caption is D135's sentence.
+- On the order axis, the caption is D134's sentence.
 
 - [ ] **Step 1: Failing pure tests**
   - `axis` is `'order'` when one step is undated, and `'date'` when all are dated.
@@ -1517,7 +1498,7 @@ export function toRace(ledger: SeasonLedger): Race;
 - Consumes: `Seat[]` from the page's existing `getLeagueBoard` load. No new query.
 - Produces:
 ```ts
-export type H2HFilm = { title: string; slug: string | null; tmdbId: string | null; posterUrl: string | null;
+export type H2HFilm = { title: string; tmdbId: string | null; posterUrl: string | null;
   points: number; status: 'none' | 'nominated' | 'won'; roundA: number | null; roundB: number | null };
 export type HeadToHead = {
   a: H2HSide; b: H2HSide;             // H2HSide = { draftId, name, uuid, isDummy, group, total, position, isViewer }
@@ -1535,7 +1516,7 @@ export function seatAbove(standings: readonly StandingsRow[], draftId: number): 
 - **`vs`** must be a `draftId` in this league and season. Anything else is ignored, and the page renders as if absent (no 404, following the watchlist's R11 rule for an unknown view).
 - **Same group:** `shared` is empty by construction (measured: 0 duplicates in 1,020 picks), and the component says "Same group, so no film is on both teams" rather than showing an empty band.
 - Dummy and character seats compare like anyone else (§6).
-- **Positions** come from `rankSeats`, so they are league-wide (§6). The member's "Your roster" line (open question 4's default) uses `seatAbove`.
+- **Positions** come from `rankSeats`, so they are league-wide (§6). The member's "Your roster" line (open question 3's default) uses `seatAbove`.
 
 **Visual (C's):**
 - The headline: "25 behind Micah Baird", or "Leads Micah Baird by 25".
@@ -1564,7 +1545,7 @@ export function seatAbove(standings: readonly StandingsRow[], draftId: number): 
   - Give one holder of a shared film different points in the fixture. Expect the "cancels out" pin red.
   - Put the reader's seat in `b`. Expect the member e2e red.
   - Restore both.
-- [ ] **Step 6: Record D137 (public compare: the owner reversed "members only", 2026-09-27) and commit.** `git commit -m "feat(leagues): compare any seat from the standings (P16.T24)"`
+- [ ] **Step 6: Record D136 (public compare: the owner reversed "members only", 2026-09-27) and commit.** `git commit -m "feat(leagues): compare any seat from the standings (P16.T24)"`
 
 ---
 
@@ -1591,7 +1572,7 @@ export function seatAbove(standings: readonly StandingsRow[], draftId: number): 
 
 For each page, extract and diff: seat names, pick titles, point totals, `/members/` links, `PointsLedger` lines, avatar `src` values, and every control (`button`, `a[href*="setup"]`, `a[href*="draft"]`, invite).
 
-**Allowed to differ, and nothing else (D138):**
+**Allowed to differ, and nothing else (D137):**
 - owner and member actions (setup, draft console, invite, open season);
 - "Your roster" and the "You" marker;
 - avatars: initials for a stranger, faces for a member (D100's Gravatar/`MD5(email)` leak; kept);
@@ -1603,7 +1584,7 @@ For each page, extract and diff: seat names, pick titles, point totals, `/member
 - [ ] **Step 2: Failing e2e (CI data).** For each league tab, collect seat names, pick titles and totals from a signed-out context and from a seated-member context. Assert the three sets are **equal**. Assert the signed-out page has no `setup`/`draft` links and no invite control.
 - [ ] **Step 3: Close each gap.** Run and confirm PASS.
 - [ ] **Step 4: 🔴 Mutation.** Hide `PointsLedger` lines when signed out (`signedIn ? lines : []` in `PickCell`). Expect the equality e2e red. Restore.
-- [ ] **Step 5: Record D138 and commit.** `git commit -m "feat(leagues): a follower sees what a player sees, read-only (P16.T26)"`
+- [ ] **Step 5: Record D137 and commit.** `git commit -m "feat(leagues): a follower sees what a player sees, read-only (P16.T26)"`
 
 ---
 
@@ -1641,7 +1622,7 @@ For each page, extract and diff: seat names, pick titles, point totals, `/member
 - [ ] **Step 2: Production-build pass** of every Phase 16 surface, signed out and signed in, at 1440 and 390, light and dark. `npm run build-storybook` passes with every new story present.
 - [ ] **Step 3: Docs**
   - Tick T26–T28 in PROGRESS.
-  - Confirm D129–D138 are all present, and renumber if any clashed.
+  - Confirm D129–D137 are all present, and renumber if any clashed.
   - Update `docs/PLAN.md` § Phase 16's gate line to "met".
-  - Confirm the cutover plan's T3b table lists M1–M4 and that its C5 count matches the script.
+  - Confirm the cutover plan's T3b table lists M1–M3 and that its C5 count matches the script.
 - [ ] **Step 4:** `git commit -m "docs: Phase 16 complete"`

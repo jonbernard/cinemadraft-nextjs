@@ -2467,7 +2467,7 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
   loudly. Not fixed: `lib/db.test.ts` asserts exactly 1,355 rows, so deleting
   any of them is a deliberate change with a test to update.
 
-Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner decided every design question on 2026-09-27; five defaults await confirmation (the plan's § Open questions). Four migrations (M1–M4), each applied to all three databases and added to the Phase 13 cutover's T3b table and `restore-from-heroku.sh` C5/C7. New decisions D129–D138. 🔴 Each tranche gates on the **whole** e2e suite in CI's shape (empty database, migrations, seed), not the touched specs.
+Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner decided every design question on 2026-09-27; five defaults await confirmation (the plan's § Open questions). Three migrations (M1–M3), each applied to all three databases and added to the Phase 13 cutover's T3b table and `restore-from-heroku.sh` C5/C7. New decisions D129–D137. 🔴 Each tranche gates on the **whole** e2e suite in CI's shape (empty database, migrations, seed), not the touched specs.
 
 **Tranche 1: opening the next season, and the AFI flag (time-sensitive; ships whole before the active year is flipped to 2027)**
 - [ ] P16.T1 — `events.has_ceremony` (M1), and the rail stops waiting for the AFI (D129)
@@ -2478,11 +2478,11 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
 - [ ] P16.T6 — season setup re-seats people from earlier seasons, one tap each
 - [ ] P16.T7 — tranche 1 gate
 
-**Tranche 2: the duplicate-film merge, slugs, and storing every browse result**
+**Tranche 2: the duplicate-film merge, and title + id film URLs**
 - [ ] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies
-- [ ] P16.T9 — film slugs (M3), the `[film]` route and the permanent redirect (D133)
-- [ ] P16.T10 — every internal link spells the slug (`filmHref`, layering guard)
-- [ ] P16.T11 — store every browse result, measured and bounded (D134, amends D63/D56)
+- [ ] P16.T9 — title + id film URLs: the `[film]` route, the canonical spelling and the redirects (D133; no migration)
+- [ ] P16.T10 — every link spells `title-id`, held or not (`filmHref`, layering guard)
+- ~~P16.T11 — store every browse result~~ — dropped by the owner 2026-09-27 (title + id URLs need no row); ID kept so later numbers do not move
 - [ ] P16.T12 — tranche 2 gate
 
 **Tranche 3: the season view on `/award-shows`**
@@ -2493,19 +2493,19 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
 - [ ] P16.T17 — tranche 3 gate
 
 **Tranche 4: the ledger**
-- [ ] P16.T18 — show dates per season (M4, D135)
+- [ ] P16.T18 — show dates per season (M3, D134)
 - [ ] P16.T19 — the Standings tab, led by "what moved"
-- [ ] P16.T20 — "what moved" streams while a ceremony is entered (D136)
+- [ ] P16.T20 — "what moved" streams while a ceremony is entered (D135)
 - [ ] P16.T21 — a seat's season, on its own page
 - [ ] P16.T22 — the Race tab
 - [ ] P16.T23 — tranche 4 gate
 
 **Tranche 5: head-to-head**
-- [ ] P16.T24 — "Compare" on every standings row, public (D137)
+- [ ] P16.T24 — "Compare" on every standings row, public (D136)
 - [ ] P16.T25 — tranche 5 gate
 
 **Tranche 6: followers**
-- [ ] P16.T26 — audit what a follower is not shown, measured, and close the gap (D138)
+- [ ] P16.T26 — audit what a follower is not shown, measured, and close the gap (D137)
 - [ ] P16.T27 — the explainer and "race at the top" take the sign-in card's slot
 - [ ] P16.T28 — tranche 6 gate, and Phase 16 closes
 
