@@ -274,7 +274,10 @@ test.describe('award shows', () => {
     // positive one would also pass on the plural, since it is a substring.
     const { abbreviation } = await seedShow();
 
-    await page.goto('/award-shows');
+    // The scratch season, which is after the active one: with no year, CI's
+    // empty database is off-season and shows last season, where an unentered
+    // show reads "No results recorded" (P16.T18), not its category count.
+    await page.goto(`/award-shows?year=${YEAR}`);
 
     // Since P16.T15 the index is the season, and a show has a row per moment:
     // its (undated, upcoming) nominations row carries the category count.
@@ -391,7 +394,7 @@ test.describe('award shows', () => {
         ).toBeVisible();
         await expect(announced(edit, 'Nominations')).toHaveValue('');
         await announced(edit, 'Nominations').fill(`${YEAR}-01-21T08:00`);
-        await announced(edit, 'Awards').fill(`${YEAR}-03-14T20:00`);
+        await announced(edit, 'Awards').fill(`${YEAR}-02-14T20:00`);
         await edit.getByRole('button', { name: 'Save show' }).click();
         await expect(edit.getByText('Saved')).toBeVisible();
 
@@ -406,13 +409,14 @@ test.describe('award shows', () => {
             ),
           );
         // UTC midnight of the day typed, and the ET wall clock past it:
-        // 8am is 13h, 8pm is 25h, as the award-entry skill stores them.
+        // 8am is 13h, 8pm is 25h, as the award-entry skill stores them
+        // (both in EST: after the March clock change 8pm is 24h).
         expect(await stored()).toEqual([
           {
             year: YEAR,
             nom_date: String(Date.UTC(YEAR, 0, 21)),
             nom_time: String(13 * 3_600_000),
-            awards_date: String(Date.UTC(YEAR, 2, 14)),
+            awards_date: String(Date.UTC(YEAR, 1, 14)),
             awards_time: String(25 * 3_600_000),
             events_nom: null,
           },
@@ -421,7 +425,7 @@ test.describe('award shows', () => {
         await page.reload();
         edit = await open();
         await expect(announced(edit, 'Nominations')).toHaveValue(`${YEAR}-01-21T08:00`);
-        await expect(announced(edit, 'Awards')).toHaveValue(`${YEAR}-03-14T20:00`);
+        await expect(announced(edit, 'Awards')).toHaveValue(`${YEAR}-02-14T20:00`);
 
         await announced(edit, 'Nominations').fill(`${YEAR - 1}-01-21T08:00`);
         await edit.getByRole('button', { name: 'Save show' }).click();

@@ -1429,7 +1429,7 @@ export function toRace(ledger: SeasonLedger): Race;
 
 - [ ] **Step 1: Failing pure tests**
   - `axis` is `'order'` when one step is undated, and `'date'` when all are dated.
-  - `leadChanges` counts a change only when `standings[0].draftId` differs from the previous step's. A tie at the top that `rankSeats` orders by draft order is not a change. (Measured in P16.T14: this gives 2 for league 1's 2025, not the proposal's 6, which counted leader sets; the `OrderOnlyPastSeason` story and T23's check should expect 2, or T22 should adopt the leader-set rule and say so.)
+  - `leadChanges` counts a change only when `standings[0].draftId` differs from the previous step's. A tie at the top that `rankSeats` orders by draft order is not a change. (Measured in P16.T14: this gives 2 for league 1's 2025, not the proposal's 6, which counted leader sets. Re-measured in P16.T18: with 2025 in its own dates (D134) it is **3**, and leader sets are still 6; T23's check should expect 3, or T22 should adopt the leader-set rule and say so. 2025 is no longer an order-only season, so the `OrderOnlyPastSeason` story needs a season lacking rows instead.)
   - The last point of each line equals the seat's total.
 - [ ] **Step 2: Component test.** The table has one row per seat, and its last column equals the totals. The SVG has one `path` per seat.
 - [ ] **Step 3: Implement. Stories:** `DatedSeason` (2026-shaped), `OrderOnlyPastSeason` (2025-shaped, 6 lead changes), `FlatSeason`.

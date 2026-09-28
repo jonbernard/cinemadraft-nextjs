@@ -4,7 +4,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { Client } from 'pg';
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Mocked so the test needs no `available_years` row: CI's unseeded database has none.
+vi.mock('@/lib/services/season', async (real) => ({
+  ...(await real<typeof import('@/lib/services/season')>()),
+  getActiveYear: vi.fn(async () => 2988),
+}));
 
 import { db } from '@/lib/db';
 import { getSeasonMoments } from '@/lib/services/moments';
