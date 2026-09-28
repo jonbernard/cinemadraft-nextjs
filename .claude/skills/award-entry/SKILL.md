@@ -262,10 +262,11 @@ something to page every member about.
 
 ### What to know about the shows
 
-- **AFI has no ceremony.** It names ten films and declares no winners, so its
-  `awards` half is permanently blank and `dates` will always list its ceremony
-  as `not this season`. That is correct — never invent one, and do not report
-  it as outstanding.
+- **A show with `has_ceremony = false` (today the AFI) has no awards half; the
+  script refuses one.** It names its films and declares no winners. `dates`
+  prints its ceremony as `no ceremony` and never counts it as outstanding, and
+  `set-dates` refuses an `awards` entry for it with `afi has no ceremony`. The
+  flag is data (D129), set in the show's admin form.
 - **A date that moves.** If a show reschedules, its date is already "current"
   and will be skipped. Set `"recheck": true` on that show's entry to write it
   anyway.

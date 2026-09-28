@@ -77,11 +77,14 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
   ]);
 
   // `view.events` is one entry per show *phase* (D81), so the eyebrow counts
-  // shows through their ids and calls a show complete once its ceremony has
-  // passed — otherwise a season would report twice as many "shows" as it has.
-  const shows = new Set(view.events.map((phase) => phase.eventId)).size;
-  const complete = view.events.filter(
-    (phase) => phase.phase === 'ceremony' && phase.complete,
+  // shows through their ids, and a show is complete once every one of its
+  // phases is. A show with no ceremony (D129, the AFI) has only its
+  // nominations phase, so it completes once they are out, rather than
+  // waiting all year for a ceremony box that never comes.
+  const byShow = Map.groupBy(view.events, (phase) => phase.eventId);
+  const shows = byShow.size;
+  const complete = [...byShow.values()].filter((phases) =>
+    phases.every((phase) => phase.complete),
   ).length;
 
   return (

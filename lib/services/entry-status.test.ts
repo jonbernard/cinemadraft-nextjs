@@ -11,6 +11,7 @@ const HOUR = 3_600_000;
  * already the 16th in UTC. March is daylight time, so ET is UTC−4 there.
  */
 const OSCARS = {
+  hasCeremony: true,
   nomDate: Date.UTC(2026, 0, 22),
   nomTime: 13 * HOUR,
   awardsDate: Date.UTC(2026, 2, 15),
@@ -107,11 +108,29 @@ describe('entryStatus', () => {
     );
     expect(
       entryStatus(
-        { nomDate: null, nomTime: null, awardsDate: null, awardsTime: null },
+        {
+          hasCeremony: true,
+          nomDate: null,
+          nomTime: null,
+          awardsDate: null,
+          awardsTime: null,
+        },
         2026,
         NOTHING,
         at('2026-06-01T00:00:00Z'),
       ),
     ).toEqual({ needsNominations: false, needsWinners: false });
+  });
+
+  it('never needs winners for a show with no ceremony, even with a dated, passed ceremony', () => {
+    // 🔴 The date is deliberately present and past: a stale awards date left on
+    // the AFI's row must not make it "need winners" (D129). The flag decides.
+    const noCeremony = { ...OSCARS, hasCeremony: false };
+    expect(
+      entryStatus(noCeremony, 2026, SLATE, at('2026-03-17T00:00:00Z')).needsWinners,
+    ).toBe(false);
+    expect(
+      entryStatus(noCeremony, 2026, NOTHING, at('2026-01-23T00:00:00Z')).needsNominations,
+    ).toBe(true);
   });
 });

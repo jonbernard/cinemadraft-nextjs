@@ -494,6 +494,49 @@ test.describe('dashboard', () => {
     }
   });
 
+  /**
+   * D129: a show with no ceremony (the AFI) gets one box, its nominations,
+   * and nothing on the rail waits for a ceremony that never comes.
+   *
+   * 🔴 Its own scratch show, dated inside the *active* season (read from the
+   * database, not assumed), so the rail's season window keeps its date on CI
+   * and on the restored copy alike. Every phase is in the DOM whatever the
+   * window shows, so "no ceremony box" is a real absence, not an off-screen
+   * one. Deleted in `finally`.
+   */
+  test('a show with no ceremony has no ceremony box, and nothing waits for one', async ({
+    page,
+  }) => {
+    const show = `${TAG}-no-ceremony`;
+    await withDb(async (query) => {
+      const [active] = (await query(
+        'select year from available_years order by is_active desc, year desc limit 1',
+      )) as { year: number }[];
+      await query(
+        `insert into events (name, abbreviation, has_ceremony, nom_date, awards_date, created_at, updated_at)
+           values ($1, $1, false, $2, null, now(), now())`,
+        [show, Date.UTC((active?.year ?? 2026) - 1, 11, 1)],
+      );
+    });
+
+    try {
+      await page.goto('/');
+      const rail = page.getByRole('list', { name: 'Season award shows' });
+      const boxes = rail
+        .getByRole('listitem')
+        .filter({ has: page.getByText(show, { exact: true }) });
+
+      await expect(boxes).toHaveCount(1);
+      await expect(boxes.getByText('Nominations', { exact: true })).toBeVisible();
+      await expect(boxes.getByText('Ceremony', { exact: true })).toHaveCount(0);
+      await expect(boxes.getByText('Next · date TBA', { exact: true })).toHaveCount(0);
+    } finally {
+      await withDb((query) =>
+        query('delete from events where abbreviation = $1', [show]),
+      );
+    }
+  });
+
   test.describe('signed in', () => {
     /**
      * 🔴 These four need the restored member, and only these four — the

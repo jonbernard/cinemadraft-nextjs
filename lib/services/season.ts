@@ -68,16 +68,10 @@ export async function getSeasons(): Promise<number[]> {
  * far future, not the past.
  */
 export function toSeasonPhases(
-  events: readonly {
-    id: number;
-    name: string | null;
-    abbreviation: string | null;
-    nomDate: number | null;
-    awardsDate: number | null;
-  }[],
+  events: readonly PhaseEvent[],
+  _season: number,
+  now: number = Date.now(),
 ): SeasonPhase[] {
-  const now = Date.now();
-
   return events
     .flatMap((event) => {
       const shared = {
@@ -85,14 +79,19 @@ export function toSeasonPhases(
         name: event.name,
         abbreviation: event.abbreviation,
       };
+      const nominations: SeasonPhase = {
+        ...shared,
+        key: `${event.id}-nominations`,
+        phase: 'nominations',
+        date: event.nomDate,
+        complete: event.nomDate != null && event.nomDate < now,
+      };
+      // 🔴 A show with no ceremony (D129, the AFI) has one moment. Emitting a
+      // ceremony box for it anyway is what read "11 of 12 · Next · date TBA"
+      // for the rest of the year: an undated box that could never complete.
+      if (!event.hasCeremony) return [nominations];
       return [
-        {
-          ...shared,
-          key: `${event.id}-nominations`,
-          phase: 'nominations' as const,
-          date: event.nomDate,
-          complete: event.nomDate != null && event.nomDate < now,
-        },
+        nominations,
         {
           ...shared,
           key: `${event.id}-ceremony`,
@@ -108,9 +107,23 @@ export function toSeasonPhases(
     );
 }
 
+/** The slice of an event the season rail reads. */
+export type PhaseEvent = {
+  id: number;
+  name: string | null;
+  abbreviation: string | null;
+  hasCeremony: boolean;
+  nomDate: number | null;
+  awardsDate: number | null;
+};
+
 /** Every scoring moment in the calendar, read from the events table. */
 export async function getSeasonPhases(): Promise<SeasonPhase[]> {
-  return toSeasonPhases(await eventRepository.findAll());
+  const [events, season] = await Promise.all([
+    eventRepository.findAll(),
+    getActiveYear(),
+  ]);
+  return toSeasonPhases(events, season);
 }
 
 /**

@@ -2470,7 +2470,7 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
 Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner decided every design question on 2026-09-27; five defaults await confirmation (the plan's § Open questions). Three migrations (M1–M3), each applied to all three databases and added to the Phase 13 cutover's T3b table and `restore-from-heroku.sh` C5/C7. New decisions D129–D137. 🔴 Each tranche gates on the **whole** e2e suite in CI's shape (empty database, migrations, seed), not the touched specs.
 
 **Tranche 1: opening the next season, and the AFI flag (time-sensitive; ships whole before the active year is flipped to 2027)**
-- [ ] P16.T1 — `events.has_ceremony` (M1), and the rail stops waiting for the AFI (D129)
+- [x] P16.T1 — `events.has_ceremony` (M1), and the rail stops waiting for the AFI (D129)
 - [ ] P16.T2 — the rail shows the season it is labelled with
 - [ ] P16.T3 — a league's status belongs to its active season (D130)
 - [ ] P16.T4 — opening a season creates an empty one (D131)

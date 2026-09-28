@@ -16,6 +16,7 @@ export type AdminEvent = {
   awardsDate: number | null;
   awardsTime: number | null;
   awardsDuration: number | null;
+  hasCeremony: boolean;
 };
 
 /** Local midnight of a `Date`, in epoch milliseconds — what `nomDate` stores. */
@@ -71,6 +72,7 @@ export function EventAdmin({
   const [awardsMinutes, setAwardsMinutes] = useState(
     event.awardsDuration == null ? '' : String(Math.round(event.awardsDuration / 60_000)),
   );
+  const [hasCeremony, setHasCeremony] = useState(event.hasCeremony);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -103,11 +105,22 @@ export function EventAdmin({
           awardsDate: awards?.date ?? null,
           awardsTime: awards?.time ?? null,
           awardsDuration,
+          hasCeremony,
         });
         setMessage(result.ok ? 'Saved' : result.message);
       });
     },
-    [event.id, name, abbreviation, image, nomAt, nomMinutes, awardsAt, awardsMinutes],
+    [
+      event.id,
+      name,
+      abbreviation,
+      image,
+      nomAt,
+      nomMinutes,
+      awardsAt,
+      awardsMinutes,
+      hasCeremony,
+    ],
   );
 
   return (
@@ -172,6 +185,18 @@ export function EventAdmin({
           />
         </label>
       </fieldset>
+
+      {/* D129: a show with no ceremony (the AFI) has one moment on the rail,
+          and never needs winners. A setting, not a live control. */}
+      <label className="flex min-h-11 w-fit items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={hasCeremony}
+          onChange={(e) => setHasCeremony(e.target.checked)}
+          className="size-5"
+        />
+        This show has a ceremony
+      </label>
 
       <fieldset className="flex flex-wrap items-end gap-3">
         <legend className="text-text-dim mb-1 text-xs">Awards</legend>

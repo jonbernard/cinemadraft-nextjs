@@ -29,6 +29,8 @@
 export type EntryStatus = { needsNominations: boolean; needsWinners: boolean };
 
 export type ShowDates = {
+  /** False for a show that names honourees and holds no ceremony (D129, the AFI). */
+  hasCeremony: boolean;
   nomDate: number | null;
   nomTime: number | null;
   awardsDate: number | null;
@@ -68,7 +70,9 @@ export function entryStatus(
     needsNominations:
       due(instantOf(dates.nomDate, dates.nomTime), season, now) &&
       entries.nominations === 0,
+    // A show with no ceremony has no winners to enter, whatever its dates say.
     needsWinners:
+      dates.hasCeremony &&
       due(instantOf(dates.awardsDate, dates.awardsTime), season, now) &&
       entries.categoriesDecided < entries.categoriesWithNominees,
   };

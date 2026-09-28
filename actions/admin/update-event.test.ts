@@ -294,6 +294,22 @@ describe('updateEvent', () => {
     expect(row?.nomActive).not.toBe(row?.awardsActive);
   });
 
+  it('round-trips has_ceremony both ways (D129)', async () => {
+    const event = await makeEvent();
+    const admin = await makeUser('admin');
+    signInAs(admin);
+
+    await updateEvent({ eventId: event.id, hasCeremony: false });
+    expect((await db.event.findUnique({ where: { id: event.id } }))?.hasCeremony).toBe(
+      false,
+    );
+
+    await updateEvent({ eventId: event.id, hasCeremony: true });
+    expect((await db.event.findUnique({ where: { id: event.id } }))?.hasCeremony).toBe(
+      true,
+    );
+  });
+
   it('no longer writes live_results, and leaves what is stored alone', async () => {
     // Removed from the whitelist with the "Live results" box beside the Live
     // switch: nothing reads the column. A payload that still carries it is

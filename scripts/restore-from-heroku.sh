@@ -157,6 +157,7 @@ BAD="$(q <<'SQL'
 select name from (values
   ('nominations.year is integer', coalesce((select data_type = 'integer' from information_schema.columns
       where table_schema = 'public' and table_name = 'nominations' and column_name = 'year'), false)),
+  ('events.has_ceremony, afi false', coalesce((select not has_ceremony from events where abbreviation = 'afi'), false)),
   ('events.focused_award_id',   exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'events' and column_name = 'focused_award_id')),
   ('available_years.is_active', exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'available_years' and column_name = 'is_active')),
   ('movies.accent_hex',         exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'movies' and column_name = 'accent_hex')),

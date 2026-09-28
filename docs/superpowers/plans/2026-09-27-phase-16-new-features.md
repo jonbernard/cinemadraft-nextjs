@@ -275,7 +275,7 @@ const complete = [...byShow.values()].filter((phases) => phases.every((p) => p.c
 
 - [ ] **Step 7: e2e (production build, CI data)**
 
-In `e2e/dashboard.spec.ts`, beside the existing undated-scratch-event case (lines 430–470), add a case with its own tagged event where `has_ceremony = false`, `nom_date` is yesterday and `awards_date` is null. Assert that the rail has no box for that event's ceremony, and that no chip reading `Next · date TBA` belongs to it (scope the locator to the event's name). Clean the row up in `finally`.
+In `e2e/dashboard.spec.ts`, beside the existing undated-scratch-event case (lines 430–470), add a case with its own tagged event where `has_ceremony = false`, `nom_date` is 1 December before the active season (read from `available_years`) and `awards_date` is null. (Corrected in P16.T1: "yesterday" is outside the active season's window from 1 August, so P16.T2 would blank it.) Assert that the rail has no box for that event's ceremony, and that no chip reading `Next · date TBA` belongs to it (scope the locator to the event's name). Clean the row up in `finally`.
 
 - [ ] **Step 8: Cutover plan and restore check**
   - In `docs/superpowers/plans/2026-09-27-phase-13-cutover.md` § What a full restore wipes, add the row `| 20260928090000_event_has_ceremony | events.has_ceremony, AFI false (D129). Without it the rail waits for an AFI ceremony forever |`, and change "the six changes" / "the nine T3b schema facts" to the new counts.
@@ -287,7 +287,8 @@ In `e2e/dashboard.spec.ts`, beside the existing undated-scratch-event case (line
 
 - [ ] **Step 9: Run the tests**
 
-Run: `npx vitest run lib/services/season-phases.test.ts lib/services/entry-status.test.ts actions/admin/update-event.test.ts && node --test scripts/award-import.test.mjs && npx playwright test e2e/dashboard.spec.ts`
+Run: `npx vitest run lib/services/season-phases.test.ts lib/services/entry-status.test.ts actions/admin/update-event.test.ts scripts/award-import.test.mjs && npx playwright test e2e/dashboard.spec.ts`
+(Corrected in P16.T1: `award-import.test.mjs` imports Vitest, so `node --test` cannot run it.)
 Expected: PASS.
 
 - [ ] **Step 10: 🔴 Mutation**

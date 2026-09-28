@@ -823,7 +823,7 @@ export async function loadDates(client) {
   if (activeYear == null) throw new Error('no seasons exist in available_years');
 
   const rows = await client.query(
-    `SELECT id, abbreviation, name, nom_date, nom_time, awards_date, awards_time
+    `SELECT id, abbreviation, name, has_ceremony, nom_date, nom_time, awards_date, awards_time
        FROM events
       ORDER BY abbreviation`,
   );
@@ -841,6 +841,8 @@ export async function loadDates(client) {
       id: row.id,
       abbreviation: row.abbreviation,
       name: row.name,
+      // D129: a show with no ceremony (the AFI) has no awards half at all.
+      hasCeremony: row.has_ceremony !== false,
       nomDate,
       nomTime,
       awardsDate,
@@ -848,7 +850,8 @@ export async function loadDates(client) {
       nomInstant,
       awardsInstant,
       nomCurrent: isInSeason(nomInstant, activeYear),
-      awardsCurrent: isInSeason(awardsInstant, activeYear),
+      // A ceremony that does not exist is never outstanding.
+      awardsCurrent: row.has_ceremony === false || isInSeason(awardsInstant, activeYear),
       // What to reuse when a source gives a date but no time. These are stable
       // per show — SAG announces at 10:00 ET, WGA at 11:00, most at 8:00.
       nomTimeOfDay: nomTime,
@@ -920,6 +923,19 @@ export async function applyDates(client, plan, state, { commit, secret }) {
   const problems = validateDatesPlan(plan, state.shows);
   if (problems.length > 0) {
     throw new Error(`this plan cannot be applied:\n  - ${problems.join('\n  - ')}`);
+  }
+
+  const noCeremony = (plan.shows ?? []).filter(
+    (entry) =>
+      entry.awards != null &&
+      state.shows.find(
+        (show) => show.abbreviation.toLowerCase() === entry.abbreviation.toLowerCase(),
+      )?.hasCeremony === false,
+  );
+  if (noCeremony.length > 0) {
+    throw new Error(
+      noCeremony.map((entry) => `${entry.abbreviation} has no ceremony`).join('; '),
+    );
   }
 
   if (plan.year !== state.activeYear) {
@@ -1185,7 +1201,9 @@ async function main(argv) {
           `        nominations ${formatEt(show.nomInstant).padEnd(28)} ${show.nomCurrent ? 'current' : 'not this season'}`,
         );
         console.log(
-          `        ceremony    ${formatEt(show.awardsInstant).padEnd(28)} ${show.awardsCurrent ? 'current' : 'not this season'}`,
+          show.hasCeremony
+            ? `        ceremony    ${formatEt(show.awardsInstant).padEnd(28)} ${show.awardsCurrent ? 'current' : 'not this season'}`
+            : '        ceremony    no ceremony',
         );
       }
       const outstanding = shows.filter((show) => !show.nomCurrent || !show.awardsCurrent);

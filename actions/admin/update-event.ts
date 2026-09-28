@@ -31,6 +31,8 @@ const Input = z.object({
   awardsDate: z.number().nullable().optional(),
   awardsTime: z.number().nullable().optional(),
   awardsDuration: z.number().nullable().optional(),
+  // False for a show that names honourees and holds no ceremony (D129).
+  hasCeremony: z.boolean().optional(),
 });
 
 export type UpdateEventInput = z.infer<typeof Input>;
