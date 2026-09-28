@@ -58,6 +58,7 @@ describe('route protection', () => {
       '/leagues/[id]',
       '/leagues/[id]/[year]',
       '/leagues/[id]/[year]/group/[group]',
+      '/leagues/[id]/standings',
       '/leagues/[id]/draft',
       '/leagues/[id]/setup',
       '/award-shows',

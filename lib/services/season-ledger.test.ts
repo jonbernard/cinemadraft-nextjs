@@ -4,7 +4,7 @@ import type { Movie } from '@/lib/repositories/movies';
 import type { Seat } from './draft';
 import type { Moment } from './moments';
 import type { LedgerLine } from './scoring';
-import { buildSeasonLedger } from './season-ledger';
+import { buildSeasonLedger, toStandingsView } from './season-ledger';
 
 /**
  * Each seat's season by moment (P16.T14), on synthetic seats. Pure: runs on CI.
@@ -158,5 +158,72 @@ describe('buildSeasonLedger', () => {
       m.key === '1-nominations' ? { ...m, state: 'live' as const } : m,
     );
     expect(buildSeasonLedger(SEATS, live, null).latest?.moment.key).toBe('1-nominations');
+  });
+});
+
+describe('toStandingsView', () => {
+  const view = (moments: Moment[], viewerId: number | null = null) =>
+    toStandingsView({
+      leagueId: 7,
+      leagueName: 'L',
+      year: 2026,
+      ledger: buildSeasonLedger(SEATS, moments, viewerId),
+      moments,
+      viewerId,
+      categories: 24,
+    });
+
+  it('tells what moved at the latest moment, not the first', () => {
+    const moved = view(MOMENTS).whatMoved;
+    expect(moved?.moment.key).toBe('1-ceremony');
+    expect(moved?.leaders).toEqual(['A', 'C']);
+    expect(moved?.previousLeader).toBe('A');
+    expect(moved?.leadChanged).toBe(false);
+    expect(moved?.gains).toEqual([
+      { draftId: 10, name: 'A', points: 10 },
+      { draftId: 12, name: 'C', points: 10 },
+    ]);
+  });
+
+  it('marks a change of leader, and who moved from where', () => {
+    const early = MOMENTS.map((m) =>
+      m.key === '1-ceremony' ? { ...m, state: 'upcoming' as const } : m,
+    );
+    const moved = view(early).whatMoved;
+    expect(moved?.moment.key).toBe('1-nominations');
+    expect(moved?.leadChanged).toBe(true);
+    expect(moved?.previousLeader).toBe('B');
+    expect(moved?.movers).toEqual([
+      { draftId: 10, name: 'A', from: 2, to: 1 },
+      { draftId: 12, name: 'C', from: 2, to: 1 },
+      { draftId: 11, name: 'B', from: 1, to: 3 },
+    ]);
+  });
+
+  it('ranks rows on the board totals, with each show and the latest gain', () => {
+    const { rows, shows } = view(MOMENTS, 1010);
+    expect(rows.map((r) => [r.name, r.position, r.total, r.last, r.isViewer])).toEqual([
+      ['A', 1, 35, 10, true],
+      ['C', 1, 35, 10, false],
+      ['B', 3, 20, 0, false],
+    ]);
+    expect(rows[0]?.byShow).toEqual({ afi: 5, oscars: 30 });
+    // Only shows that scored, in moment order.
+    expect(shows.map((s) => s.abbreviation)).toEqual(['afi', 'oscars']);
+  });
+
+  it('is on air only while a moment is live, and counts categories only then', () => {
+    expect(view(MOMENTS).onAir).toBe(false);
+    expect(view(MOMENTS).whatMoved?.moment.categories).toBeNull();
+    const live = MOMENTS.map((m) =>
+      m.key === '1-ceremony' ? { ...m, state: 'live' as const } : m,
+    );
+    expect(view(live).onAir).toBe(true);
+    expect(view(live).whatMoved?.moment.categories).toBe(24);
+  });
+
+  it('survives JSON, which is how the stream sends it', () => {
+    const once = view(MOMENTS);
+    expect(JSON.parse(JSON.stringify(once))).toEqual(once);
   });
 });
