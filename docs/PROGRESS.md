@@ -2476,7 +2476,11 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
 - [x] P16.T4 — opening a season creates an empty one (D131)
 - [x] P16.T5 — "Open 2027", and the rollover panel
 - [x] P16.T6 — season setup re-seats people from earlier seasons, one tap each
-- [ ] P16.T7 — tranche 1 gate
+- [x] P16.T7 — tranche 1 gate (2026-09-27, branch `agent/p16-t1`)
+  - **CI shape** (empty postgres:17 on 5445, `prisma migrate deploy`, `node scripts/seed-e2e.mjs`, `CI=1`, production build, and the keys CI does not have blanked: `TMDB_API_KEY`, the Clerk keys, `VERCEL_OIDC_TOKEN`, `BLOB_STORE_ID`, because locally `.env.local` would otherwise supply them). lint, typecheck, `npm run layering` and `npm run build-storybook` green. `npm run test:ci`: 158 files, **1,808 passed**, 0 failed. `npm run test:e2e`: **167 passed, 100 skipped, 0 failed**, 1 flaky (`errors.spec.ts` "the 404 panel does not repaint the ground inside the shell", red once, green on its first retry; nothing here touches it). The skips are CI's own: the `VISUAL=1` and Clerk-key opt-outs, `TMDB_API_KEY not configured`, and the restored-corpus specs.
+  - 🔴 **The first CI-shape run left `.env.local`'s TMDB key in place**, and three TMDB-gated specs ran against an empty database and failed (`dashboard` preloads, `films` 335 points, `browse` marking watched). They skip on real CI, where there is no key. The run above blanks the keys, which is what the gate is supposed to reproduce.
+  - **Executor** (restored copy on 5440): `npx vitest run` **2,348 passed**, 0 failed (194 files). `npm run test:e2e`: **213 passed, 54 skipped, 1 failed**. The one red is `browse.spec.ts` "marking a film watched › survives a reload, and can be undone" (the badge is not on the page after the reload; 30 s timeout). **It is red on untouched `origin/dev` (e04975f) too**, run in a scratch worktree against the same database, so it predates this tranche; it needs its own fix. Skips: `VISUAL=1` and the Clerk-key opt-outs.
+  - Browser pass in a production build, 1440 and 390, light and dark, with the executor's active year set to 2027 and restored afterwards: "+ Open 2027" and its confirm, the rollover panel, the empty-season notice, and setup's "From earlier seasons". Screenshots in the conductor workspace, `.context/phase-16/t1/`.
 
 **Tranche 2: the duplicate-film merge, and title + id film URLs**
 - [ ] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies

@@ -644,7 +644,7 @@ Drop the already-seated check. Expect red at "a second seatReturning … is refu
 
 - [ ] **Step 1:** Run § The tranche gate. Every spec. 0 failed.
 - [ ] **Step 2:** On the executor, run the full `npx vitest run` and the full e2e suite.
-- [ ] **Step 3: Browser pass in a production build** at 1440 and 390, light and dark: owner, member and stranger on a league whose newest is 2025. Screenshot the four states from T5's table into `.local/p16/t1/` (gitignored).
+- [ ] **Step 3: Browser pass in a production build** at 1440 and 390, light and dark: owner, member and stranger on a league whose newest is 2025. Screenshot the four states from T5's table into `.local/p16/t1/` (gitignored). (P16.T7 wrote them to the conductor workspace's `.context/phase-16/t1/`, where the orchestrator asked for them.)
 - [ ] **Step 4:** In `docs/PROGRESS.md`, tick T1–T7 and record both gates' pass/skip/fail counts.
 - [ ] **Step 5:** Tell the owner the tranche is on `dev` and that flipping the active year is now safe. `git commit -m "docs: P16 tranche 1 gate"`
 
