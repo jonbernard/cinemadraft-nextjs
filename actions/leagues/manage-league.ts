@@ -4,11 +4,13 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { ConflictError } from '@/lib/errors';
+import { canOpenSeason } from '@/lib/leagues/open-season';
 import { isCurrentSeason, seasonStatus } from '@/lib/leagues/season';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
 import { profileFeedRepository } from '@/lib/repositories/profile-feeds';
 import { getLeagueBoard } from '@/lib/services/draft';
+import { getActiveYear } from '@/lib/services/season';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 import { authorizeLeague } from './guard';
 
@@ -200,74 +202,55 @@ async function postRosters(leagueId: number, year: number, leagueName: string | 
   }
 }
 
-const Stage = z.object({
+const Open = z.object({
   leagueId: z.int().positive(),
-  /** The season being opened, normally the one after the current. */
+  /** The season being opened: the site's active year, one beyond the league's newest. */
   year: z.int().positive(),
 });
 
 /**
- * Open next season (P10.T18).
+ * Open the next season (D131). Supersedes P10.T18's `stageNextSeason`.
  *
- * Copies this league's people into seats for the new year. Membership is a
- * seat, so without this a league's members would have to re-join every
- * January.
+ * 🔴 **Nobody carries forward.** Opening a season creates an empty one: no
+ * `drafts` rows at all. The owner re-seats people from earlier seasons one
+ * tap at a time on the setup page (`seatReturning`). The old action copied the
+ * whole previous roster, placeholders and characters included, which the
+ * owner decided against on 2026-09-27.
  *
- * 🔴 **Safe to run twice.** Anyone already seated for the target year is
- * skipped, so a double click does not double the league. Placeholder seats
- * carry over too — a league that drafts on behalf of someone still does next
- * year.
+ * 🔴 **Offered only when the site is on the next year** (`canOpenSeason`), and
+ * only one season beyond the league's newest.
  *
- * The league goes back to `pending`: a new season has no groups yet.
+ * 🔴 **Safe to press twice.** A league already on `year` is left exactly as it
+ * is. The old action reset the status to `pending` on every call, so a second
+ * press after "Start the draft" stopped the draft.
+ *
+ * The season it leaves keeps its seats, picks and groups, and reads as
+ * complete from here on (D130).
  */
-export async function stageNextSeason(
-  input: z.infer<typeof Stage>,
-): Promise<ActionResult<{ seated: number }>> {
-  const parsed = Stage.safeParse(input);
+export async function openSeason(
+  input: z.infer<typeof Open>,
+): Promise<ActionResult<{ opened: boolean }>> {
+  const parsed = Open.safeParse(input);
   if (!parsed.success) return fail('INVALID', 'that season is not valid');
 
   try {
-    await authorizeLeague(parsed.data.leagueId);
+    const { league } = await authorizeLeague(parsed.data.leagueId);
+    const seasons = await draftRepository.findYearsByLeagueId(parsed.data.leagueId);
 
-    const all = await draftRepository.findByLeagueId(parsed.data.leagueId);
-    const alreadySeated = new Set(
-      all
-        .filter((seat) => seat.year === parsed.data.year)
-        .map((seat) => seat.userId ?? `dummy:${seat.dummyName}`),
-    );
-
-    // The most recent season that is not the one being staged — the roster to
-    // carry forward.
-    const previousYear = Math.max(
-      ...all
-        .flatMap((seat) => (seat.year == null ? [] : [seat.year]))
-        .filter((year) => year !== parsed.data.year),
-      0,
-    );
-    const roster = all.filter((seat) => seat.year === previousYear);
-
-    let seated = 0;
-    for (const seat of roster) {
-      const key = seat.userId ?? `dummy:${seat.dummyName}`;
-      if (alreadySeated.has(key)) continue;
-      alreadySeated.add(key);
-
-      await draftRepository.create({
-        leagueId: parsed.data.leagueId,
-        year: parsed.data.year,
-        userId: seat.userId,
-        dummyName: seat.dummy === true ? seat.dummyName : null,
-      });
-      seated += 1;
+    if (league.activeYear === parsed.data.year) return ok({ opened: false });
+    if (
+      canOpenSeason({ activeYear: await getActiveYear(), seasons }) !== parsed.data.year
+    ) {
+      throw new ConflictError('that season cannot be opened');
     }
 
     await leagueRepository.update(parsed.data.leagueId, {
-      draftingStatus: 'pending',
       activeYear: parsed.data.year,
+      draftingStatus: 'pending',
     });
 
     revalidatePath(`/leagues/${parsed.data.leagueId}`, 'layout');
-    return ok({ seated });
+    return ok({ opened: true });
   } catch (error) {
     return toActionResult(error);
   }

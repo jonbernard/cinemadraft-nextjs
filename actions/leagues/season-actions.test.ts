@@ -9,13 +9,21 @@ vi.mock('@clerk/nextjs/server', () => ({ currentUser }));
 const revalidatePath = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({ revalidatePath }));
 
+// The site's active season (admin season control), one beyond this file's
+// fixture season: the state in which a league may open its next one (D131).
+// `YEAR` is hoisted-safe because it is read only when the mock is called.
+vi.mock('@/lib/services/season', async (real) => ({
+  ...(await real<typeof import('@/lib/services/season')>()),
+  getActiveYear: vi.fn(async () => YEAR + 1),
+}));
+
 import { db } from '@/lib/db';
 import { leagueRepository } from '@/lib/repositories/leagues';
 import { getLeagueBoard } from '@/lib/services/draft';
 import { getSeasonSetup } from '@/lib/services/season-setup';
 import {
   completeDraft,
-  stageNextSeason,
+  openSeason,
   startDraft,
   updateLeagueSettings,
 } from './manage-league';
@@ -624,60 +632,67 @@ describe('settings', () => {
   });
 });
 
-describe('staging next season', () => {
-  it('carries this year’s people into next year', async () => {
+describe('opening a season (D131)', () => {
+  it('refuses a year the site is not on, and changes nothing', async () => {
     signInAs(fixture.owner);
-
-    const result = await stageNextSeason({
-      leagueId: fixture.league.id,
-      year: YEAR + 1,
-    });
-
-    expect(result).toMatchObject({ ok: true, data: { seated: 2 } });
-    const next = (await seatsOf(fixture.league.id)).filter(
-      (seat) => seat.year === YEAR + 1,
-    );
-    expect(next).toHaveLength(2);
-  });
-
-  it('running it twice does not double the league', async () => {
-    signInAs(fixture.owner);
-    await stageNextSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
-
-    const second = await stageNextSeason({
-      leagueId: fixture.league.id,
-      year: YEAR + 1,
-    });
-
-    expect(second).toMatchObject({ ok: true, data: { seated: 0 } });
+    const result = await openSeason({ leagueId: fixture.league.id, year: YEAR + 2 });
+    expect(result.ok).toBe(false);
     expect(
-      (await seatsOf(fixture.league.id)).filter((seat) => seat.year === YEAR + 1),
-    ).toHaveLength(2);
+      await db.draft.count({ where: { leagueId: fixture.league.id, year: YEAR + 2 } }),
+    ).toBe(0);
+    expect(
+      (await db.league.findUnique({ where: { id: fixture.league.id } }))?.activeYear,
+    ).not.toBe(YEAR + 2);
   });
 
-  it('carries placeholder seats too', async () => {
+  it('refuses a member who is not an owner', async () => {
+    signInAs(fixture.member);
+    expect((await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 })).ok).toBe(
+      false,
+    );
+    expect(
+      (await db.league.findUnique({ where: { id: fixture.league.id } }))?.activeYear,
+    ).not.toBe(YEAR + 1);
+  });
+
+  it('opens an empty season: nobody carries forward', async () => {
     signInAs(fixture.owner);
-    await addDummySeat({
-      leagueId: fixture.league.id,
-      year: YEAR,
-      dummyName: 'Placeholder',
+    const result = await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
+    expect(result).toMatchObject({ ok: true, data: { opened: true } });
+    expect(
+      await db.draft.count({ where: { leagueId: fixture.league.id, year: YEAR + 1 } }),
+    ).toBe(0);
+    expect(
+      await db.league.findUnique({ where: { id: fixture.league.id } }),
+    ).toMatchObject({ activeYear: YEAR + 1, draftingStatus: 'pending' });
+    // The season it left is untouched: both seats, and read as finished.
+    expect(
+      await db.draft.count({ where: { leagueId: fixture.league.id, year: YEAR } }),
+    ).toBe(2);
+    expect((await getLeagueBoard(fixture.league.id, YEAR)).status).toBe('complete');
+  });
+
+  it('opening twice changes nothing the second time', async () => {
+    signInAs(fixture.owner);
+    await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
+    await markUnderWay();
+    expect(
+      await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 }),
+    ).toMatchObject({
+      ok: true,
+      data: { opened: false },
     });
-
-    await stageNextSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
-
-    const next = (await seatsOf(fixture.league.id)).filter(
-      (seat) => seat.year === YEAR + 1,
-    );
-    expect(next.some((seat) => seat.dummyName === 'Placeholder')).toBe(true);
+    // 🔴 The second press does not reset a season that has moved on.
+    expect(
+      (await db.league.findUnique({ where: { id: fixture.league.id } }))?.draftingStatus,
+    ).toBe('active');
   });
 
-  it('returns the league to pending, because a new season has no groups', async () => {
-    signInAs(fixture.owner);
-
-    await stageNextSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
-
-    expect((await leagueRepository.findById(fixture.league.id)).draftingStatus).toBe(
-      'pending',
-    );
-  });
+  /** The status a season reaches once it is under way, written directly. */
+  async function markUnderWay() {
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { draftingStatus: 'active' },
+    });
+  }
 });
