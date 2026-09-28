@@ -6,7 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { canManageLeague } from '@/lib/services/league-access';
 import { getActiveYear } from '@/lib/services/season';
-import { getSeasonSetup } from '@/lib/services/season-setup';
+import { getReturningPeople, getSeasonSetup } from '@/lib/services/season-setup';
 
 /**
  * The owner's season setup (P10.T14–T19).
@@ -43,6 +43,10 @@ export default async function SeasonSetupPage({
   const user = await getCurrentUser();
   if (!canManageLeague(view, user?.id)) notFound();
 
+  // Only an owner gets here, and only a pending season can take anyone.
+  const returning =
+    view.status === 'pending' ? await getReturningPeople(view.leagueId, view.year) : [];
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-10">
       <header className="flex flex-col gap-2">
@@ -63,6 +67,7 @@ export default async function SeasonSetupPage({
         groups={view.groups}
         suggestedGroupCount={view.suggestedGroupCount}
         status={view.status}
+        returning={returning}
       />
     </div>
   );

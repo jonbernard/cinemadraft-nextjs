@@ -40,12 +40,20 @@ const startDraft = vi.hoisted(() =>
   ),
 );
 const completeDraft = vi.hoisted(() => vi.fn(async () => ({ ok: true, data: null })));
+const seatReturning = vi.hoisted(() =>
+  vi.fn(
+    async (): Promise<
+      { ok: true; data: { draftId: number } } | { ok: false; message: string }
+    > => ({ ok: true, data: { draftId: 40 } }),
+  ),
+);
 
 vi.mock('@/actions/leagues/manage-seats', () => ({
   assignSeats,
   addDummySeat,
   randomiseGroups,
   removeSeat,
+  seatReturning,
 }));
 vi.mock('@/actions/leagues/manage-league', () => ({ startDraft, completeDraft }));
 
@@ -576,5 +584,63 @@ describe('SeasonSetup, rounding out the groups', () => {
 
     expect(await screen.findByText(/set up the groups first/i)).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
+  });
+});
+
+describe('SeasonSetup, people from earlier seasons (D131)', () => {
+  const RETURNING = [
+    { fromDraftId: 11, name: 'Mina Park', kind: 'member' as const, lastYear: 2026 },
+    { fromDraftId: 12, name: 'Aunt Jo', kind: 'unregistered' as const, lastYear: 2025 },
+    { fromDraftId: 13, name: 'Neo', kind: 'character' as const, lastYear: 2026 },
+  ];
+  const list = () => screen.getByRole('list', { name: 'From earlier seasons' });
+
+  it('lists each person with what they are and when they last played', () => {
+    setup({ returning: RETURNING });
+
+    const rows = within(list()).getAllByRole('listitem');
+    expect(rows.map((row) => row.textContent?.replace('Add', '').trim())).toEqual([
+      'Mina Park · last in 2026',
+      'Aunt Jo · not registered yet · last in 2025',
+      'Neo · character · last in 2026',
+    ]);
+  });
+
+  it('seats one person per tap, and their row leaves the list', async () => {
+    const user = setup({ returning: RETURNING });
+
+    await user.click(screen.getByRole('button', { name: 'Add Aunt Jo' }));
+
+    expect(seatReturning).toHaveBeenCalledExactlyOnceWith({
+      leagueId: 7,
+      year: 2026,
+      fromDraftId: 12,
+    });
+    await waitFor(() =>
+      expect(within(list()).queryByText(/Aunt Jo/)).not.toBeInTheDocument(),
+    );
+    expect(within(list()).getAllByRole('listitem')).toHaveLength(2);
+    expect(await screen.findByText('Aunt Jo seated')).toBeInTheDocument();
+  });
+
+  it('keeps the row and says why when the seat is refused', async () => {
+    seatReturning.mockResolvedValueOnce({
+      ok: false,
+      message: 'they already have a seat this season',
+    });
+    const user = setup({ returning: RETURNING });
+
+    await user.click(screen.getByRole('button', { name: 'Add Mina Park' }));
+
+    expect(
+      await screen.findByText('they already have a seat this season'),
+    ).toBeInTheDocument();
+    expect(within(list()).getByText(/Mina Park/)).toBeInTheDocument();
+  });
+
+  it('offers nobody once the draft has started', () => {
+    setup({ returning: RETURNING, status: 'active' });
+
+    expect(screen.queryByRole('list', { name: 'From earlier seasons' })).toBeNull();
   });
 });

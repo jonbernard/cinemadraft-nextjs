@@ -9,11 +9,21 @@ vi.mock('@clerk/nextjs/server', () => ({ currentUser }));
 const revalidatePath = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({ revalidatePath }));
 
+// The site's active season (admin season control), one beyond this file's
+// fixture season: the state in which a league may open its next one (D131).
+// `YEAR` is hoisted-safe because it is read only when the mock is called.
+vi.mock('@/lib/services/season', async (real) => ({
+  ...(await real<typeof import('@/lib/services/season')>()),
+  getActiveYear: vi.fn(async () => YEAR + 1),
+}));
+
 import { db } from '@/lib/db';
 import { leagueRepository } from '@/lib/repositories/leagues';
+import { getLeagueBoard, getOpenableSeason } from '@/lib/services/draft';
+import { getReturningPeople, getSeasonSetup } from '@/lib/services/season-setup';
 import {
   completeDraft,
-  stageNextSeason,
+  openSeason,
   startDraft,
   updateLeagueSettings,
 } from './manage-league';
@@ -23,6 +33,7 @@ import {
   randomiseGroups,
   removeSeat,
   renameDummySeat,
+  seatReturning,
 } from './manage-seats';
 
 /**
@@ -368,6 +379,28 @@ describe('groups', () => {
     expect(result).toMatchObject({ ok: false, code: 'CONFLICT' });
   });
 
+  it('closes the season it leaves: its groups can no longer be re-dealt', async () => {
+    // 🔴 `drafting_status` is one column for every season (D130). Opening the
+    // next season sets it to `pending`, and without `seasonStatus` the season
+    // just left read `pending` too, and could be re-dealt with picks in it.
+    // The row is written directly: the action that writes it is P16.T4's.
+    signInAs(fixture.owner);
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { activeYear: YEAR + 1, draftingStatus: 'pending' },
+    });
+    const before = await seatsOf(fixture.league.id);
+
+    const redeal = await randomiseGroups({
+      leagueId: fixture.league.id,
+      year: YEAR,
+      groupCount: 2,
+    });
+
+    expect(redeal.ok).toBe(false);
+    expect(await seatsOf(fixture.league.id)).toEqual(before);
+  });
+
   it('saves a layout the owner arranged by hand', async () => {
     signInAs(fixture.owner);
 
@@ -440,6 +473,53 @@ describe('draft status', () => {
     expect((await leagueRepository.findById(fixture.league.id)).draftingStatus).toBe(
       'pending',
     );
+  });
+
+  it('will not start or finish a season that is not the current one', async () => {
+    // Writing `active` or `complete` for 2026 while 2027 is open would write it
+    // onto 2027: the column has no year (D130).
+    signInAs(fixture.owner);
+    // Grouped, so the only thing between startDraft and a write is the
+    // current-season check, not "set up the groups first".
+    await db.draft.updateMany({
+      where: { leagueId: fixture.league.id },
+      data: { group: 1 },
+    });
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { activeYear: YEAR + 1, draftingStatus: 'pending' },
+    });
+    const status = async () =>
+      (await db.league.findUnique({ where: { id: fixture.league.id } }))?.draftingStatus;
+
+    expect(await startDraft({ leagueId: fixture.league.id, year: YEAR })).toMatchObject({
+      ok: false,
+      code: 'CONFLICT',
+    });
+    expect(await status()).toBe('pending');
+
+    // Finishing a season that is already over is a no-op, not a write.
+    expect((await completeDraft({ leagueId: fixture.league.id, year: YEAR })).ok).toBe(
+      true,
+    );
+    expect(await status()).toBe('pending');
+
+    // A season that has not been opened can be finished no more than started.
+    expect(
+      (await completeDraft({ leagueId: fixture.league.id, year: YEAR + 2 })).ok,
+    ).toBe(false);
+    expect(await status()).toBe('pending');
+  });
+
+  it('the board and the setup page read a finished season as finished (D130)', async () => {
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { activeYear: YEAR + 1, draftingStatus: 'pending' },
+    });
+
+    expect((await getLeagueBoard(fixture.league.id, YEAR)).status).toBe('complete');
+    expect((await getSeasonSetup(fixture.league.id, YEAR)).status).toBe('complete');
+    expect((await getLeagueBoard(fixture.league.id, YEAR + 1)).status).toBe('pending');
   });
 
   it('marks the draft complete', async () => {
@@ -553,60 +633,293 @@ describe('settings', () => {
   });
 });
 
-describe('staging next season', () => {
-  it('carries this year’s people into next year', async () => {
+describe('opening a season (D131)', () => {
+  it('refuses a year the site is not on, and changes nothing', async () => {
     signInAs(fixture.owner);
-
-    const result = await stageNextSeason({
-      leagueId: fixture.league.id,
-      year: YEAR + 1,
-    });
-
-    expect(result).toMatchObject({ ok: true, data: { seated: 2 } });
-    const next = (await seatsOf(fixture.league.id)).filter(
-      (seat) => seat.year === YEAR + 1,
-    );
-    expect(next).toHaveLength(2);
-  });
-
-  it('running it twice does not double the league', async () => {
-    signInAs(fixture.owner);
-    await stageNextSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
-
-    const second = await stageNextSeason({
-      leagueId: fixture.league.id,
-      year: YEAR + 1,
-    });
-
-    expect(second).toMatchObject({ ok: true, data: { seated: 0 } });
+    const result = await openSeason({ leagueId: fixture.league.id, year: YEAR + 2 });
+    expect(result.ok).toBe(false);
     expect(
-      (await seatsOf(fixture.league.id)).filter((seat) => seat.year === YEAR + 1),
-    ).toHaveLength(2);
+      await db.draft.count({ where: { leagueId: fixture.league.id, year: YEAR + 2 } }),
+    ).toBe(0);
+    expect(
+      (await db.league.findUnique({ where: { id: fixture.league.id } }))?.activeYear,
+    ).not.toBe(YEAR + 2);
   });
 
-  it('carries placeholder seats too', async () => {
+  it('refuses a member who is not an owner', async () => {
+    signInAs(fixture.member);
+    expect((await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 })).ok).toBe(
+      false,
+    );
+    expect(
+      (await db.league.findUnique({ where: { id: fixture.league.id } }))?.activeYear,
+    ).not.toBe(YEAR + 1);
+  });
+
+  it('opens an empty season: nobody carries forward', async () => {
     signInAs(fixture.owner);
-    await addDummySeat({
-      leagueId: fixture.league.id,
-      year: YEAR,
-      dummyName: 'Placeholder',
+    const result = await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
+    expect(result).toMatchObject({ ok: true, data: { opened: true } });
+    expect(
+      await db.draft.count({ where: { leagueId: fixture.league.id, year: YEAR + 1 } }),
+    ).toBe(0);
+    expect(
+      await db.league.findUnique({ where: { id: fixture.league.id } }),
+    ).toMatchObject({ activeYear: YEAR + 1, draftingStatus: 'pending' });
+    // The season it left is untouched: both seats, and read as finished.
+    expect(
+      await db.draft.count({ where: { leagueId: fixture.league.id, year: YEAR } }),
+    ).toBe(2);
+    expect((await getLeagueBoard(fixture.league.id, YEAR)).status).toBe('complete');
+  });
+
+  it('opening twice changes nothing the second time', async () => {
+    signInAs(fixture.owner);
+    await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
+    await markUnderWay();
+    expect(
+      await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 }),
+    ).toMatchObject({
+      ok: true,
+      data: { opened: false },
+    });
+    // 🔴 The second press does not reset a season that has moved on.
+    expect(
+      (await db.league.findUnique({ where: { id: fixture.league.id } }))?.draftingStatus,
+    ).toBe('active');
+  });
+
+  it('offers the season until it is opened, and not after', async () => {
+    // The league page's offer reads the same two checks the action makes. An
+    // opened season has no seats yet, so the seasons list alone would keep
+    // offering it; the league's active year is what withdraws it.
+    signInAs(fixture.owner);
+    expect(await getOpenableSeason(fixture.league.id, [YEAR])).toEqual({
+      year: YEAR + 1,
+      fromYear: YEAR,
     });
 
-    await stageNextSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
+    await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
 
-    const next = (await seatsOf(fixture.league.id)).filter(
-      (seat) => seat.year === YEAR + 1,
-    );
-    expect(next.some((seat) => seat.dummyName === 'Placeholder')).toBe(true);
+    expect(await getOpenableSeason(fixture.league.id, [YEAR])).toBeNull();
   });
 
-  it('returns the league to pending, because a new season has no groups', async () => {
+  /** The status a season reaches once it is under way, written directly. */
+  async function markUnderWay() {
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { draftingStatus: 'active' },
+    });
+  }
+});
+
+describe('re-seating people from earlier seasons (D131)', () => {
+  /**
+   * The fixture's YEAR holds the owner and the member; this adds a person who
+   * has not registered and a character, then opens YEAR + 1, which is empty.
+   */
+  async function openedWithEveryone() {
     signInAs(fixture.owner);
+    await addDummySeat({ leagueId: fixture.league.id, year: YEAR, dummyName: 'Aunt Jo' });
+    await addDummySeat({ leagueId: fixture.league.id, year: YEAR, dummyName: 'Neo' });
+    await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
+    const seats = await seatsOf(fixture.league.id);
+    const from = (match: (seat: (typeof seats)[number]) => boolean) =>
+      seats.find((seat) => seat.year === YEAR && match(seat))?.id as number;
+    return {
+      member: from((seat) => seat.userId === fixture.member?.id),
+      auntJo: from((seat) => seat.dummyName === 'Aunt Jo'),
+      neo: from((seat) => seat.dummyName === 'Neo'),
+    };
+  }
 
-    await stageNextSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
+  const nextSeason = async () =>
+    (await seatsOf(fixture.league.id)).filter((seat) => seat.year === YEAR + 1);
 
-    expect((await leagueRepository.findById(fixture.league.id)).draftingStatus).toBe(
-      'pending',
+  it('lists everyone from earlier seasons once, members first, with what they are', async () => {
+    const from = await openedWithEveryone();
+
+    const people = await getReturningPeople(fixture.league.id, YEAR + 1);
+
+    expect(people.map(({ kind, lastYear }) => ({ kind, lastYear }))).toEqual([
+      { kind: 'member', lastYear: YEAR },
+      { kind: 'member', lastYear: YEAR },
+      { kind: 'unregistered', lastYear: YEAR },
+      { kind: 'character', lastYear: YEAR },
+    ]);
+    expect(people.slice(2)).toEqual([
+      { fromDraftId: from.auntJo, name: 'Aunt Jo', kind: 'unregistered', lastYear: YEAR },
+      { fromDraftId: from.neo, name: 'Neo', kind: 'character', lastYear: YEAR },
+    ]);
+    expect(people.map((person) => person.fromDraftId)).toContain(from.member);
+  });
+
+  it('takes each person from their newest seat, and lists them once', async () => {
+    // The member also played the season before, in an older seat.
+    const older = await db.draft.create({
+      data: { leagueId: fixture.league.id, year: YEAR - 1, userId: fixture.member?.id },
+      select: { id: true },
+    });
+    const from = await openedWithEveryone();
+
+    const members = (await getReturningPeople(fixture.league.id, YEAR + 1)).filter(
+      (person) => person.kind === 'member',
     );
+
+    expect(members).toHaveLength(2);
+    expect(members.map((person) => person.fromDraftId)).toContain(from.member);
+    expect(members.map((person) => person.fromDraftId)).not.toContain(older.id);
+  });
+
+  it('lists only earlier seasons, never a later one', async () => {
+    await db.draft.create({
+      data: {
+        leagueId: fixture.league.id,
+        year: YEAR + 2,
+        dummy: true,
+        dummyName: 'Later',
+      },
+    });
+    await openedWithEveryone();
+
+    const names = (await getReturningPeople(fixture.league.id, YEAR + 1)).map(
+      (person) => person.name,
+    );
+
+    expect(names).not.toContain('Later');
+  });
+
+  it('seats a member as themselves, and a character as a character', async () => {
+    const from = await openedWithEveryone();
+
+    const seated = await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: from.member,
+    });
+    await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: from.neo,
+    });
+
+    expect(seated.ok).toBe(true);
+    const rows = await db.draft.findMany({
+      where: { leagueId: fixture.league.id, year: YEAR + 1 },
+      select: { userId: true, dummy: true, dummyName: true },
+      orderBy: { id: 'asc' },
+    });
+    expect(rows).toEqual([
+      { userId: fixture.member?.id, dummy: false, dummyName: null },
+      { userId: null, dummy: true, dummyName: 'Neo' },
+    ]);
+  });
+
+  it('refuses the same person twice, and the count does not move', async () => {
+    const from = await openedWithEveryone();
+    await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: from.member,
+    });
+
+    const again = await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: from.member,
+    });
+
+    expect(again.ok).toBe(false);
+    expect(await nextSeason()).toHaveLength(1);
+  });
+
+  it('refuses a seat from another league', async () => {
+    await openedWithEveryone();
+    const elsewhere = await db.league.create({
+      data: {
+        name: `${TAG} elsewhere`,
+        owner: '[]',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      select: { id: true },
+    });
+    const foreign = await db.draft.create({
+      data: { leagueId: elsewhere.id, year: YEAR, dummy: true, dummyName: 'Stranger' },
+      select: { id: true },
+    });
+
+    const result = await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: foreign.id,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(await nextSeason()).toHaveLength(0);
+  });
+
+  it('refuses a seat from the season being set up itself', async () => {
+    const from = await openedWithEveryone();
+    const seated = await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: from.auntJo,
+    });
+    const own = seated.ok ? seated.data.draftId : 0;
+
+    const result = await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: own,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(await nextSeason()).toHaveLength(1);
+  });
+
+  it('refuses once the season is no longer pending', async () => {
+    const from = await openedWithEveryone();
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { draftingStatus: 'active' },
+    });
+
+    const result = await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: from.member,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(await nextSeason()).toHaveLength(0);
+  });
+
+  it('refuses a member who is not an owner', async () => {
+    const from = await openedWithEveryone();
+    signInAs(fixture.member);
+
+    const result = await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: from.member,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(await nextSeason()).toHaveLength(0);
+  });
+
+  it('drops someone from the list once they are seated', async () => {
+    const from = await openedWithEveryone();
+    await seatReturning({
+      leagueId: fixture.league.id,
+      year: YEAR + 1,
+      fromDraftId: from.member,
+    });
+
+    const people = await getReturningPeople(fixture.league.id, YEAR + 1);
+
+    expect(people).toHaveLength(3);
+    expect(people.map((person) => person.fromDraftId)).not.toContain(from.member);
   });
 });

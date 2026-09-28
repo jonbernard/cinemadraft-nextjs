@@ -2,14 +2,15 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-
 import { ConflictError } from '@/lib/errors';
+import { seasonStatus } from '@/lib/leagues/season';
 import { draftRepository } from '@/lib/repositories/drafts';
 import {
   type Assignment,
   dealIntoGroups,
   shuffle,
 } from '@/lib/services/group-assignment';
+import { personKey } from '@/lib/services/season-setup';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 import { authorizeLeague } from './guard';
 
@@ -171,7 +172,7 @@ export async function randomiseGroups(
 
   try {
     const { league } = await authorizeLeague(parsed.data.leagueId);
-    if (league.draftingStatus !== 'pending') {
+    if (seasonStatus(league, parsed.data.year) !== 'pending') {
       throw new ConflictError('groups can only be arranged before the draft starts');
     }
 
@@ -191,6 +192,71 @@ export async function randomiseGroups(
     // these rows (P15.T12); it never rolls its own, so a viewer who reloads
     // mid-animation sees exactly what the page beneath already holds.
     return ok({ assigned: assignments.length, assignments });
+  } catch (error) {
+    return toActionResult(error);
+  }
+}
+
+const Returning = z.object({
+  leagueId: z.int().positive(),
+  year: z.int().positive(),
+  /** The person's seat in an earlier season of this league. */
+  fromDraftId: z.int().positive(),
+});
+
+/**
+ * Seat someone from an earlier season in this one (D131). One press seats one
+ * person (D121): there is no "add everyone".
+ *
+ * 🔴 The source seat is read from the database and must belong to this
+ * league and to an earlier season, so a caller cannot copy a seat out of
+ * somebody else's league. A member comes back as themselves (their account,
+ * not a placeholder with their name); everyone else by the name they had.
+ *
+ * ponytail: check-then-insert, so two presses racing each other could seat
+ * one person twice. The row leaves the list on the first press and the
+ * button is disabled while it runs; a unique index would need a person
+ * column that `drafts` does not have.
+ */
+export async function seatReturning(
+  input: z.infer<typeof Returning>,
+): Promise<ActionResult<{ draftId: number }>> {
+  const parsed = Returning.safeParse(input);
+  if (!parsed.success) return fail('INVALID', 'that seat is not valid');
+
+  try {
+    const { league } = await authorizeLeague(parsed.data.leagueId);
+
+    const source = await draftRepository.findById(parsed.data.fromDraftId);
+    if (
+      source.leagueId !== parsed.data.leagueId ||
+      source.year == null ||
+      source.year >= parsed.data.year
+    ) {
+      throw new ConflictError('that seat is not from an earlier season of this league');
+    }
+    if (seasonStatus(league, parsed.data.year) !== 'pending') {
+      throw new ConflictError('people can only be added before the draft starts');
+    }
+
+    const key = personKey(source);
+    const seated = await draftRepository.findByLeagueIdAndYear(
+      parsed.data.leagueId,
+      parsed.data.year,
+    );
+    if (key == null || seated.some((seat) => personKey(seat) === key)) {
+      throw new ConflictError('they already have a seat this season');
+    }
+
+    const seat = await draftRepository.create({
+      leagueId: parsed.data.leagueId,
+      year: parsed.data.year,
+      userId: source.userId,
+      dummyName: source.userId == null ? source.dummyName : null,
+    });
+
+    revalidatePath(`/leagues/${parsed.data.leagueId}`, 'layout');
+    return ok({ draftId: seat.id });
   } catch (error) {
     return toActionResult(error);
   }

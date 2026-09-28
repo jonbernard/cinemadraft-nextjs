@@ -1,3 +1,5 @@
+import { inSeason } from '@/lib/utils/season-window';
+
 /**
  * Whether a show still needs its nominations, or its winners, entered for a
  * season — worked out from its dates and what is already in, never from a flag.
@@ -29,6 +31,8 @@
 export type EntryStatus = { needsNominations: boolean; needsWinners: boolean };
 
 export type ShowDates = {
+  /** False for a show that names honourees and holds no ceremony (D129, the AFI). */
+  hasCeremony: boolean;
   nomDate: number | null;
   nomTime: number | null;
   awardsDate: number | null;
@@ -43,11 +47,6 @@ export type SeasonEntries = {
   /** Of those, how many have a winner. */
   categoriesDecided: number;
 };
-
-/** The same window as `seasonWindow` in `scripts/award-import.mjs`. */
-function inSeason(instant: number, season: number): boolean {
-  return instant >= Date.UTC(season - 1, 7, 1) && instant < Date.UTC(season, 7, 1);
-}
 
 /** The real moment: the event's local midnight plus the offset (dates spec). */
 function instantOf(date: number | null, time: number | null): number | null {
@@ -68,7 +67,9 @@ export function entryStatus(
     needsNominations:
       due(instantOf(dates.nomDate, dates.nomTime), season, now) &&
       entries.nominations === 0,
+    // A show with no ceremony has no winners to enter, whatever its dates say.
     needsWinners:
+      dates.hasCeremony &&
       due(instantOf(dates.awardsDate, dates.awardsTime), season, now) &&
       entries.categoriesDecided < entries.categoriesWithNominees,
   };

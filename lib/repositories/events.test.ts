@@ -87,9 +87,10 @@ describe('the DTO matches the captured contract', () => {
     // the source had no such column — the selection was a socket.io message
     // and lived nowhere (P14.T12). Named here rather than the assertion being
     // loosened, so the next column added still has to be argued for, the way
-    // `movies.accentHex` is named in `movies.test.ts`.
+    // `movies.accentHex` is named in `movies.test.ts`. And `hasCeremony`
+    // (D129): the source knew the AFI had no ceremony only as folklore.
     expect(Object.keys(event).sort()).toEqual(
-      [...Object.keys(expected), 'focusedAwardId'].sort(),
+      [...Object.keys(expected), 'focusedAwardId', 'hasCeremony'].sort(),
     );
   });
 

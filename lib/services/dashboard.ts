@@ -160,7 +160,7 @@ export async function getDashboard(userId: number | null): Promise<DashboardView
     // A league the viewer has no seat in this season still belongs on the
     // page — they may be mid-draft, or the season may not have started.
     leagues,
-    events: toSeasonPhases(events),
+    events: toSeasonPhases(events, year),
     nowPlaying: nowPlaying.map((film) => ({
       tmdbId: film.tmdbId,
       title: film.title,

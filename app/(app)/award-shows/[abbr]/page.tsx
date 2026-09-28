@@ -198,6 +198,7 @@ export default async function AwardShowPage({
                   awardsDate: event.awardsDate,
                   awardsTime: event.awardsTime,
                   awardsDuration: event.awardsDuration,
+                  hasCeremony: event.hasCeremony,
                 }}
               />
             </div>

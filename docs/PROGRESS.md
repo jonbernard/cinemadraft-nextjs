@@ -2467,7 +2467,51 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
   loudly. Not fixed: `lib/db.test.ts` asserts exactly 1,355 rows, so deleting
   any of them is a deliberate change with a test to update.
 
-- [ ] P16 not started — post-cutover (`docs/PLAN.md` § Phase 16), gated on Phase 13; no plan written yet
+Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner decided every design question on 2026-09-27; five defaults await confirmation (the plan's § Open questions). Three migrations (M1–M3), each applied to all three databases and added to the Phase 13 cutover's T3b table and `restore-from-heroku.sh` C5/C7. New decisions D129–D137. 🔴 Each tranche gates on the **whole** e2e suite in CI's shape (empty database, migrations, seed), not the touched specs.
+
+**Tranche 1: opening the next season, and the AFI flag (time-sensitive; ships whole before the active year is flipped to 2027)**
+- [x] P16.T1 — `events.has_ceremony` (M1), and the rail stops waiting for the AFI (D129)
+- [x] P16.T2 — the rail shows the season it is labelled with
+- [x] P16.T3 — a league's status belongs to its active season (D130)
+- [x] P16.T4 — opening a season creates an empty one (D131)
+- [x] P16.T5 — "Open 2027", and the rollover panel
+- [x] P16.T6 — season setup re-seats people from earlier seasons, one tap each
+- [x] P16.T7 — tranche 1 gate (2026-09-27, branch `agent/p16-t1`)
+  - **CI shape** (empty postgres:17 on 5445, `prisma migrate deploy`, `node scripts/seed-e2e.mjs`, `CI=1`, production build, and the keys CI does not have blanked: `TMDB_API_KEY`, the Clerk keys, `VERCEL_OIDC_TOKEN`, `BLOB_STORE_ID`, because locally `.env.local` would otherwise supply them). lint, typecheck, `npm run layering` and `npm run build-storybook` green. `npm run test:ci`: 158 files, **1,808 passed**, 0 failed. `npm run test:e2e`: **167 passed, 100 skipped, 0 failed**, 1 flaky (`errors.spec.ts` "the 404 panel does not repaint the ground inside the shell", red once, green on its first retry; nothing here touches it). The skips are CI's own: the `VISUAL=1` and Clerk-key opt-outs, `TMDB_API_KEY not configured`, and the restored-corpus specs.
+  - 🔴 **The first CI-shape run left `.env.local`'s TMDB key in place**, and three TMDB-gated specs ran against an empty database and failed (`dashboard` preloads, `films` 335 points, `browse` marking watched). They skip on real CI, where there is no key. The run above blanks the keys, which is what the gate is supposed to reproduce.
+  - **Executor** (restored copy on 5440): `npx vitest run` **2,348 passed**, 0 failed (194 files). `npm run test:e2e`: **213 passed, 54 skipped, 1 failed**. The one red is `browse.spec.ts` "marking a film watched › survives a reload, and can be undone" (the badge is not on the page after the reload; 30 s timeout). **It is red on untouched `origin/dev` (e04975f) too**, run in a scratch worktree against the same database, so it predates this tranche; it needs its own fix. Skips: `VISUAL=1` and the Clerk-key opt-outs.
+  - Browser pass in a production build, 1440 and 390, light and dark, with the executor's active year set to 2027 and restored afterwards: "+ Open 2027" and its confirm, the rollover panel, the empty-season notice, and setup's "From earlier seasons". Screenshots in the conductor workspace, `.context/phase-16/t1/`.
+
+**Tranche 2: the duplicate-film merge, and title + id film URLs**
+- [ ] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies
+- [ ] P16.T9 — title + id film URLs: the `[film]` route, the canonical spelling and the redirects (D133; no migration)
+- [ ] P16.T10 — every link spells `title-id`, held or not (`filmHref`, layering guard)
+- ~~P16.T11 — store every browse result~~ — dropped by the owner 2026-09-27 (title + id URLs need no row); ID kept so later numbers do not move
+- [ ] P16.T12 — tranche 2 gate
+
+**Tranche 3: the season view on `/award-shows`**
+- [ ] P16.T13 — `moments`: a season's scoring moments, in order
+- [ ] P16.T14 — `season-ledger`: every seat's points per moment, and the standings after each
+- [ ] P16.T15 — the season view replaces the logo grid (signed out first)
+- [ ] P16.T16 — signed in, each finished moment says what it did to you
+- [ ] P16.T17 — tranche 3 gate
+
+**Tranche 4: the ledger**
+- [ ] P16.T18 — show dates per season (M3, D134)
+- [ ] P16.T19 — the Standings tab, led by "what moved"
+- [ ] P16.T20 — "what moved" streams while a ceremony is entered (D135)
+- [ ] P16.T21 — a seat's season, on its own page
+- [ ] P16.T22 — the Race tab
+- [ ] P16.T23 — tranche 4 gate
+
+**Tranche 5: head-to-head**
+- [ ] P16.T24 — "Compare" on every standings row, public (D136)
+- [ ] P16.T25 — tranche 5 gate
+
+**Tranche 6: followers**
+- [ ] P16.T26 — audit what a follower is not shown, measured, and close the gap (D137)
+- [ ] P16.T27 — the explainer and "race at the top" take the sign-in card's slot
+- [ ] P16.T28 — tranche 6 gate, and Phase 16 closes
 
 ---
 

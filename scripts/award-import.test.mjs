@@ -1097,7 +1097,7 @@ describe('formatEt', () => {
   });
 });
 
-import { applyDates, validateDatesPlan } from './award-import.mjs';
+import { applyDates, loadDates, validateDatesPlan } from './award-import.mjs';
 
 const SHOWS = [
   {
@@ -1110,6 +1110,7 @@ const SHOWS = [
     awardsTime: 90000000,
     nomInstant: null,
     awardsInstant: null,
+    hasCeremony: true,
     nomCurrent: false,
     awardsCurrent: false,
     nomTimeOfDay: 46800000,
@@ -1340,5 +1341,99 @@ describe('applyDates', () => {
     expect(validateDatesPlan(bad, SHOWS)).toContain(
       'dga nominations date must be YYYY-MM-DD',
     );
+  });
+});
+
+/** D129: a show with `has_ceremony = false` (today the AFI) has no awards half. */
+describe('a show with no ceremony', () => {
+  const AFI = {
+    ...SHOWS[0],
+    id: 1,
+    abbreviation: 'afi',
+    name: 'AFI Awards',
+    hasCeremony: false,
+    awardsTime: null,
+    awardsTimeOfDay: null,
+  };
+
+  it('refuses an awards entry for it, before writing anything', async () => {
+    const ran = [];
+    const client = {
+      async query(text) {
+        ran.push(text);
+        return { rows: [] };
+      },
+    };
+    const plan = {
+      ...PLAN,
+      shows: [{ abbreviation: 'afi', awards: { date: '2026-01-10', time: '12:00' } }],
+    };
+    await expect(
+      applyDates(
+        client,
+        plan,
+        { activeYear: 2026, shows: [AFI] },
+        {
+          commit: true,
+          secret: 'test-secret',
+        },
+      ),
+    ).rejects.toThrow('afi has no ceremony');
+    expect(ran).toEqual([]);
+  });
+
+  it('still takes its nominations date', async () => {
+    const plan = {
+      ...PLAN,
+      shows: [
+        { abbreviation: 'afi', nominations: { date: '2025-12-04', time: '12:00' } },
+      ],
+    };
+    const report = await applyDates(
+      { query: async () => ({ rows: [] }) },
+      plan,
+      { activeYear: 2026, shows: [AFI] },
+      { commit: false },
+    );
+    expect(report.changes.map((change) => change.field)).toEqual(['nominations']);
+  });
+
+  it('loads it as having no ceremony, and never as an outstanding one', async () => {
+    const client = {
+      async query(text) {
+        if (text.includes('available_years')) return { rows: [{ year: 2026 }] };
+        return {
+          rows: [
+            {
+              id: 1,
+              abbreviation: 'afi',
+              name: 'AFI',
+              has_ceremony: false,
+              nom_date: null,
+              nom_time: null,
+              awards_date: null,
+              awards_time: null,
+            },
+            {
+              id: 2,
+              abbreviation: 'dga',
+              name: 'DGA',
+              has_ceremony: true,
+              nom_date: null,
+              nom_time: null,
+              awards_date: null,
+              awards_time: null,
+            },
+          ],
+        };
+      },
+    };
+    const { shows } = await loadDates(client);
+    expect(
+      shows.map((show) => [show.abbreviation, show.hasCeremony, show.awardsCurrent]),
+    ).toEqual([
+      ['afi', false, true],
+      ['dga', true, false],
+    ]);
   });
 });

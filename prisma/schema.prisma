@@ -86,6 +86,7 @@ model Event {
   awardsTime     BigInt?   @map("awards_time")
   awardsDuration BigInt?   @map("awards_duration")
   focusedAwardId Int?      @map("focused_award_id")
+  hasCeremony    Boolean   @default(true) @map("has_ceremony")
   createdAt      DateTime? @map("created_at") @db.Timestamptz(6)
   updatedAt      DateTime? @map("updated_at") @db.Timestamptz(6)
 

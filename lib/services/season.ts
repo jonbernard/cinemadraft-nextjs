@@ -1,5 +1,6 @@
 import { availableYearRepository } from '@/lib/repositories/available-years';
 import { eventRepository } from '@/lib/repositories/events';
+import { inSeason } from '@/lib/utils/season-window';
 
 /**
  * The season the app is currently showing (D22).
@@ -68,37 +69,46 @@ export async function getSeasons(): Promise<number[]> {
  * far future, not the past.
  */
 export function toSeasonPhases(
-  events: readonly {
-    id: number;
-    name: string | null;
-    abbreviation: string | null;
-    nomDate: number | null;
-    awardsDate: number | null;
-  }[],
+  events: readonly PhaseEvent[],
+  season: number,
+  now: number = Date.now(),
 ): SeasonPhase[] {
-  const now = Date.now();
+  // 🔴 Only this season's dates (P16.T2). A show holds one row of dates,
+  // overwritten each season, so once the active year moves on every show
+  // still carries last season's, all past, and without this the rail would
+  // call the new season finished the day it opens. Out of season is "not
+  // scheduled yet", which is exactly what it is.
+  const own = (date: number | null) =>
+    date != null && inSeason(date, season) ? date : null;
 
   return events
     .flatMap((event) => {
+      const nomDate = own(event.nomDate);
+      const awardsDate = own(event.awardsDate);
       const shared = {
         eventId: event.id,
         name: event.name,
         abbreviation: event.abbreviation,
       };
+      const nominations: SeasonPhase = {
+        ...shared,
+        key: `${event.id}-nominations`,
+        phase: 'nominations',
+        date: nomDate,
+        complete: nomDate != null && nomDate < now,
+      };
+      // 🔴 A show with no ceremony (D129, the AFI) has one moment. Emitting a
+      // ceremony box for it anyway is what read "11 of 12 · Next · date TBA"
+      // for the rest of the year: an undated box that could never complete.
+      if (!event.hasCeremony) return [nominations];
       return [
-        {
-          ...shared,
-          key: `${event.id}-nominations`,
-          phase: 'nominations' as const,
-          date: event.nomDate,
-          complete: event.nomDate != null && event.nomDate < now,
-        },
+        nominations,
         {
           ...shared,
           key: `${event.id}-ceremony`,
           phase: 'ceremony' as const,
-          date: event.awardsDate,
-          complete: event.awardsDate != null && event.awardsDate < now,
+          date: awardsDate,
+          complete: awardsDate != null && awardsDate < now,
         },
       ];
     })
@@ -108,9 +118,23 @@ export function toSeasonPhases(
     );
 }
 
+/** The slice of an event the season rail reads. */
+export type PhaseEvent = {
+  id: number;
+  name: string | null;
+  abbreviation: string | null;
+  hasCeremony: boolean;
+  nomDate: number | null;
+  awardsDate: number | null;
+};
+
 /** Every scoring moment in the calendar, read from the events table. */
 export async function getSeasonPhases(): Promise<SeasonPhase[]> {
-  return toSeasonPhases(await eventRepository.findAll());
+  const [events, season] = await Promise.all([
+    eventRepository.findAll(),
+    getActiveYear(),
+  ]);
+  return toSeasonPhases(events, season);
 }
 
 /**

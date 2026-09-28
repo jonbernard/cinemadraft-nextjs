@@ -182,3 +182,39 @@ describe('the signed-in dashboard', () => {
     expect(getLandingFacts).not.toHaveBeenCalled();
   });
 });
+
+describe('the season eyebrow', () => {
+  const phase = (
+    eventId: number,
+    kind: 'nominations' | 'ceremony',
+    complete: boolean,
+  ) => ({
+    key: `${eventId}-${kind}`,
+    eventId,
+    phase: kind,
+    name: `Show ${eventId}`,
+    abbreviation: `s${eventId}`,
+    date: Date.UTC(2026, 0, eventId),
+    complete,
+  });
+
+  it('counts a show complete once every one of its phases is, so a show with no ceremony completes (D129)', async () => {
+    getDashboard.mockResolvedValue({
+      year: 2026,
+      leagues: [],
+      nowPlaying: [],
+      events: [
+        phase(1, 'nominations', true),
+        phase(1, 'ceremony', true),
+        // The AFI: one phase, and it has passed.
+        phase(2, 'nominations', true),
+        phase(3, 'nominations', true),
+        phase(3, 'ceremony', false),
+      ],
+    });
+
+    render(await DashboardPage(props()));
+
+    expect(screen.getByText('2 of 3 shows complete')).toBeInTheDocument();
+  });
+});

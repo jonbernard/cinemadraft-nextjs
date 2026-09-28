@@ -67,7 +67,7 @@ S11 repeats the script run against a fresh Heroku dump.
 
 ## What a full restore wipes
 
-**Schema.** These are the six changes from PLAN.md § T3b. They are gone after the wipe in S17, the script's `migrate deploy` puts them back, and each has its own line in check C5:
+**Schema.** These are the seven changes from PLAN.md § T3b and after. They are gone after the wipe in S17, the script's `migrate deploy` puts them back, and each has its own line in check C5:
 
 | Migration | Change |
 |---|---|
@@ -77,6 +77,7 @@ S11 repeats the script run against a fresh Heroku dump.
 | `20260815160000_movie_title_search` | `pg_trgm` plus the `movies_title_trgm` GIN index |
 | `20260816120000_nominations_year_integer` | `nominations.year` as `integer`. The restore brings back `text`, and nothing errors |
 | `20260913120000_event_focused_award` | `events.focused_award_id` (D117) |
+| `20260928090000_event_has_ceremony` | `events.has_ceremony`, AFI false (D129). Without it the rail waits for an AFI ceremony forever |
 
 **Data: all of it.** Everything on Neon is replaced by the dump. None of it is re-applied. The lines worth knowing:
 
@@ -447,7 +448,7 @@ Every query runs as `"$PSQL" "$NEON_DIRECT" -At` unless marked otherwise.
 diff "$CUT/dump-row-counts.tsv" <(scripts/row-counts.sh "$HEROKU_DB")
 ```
 
-**C3–C6 live in `scripts/restore-from-heroku.sh`**, which runs them after the step each one guards: C3 raw counts against the dump's (`scripts/dump-row-counts.sh` vs `scripts/row-counts.sh`), C4 folded counts and zero uppercase identifiers, C5 the nine T3b schema facts, C6 `12|12` logos on Blob. The script is their only definition.
+**C3–C6 live in `scripts/restore-from-heroku.sh`**, which runs them after the step each one guards: C3 raw counts against the dump's (`scripts/dump-row-counts.sh` vs `scripts/row-counts.sh`), C4 folded counts and zero uppercase identifiers, C5 the ten T3b schema facts, C6 `12|12` logos on Blob. The script is their only definition.
 
 **C7: invariants.** S22 gives the expected value for each line. The script runs the same four at its end, plus a second folded recount.
 

@@ -235,6 +235,32 @@ describe('addPick — refusals', () => {
     expect(await picksOf(fixture.seatA.id)).toHaveLength(1);
   });
 
+  it('still takes a correction to a season that is over, once the next is opened', async () => {
+    // 🔴 D130. Opening 2027 sets the league's one status column to `pending`,
+    // which without `seasonStatus` refused every correction to the season just
+    // finished, while award shows still resolve for months after a draft ends.
+    signInAs(fixture.owner);
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { activeYear: 3000, draftingStatus: 'pending' },
+    });
+
+    try {
+      const result = await addPick({
+        draftId: fixture.seatA.id,
+        movieId: fixture.films[0]?.id as number,
+      });
+
+      expect(result).toMatchObject({ ok: true });
+      expect(await picksOf(fixture.seatA.id)).toHaveLength(1);
+    } finally {
+      await db.league.update({
+        where: { id: fixture.league.id },
+        data: { activeYear: null, draftingStatus: 'active' },
+      });
+    }
+  });
+
   it('refuses a league member who is not the owner', async () => {
     // Members do not enter their own picks — the owner does, on the call
     // (D46). A member holding a seat is the most plausible attacker.

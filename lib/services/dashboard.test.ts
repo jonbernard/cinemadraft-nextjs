@@ -391,6 +391,7 @@ describe('the live banner', () => {
       nomDuration: null,
       awardsActive: false,
       focusedAwardId: null,
+      hasCeremony: true,
       awardsDate: null,
       awardsTime: null,
       awardsDuration: null,

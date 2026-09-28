@@ -34,6 +34,7 @@ export type Event = Omit<
     | 'awardsTime'
     | 'awardsDuration'
     | 'focusedAwardId'
+    | 'hasCeremony'
     | 'createdAt'
     | 'updatedAt'
   >,
@@ -74,6 +75,7 @@ const SELECT = {
   awardsTime: true,
   awardsDuration: true,
   focusedAwardId: true,
+  hasCeremony: true,
   createdAt: true,
   updatedAt: true,
 } as const;
@@ -125,6 +127,7 @@ export type EventUpdate = Partial<{
   awardsTime: number | null;
   awardsDuration: number | null;
   liveResults: boolean;
+  hasCeremony: boolean;
 }>;
 
 /** Postgres/Prisma "record to update not found". */

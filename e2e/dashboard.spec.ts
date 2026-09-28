@@ -425,8 +425,14 @@ test.describe('dashboard', () => {
    * was never the defect — the token had zero rendered consumers.
    *
    * 🔴 Its own scratch show, so the rail exists on CI's empty calendar and the
-   * test controls which state "next" is in. Undated first (`Next · date TBA`),
-   * then dated (`Next`): both are beam, and a TBA-only spend fails the second.
+   * test controls which state "next" is in: undated, `Next · date TBA`.
+   *
+   * 🔴 The dated half (`Next`) was removed in P16.T2, not weakened. The rail
+   * now reads only the active season's dates, and CI's seed pins that season
+   * at 2026, whose window closed on 31 July 2026: no date can be both inside
+   * it and in the future, so the dated case could never render again. Dated
+   * and undated share one `tone` expression, and `SeasonStepper.test.tsx`'s
+   * "paints the next chip beam, dated or not" pins that it does not split.
    * Both schemes, because light and dark are different hexes and a chip that
    * read the dark token everywhere would pass one of them. Deleted in the
    * test's own `finally`, for the same reason as the scratch season above.
@@ -446,47 +452,79 @@ test.describe('dashboard', () => {
       `rgb(${[1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
 
     try {
-      for (const [label, awardsDate] of [
-        ['Next · date TBA', null],
-        ['Next', Date.now() + 10 * 86_400_000],
-      ] as const) {
-        await withDb((query) =>
-          query('update events set awards_date = $2 where abbreviation = $1', [
-            show,
-            awardsDate,
-          ]),
+      const label = 'Next · date TBA';
+      for (const scheme of ['dark', 'light'] as const) {
+        // Storage before load, not the attribute after it: see visual.spec.ts
+        // for the race the other order loses one time in sixteen.
+        await page.addInitScript((mode) => {
+          try {
+            window.localStorage.setItem('mui-mode', mode);
+          } catch {}
+        }, scheme);
+        await page.emulateMedia({ colorScheme: scheme });
+        await page.goto('/');
+        await expect(page.locator('html')).toHaveAttribute(
+          'data-mui-color-scheme',
+          scheme,
         );
 
-        for (const scheme of ['dark', 'light'] as const) {
-          // Storage before load, not the attribute after it: see visual.spec.ts
-          // for the race the other order loses one time in sixteen.
-          await page.addInitScript((mode) => {
-            try {
-              window.localStorage.setItem('mui-mode', mode);
-            } catch {}
-          }, scheme);
-          await page.emulateMedia({ colorScheme: scheme });
-          await page.goto('/');
-          await expect(page.locator('html')).toHaveAttribute(
-            'data-mui-color-scheme',
-            scheme,
-          );
+        const chip = page
+          .locator('li[aria-current="step"]')
+          .getByText(label, { exact: true });
+        const painted = await chip.evaluate((el) => {
+          const style = getComputedStyle(el);
+          return { color: style.color, background: style.backgroundColor };
+        });
 
-          const chip = page
-            .locator('li[aria-current="step"]')
-            .getByText(label, { exact: true });
-          const painted = await chip.evaluate((el) => {
-            const style = getComputedStyle(el);
-            return { color: style.color, background: style.backgroundColor };
-          });
-
-          expect(painted, `${label}, ${scheme}`).toEqual({
-            color: rgb(palettes[scheme].beam),
-            // The pair `theme/contrast.test.ts` proves: beam on panel.
-            background: rgb(palettes[scheme].bg.panel),
-          });
-        }
+        expect(painted, `${label}, ${scheme}`).toEqual({
+          color: rgb(palettes[scheme].beam),
+          // The pair `theme/contrast.test.ts` proves: beam on panel.
+          background: rgb(palettes[scheme].bg.panel),
+        });
       }
+    } finally {
+      await withDb((query) =>
+        query('delete from events where abbreviation = $1', [show]),
+      );
+    }
+  });
+
+  /**
+   * D129: a show with no ceremony (the AFI) gets one box, its nominations,
+   * and nothing on the rail waits for a ceremony that never comes.
+   *
+   * 🔴 Its own scratch show, dated inside the *active* season (read from the
+   * database, not assumed), so the rail's season window keeps its date on CI
+   * and on the restored copy alike. Every phase is in the DOM whatever the
+   * window shows, so "no ceremony box" is a real absence, not an off-screen
+   * one. Deleted in `finally`.
+   */
+  test('a show with no ceremony has no ceremony box, and nothing waits for one', async ({
+    page,
+  }) => {
+    const show = `${TAG}-no-ceremony`;
+    await withDb(async (query) => {
+      const [active] = (await query(
+        'select year from available_years order by is_active desc, year desc limit 1',
+      )) as { year: number }[];
+      await query(
+        `insert into events (name, abbreviation, has_ceremony, nom_date, awards_date, created_at, updated_at)
+           values ($1, $1, false, $2, null, now(), now())`,
+        [show, Date.UTC((active?.year ?? 2026) - 1, 11, 1)],
+      );
+    });
+
+    try {
+      await page.goto('/');
+      const rail = page.getByRole('list', { name: 'Season award shows' });
+      const boxes = rail
+        .getByRole('listitem')
+        .filter({ has: page.getByText(show, { exact: true }) });
+
+      await expect(boxes).toHaveCount(1);
+      await expect(boxes.getByText('Nominations', { exact: true })).toBeVisible();
+      await expect(boxes.getByText('Ceremony', { exact: true })).toHaveCount(0);
+      await expect(boxes.getByText('Next · date TBA', { exact: true })).toHaveCount(0);
     } finally {
       await withDb((query) =>
         query('delete from events where abbreviation = $1', [show]),

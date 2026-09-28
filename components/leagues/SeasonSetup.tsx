@@ -8,6 +8,7 @@ import {
   assignSeats,
   randomiseGroups,
   removeSeat,
+  seatReturning,
 } from '@/actions/leagues/manage-seats';
 import { isCharacter, nextCharacter } from '@/lib/leagues/characters';
 // 🔴 A *value* import from `lib/services/`, which every other component here
@@ -16,6 +17,7 @@ import { isCharacter, nextCharacter } from '@/lib/leagues/characters';
 // client bundle through it. Keep it that way: the day that module grows an
 // import, this line has to move rather than the module.
 import { type Assignment, seatsToEvenGroups } from '@/lib/services/group-assignment';
+import type { ReturningPerson } from '@/lib/services/season-setup';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '../ui/Button';
 import { useConfirm } from '../ui/ConfirmDialog';
@@ -55,6 +57,7 @@ export function SeasonSetup({
   groups,
   suggestedGroupCount,
   status,
+  returning = [],
   className,
 }: {
   leagueId: number;
@@ -63,6 +66,8 @@ export function SeasonSetup({
   groups: readonly number[];
   suggestedGroupCount: number;
   status: string | null;
+  /** People from earlier seasons not seated in this one (D131). */
+  returning?: readonly ReturningPerson[];
   className?: string;
 }) {
   const [message, setMessage] = useState<string | null>(null);
@@ -269,6 +274,16 @@ export function SeasonSetup({
         ) : null}
       </section>
 
+      {isPending && returning.length > 0 ? (
+        <ReturningPeople
+          leagueId={leagueId}
+          year={year}
+          people={returning}
+          disabled={pending}
+          onDone={setMessage}
+        />
+      ) : null}
+
       {isPending ? (
         <section className="flex flex-col gap-4">
           <h2 className="text-text-dim text-xs font-normal">Groups</h2>
@@ -381,6 +396,89 @@ function toCeremonyGroups(
       group,
       names: members.sort((a, b) => a.order - b.order).map((member) => member.name),
     }));
+}
+
+/**
+ * People from earlier seasons, one "Add" each (D131).
+ *
+ * 🔴 **Nobody carries forward.** A season opens empty, and this is how the
+ * owner brings people back: one press seats one person (D121), so there is
+ * deliberately no "add everyone". A row leaves the list as soon as its seat
+ * is made, before the page's own refresh arrives.
+ *
+ * The same words as the seat list for who someone is, so a person reads the
+ * same in both places.
+ */
+function ReturningPeople({
+  leagueId,
+  year,
+  people,
+  disabled,
+  onDone,
+}: {
+  leagueId: number;
+  year: number;
+  people: readonly ReturningPerson[];
+  disabled: boolean;
+  onDone: (message: string | null) => void;
+}) {
+  const [added, setAdded] = useState<ReadonlySet<number>>(new Set());
+  const [adding, setAdding] = useState<number | null>(null);
+  const [, startTransition] = useTransition();
+  const shown = people.filter((person) => !added.has(person.fromDraftId));
+
+  const add = (person: ReturningPerson) => {
+    setAdding(person.fromDraftId);
+    startTransition(async () => {
+      const result = await seatReturning({
+        leagueId,
+        year,
+        fromDraftId: person.fromDraftId,
+      });
+      setAdding(null);
+      if (!result.ok) {
+        onDone(result.message);
+        return;
+      }
+      setAdded((previous) => new Set(previous).add(person.fromDraftId));
+      onDone(`${person.name} seated`);
+    });
+  };
+
+  if (shown.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-4">
+      <h2 className="text-text-dim text-xs font-normal">From earlier seasons</h2>
+      <ul aria-label="From earlier seasons" className="flex flex-col">
+        {shown.map((person) => (
+          <li
+            key={person.fromDraftId}
+            className="border-border-rule flex flex-wrap items-center gap-3 border-b py-3"
+          >
+            <span className="text-text-primary min-w-40 flex-1 text-sm">
+              {person.name}
+              {person.kind === 'member' ? null : (
+                <span className="text-text-dim">
+                  {person.kind === 'character' ? ' · character' : ' · not registered yet'}
+                </span>
+              )}
+              <span className="text-text-dim"> · last in {person.lastYear}</span>
+            </span>
+            <Button
+              variant="outlined"
+              onClick={() => add(person)}
+              disabled={disabled || adding != null}
+              aria-label={`Add ${person.name}`}
+              sx={{ minHeight: 44 }}
+            >
+              {adding === person.fromDraftId ? 'Adding…' : 'Add'}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 }
 
 /**

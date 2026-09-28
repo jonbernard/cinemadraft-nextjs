@@ -1,9 +1,12 @@
+import { canOpenSeason } from '@/lib/leagues/open-season';
+import { seasonStatus } from '@/lib/leagues/season';
 import { draftPickRepository } from '@/lib/repositories/draft-picks';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
 import { type Movie, movieRepository } from '@/lib/repositories/movies';
 import { userRepository } from '@/lib/repositories/users';
 import { type LedgerLine, ledgerForMovies } from './scoring';
+import { getActiveYear } from './season';
 
 export type BoardPick = {
   pickId: number;
@@ -183,7 +186,7 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
     year,
     leagueId,
     leagueName: league.name,
-    status: league.draftingStatus,
+    status: seasonStatus(league, year),
     ownerIds: league.ownerIds,
     uuid: league.uuid,
     groups,
@@ -199,4 +202,28 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
  */
 export async function getLeagueSeasons(leagueId: number): Promise<number[]> {
   return draftRepository.findYearsByLeagueId(leagueId);
+}
+
+/**
+ * The season this league's owner may open now, and the one it follows, or
+ * null (D131). `seasons` is `getLeagueSeasons`' answer, which the league page
+ * already holds.
+ *
+ * 🔴 The same two checks `openSeason` makes, in the same order. Seasons come
+ * from `drafts`, and an opened season has none until someone is seated, so
+ * "already open" is read from the league's `active_year` first; without it
+ * the offer would outlive the act.
+ */
+export async function getOpenableSeason(
+  leagueId: number,
+  seasons: readonly number[],
+): Promise<{ year: number; fromYear: number } | null> {
+  const [league, activeYear] = await Promise.all([
+    leagueRepository.findById(leagueId),
+    getActiveYear(),
+  ]);
+  if (league.activeYear === activeYear) return null;
+  const year = canOpenSeason({ activeYear, seasons });
+  const fromYear = seasons[0];
+  return year == null || fromYear == null ? null : { year, fromYear };
 }

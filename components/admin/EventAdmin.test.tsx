@@ -18,6 +18,7 @@ const EVENT = {
   awardsDate: null,
   awardsTime: null,
   awardsDuration: null,
+  hasCeremony: true,
 };
 
 /**
@@ -38,7 +39,10 @@ describe('EventAdmin', () => {
     render(<EventAdmin event={EVENT} />);
 
     expect(screen.queryByRole('switch')).not.toBeInTheDocument();
-    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    // The one checkbox is a setting, not a live control (D129).
+    expect(screen.getAllByRole('checkbox')).toEqual([
+      screen.getByRole('checkbox', { name: 'This show has a ceremony' }),
+    ]);
     expect(screen.queryByText(/Live/)).not.toBeInTheDocument();
   });
 
@@ -55,5 +59,16 @@ describe('EventAdmin', () => {
     for (const flag of ['nomActive', 'awardsActive', 'liveResults']) {
       expect(input).not.toHaveProperty(flag);
     }
+  });
+
+  it('sends has_ceremony as the box reads', async () => {
+    render(<EventAdmin event={EVENT} />);
+
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'This show has a ceremony' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Save show' }));
+
+    expect(updateEvent.mock.calls[0]?.[0]).toMatchObject({ hasCeremony: false });
   });
 });
