@@ -107,7 +107,24 @@ export default defineConfig({
      */
     video: Number(process.env.DEMO_PACE ?? 0) > 0 ? 'on' : 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // 🔴 `season-rollover.spec.ts` flips the site's active season, the one
+  // global every other spec reads, so it runs alone after the rest: a project
+  // that depends on `chromium` starts only once every `chromium` test is done.
+  // If any of them fails it is reported as not run rather than run into a
+  // half-finished suite.
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: /season-rollover\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'season-rollover',
+      testMatch: /season-rollover\.spec\.ts/,
+      dependencies: ['chromium'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
   webServer: {
     // Production build, not `next dev`. Dev mode injects extra styling and
     // does not exercise the same CSS pipeline, and the layer-order assertions

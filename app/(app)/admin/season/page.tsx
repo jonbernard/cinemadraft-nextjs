@@ -5,7 +5,7 @@ import { availableYearRepository } from '@/lib/repositories/available-years';
 import { userRepository } from '@/lib/repositories/users';
 
 /**
- * The active-season control (T48, D22).
+ * The season control: start the next season, or switch back one (T48, D22, D138).
  *
  * `requirePageAdmin()` gates the page independently of `setActiveYear` gating the
  * action itself — a Server Action's id ships in the client bundle, so it is
@@ -31,10 +31,8 @@ export default async function AdminSeasonPage() {
       <SectionHead as="h1">Active season</SectionHead>
 
       <p className="text-text-secondary max-w-prose text-sm leading-relaxed">
-        Nearly every page in the app scopes to this year — leagues, drafts, award shows,
-        the whole dashboard. Changing it re-scopes them immediately, for every member,
-        without a redeploy. Nothing changes until it is confirmed, and the only way back
-        is to activate another season.
+        Every league, draft, award show and dashboard follows the active season. A change
+        here takes effect straight away, for everyone, with no redeploy.
       </p>
 
       <SeasonControl
