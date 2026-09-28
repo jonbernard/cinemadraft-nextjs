@@ -166,6 +166,23 @@ export const winnerRepository = {
   },
 
   /** How many wins are recorded for a category, across every year. */
+  /**
+   * How many winners each show has in a season: eventId → count (P16.T13).
+   *
+   * One grouped query through `awards.event_id`. Both join columns are
+   * bigint and nothing here has a foreign key, so an orphaned row simply
+   * falls out of the join.
+   */
+  async countByEventForYear(year: number): Promise<Map<number, number>> {
+    const rows = await db.$queryRaw<{ event_id: bigint; count: bigint }[]>`
+      select a.event_id, count(*) as count
+        from winners t
+        join awards a on a.id = t.award_id
+       where t.year = ${year}
+       group by a.event_id`;
+    return new Map(rows.map((row) => [Number(row.event_id), Number(row.count)]));
+  },
+
   async countByAwardId(awardId: number): Promise<number> {
     return db.winner.count({ where: { awardId: BigInt(awardId) } });
   },

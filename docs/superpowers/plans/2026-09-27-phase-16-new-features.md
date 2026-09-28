@@ -1058,11 +1058,12 @@ export type Moment = {
 export function toMoments(input: {
   events: readonly Pick<Event, 'id' | 'abbreviation' | 'name' | 'hasCeremony' | 'nomDate' | 'awardsDate' | 'awardsActive'>[];
   year: number;
+  activeYear: number;                          // corrected in P16.T13: "live" needs to know the active season
   nominations: ReadonlyMap<number, number>;   // eventId → count, this year
   winners: ReadonlyMap<number, number>;
   datesForYear?: ReadonlyMap<number, { nomDate: number | null; awardsDate: number | null }>; // P16.T18
 }): Moment[];
-export async function getSeasonMoments(year: number): Promise<Moment[]>; // 3 queries: events, two counts
+export async function getSeasonMoments(year: number): Promise<Moment[]>; // 3 queries: events, two counts (and the active-year lookup)
 ```
 
 **Rules, each a test:**
@@ -1071,7 +1072,7 @@ export async function getSeasonMoments(year: number): Promise<Moment[]>; // 3 qu
 - `order` uses `seasonOffset(date)` when dated, and otherwise `seasonOffset` of the event's current column (whatever year it holds). That puts a past season, which has no dates, in this year's calendar order. An event with no date anywhere sorts last.
 - `state`:
   - nominations moments are `finished` when `nominations > 0`;
-  - ceremony moments are `live` when `awardsActive` and the year is the one being viewed, and `finished` when `winners > 0 && !awardsActive`;
+  - ceremony moments are `live` when `awardsActive` and the year viewed is the active year (settled in P16.T13: a past season's ceremony is never on air), and `finished` when `winners > 0 && !awardsActive`;
   - anything else is `upcoming`.
 - Sorting is by `order`, then nominations before ceremony, then name.
 

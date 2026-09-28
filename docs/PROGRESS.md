@@ -2496,7 +2496,7 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
   - **Browser pass** (production build, 5440): `/films/313369` and `/films/la-la-lamd-313369` 308 to `/films/la-la-land-313369`; `/films/550` 308 to `/films/fight-club-550`, an unheld film, with no row written. Every film link on `/` (20), `/browse` page 1 (1, the current release month), `/watchlist` (3) and a member page (50) is `title-id` and answers 200 with no redirect. Held and unheld film pages at 1440 and 390, light and dark, in the conductor workspace's `.context/phase-16/t2/`.
 
 **Tranche 3: the season view on `/award-shows`**
-- [ ] P16.T13 — `moments`: a season's scoring moments, in order
+- [x] P16.T13 — `moments`: a season's scoring moments, in order (9 pure tests; mutations: clock-based state → 3 red, drop the active-year half of `live` → 1 red, ignore `datesForYear` → 1 red)
 - [ ] P16.T14 — `season-ledger`: every seat's points per moment, and the standings after each
 - [ ] P16.T15 — the season view replaces the logo grid (signed out first)
 - [ ] P16.T16 — signed in, each finished moment says what it did to you
