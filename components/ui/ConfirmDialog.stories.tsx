@@ -32,11 +32,10 @@ export const Long: StoryObj<typeof meta> = {
       // `/admin/season`, verbatim — the one that re-scopes every page for
       // every member, and the reason the dialog wraps rather than truncates.
       message:
-        'Make 2025 the active season? This re-scopes every league, draft, award show ' +
-        'and dashboard in the app for all 60 people, immediately. It takes effect ' +
-        'with no redeploy and cannot be undone — only replaced by activating another ' +
-        'season.',
-      confirmLabel: 'Make 2025 active',
+        'Start the 2027 season? Every league, draft, award show and dashboard moves ' +
+        'to 2027 for all 60 people, now. Members see “not set up yet” until their ' +
+        'league’s owner opens 2027.',
+      confirmLabel: 'Start 2027',
     },
   },
 };

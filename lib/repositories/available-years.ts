@@ -24,8 +24,9 @@ const SELECT = {
 /**
  * Postgres unique violation.
  *
- * Only `available_years_one_active` can raise it on this table, and only when
- * a second row is being flagged active — so it means exactly one thing here.
+ * On this table it means a concurrent season change: `available_years_one_active`
+ * refusing a second active row, or (in `startNext`) two presses racing to
+ * create the same year.
  */
 const UNIQUE_VIOLATION = '23505';
 
@@ -81,6 +82,72 @@ export const availableYearRepository = {
    */
   async findActive(): Promise<AvailableYear | null> {
     return db.availableYear.findFirst({ where: { isActive: true }, select: SELECT });
+  },
+
+  /**
+   * Start the season after the active one: create its row if it has none, and
+   * make it active, in one transaction (D138).
+   *
+   * `year` is the season the admin confirmed, not "whatever is next now". That
+   * is what makes a second press a no-op rather than 2028: the stale press
+   * still says 2027, 2027 is active by then, and nothing is written. Any other
+   * year is refused, so the only season this can ever create is active + 1.
+   *
+   * Active + 1, not newest row + 1. They agree in production, but the e2e
+   * suite parks inactive scratch seasons at 2991-2994, and an admin who
+   * switched back a year has a newer row already; newest + 1 would skip a
+   * season in both, and `canOpenSeason` (D131) offers no league an opening
+   * when the site skips one. The base is `getActiveYear`'s: the flagged row,
+   * else the newest.
+   */
+  async startNext(year: number): Promise<{ season: AvailableYear; started: boolean }> {
+    try {
+      return await db.$transaction(async (tx) => {
+        const base =
+          (await tx.availableYear.findFirst({
+            where: { isActive: true },
+            select: SELECT,
+          })) ??
+          (await tx.availableYear.findFirst({
+            where: { year: { not: null } },
+            orderBy: { year: 'desc' },
+            select: SELECT,
+          }));
+        if (base?.year == null) throw new NotFoundError('available year', year);
+
+        if (year === base.year) return { season: base, started: false };
+        if (year !== base.year + 1) {
+          throw new ConflictError(
+            `the next season is ${base.year + 1}; ${year} was not started`,
+          );
+        }
+
+        const now = new Date();
+        const target = await tx.availableYear.upsert({
+          where: { year },
+          create: { year, isActive: false, createdAt: now, updatedAt: now },
+          update: {},
+          select: { id: true },
+        });
+        await tx.availableYear.updateMany({
+          where: { isActive: true, id: { not: target.id } },
+          data: { isActive: false },
+        });
+        const season = await tx.availableYear.update({
+          where: { id: target.id },
+          data: { isActive: true, updatedAt: now },
+          select: SELECT,
+        });
+        return { season, started: true };
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ConflictError(
+          `another season was started at the same time; ${year} was not`,
+        );
+      }
+      throw error;
+    }
   },
 
   /**
