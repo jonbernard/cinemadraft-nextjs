@@ -33,6 +33,10 @@ const DOMAIN = '@example.test';
 
 let original: number;
 let preexisting: Set<number>;
+// CI runs unit tests before `seed-e2e.mjs`, so its database has no active
+// season yet. Seat a scratch one then, and remove it afterwards.
+const SCRATCH_YEAR = 2980;
+let scratch = false;
 
 async function makeUser(role: 'admin' | 'user') {
   return db.user.create({
@@ -67,9 +71,14 @@ const activeYears = async () =>
   (await db.availableYear.findMany({ where: { isActive: true } })).map((row) => row.year);
 
 beforeAll(async () => {
-  const active = await db.availableYear.findFirst({ where: { isActive: true } });
-  if (active?.year == null) throw new Error('no active season; run scripts/seed-e2e.mjs');
-  original = active.year;
+  let active = await db.availableYear.findFirst({ where: { isActive: true } });
+  if (active?.year == null) {
+    active = await db.availableYear.create({
+      data: { year: SCRATCH_YEAR, isActive: true },
+    });
+    scratch = true;
+  }
+  original = active.year as number;
   const rows = await db.availableYear.findMany({
     where: { year: { in: [original + 1, original + 2] } },
   });
@@ -96,6 +105,7 @@ afterEach(async () => {
 });
 
 afterAll(async () => {
+  if (scratch) await db.availableYear.deleteMany({ where: { year: SCRATCH_YEAR } });
   await db.$disconnect();
 });
 
