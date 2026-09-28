@@ -18,6 +18,7 @@ import { getLandingFacts, type LandingFacts } from '@/lib/services/how-it-works'
 import { availableSeasons, getLeaderboard } from '@/lib/services/leaderboard';
 import { cn } from '@/lib/utils/cn';
 import { filmHref } from '@/lib/utils/film-href';
+import { leagueHref } from '@/lib/utils/league-href';
 
 /**
  * Posters in the hero's wall, and the number `getLandingFacts` is asked for.
@@ -424,7 +425,7 @@ function YourLeagues({ leagues }: { leagues: DashboardView['leagues'] }) {
               </Link>
             ) : null}
             <Link
-              href={`/leagues/${league.id}`}
+              href={leagueHref(league.id)}
               className="border-border-rule text-text-primary hover:bg-bg-surface focus-visible:outline-accent-fill flex min-h-11 items-center rounded-sm border px-4 text-sm focus-visible:outline-2"
             >
               Open the league

@@ -28,7 +28,7 @@ test.describe('points ledger', () => {
   test.beforeEach(skipWithoutRestoredCorpus);
 
   test('a pick’s points explain themselves, and the lines add up', async ({ page }) => {
-    await page.goto(`/leagues/${LEAGUE}?year=${YEAR}`);
+    await page.goto(`/leagues/${LEAGUE}/${YEAR}`);
 
     // League 1's 2025 season drafts in four groups, so the page renders four
     // boards. The first is enough — they share a component.
@@ -66,7 +66,7 @@ test.describe('points ledger', () => {
   test('opens from the keyboard', async ({ page }) => {
     // jsdom cannot toggle a <details> with Enter, so this is the only place
     // the keyboard path is actually proven.
-    await page.goto(`/leagues/${LEAGUE}?year=${YEAR}`);
+    await page.goto(`/leagues/${LEAGUE}/${YEAR}`);
 
     const ledger = page
       .getByRole('table', { name: /Draft board/i })
@@ -80,7 +80,7 @@ test.describe('points ledger', () => {
   });
 
   test('a win is named, not just coloured', async ({ page }) => {
-    await page.goto(`/leagues/${LEAGUE}?year=${YEAR}`);
+    await page.goto(`/leagues/${LEAGUE}/${YEAR}`);
 
     const board = page.getByRole('table', { name: /Draft board/i }).first();
     // Open several ledgers; some film in a league's season has won something.

@@ -58,6 +58,12 @@ export async function syncClerkIdentity(identity: ClerkIdentity): Promise<SyncRe
     const legacy = await userRepository.findByEmail(email.address);
     if (!legacy) continue;
 
+    // 🔴 The concurrent first sign-in: another request for this same identity
+    // created (or claimed) the row between our `findByClerkId` miss above and
+    // this lookup. It is already ours — that is `linked`, not a claim. Caught
+    // by the 10-way concurrency test flaking on CI with 'claimed'.
+    if (legacy.clerkId === identity.clerkId) return { status: 'linked', user: legacy };
+
     // Intentionally redundant with `claim`, which refuses the same case via a
     // conditional write and throws below. Verified by mutation: deleting this
     // branch leaves every test green, because the repository still holds the

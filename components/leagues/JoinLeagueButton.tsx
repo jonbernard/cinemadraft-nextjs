@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 
 import { joinLeague } from '@/actions/leagues/join-league';
+import { leagueHref } from '@/lib/utils/league-href';
 
 /**
  * Accepting an invite.
@@ -30,7 +31,7 @@ export function JoinLeagueButton({ uuid }: { uuid: string }) {
         setError(result.message);
         return;
       }
-      router.push(`/leagues/${result.data.leagueId}`);
+      router.push(leagueHref(result.data.leagueId));
     });
   }, [uuid, router]);
 

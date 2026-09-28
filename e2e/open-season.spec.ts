@@ -134,10 +134,10 @@ test.describe('opening the next season', () => {
       await notice(outsider.page);
       await expect(
         outsider.page.getByRole('link', { name: `See ${previous}` }),
-      ).toHaveAttribute('href', `/leagues/${leagueId}?year=${previous}`);
+      ).toHaveAttribute('href', `/leagues/${leagueId}/${previous}`);
       await expect(outsider.page.getByRole('button', { name: /Open/ })).toHaveCount(0);
       await noSidewaysScroll(outsider.page);
-      await outsider.page.goto(`/leagues/${leagueId}?year=${previous}`);
+      await outsider.page.goto(`/leagues/${leagueId}/${previous}`);
       await expect(
         outsider.page.getByText(`${member.firstName} ${member.lastName}`).first(),
       ).toBeVisible();
@@ -152,7 +152,7 @@ test.describe('opening the next season', () => {
 
       // From the finished season's page it is the Seasons nav's last entry.
       await page.setViewportSize({ width: 1440, height: 900 });
-      await page.goto(`/leagues/${leagueId}?year=${previous}`);
+      await page.goto(`/leagues/${leagueId}/${previous}`);
       await page
         .getByRole('navigation', { name: 'Seasons' })
         .getByRole('button', { name: `+ Open ${year}` })
@@ -193,7 +193,7 @@ test.describe('opening the next season', () => {
       await page.setViewportSize({ width: 1440, height: 900 });
 
       // The season it left is exactly as it was: its seats, and finished.
-      await page.goto(`/leagues/${leagueId}?year=${previous}`);
+      await page.goto(`/leagues/${leagueId}/${previous}`);
       await expect(page.getByText(`${previous} · complete`)).toBeVisible();
       await expect(
         page.getByText(`${member.firstName} ${member.lastName}`).first(),

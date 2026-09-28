@@ -6,6 +6,7 @@ import { SectionHead } from '@/components/ui/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
+import { leagueHref } from '@/lib/utils/league-href';
 
 /**
  * Following an invite link (P10.T1).
@@ -86,7 +87,7 @@ export default async function JoinPage({
           You are already in this league.
         </p>
         <Link
-          href={`/leagues/${league.id}`}
+          href={leagueHref(league.id)}
           className="bg-bg-surface text-text-primary hover:text-accent-text focus-visible:outline-accent-fill flex min-h-11 w-fit items-center rounded-sm px-4 text-sm transition-colors focus-visible:outline-2"
         >
           Go to the league

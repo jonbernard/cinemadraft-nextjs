@@ -205,7 +205,7 @@ async function pointsOnLeagueBoard(
   leagueId: number,
   title: string,
 ): Promise<number> {
-  await page.goto(`/leagues/${leagueId}?year=${YEAR}`);
+  await page.goto(`/leagues/${leagueId}/${YEAR}`);
   const summary = page
     .getByRole('table', { name: /Draft board/i })
     .first()
@@ -371,7 +371,7 @@ test.describe('journey 3 — a ceremony night', () => {
       'And the board names the win rather than only doubling',
       async () => {
         // A reader has to be able to see *why* the number moved.
-        await page.goto(`/leagues/${leagueId}?year=${YEAR}`);
+        await page.goto(`/leagues/${leagueId}/${YEAR}`);
         const cell = page
           .getByRole('table', { name: /Draft board/i })
           .first()

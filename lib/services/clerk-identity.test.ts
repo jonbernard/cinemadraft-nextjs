@@ -200,6 +200,26 @@ describe('syncClerkIdentity', () => {
       expect(row?.clerkId).toBe('user_test_aaa');
     });
 
+    it('reports linked, not claimed, when the same identity won the race by email', async () => {
+      // Deterministic form of the CI flake: our `findByClerkId` misses
+      // because the winning request had not written yet, then `findByEmail`
+      // finds the row it wrote — already carrying OUR clerk_id.
+      const mine = identity({ clerkId: 'user_test_race_self' });
+      await syncClerkIdentity(mine);
+      const repo = await import('@/lib/repositories/users');
+      const miss = vi
+        .spyOn(repo.userRepository, 'findByClerkId')
+        .mockResolvedValueOnce(null);
+      const claim = vi.spyOn(repo.userRepository, 'claim');
+
+      const result = await syncClerkIdentity(mine);
+
+      expect(result.status).toBe('linked');
+      expect(claim).not.toHaveBeenCalled();
+      miss.mockRestore();
+      claim.mockRestore();
+    });
+
     it('creates exactly one row for a brand-new identity', async () => {
       const fresh = identity({
         clerkId: 'user_new_race',
