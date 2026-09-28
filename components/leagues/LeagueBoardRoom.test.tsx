@@ -453,8 +453,9 @@ describe('the league page’s TV seam', () => {
     // 🔴 D114 exactly: the live room's league picker shipped dropping `?tv=1`,
     // taking a reader with a remote out of full screen with no way back. The
     // group nav is the same control in the same trap. `e2e/league-board-live`
-    // proves it in a browser; this names the line.
+    // proves it in a browser; this names the line, and `pageUrl` hands `tv`
+    // to `leagueHref`, whose own test pins that it reaches the URL (D139).
     expect(page).toContain('href={pageUrl({ group: entry.group, tv: true })}');
-    expect(page).toMatch(/next\.tv \? '&tv=1' : ''/);
+    expect(page).toMatch(/leagueHref\(view\.leagueId, \{[^}]*tv: next\.tv,/);
   });
 });

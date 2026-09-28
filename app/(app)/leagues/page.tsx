@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { requirePageUser } from '@/lib/auth';
 import { getMyLeagues } from '@/lib/services/my-leagues';
+import { leagueHref } from '@/lib/utils/league-href';
 
 /**
  * The leagues you are in (P10.T12).
@@ -51,7 +52,7 @@ export default async function LeaguesPage() {
           {leagues.map((league) => (
             <li key={league.id}>
               <Link
-                href={`/leagues/${league.id}`}
+                href={leagueHref(league.id)}
                 className="bg-bg-panel hover:bg-bg-surface focus-visible:outline-accent-fill flex flex-col gap-1 rounded-sm p-4 focus-visible:outline-2"
               >
                 <span className="flex flex-wrap items-baseline gap-x-3">

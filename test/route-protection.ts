@@ -169,6 +169,10 @@ export const PUBLIC_ROUTES = [
   // them, and the link people paste into a group chat has to open for whoever
   // taps it. Signing in only marks the viewer's own seat.
   '/leagues/[id]',
+  // 🔴 The same page, one season and one group further in (D139). Both files
+  // re-export `/leagues/[id]`'s page, so they are exactly as public as it is.
+  '/leagues/[id]/[year]',
+  '/leagues/[id]/[year]/group/[group]',
   // 🔴 Owner-only, and NOT left unguarded by being listed here: the page
   // resolves the session itself and answers 404 to anyone who is not an owner,
   // which is a stronger answer than a redirect, because a bounce to sign-in

@@ -5,6 +5,7 @@ import { useCallback, useId, useState, useTransition } from 'react';
 
 import { createLeague } from '@/actions/leagues/create-league';
 import { cn } from '@/lib/utils/cn';
+import { leagueHref } from '@/lib/utils/league-href';
 
 /**
  * Starting a league.
@@ -49,7 +50,7 @@ export function CreateLeagueForm({ className }: { className?: string }) {
           return;
         }
         // Straight to the league, where the invite link is.
-        router.push(`/leagues/${result.data.leagueId}`);
+        router.push(leagueHref(result.data.leagueId));
       });
     },
     [name, type, router],

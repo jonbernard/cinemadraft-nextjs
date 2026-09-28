@@ -304,7 +304,7 @@ test.describe('the league board, live', () => {
         documents += 1;
       });
 
-      await viewer.goto(`/leagues/${leagueId}?year=${YEAR}`);
+      await viewer.goto(`/leagues/${leagueId}/${YEAR}`);
 
       const standings = viewer.getByRole('table', {
         name: 'League standings, by position',
@@ -410,14 +410,14 @@ test.describe('the league board, live', () => {
        * one. Delete the client's guard and this reads two requests, the first
        * naming the finished league.
        */
-      await viewer.goto(`/leagues/${finished}?year=${YEAR}`);
+      await viewer.goto(`/leagues/${finished}/${YEAR}`);
       await expect(
         viewer.getByRole('table', {
           name: 'Draft board: one row per seat, one column per round',
         }),
       ).toBeVisible();
 
-      await viewer.goto(`/leagues/${running}?year=${YEAR}`);
+      await viewer.goto(`/leagues/${running}/${YEAR}`);
       await expect.poll(() => opened.length).toBe(1);
       expect(opened[0]).toContain(`/api/leagues/${running}/board/stream`);
 
@@ -481,7 +481,7 @@ test.describe('the league board, live', () => {
     });
     const viewer = await audience.newPage();
     try {
-      await viewer.goto(`/leagues/${leagueId}?year=${YEAR}&tv=1`);
+      await viewer.goto(`/leagues/${leagueId}/${YEAR}?tv=1`);
 
       // 🔴 Still in the DOM and not on screen, which is what tells "hidden"
       // from "never rendered" — and 1920 is the only width where the rail is
@@ -588,7 +588,7 @@ test.describe('the league board, live', () => {
         .getByRole('navigation', { name: 'Groups' })
         .getByRole('link', { name: 'Group 2' })
         .click();
-      await expect(viewer).toHaveURL(/group=2/);
+      await expect(viewer).toHaveURL(/\/group\/2(\?|$)/);
       await expect(viewer).toHaveURL(/tv=1/);
       await expect(rail).toBeHidden();
       await expect(viewer.getByRole('heading', { name: 'Group 2' })).toHaveCount(1);
@@ -600,7 +600,7 @@ test.describe('the league board, live', () => {
       // And the way out is still on the screen TV mode left behind.
       await expect(viewer.getByRole('link', { name: 'Leave TV mode' })).toBeVisible();
 
-      await viewer.goto(`/leagues/${leagueId}?year=${YEAR}&group=1&tv=1`);
+      await viewer.goto(`/leagues/${leagueId}/${YEAR}/group/1?tv=1`);
       await expect(board.getByText(FILMS[0] as string).first()).toBeVisible();
       await expect(board.getByText(FILMS[1] as string)).toHaveCount(0);
 
@@ -650,7 +650,7 @@ test.describe('the league board, live', () => {
       const anon = await stranger.newPage();
       // A document on the origin, so `fetch` is same-origin — and with no
       // cookie, because this context has never signed anybody in.
-      await anon.goto(`/leagues/${leagueId}?year=${YEAR}`);
+      await anon.goto(`/leagues/${leagueId}/${YEAR}`);
       const open = JSON.parse(
         (await firstFrame(anon, url)).replace(/^data: /, '').trim(),
       );
@@ -673,7 +673,7 @@ test.describe('the league board, live', () => {
 
       // And the same URL, read by the seat's holder, hands back the seat — so
       // the absence above is a refusal rather than an empty fixture.
-      await page.goto(`/leagues/${leagueId}?year=${YEAR}`);
+      await page.goto(`/leagues/${leagueId}/${YEAR}`);
       const mine = JSON.parse(
         (await firstFrame(page, url)).replace(/^data: /, '').trim(),
       );
