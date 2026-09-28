@@ -93,7 +93,7 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
   executors is what fixed it, and it is why the row counts below can still be
   exact.
 
-  - **The executors are restored copies of production.** League 1 is sixty real people's history, and `lib/db.test.ts` asserts exact row counts against them (60 users / 13 leagues / 1,355 movies / 156 drafts).
+  - **The executors are restored copies of production.** League 1 is sixty real people's history, and `lib/db.test.ts` asserts exact row counts against them (60 users / 13 leagues / 1,347 movies / 156 drafts). It was 1,355 movies until the P16 duplicate-film merge, M2 (D132), folded eight pairs; `agent:up` migrates after restoring, so a baseline taken before M2 still lands on 1,347.
   - **5434 is the second worktree's database**, an identical clone of 5433. It exists so two agents can run tests and browsers at once: the suite's DB-backed project is serial by design, because `available_years_one_active` is a global partial unique index with no per-worker copy, so two runs against *one* database race it. Point a run at it by exporting `DATABASE_URL=postgresql://cinemadraft:local@localhost:5434/cinemadraft` — process env beats `.env.local` in Vitest, Playwright and Next alike.
   - 🔴 `lib/db.test.ts` asserts the port too, not only the counts — it accepts **either** 5433 or 5434, and rejects both Neon and the owner's 5432. An earlier version of this note claimed only the counts mattered; that was wrong, and the second database failed that one test and nothing else until it was fixed.
   - Re-clone it whenever it drifts: `pg_dump -h localhost -p 5433 … -Fc` piped into `pg_restore -h localhost -p 5434 … --clean --if-exists`. Both must sit at the baseline counts above, or `lib/db.test.ts` fails on whichever one a run happens to use.
@@ -119,7 +119,7 @@ Adding or upgrading a dependency: run `npm install <pkg>` normally so `package.j
   5432 and Neon. 🔴 The baseline is a **data** fixture only — `agent:up` runs
   migrations after restoring, so a schema change does NOT require recapturing
   it. Refresh it with `npm run agent:baseline <port>` only when the rows should
-  change; it refuses a source that has drifted from 60/13/1355/156 or that is
+  change; it refuses a source that has drifted from 60/13/1347/156 (after the P16 merge, M2) or that is
   the owner's 5432.
 
   The manual recipe, for reference, with the two traps that cost time:

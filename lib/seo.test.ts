@@ -46,7 +46,8 @@ describe('movieJsonLd', () => {
       '@context': 'https://schema.org',
       '@type': 'Movie',
       name: 'Fight Club',
-      url: 'https://cinemadraft.com/films/550',
+      // Title + id (D133), spelled by filmHref from the title it already has.
+      url: 'https://cinemadraft.com/films/fight-club-550',
       image: 'https://image.tmdb.org/t/p/w500/poster.jpg',
       description: 'A ticking-time-bomb insomniac.',
       datePublished: '1999-10-15',

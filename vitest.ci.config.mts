@@ -26,11 +26,11 @@ import { config, EXCLUDE } from './vitest.config.mts';
 export default config([
   ...EXCLUDE,
   // Contract tests against restored production data. The extglob spares
-  // the two files that seed every row they touch — the `userId`/`year`
+  // the three files that seed every row they touch — the `userId`/`year`
   // scoping on the list writes and the ownership scoping on the
-  // watchlist's progress reads are security claims and belong on every
-  // push.
-  'lib/repositories/!(lists.writes|watchlists.scoping).test.ts',
+  // watchlist's progress reads are security claims, and the duplicate-film
+  // merge's refusal is a data-loss guard (D132); all belong on every push.
+  'lib/repositories/!(lists.writes|watchlists.scoping|movie-merge).test.ts',
   'lib/schema.test.ts',
   'lib/services/clerk-identity.production.test.ts',
   // Asserts the local Docker connection string (port 5433) and the
@@ -123,4 +123,12 @@ export default config([
   // real nominations is what makes "one film costs the same as 123"
   // meaningful.
   'lib/services/scoring.batching.test.ts',
+  // M2 (D132): reads the eight merged pairs in the restored movies table,
+  // and the restored reference counts the merge had to preserve. The merge's
+  // own rules are `lib/repositories/movie-merge.test.ts`, which seeds its
+  // rows in a rolled-back transaction and runs here.
+  'lib/repositories/movie-merge.production.test.ts',
+  // D133's ceiling: reads league 1's drafted films and calls TMDB. CI has
+  // neither the rows nor a key. The spelling rules are film-href.test.ts.
+  'lib/utils/film-titles.production.test.ts',
 ]);

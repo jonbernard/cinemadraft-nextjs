@@ -204,8 +204,8 @@ export const PUBLIC_ROUTES = [
   // anonymous reader, or a crawler walking every TMDB id, cannot cause a row to
   // be created. The watched badge renders only for a signed-in reader and its
   // action checks the session itself.
-  '/films/[tmdbId]',
-  '/films/[tmdbId]/opengraph-image',
+  '/films/[film]',
+  '/films/[film]/opengraph-image',
   // Browse, public for the same reasons: it was public in the source, it is
   // where a link to a film comes from, and it only reads.
   '/browse',

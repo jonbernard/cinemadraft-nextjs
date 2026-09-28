@@ -39,7 +39,8 @@ import { discoverRoutes, PUBLIC_ROUTES } from '../test/route-protection';
 const SAMPLES: Record<string, string> = {
   '[id]': '999999',
   '[abbr]': 'e2e-clerk-nope',
-  '[tmdbId]': '999999999',
+  // A well-formed film URL (D133) for an id TMDB does not have: a 404 from the page.
+  '[film]': 'e2e-nope-999999999',
   '[uuid]': '00000000-0000-0000-0000-000000000000',
   // Catch-alls need at least one segment; optional ones (`[[...x]]`) need none,
   // and the route's real URL is the path without them.
@@ -101,7 +102,7 @@ function isSignInRedirect(status: number, location: string | undefined): boolean
  */
 const NOT_REQUESTABLE = new Set([
   '/award-shows/[abbr]/opengraph-image',
-  '/films/[tmdbId]/opengraph-image',
+  '/films/[film]/opengraph-image',
   '/how-it-works/opengraph-image',
 ]);
 

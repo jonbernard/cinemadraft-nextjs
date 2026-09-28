@@ -770,7 +770,7 @@ SELECT merge_duplicate_movies();
 DROP INDEX IF EXISTS movies_tmdb_id;
 CREATE UNIQUE INDEX movies_tmdb_id_key ON movies (tmdb_id);
 ```
-Update the schema, regenerate using the private-copy recipe, and make `upsertByTmdbId` `db.movie.upsert({ where: { tmdbId }, update: {}, create: { ... } })`. `update: {}` keeps D63's "never refresh a cached title".
+Update the schema, regenerate using the private-copy recipe, and make `upsertByTmdbId` `db.movie.upsert({ where: { tmdbId }, update: { tmdbId }, create: { ... } })`. (Corrected in P16.T8: the plan said `update: {}`, but with an empty update Prisma 7 selects then inserts rather than issuing `ON CONFLICT`, and two concurrent writers trip the new index with P2002. Setting the key to itself is the native upsert, and still refreshes nothing, so D63's "never refresh a cached title" holds. `film-ingest.test.ts` "is atomic at the repository" pins it; the existing `Promise.all([ensureFilm, ensureFilm])` case never reaches the race, because the TMDB cache serialises the two calls.)
 
 - [ ] **Step 4: Run it and confirm PASS.** Also run `film-ingest.test.ts`: its `Promise.all([ensureFilm, ensureFilm])` case is now guaranteed by the index, not by luck. Add to `award-import.test.mjs` a case where an INSERT for an existing `tmdb_id` returns the existing id.
 
@@ -953,13 +953,13 @@ export function parseFilmSegment(segment: string): { tmdbId: string; slugPart: s
   - With `maxRedirects: 0`, `GET /films/313369` is **308** with `location` `/films/la-la-land-313369`.
   - `GET /films/la-la-lamd-313369` (stale slug) is 308 to the same place.
   - `GET /films/la-la-land-313369` is 200. `link[rel=canonical]` and the JSON-LD `url` both end `/films/la-la-land-313369`.
-  - An unheld film gets the same shape: `/films/496243` redirects to `/films/parasite-496243` (the id the spec already uses), and that is 200 **with no `movies` row created** (a SQL count before and after).
+  - An unheld film gets the same shape: `/films/550` redirects to `/films/fight-club-550`, and that is 200 **with no `movies` row created** (a SQL count before and after). (Corrected in P16.T9: the plan named Parasite, 496243, but Parasite is held — it won the 2020 Oscars — so a count of its rows proves nothing. Fight Club has no row.)
   - `/films/arrival` (no id) is 404, and so is `/films/e2e-nope-999999999`.
 
 - [ ] **Step 8: 🔴 Mutation**
   - Make `parseFilmSegment` take the *first* digit run. Expect red at "reads the id from the end".
   - Delete the redirect line. Expect the e2e 308 assertions red.
-  - Compare slugs case-insensitively in the redirect check. Expect "stale slug is 308" red.
+  - ~~Compare slugs case-insensitively in the redirect check.~~ (Replaced in P16.T9: this mutation cannot go red. `parseFilmSegment` refuses capitals, so every segment that reaches the comparison is already lowercase and case-folding changes nothing.) Instead: redirect only a bare id (`parsed.slugPart === ''`). Expect "stale slug is 308" red.
   - Restore all three.
 
 - [ ] **Step 9: Record D133 and commit**
@@ -988,7 +988,7 @@ A permanent redirect on every internal click is the failure the films proposal w
   - `components/profile/FeedPost.tsx:93,114`
   - `components/shell/SearchOverlay.tsx:111` (`router.push(filmHref(film))`)
   - the board and live poster links, if they link to films. Check `PickCell` and `LiveAward` with the grep in step 1.
-- Cache refresh: `actions/reviews/save-review.ts:60`, `actions/reviews/delete-review.ts:35`, `actions/watchlist/set-watched.ts:74`. These become `revalidatePath('/films/[film]', 'page')`. A path built from a title could miss the spelling a reader has cached, while the route-pattern form revalidates every film page's cache entry and needs no title.
+- Cache refresh: `actions/reviews/save-review.ts:60`, `actions/reviews/delete-review.ts:35`, `actions/watchlist/set-watched.ts:74`. These become `revalidatePath('/(app)/films/[film]', 'page')`, through a shared `FILM_PAGE_ROUTE` constant. (Corrected in P16.T10: the plan wrote `/films/[film]`, but Next tags a page by its file path including the route group — `next/dist/server/lib/implicit-tags.js` — so the group-less pattern revalidates nothing.) A path built from a title could miss the spelling a reader has cached, while the route-pattern form revalidates every film page's cache entry and needs no title.
 - Tests asserting numeric URLs: `app/sitemap.production.test.ts:29,35`, `components/films/BrowseMonth.test.tsx:40,60`, `components/shell/SearchOverlay.test.tsx:45`, `components/profile/FeedPost.test.tsx:73,84`, `lib/seo.test.ts:7,49`, `actions/reviews/review-actions.test.ts:266`, `e2e/browse.spec.ts:65,148,265-266,330-331`, `e2e/members.spec.ts:213`, `e2e/inventory.spec.ts:27`, `e2e/visual.spec.ts:62`, `e2e/journeys/03-a-ceremony-night.spec.ts:187`, `e2e/journeys/04-a-reader-browses.spec.ts:85-86,125`, `e2e/films.spec.ts` (its direct `goto`s keep numeric ids on purpose and now follow the 308)
 - Modify: `scripts/layering.sh`, adding:
   ```bash
@@ -1022,7 +1022,7 @@ A permanent redirect on every internal click is the failure the films proposal w
 ### Task P16.T12: Tranche 2 gate
 
 - [ ] **Step 1:** Run § The tranche gate (CI shape, every spec), then the full suites on the executor.
-- [ ] **Step 2:** Run `scripts/restore-from-heroku.sh .local/baseline.dump <scratch agent:up URL> --yes` end to end. It must be GREEN, printing the merge prediction 8/13/0/0 (step 8 of T8), the C5 lines for M2, and C7.
+- [ ] **Step 2:** Run `scripts/restore-from-heroku.sh .local/prod-dump.dump <scratch URL, 5460+> --yes` end to end. (Corrected in P16.T12: the plan named `.local/baseline.dump`, which is already normalized to snake_case, so `normalize.sql` fails on it at `"Users" does not exist`. The script takes a Heroku-shaped dump.) It must be GREEN, printing the merge prediction 8/13/0/0 (step 8 of T8), the C5 lines for M2, and C7.
 - [ ] **Step 3: Production-build browser pass**
   - `/films/313369` redirects to `/films/la-la-land-313369`. Check that every film link on `/browse` page 1, `/watchlist`, `/` and a member page is `title-id`, with no 308s in the network log.
   - At 1440 and 390, light and dark.

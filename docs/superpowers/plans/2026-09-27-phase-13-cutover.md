@@ -67,7 +67,7 @@ S11 repeats the script run against a fresh Heroku dump.
 
 ## What a full restore wipes
 
-**Schema.** These are the seven changes from PLAN.md § T3b and after. They are gone after the wipe in S17, the script's `migrate deploy` puts them back, and each has its own line in check C5:
+**Schema.** These are the eight changes from PLAN.md § T3b and after. They are gone after the wipe in S17, the script's `migrate deploy` puts them back, and each has its own line in check C5:
 
 | Migration | Change |
 |---|---|
@@ -78,6 +78,7 @@ S11 repeats the script run against a fresh Heroku dump.
 | `20260816120000_nominations_year_integer` | `nominations.year` as `integer`. The restore brings back `text`, and nothing errors |
 | `20260913120000_event_focused_award` | `events.focused_award_id` (D117) |
 | `20260928090000_event_has_ceremony` | `events.has_ceremony`, AFI false (D129). Without it the rail waits for an AFI ceremony forever |
+| `20260928120000_movie_merge` | `merge_duplicate_movies()`, run once; `movies.tmdb_id` unique (D132). Changes row counts: see C7 |
 
 **Data: all of it.** Everything on Neon is replaced by the dump. None of it is re-applied. The lines worth knowing:
 
@@ -89,6 +90,7 @@ S11 repeats the script run against a fresh Heroku dump.
 | `events.focused_award_id`, `movies.accent_hex` | NULL. NULL means "nothing on screen" (D117); accent colours refill lazily |
 | Everything created on staging: users, leagues, drafts, picks, lists, watchlists, TMDB-cached films, nominations, winners, notifications, roster posts | Deleted. Test data |
 | `_prisma_migrations` | Dropped by the wipe, rebuilt by the script |
+| `movies` and `watchlists` | Shrink by the merge (M2, D132): every pair of rows sharing a `tmdb_id` folds into the older, and a member's doubled watchlist row for it goes too. On the 2026-08-13 dump, movies −8 and watchlists −13 (reviews and lists −0). C7 predicts it, from the dump, before migrating |
 
 ---
 
@@ -448,9 +450,9 @@ Every query runs as `"$PSQL" "$NEON_DIRECT" -At` unless marked otherwise.
 diff "$CUT/dump-row-counts.tsv" <(scripts/row-counts.sh "$HEROKU_DB")
 ```
 
-**C3–C6 live in `scripts/restore-from-heroku.sh`**, which runs them after the step each one guards: C3 raw counts against the dump's (`scripts/dump-row-counts.sh` vs `scripts/row-counts.sh`), C4 folded counts and zero uppercase identifiers, C5 the ten T3b schema facts, C6 `12|12` logos on Blob. The script is their only definition.
+**C3–C6 live in `scripts/restore-from-heroku.sh`**, which runs them after the step each one guards: C3 raw counts against the dump's (`scripts/dump-row-counts.sh` vs `scripts/row-counts.sh`), C4 folded counts and zero uppercase identifiers, C5 the thirteen T3b schema facts (M2 adds `movies_tmdb_id_key` unique, no duplicate `tmdb_id`, no orphaned `movie_id`), C6 `12|12` logos on Blob. The script is their only definition.
 
-**C7: invariants.** S22 gives the expected value for each line. The script runs the same four at its end, plus a second folded recount.
+**C7: invariants.** S22 gives the expected value for each line. The script runs the same four at its end, plus a second folded recount. That recount expects the dump's counts **less the movie merge's predicted deletions** (M2): the script computes them with the migration's own rules after C4 and prints `merge will remove movies N, watchlists N, reviews N, lists N` before migrating. Mutation-tested 2026-09-27 on a throwaway 5461: skipping `SELECT merge_duplicate_movies()` fails the migration itself (the unique index refuses the duplicates); dropping the watchlist dedupe → C7 red on `watchlists 2350 / 2363`; a prediction off by one → C7 red on `movies`.
 
 ```sql
 select 'claimed', count(*) from users where clerk_id is not null

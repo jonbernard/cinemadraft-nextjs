@@ -3,6 +3,7 @@ import type { MetadataRoute } from 'next';
 import { eventRepository } from '@/lib/repositories/events';
 import { movieRepository } from '@/lib/repositories/movies';
 import { canonical } from '@/lib/seo';
+import { filmHref } from '@/lib/utils/film-href';
 
 /**
  * How many film pages the sitemap will publish.
@@ -48,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
   const filmPages: MetadataRoute.Sitemap = films.map((film) => ({
-    url: canonical(`/films/${film.tmdbId}`),
+    url: canonical(filmHref(film)),
     lastModified: film.updatedAt ?? undefined,
     changeFrequency: 'monthly' as const,
     priority: 0.5,

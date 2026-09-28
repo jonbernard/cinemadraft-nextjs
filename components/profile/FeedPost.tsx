@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import type { FeedAttachment, FeedItem } from '@/lib/services/profile';
 import { cn } from '@/lib/utils/cn';
+import { filmHref } from '@/lib/utils/film-href';
 import { formatDay } from '@/lib/utils/format';
 import { ReviewCard } from '../films/ReviewCard';
 import { Panel } from '../ui/Panel';
@@ -90,7 +91,7 @@ function Attachment({ attachment }: { attachment: FeedAttachment }) {
         <li key={film.movieId}>
           {film.tmdbId ? (
             <Link
-              href={`/films/${film.tmdbId}`}
+              href={filmHref({ tmdbId: film.tmdbId, title: film.title })}
               className="focus-visible:outline-accent-fill block rounded-sm focus-visible:outline-2"
             >
               <PosterFrame title={film.title} posterUrl={film.posterUrl} />
@@ -111,7 +112,7 @@ function FilmName({ film }: { film: { tmdbId: string | null; title: string } }) 
 
   return (
     <Link
-      href={`/films/${film.tmdbId}`}
+      href={filmHref({ tmdbId: film.tmdbId, title: film.title })}
       className="text-text-primary hover:text-accent-text focus-visible:outline-accent-fill font-serif text-lg focus-visible:outline-2"
     >
       {film.title}

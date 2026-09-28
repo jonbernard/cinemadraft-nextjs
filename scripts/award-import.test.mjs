@@ -281,6 +281,35 @@ describe('resolveFilm', () => {
     expect(result.created).toBe(true);
   });
 
+  // D132: `tmdb_id` is unique, so a film ingested by the app between the
+  // look-up and the INSERT comes back as the existing row, not a second one.
+  // The fake answers only an INSERT that carries the upsert clause, so a
+  // plain INSERT gets no row back and this goes red.
+  it('returns the existing id when another writer ingested the film first', async () => {
+    const client = fakeClient([
+      [/FROM movies WHERE tmdb_id/, []],
+      [
+        /INSERT INTO movies[\s\S]*ON CONFLICT \(tmdb_id\) DO UPDATE SET tmdb_id = EXCLUDED\.tmdb_id[\s\S]*RETURNING id/,
+        [{ id: 7, title: 'Sinners', release_date: new Date('2025-04-18') }],
+      ],
+    ]);
+    const fetchFilm = async () => ({
+      tmdbId: '1233413',
+      imdbId: '31193180',
+      title: 'Sinners',
+      sortTitle: 'Sinners',
+      poster: null,
+      backdrop: null,
+      releaseDate: new Date('2025-04-18'),
+    });
+    const result = await resolveFilm(
+      client,
+      { title: 'Sinners', tmdbId: '1233413' },
+      fetchFilm,
+    );
+    expect(result.movieId).toBe(7);
+  });
+
   it('throws rather than writing a half-film when TMDB has nothing', async () => {
     const client = fakeClient([[/FROM movies WHERE tmdb_id/, []]]);
     await expect(

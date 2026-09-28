@@ -198,4 +198,12 @@ check "no maxDuration above the Hobby ceiling of 60" \
      app lib actions --include='*.ts' --include='*.tsx' 2>/dev/null \
      || true)"
 
+# D133: a film URL is title + TMDB id, and `filmHref` is the one place it is
+# spelled. A hand-built `/films/${id}` skips the slug part, and every click on
+# it costs a 308. Cache refreshes use the route pattern,
+# `revalidatePath('/films/[film]', 'page')`, which needs no title at all.
+check "film URLs are spelled by filmHref" \
+  "$(git grep -nE '/films/\$\{' -- app components lib actions ':!lib/utils/film-href.ts' \
+     2>/dev/null || true)"
+
 exit $fail

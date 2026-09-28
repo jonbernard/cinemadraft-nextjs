@@ -3,6 +3,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { db } from '@/lib/db';
+import { filmHref, parseFilmSegment } from '@/lib/utils/film-href';
 import sitemap from './sitemap';
 
 afterAll(async () => {
@@ -30,9 +31,18 @@ describe('sitemap, against the restored catalogue', () => {
     );
 
     expect(films.length).toBeGreaterThan(0);
-    // Every film URL ends in a TMDB id, never a local row id or a slug.
+    // Every film URL is the canonical title + TMDB id (D133), spelled from the
+    // cached row's own title, so a crawler following it gets a 200, not a 308.
     for (const film of films.slice(0, 20)) {
-      expect(new URL(film.url).pathname).toMatch(/^\/films\/\d+$/);
+      const path = new URL(film.url).pathname;
+      const parsed = parseFilmSegment(path.slice('/films/'.length));
+      expect(parsed, path).not.toBeNull();
+      const row = await db.movie.findUnique({
+        where: { tmdbId: parsed?.tmdbId },
+        select: { tmdbId: true, title: true },
+      });
+      expect(row, path).not.toBeNull();
+      expect(path).toBe(filmHref({ tmdbId: row?.tmdbId ?? '', title: row?.title }));
     }
   });
 });

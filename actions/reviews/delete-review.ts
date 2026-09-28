@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { requireUser } from '@/lib/auth';
 import { deleteMyReview } from '@/lib/services/reviews';
+import { FILM_PAGE_ROUTE } from '@/lib/utils/film-href';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 
 const Input = z.object({
@@ -32,7 +33,8 @@ export async function deleteReview(
     const user = await requireUser();
     await deleteMyReview(user.id, parsed.data.tmdbId);
 
-    revalidatePath(`/films/${parsed.data.tmdbId}`);
+    // Every film page's cache entry, whatever spelling a reader holds (D133).
+    revalidatePath(FILM_PAGE_ROUTE, 'page');
 
     return ok(null);
   } catch (error) {

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { filmHref } from '@/lib/utils/film-href';
+
 /**
  * The origin every canonical, sitemap entry and OG URL resolves against.
  *
@@ -81,7 +83,7 @@ export function movieJsonLd(film: MovieJsonLdInput): Record<string, unknown> {
     '@context': 'https://schema.org',
     '@type': 'Movie',
     name: film.title,
-    url: canonical(`/films/${film.tmdbId}`),
+    url: canonical(filmHref(film)),
     ...(film.posterUrls[0] ? { image: film.posterUrls[0] } : {}),
     // The synopsis first, the tagline only as a fallback: a tagline is written
     // to intrigue rather than to describe, which is the wrong job here.

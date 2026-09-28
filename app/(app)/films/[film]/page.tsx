@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 
 import { deleteReview } from '@/actions/reviews/delete-review';
 import { saveReview } from '@/actions/reviews/save-review';
@@ -20,31 +20,32 @@ import { getCurrentUser } from '@/lib/auth';
 import { canonical, movieJsonLd } from '@/lib/seo';
 import { type FilmPage, isFilmWatched, loadFilmPage } from '@/lib/services/film';
 import { loadMyReview } from '@/lib/services/reviews';
+import { filmHref, parseFilmSegment } from '@/lib/utils/film-href';
 import { formatMoney, formatReleaseDate, formatRuntime } from '@/lib/utils/format';
 
 /**
- * One film (P10.T5, T6, T9).
+ * One film (P10.T5, T6, T9), at `/films/<slug>-<tmdbId>` (D133).
  *
  * 🔴 **Keyed by TMDB id, not by our own.** That is how the source app addressed
  * it (`/movie/:id`, and `GET /points/movie/:tmdbId`), and it is the only key that
- * works: `movies` holds the 1,355 films this league has drafted or nominated, so
+ * works: `movies` holds only the films this league has drafted or nominated, so
  * a local id exists for almost none of the catalogue. The screenshots show the
  * page working for exactly such a film.
  *
+ * 🔴 **The id is authoritative; the slug part is decoration.** The trailing
+ * digits decide the film. The canonical spelling is `filmHref` of the TMDB
+ * title this page already fetches, the same rule for held and unheld films,
+ * and any other spelling (an old numeric link, a stale or mistyped title) is
+ * permanently redirected (308) to it. A title with nothing Latin in it has an
+ * empty slug part, so its canonical is the bare id and it cannot loop.
+ *
  * Public (D44), and it **never writes** (D63) — see `lib/services/film.ts` for
  * why that is a decision rather than an omission.
- */
-
-/**
- * Validate the id before spending a TMDB request on it.
  *
- * 🔴 `/films/../..` and `/films/%00` both reach this handler. TMDB ids are
- * integers, so anything else is a 404 without a round trip — which also means a
- * crawler walking nonsense URLs cannot burn the rate limit.
+ * 🔴 `/films/../..` and `/films/%00` both reach this handler. `parseFilmSegment`
+ * refuses anything that is not a slug part and an id before a TMDB request is
+ * spent on it, so a crawler walking nonsense URLs cannot burn the rate limit.
  */
-function toTmdbId(raw: string): string | null {
-  return /^\d{1,12}$/.test(raw) ? raw : null;
-}
 
 /**
  * What a shared link unfurls to.
@@ -56,12 +57,11 @@ function toTmdbId(raw: string): string | null {
  */
 export async function generateMetadata({
   params,
-}: PageProps<'/films/[tmdbId]'>): Promise<Metadata> {
-  const { tmdbId } = await params;
-  const id = toTmdbId(tmdbId);
-  if (!id) return { title: 'Not here' };
+}: PageProps<'/films/[film]'>): Promise<Metadata> {
+  const parsed = parseFilmSegment((await params).film);
+  if (!parsed) return { title: 'Not here' };
 
-  const film = await loadFilmPage(id);
+  const film = await loadFilmPage(parsed.tmdbId);
   if (!film) return { title: 'Not here' };
 
   const year = film.year ? ` (${film.year})` : '';
@@ -72,7 +72,7 @@ export async function generateMetadata({
     description,
     // The app's most-shared URL, and the one most likely to be found by
     // search — so it is the one that most needs a stable canonical (P15.T6).
-    alternates: { canonical: canonical(`/films/${id}`) },
+    alternates: { canonical: canonical(filmHref(film)) },
     openGraph: {
       title: `${film.title}${year}`,
       description,
@@ -85,13 +85,19 @@ export async function generateMetadata({
   };
 }
 
-export default async function FilmPageRoute({ params }: PageProps<'/films/[tmdbId]'>) {
-  const { tmdbId } = await params;
-  const id = toTmdbId(tmdbId);
-  if (!id) notFound();
+export default async function FilmPageRoute({ params }: PageProps<'/films/[film]'>) {
+  const segment = (await params).film;
+  const parsed = parseFilmSegment(segment);
+  if (!parsed) notFound();
+  const id = parsed.tmdbId;
 
   const film = await loadFilmPage(id);
   if (!film) notFound();
+
+  // Exact, not case-folded: `parseFilmSegment` already refuses capitals, and
+  // any other spelling of this film is an old one (D133).
+  const href = filmHref(film);
+  if (href.slice('/films/'.length) !== segment) permanentRedirect(href);
 
   // The session decides whether the watched badge renders at all — the source
   // hid it for anonymous readers too. Resolved on the server because Clerk 7
@@ -330,7 +336,7 @@ function SimilarFilms({ films }: { films: FilmPage['similar'] }) {
         {films.map((film) => (
           <li key={film.tmdbId}>
             <Link
-              href={`/films/${film.tmdbId}`}
+              href={filmHref(film)}
               className="focus-visible:outline-accent-fill group flex flex-col gap-2 focus-visible:outline-2"
             >
               <span className="poster-radius bg-bg-surface light:border light:border-border-rule relative block aspect-[2/3] overflow-hidden">

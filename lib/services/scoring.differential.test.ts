@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -62,7 +62,16 @@ afterAll(async () => {
  *   film's total over every season, and this test first proves that of the
  *   source's own numbers before relying on it.
  *
- * Everything outside those two lists must equal the source. Tie order is the
+ * And by one data fix, which is not a ruling about scoring:
+ *
+ * - **D132**, duplicate film rows merged into the oldest. The source scored
+ *   both rows of a pair; the port has one. A fixture film id that is no longer
+ *   in `movies` folds into the surviving row with the same TMDB id, and that
+ *   row is expected to carry the **sum** of both. The loser's TMDB id comes
+ *   from the Heroku capture in `fixtures/` (every embedded film there carries
+ *   its `id` and `tmdbId`), and the keeper from `movies` — never a hand list.
+ *
+ * Everything outside those lists must equal the source. Tie order is the
  * port's (draft order, D126); the source had none — its seat list came back in
  * whatever order Postgres returned, and two runs of it disagreed.
  *
@@ -105,8 +114,68 @@ let pickRows: { pickId: number; draftId: number; movieId: number; year: number }
 let draftRows: { id: number; userId: number | null; leagueId: number; year: number }[] =
   [];
 
+/**
+ * D132: the fixture's film ids with merged ones replaced by their keeper, and
+ * a keeper's two figures in one season summed. Built in `beforeAll`.
+ */
+let filmSeasons: Fixture['filmSeasons'] = [];
+/** D132: fixture film id → the id it folded into, for ids no longer in `movies`. */
+const folded = new Map<number, number>();
+
+/** `id → tmdbId` for every film the Heroku capture embeds. */
+function capturedTmdbIds(): Map<number, string> {
+  const found = new Map<number, string>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) for (const item of node) walk(item);
+    else if (node && typeof node === 'object') {
+      const record = node as Record<string, unknown>;
+      if (
+        typeof record.id === 'number' &&
+        typeof record.tmdbId === 'string' &&
+        'title' in record
+      )
+        found.set(record.id, record.tmdbId);
+      for (const value of Object.values(record)) walk(value);
+    }
+  };
+  const dir = join(process.cwd(), 'fixtures');
+  for (const file of readdirSync(dir).filter((name) => name.endsWith('.json')))
+    walk(JSON.parse(readFileSync(join(dir, file), 'utf8')));
+  return found;
+}
+
+async function foldMergedFilms() {
+  const movies = await db.movie.findMany({ select: { id: true, tmdbId: true } });
+  const present = new Set(movies.map((movie) => movie.id));
+  const keeperOf = new Map(movies.map((movie) => [movie.tmdbId, movie.id]));
+  const captured = capturedTmdbIds();
+  for (const [, movieId] of SOURCE.filmSeasons) {
+    if (present.has(movieId) || folded.has(movieId)) continue;
+    const keeper = keeperOf.get(captured.get(movieId) ?? null);
+    if (keeper === undefined)
+      throw new Error(
+        `fixture film ${movieId} is not in movies and has no merged keeper`,
+      );
+    folded.set(movieId, keeper);
+  }
+  const byKey = new Map<string, Fixture['filmSeasons'][number]>();
+  for (const [year, movieId, total, cells] of SOURCE.filmSeasons) {
+    const id = folded.get(movieId) ?? movieId;
+    const seen = byKey.get(key(year, id));
+    if (!seen) {
+      byKey.set(key(year, id), [year, id, total, { ...cells }]);
+      continue;
+    }
+    seen[2] += total;
+    for (const [abbr, points] of Object.entries(cells))
+      seen[3][abbr] = (seen[3][abbr] ?? 0) + points;
+  }
+  filmSeasons = [...byKey.values()];
+}
+
 beforeAll(async () => {
-  for (const [year, movieId, total] of SOURCE.filmSeasons) {
+  await foldMergedFilms();
+  for (const [year, movieId, total] of filmSeasons) {
     source.set(key(year, movieId), total);
     seasonsOf.set(movieId, [...(seasonsOf.get(movieId) ?? []), year]);
   }
@@ -147,7 +216,7 @@ beforeAll(async () => {
   for (const [leagueId, year] of SOURCE.standings) {
     port.boards.set(key(leagueId, year), await getLeagueBoardView(leagueId, year, null));
   }
-  for (const year of new Set(SOURCE.filmSeasons.map(([y]) => y))) {
+  for (const year of new Set(filmSeasons.map(([y]) => y))) {
     const board = await getLeaderboard(year);
     port.leaderboards.set(
       year,
@@ -230,7 +299,7 @@ describe('the port against the source', () => {
   it('scores every film × season and every per-show cell, D125 aside', () => {
     const wrong: unknown[] = [];
     let cells = 0;
-    for (const [year, movieId, total, sourceCells] of SOURCE.filmSeasons) {
+    for (const [year, movieId, total, sourceCells] of filmSeasons) {
       const ours = port.leaderboards.get(year)?.get(movieId);
       if (ours?.total !== expectedFilm(year, movieId))
         wrong.push({ year, movieId, source: total, ours: ours?.total });
@@ -252,9 +321,7 @@ describe('the port against the source', () => {
     // Same films, and each season's rows run highest first. (Which of two
     // tied films lists first is display only, D11.)
     for (const [year, rows] of port.leaderboards) {
-      const sourceIds = SOURCE.filmSeasons
-        .filter(([y]) => y === year)
-        .map(([, id]) => id);
+      const sourceIds = filmSeasons.filter(([y]) => y === year).map(([, id]) => id);
       expect({ year, films: [...rows.keys()].sort() }).toEqual({
         year,
         films: sourceIds.sort(),
@@ -360,9 +427,13 @@ describe('the port against the source', () => {
 
       // The source's one figure is every season summed (D126 is what splits
       // it); each show's cells likewise.
+      // D132: the source's page read one row of a duplicated film; the port's
+      // reads the merged one, so the rows that page never saw are added in.
+      const extra = movieId == null ? NONE : unseenRows(movieId, total, cells);
       if (total !== null) {
         const summed = sum(years.map((y) => source.get(key(y, movieId as number)) ?? 0));
-        if (summed !== total) wrong.push({ tmdbId, sourceTotal: total, summed });
+        if (summed !== total + extra.total)
+          wrong.push({ tmdbId, sourceTotal: total, d132: extra.total, summed });
       }
       const shows: Cells = {};
       for (const season of scoring?.seasons ?? [])
@@ -374,11 +445,12 @@ describe('the port against the source', () => {
       const nonzero = Object.fromEntries(
         Object.entries(shows).filter(([, v]) => v !== 0),
       );
+      const expectedCells = addCells(cells, extra.cells);
       if (
         JSON.stringify(Object.entries(nonzero).sort()) !==
-        JSON.stringify(Object.entries(cells).sort())
+        JSON.stringify(Object.entries(expectedCells).sort())
       )
-        wrong.push({ tmdbId, cells, ours: nonzero });
+        wrong.push({ tmdbId, cells: expectedCells, ours: nonzero });
       // Null where nobody drafted it; the source printed 0 (PARITY, D9).
       if ((scoring?.averageDraftPosition ?? 0) !== (avg ?? 0) && scoring !== null)
         wrong.push({ tmdbId, avg, ours: scoring?.averageDraftPosition });
@@ -394,6 +466,17 @@ describe('the deviations, derived', () => {
     expect(d125.film.size).toBe(9);
   });
 
+  it('D132 folds the four merged films that carry nominations', () => {
+    // Allegiant, Ready Player One, Solo and My Life as a Zucchini: the only
+    // merged pairs whose losing row was ever nominated.
+    expect([...folded.entries()].sort(([a], [b]) => a - b)).toEqual([
+      [117, 50],
+      [177, 60],
+      [331, 270],
+      [332, 258],
+    ]);
+  });
+
   it('D126 moves seven picks, seven seats and splits six film pages', () => {
     const byPick = new Map(pickRows.map((row) => [row.pickId, row]));
     const picks = SOURCE.picks.filter(([pickId]) => {
@@ -403,9 +486,15 @@ describe('the deviations, derived', () => {
     const seats = SOURCE.seats.filter(([, year, draftId]) =>
       pickRows.some((p) => p.draftId === draftId && d126(p.movieId, year) !== 0),
     );
+    // Counted on the keeper's own seasons, before D132's fold: a merged pair
+    // whose two rows were nominated in different years is D132's split, not
+    // D126's.
     const pages = SOURCE.filmPages.filter(([tmdbId]) => {
       const movieId = port.films.get(tmdbId)?.movieId;
-      return movieId != null && (seasonsOf.get(movieId)?.length ?? 0) > 1;
+      return (
+        movieId != null &&
+        SOURCE.filmSeasons.filter(([, id]) => id === movieId).length > 1
+      );
     });
 
     expect(picks.map(([id]) => id).sort((a, b) => a - b)).toEqual([
@@ -417,6 +506,49 @@ describe('the deviations, derived', () => {
     expect(pages).toHaveLength(6);
   });
 });
+
+const NONE = { total: 0, cells: {} as Cells };
+
+function addCells(a: Cells, b: Cells): Cells {
+  const out: Cells = { ...a };
+  for (const [abbr, points] of Object.entries(b)) out[abbr] = (out[abbr] ?? 0) + points;
+  return Object.fromEntries(Object.entries(out).filter(([, v]) => v !== 0));
+}
+
+/**
+ * D132 on a film page: the fixture rows folded into `keeper` that the source's
+ * page for that film did not count. The page read one row of a pair; which one
+ * is found by matching the page's total and cells against each row's own
+ * figures, so nothing is assumed about the source's choice.
+ */
+function unseenRows(keeper: number, pageTotal: number | null, pageCells: Cells) {
+  const rows = [keeper, ...[...folded].filter(([, k]) => k === keeper).map(([id]) => id)];
+  if (rows.length === 1) return NONE;
+  const own = rows.map((id) => {
+    const seasons = SOURCE.filmSeasons.filter(([, movieId]) => movieId === id);
+    return {
+      id,
+      total: sum(seasons.map(([, , t]) => t)),
+      cells: seasons.reduce<Cells>((acc, [, , , c]) => addCells(acc, c), {}),
+    };
+  });
+  const seen = own.find(
+    (row) =>
+      row.total === (pageTotal ?? 0) &&
+      JSON.stringify(Object.entries(row.cells).sort()) ===
+        JSON.stringify(Object.entries(pageCells).sort()),
+  );
+  if (!seen) throw new Error(`film ${keeper}: the source page matches none of its rows`);
+  return own
+    .filter((row) => row !== seen)
+    .reduce(
+      (acc, row) => ({
+        total: acc.total + row.total,
+        cells: addCells(acc.cells, row.cells),
+      }),
+      NONE,
+    );
+}
 
 /** A seat's move under both rulings: the sum over its picks. */
 function seatDelta(draftId: number, year: number): number {

@@ -3,6 +3,7 @@ import { ImageResponse } from 'next/og';
 import { OgMark } from '@/components/ui/OgMark';
 import { CARD, CARD_SIZE } from '@/lib/og';
 import { loadFilmPage } from '@/lib/services/film';
+import { parseFilmSegment } from '@/lib/utils/film-href';
 
 /**
  * A film's share card (P15.T6): poster left, title and year right.
@@ -18,9 +19,11 @@ export const alt = 'A film on Cinemadraft';
 export const size = CARD_SIZE;
 export const contentType = 'image/png';
 
-export default async function Image({ params }: { params: Promise<{ tmdbId: string }> }) {
-  const { tmdbId } = await params;
-  const film = /^\d+$/.test(tmdbId) ? await loadFilmPage(tmdbId) : null;
+// Resolved by the same parse as the page, and never redirected: an image
+// route answers with the image, whatever spelling it was asked by (D133).
+export default async function Image({ params }: { params: Promise<{ film: string }> }) {
+  const parsed = parseFilmSegment((await params).film);
+  const film = parsed ? await loadFilmPage(parsed.tmdbId) : null;
   const poster = film?.posterUrls[0] ?? null;
 
   return new ImageResponse(

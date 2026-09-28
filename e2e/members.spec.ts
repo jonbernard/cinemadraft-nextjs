@@ -210,7 +210,7 @@ test.describe('a member page', () => {
     await expect(roster.getByRole('figure')).toContainText(ROSTER);
     await expect(roster.getByRole('link')).toHaveCount(ROSTER.length);
     for (const link of await roster.getByRole('link').all()) {
-      await expect(link).toHaveAttribute('href', /^\/films\/99937\d{4}$/);
+      await expect(link).toHaveAttribute('href', /^\/films\/e2e-[a-z0-9-]+-99937\d{4}$/);
     }
     await expect(post.getByText(/more films?$/)).toHaveCount(0);
   });

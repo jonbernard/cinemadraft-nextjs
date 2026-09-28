@@ -5,6 +5,7 @@ import type { Ref } from 'react';
 import { useCallback, useRef, useState } from 'react';
 
 import { findFilmsAction } from '@/actions/search/find-films';
+import { filmHref } from '@/lib/utils/film-href';
 import { FilmSearch, type SearchedFilm } from '../draft/FilmSearch';
 
 /**
@@ -108,7 +109,7 @@ export function SearchOverlay({
   const onSelect = useCallback(
     (film: SearchedFilm) => {
       if (!film.tmdbId) return;
-      router.push(`/films/${film.tmdbId}`);
+      router.push(filmHref({ tmdbId: film.tmdbId, title: film.title }));
       dialog.current?.close();
     },
     [router],

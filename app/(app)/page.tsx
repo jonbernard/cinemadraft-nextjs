@@ -17,6 +17,7 @@ import { type DashboardView, getDashboard } from '@/lib/services/dashboard';
 import { getLandingFacts, type LandingFacts } from '@/lib/services/how-it-works';
 import { availableSeasons, getLeaderboard } from '@/lib/services/leaderboard';
 import { cn } from '@/lib/utils/cn';
+import { filmHref } from '@/lib/utils/film-href';
 
 /**
  * Posters in the hero's wall, and the number `getLandingFacts` is asked for.
@@ -338,7 +339,7 @@ function NowPlayingShelf({ films }: { films: DashboardView['nowPlaying'] }) {
       {films.map((film, index) => (
         <li key={film.tmdbId} className="w-40">
           <Link
-            href={`/films/${film.tmdbId}`}
+            href={filmHref({ tmdbId: film.tmdbId, title: film.title })}
             className="focus-visible:outline-accent-fill block focus-visible:outline-2"
           >
             {/* 🔴 Two, not twelve. Measured in a production build: this shelf's

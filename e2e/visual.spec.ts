@@ -59,7 +59,7 @@ const SURFACES = [
   { name: 'dashboard', path: '/', full: true, auth: false },
   { name: 'browse', path: '/browse', full: false, auth: false },
   { name: 'award-shows', path: '/award-shows', full: true, auth: false },
-  { name: 'film', path: '/films/313369', full: true, auth: false },
+  { name: 'film', path: '/films/la-la-land-313369', full: true, auth: false },
   { name: 'league', path: '/leagues/1', full: true, auth: true },
   { name: 'draft-board', path: '/leagues/1/draft', full: true, auth: true },
 ] as const;

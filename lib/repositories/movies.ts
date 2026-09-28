@@ -114,20 +114,23 @@ export const movieRepository = {
    *
    * Ordered by id so the file is stable between builds — a sitemap that
    * reshuffles on every deploy tells a crawler the whole catalogue changed.
-   * Rows with no `tmdbId` are excluded because `/films/[tmdbId]` is the only
-   * public film URL and there is nothing to link to without one.
+   * Rows with no `tmdbId` are excluded because `/films/<slug>-<tmdbId>` is the
+   * only public film URL and there is nothing to link to without one. The
+   * title comes too, because `filmHref` spells the URL from it (D133).
    */
   async listForSitemap(
     limit: number,
-  ): Promise<{ tmdbId: string; updatedAt: Date | null }[]> {
+  ): Promise<{ tmdbId: string; title: string | null; updatedAt: Date | null }[]> {
     const rows = await db.movie.findMany({
       where: { tmdbId: { not: null } },
-      select: { tmdbId: true, updatedAt: true },
+      select: { tmdbId: true, title: true, updatedAt: true },
       orderBy: { id: 'asc' },
       take: limit,
     });
     return rows.flatMap((row) =>
-      row.tmdbId == null ? [] : [{ tmdbId: row.tmdbId, updatedAt: row.updatedAt }],
+      row.tmdbId == null
+        ? []
+        : [{ tmdbId: row.tmdbId, title: row.title, updatedAt: row.updatedAt }],
     );
   },
 
@@ -203,14 +206,21 @@ export const movieRepository = {
    * Cache a film TMDB knows about.
    *
    * `movies` is a cache of TMDB, and this is the only way a row enters it: the
-   * first time somebody drafts or nominates a film. Every one of the 1,355
-   * restored rows arrived this way.
+   * first time somebody drafts or nominates a film. Every one of the 1,347
+   * restored rows (after the P16 merge, M2) arrived this way.
    *
    * The caller has already checked `findByTmdbId`; this races only against
    * another request for the same film at the same moment — two admins entering
-   * the same nomination during a live ceremony. `create` would give the second
-   * one a duplicate row, and a duplicate film is two films as far as scoring
-   * is concerned, so the write is idempotent on `tmdbId` instead.
+   * the same nomination during a live ceremony. A duplicate film is two films
+   * as far as scoring is concerned, so the write is an upsert on the unique
+   * `tmdb_id` (D132): atomic, not look-up-then-insert.
+   *
+   * 🔴 The update is a no-op that sets `tmdbId` to itself, and it has to be.
+   * With `update: {}` Prisma does not issue `ON CONFLICT`; it selects, then
+   * inserts, and two writers at once trip the index (measured: P2002, in
+   * film-ingest.test.ts "is atomic at the repository"). Rewriting the key to
+   * its own value changes nothing, so D63's "never refresh a cached title"
+   * holds: no title, poster or `updatedAt` is touched.
    */
   async upsertByTmdbId(input: {
     tmdbId: string;
@@ -221,15 +231,11 @@ export const movieRepository = {
     backdrop: string | null;
     releaseDate: Date | null;
   }): Promise<Movie> {
-    const existing = await db.movie.findFirst({
-      where: { tmdbId: input.tmdbId },
-      select: SELECT,
-    });
-    if (existing) return existing;
-
     const now = new Date();
-    return db.movie.create({
-      data: {
+    return db.movie.upsert({
+      where: { tmdbId: input.tmdbId },
+      update: { tmdbId: input.tmdbId },
+      create: {
         tmdbId: input.tmdbId,
         imdbId: input.imdbId,
         title: input.title,

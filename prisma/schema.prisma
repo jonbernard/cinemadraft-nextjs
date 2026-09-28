@@ -131,7 +131,8 @@ model Movie {
   sortTitle   String?   @map("sort_title")
   fbId        String?   @map("fb_id") @db.VarChar(255)
   imdbId      String?   @map("imdb_id") @db.VarChar(255)
-  tmdbId      String?   @map("tmdb_id") @db.VarChar(255)
+  /// One row per TMDB film (D132, migration `20260928120000_movie_merge`).
+  tmdbId      String?   @unique(map: "movies_tmdb_id_key") @map("tmdb_id") @db.VarChar(255)
   backdrop    String?
   poster      String?
   releaseDate DateTime? @map("release_date") @db.Timestamptz(6)
@@ -141,7 +142,6 @@ model Movie {
   /// movie rather than on every render. Luminance-clamped at write time.
   accentHex   String?   @map("accent_hex") @db.VarChar(7)
 
-  @@index([tmdbId], map: "movies_tmdb_id")
   @@map("movies")
 }
 

@@ -37,7 +37,8 @@ describe('BrowseMonth', () => {
     render(<BrowseMonth month={month} isSignedIn={false} />);
     expect(screen.getByRole('link', { name: 'The Matrix' })).toHaveAttribute(
       'href',
-      '/films/603',
+      // Title + id (D133). Browse films are TMDB's, mostly unheld: same shape.
+      '/films/the-matrix-603',
     );
   });
 
@@ -57,7 +58,7 @@ describe('BrowseMonth', () => {
     const { container } = render(<BrowseMonth month={month} isSignedIn={false} />);
     const poster = container.querySelector('a[aria-hidden="true"]');
 
-    expect(poster).toHaveAttribute('href', '/films/603');
+    expect(poster).toHaveAttribute('href', '/films/the-matrix-603');
     // aria-hidden on a focusable element is itself a violation; the two
     // attributes only make sense together.
     expect(poster).toHaveAttribute('tabindex', '-1');

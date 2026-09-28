@@ -2455,7 +2455,7 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
 
 ## Phase 16 — New features
 
-- 🔴 **Seven duplicate `movies` rows**, found while researching film slugs
+- ✅ **Fixed by P16.T8 (M2, D132):** seven duplicate `movies` rows, found while researching film slugs
   (2026-09-12). Eight title+year groups collide; seven of them carry a single
   `tmdb_id` across both rows, so they are the same film stored twice:
   `allegiant` 2016, `anaconda` 2025, `michael` 2026, `obsession` 2025,
@@ -2483,11 +2483,17 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
   - Browser pass in a production build, 1440 and 390, light and dark, with the executor's active year set to 2027 and restored afterwards: "+ Open 2027" and its confirm, the rollover panel, the empty-season notice, and setup's "From earlier seasons". Screenshots in the conductor workspace, `.context/phase-16/t1/`.
 
 **Tranche 2: the duplicate-film merge, and title + id film URLs**
-- [ ] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies
-- [ ] P16.T9 — title + id film URLs: the `[film]` route, the canonical spelling and the redirects (D133; no migration)
-- [ ] P16.T10 — every link spells `title-id`, held or not (`filmHref`, layering guard)
+- [x] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies
+  - Rehearsed on the agent database (5440) and on a fresh `restore-from-heroku.sh` of `.local/prod-dump.dump` into a throwaway 5461: GREEN, printing `merge will remove movies 8, watchlists 13, reviews 0, lists 0`. After migrating, `count(*)` and `count(distinct tmdb_id)` are both 1,347.
+  - 🔴 **Not yet applied to 5432, 5433 or 5434.** The orchestrator applies it at merge, with the loop in the plan's § Global Constraints; until then `lib/db.test.ts` (now 1,347) is red on those three, and `npm run agent:baseline` (now also 1,347) refuses them.
+- [x] P16.T9 — title + id film URLs: the `[film]` route, the canonical spelling and the redirects (D133; no migration). `/films/313369` 308s to `/films/la-la-land-313369`; an unheld film (Fight Club, 550) the same, with no row written.
+- [x] P16.T10 — every link spells `title-id`, held or not (`filmHref`, layering guard). Stale-title measurement: 0 of league 1's 69 drafted films (2025–2026) would redirect.
 - ~~P16.T11 — store every browse result~~ — dropped by the owner 2026-09-27 (title + id URLs need no row); ID kept so later numbers do not move
-- [ ] P16.T12 — tranche 2 gate
+- [x] P16.T12 — tranche 2 gate (2026-09-27, branch `agent/p16-t2`, with `origin/dev` 749ba41 merged in)
+  - **CI shape** (empty postgres:17 on 5462, `prisma migrate deploy`, `node scripts/seed-e2e.mjs`, `CI=1`, production build, `TMDB_API_KEY`, the Clerk keys, `VERCEL_OIDC_TOKEN` and `BLOB_STORE_ID` blanked): lint, typecheck, `npm run layering` and `npm run build-storybook` green. `npm run test:ci`: 160 files, **1,819 passed**, 0 failed (a first run had 1 red, `CategoryAdmin` "Winners mode › marks the nomination clicked", `pointer-events: none` under load; green 5 of 5 alone and on a fresh CI-shape rerun; not touched here). `npm run test:e2e`: **169 passed, 105 skipped, 0 failed**. The skips are CI's own, the `VISUAL=1` and Clerk-key opt-outs, `TMDB_API_KEY not configured` (five more than tranche 1: the four new "a film's address" cases and the browse canonical-link case) and the restored-corpus specs.
+  - **Executor** (restored copy on 5440, M2 applied): `npx vitest run` **2,379 passed**, 0 failed (198 files). `npm run test:e2e`: **219 passed, 54 skipped, 1 failed**, the known `browse.spec.ts` "marking a film watched › survives a reload, and can be undone". 🔴 That red leaves the film it ingested behind (a `Resident Evil` row), which turns `lib/db.test.ts` red at 1,348 on the next unit run; deleted by hand after each e2e run.
+  - **Restore**: `restore-from-heroku.sh .local/prod-dump.dump` into a throwaway 5461, GREEN, `merge will remove movies 8, watchlists 13, reviews 0, lists 0`, then 1,347|1,347. (The plan named `.local/baseline.dump`; it is already snake_case, so `normalize.sql` refuses it at `"Users" does not exist`. The script is for Heroku-shaped dumps, and `prod-dump.dump` is one.)
+  - **Browser pass** (production build, 5440): `/films/313369` and `/films/la-la-lamd-313369` 308 to `/films/la-la-land-313369`; `/films/550` 308 to `/films/fight-club-550`, an unheld film, with no row written. Every film link on `/` (20), `/browse` page 1 (1, the current release month), `/watchlist` (3) and a member page (50) is `title-id` and answers 200 with no redirect. Held and unheld film pages at 1440 and 390, light and dark, in the conductor workspace's `.context/phase-16/t2/`.
 
 **Tranche 3: the season view on `/award-shows`**
 - [ ] P16.T13 — `moments`: a season's scoring moments, in order

@@ -95,7 +95,7 @@ export default async function LivePage({
 
   // 🔴 `getCurrentUser()`, not Clerk's `auth()`, which throws when
   // `clerkMiddleware` is absent — and under `E2E_TEST_AUTH` it is (D82/D84).
-  // The same call `/films/[tmdbId]` makes, for the same reason.
+  // The same call `/films/[film]` makes, for the same reason.
   const user = await getCurrentUser();
 
   // 🔴 One `pinnedLeague` call, two consumers. The rule is exported from the

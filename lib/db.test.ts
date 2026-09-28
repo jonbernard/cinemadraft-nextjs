@@ -55,7 +55,7 @@ describe('db', () => {
     // leagues are prefixed with their spec's tag.
     expect(
       await db.movie.count({ where: { NOT: { title: { contains: 'e2e-' } } } }),
-    ).toBe(1355);
+    ).toBe(1347);
     expect(
       await db.user.count({
         where: {
