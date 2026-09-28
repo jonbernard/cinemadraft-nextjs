@@ -55,6 +55,7 @@ describe('rankSeats', () => {
   });
 
   it('ranks placeholder and character seats alongside members, and keys them by -draftId', () => {
+    // `draftId` is the seat itself, member or not (P16.T24's `?vs=` needs it).
     // An unnamed placeholder reaches here as 'Unclaimed seat' (draft.ts); a
     // character seat carries its dummy name. Both draft real films, so both
     // must take a place — leaving them out moves everyone below them up one.
@@ -69,10 +70,38 @@ describe('rankSeats', () => {
     );
 
     expect(rows).toEqual([
-      { userId: -11, name: 'Unclaimed seat', total: 300, position: 1, isViewer: false },
-      { userId: -13, name: 'Hannibal Lecter', total: 200, position: 2, isViewer: false },
-      { userId: 1, name: 'Ada Lovelace', total: 100, position: 3, isViewer: false },
-      { userId: 2, name: 'Grace Hopper', total: 50, position: 4, isViewer: true },
+      {
+        draftId: 11,
+        userId: -11,
+        name: 'Unclaimed seat',
+        total: 300,
+        position: 1,
+        isViewer: false,
+      },
+      {
+        draftId: 13,
+        userId: -13,
+        name: 'Hannibal Lecter',
+        total: 200,
+        position: 2,
+        isViewer: false,
+      },
+      {
+        draftId: 10,
+        userId: 1,
+        name: 'Ada Lovelace',
+        total: 100,
+        position: 3,
+        isViewer: false,
+      },
+      {
+        draftId: 12,
+        userId: 2,
+        name: 'Grace Hopper',
+        total: 50,
+        position: 4,
+        isViewer: true,
+      },
     ]);
   });
 

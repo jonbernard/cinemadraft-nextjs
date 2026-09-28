@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import type { StandingsRow } from '@/lib/services/dashboard';
 import { cn } from '@/lib/utils/cn';
 
@@ -29,9 +31,16 @@ import { cn } from '@/lib/utils/cn';
  */
 export function StandingsPanel({
   rows,
+  compareHref,
   className,
 }: {
   rows: readonly StandingsRow[];
+  /**
+   * P16.T24: a row's "Compare" link, or null for a row that gets none (the
+   * reader's own). Only the league board passes it; `/live` and the dashboard
+   * stay as they are.
+   */
+  compareHref?: (row: StandingsRow) => string | null;
   className?: string;
 }) {
   if (rows.length === 0) {
@@ -77,6 +86,11 @@ export function StandingsPanel({
           >
             Member
           </th>
+          {compareHref ? (
+            <th scope="col" className="py-2 pl-3">
+              <span className="sr-only">Compare</span>
+            </th>
+          ) : null}
           <th
             scope="col"
             className="text-text-secondary py-2 pl-3 text-right text-xs font-normal"
@@ -121,6 +135,7 @@ export function StandingsPanel({
                 <span className="text-text-secondary ml-2 text-xs">You</span>
               ) : null}
             </th>
+            {compareHref ? <CompareCell row={row} href={compareHref(row)} /> : null}
             {/* 🔴 `tabular` is not optional (§6.5). Proportional figures make
                 this column jitter every time a score changes during a live
                 show, which reads as the layout breaking. `whitespace-nowrap`
@@ -133,5 +148,25 @@ export function StandingsPanel({
         ))}
       </tbody>
     </table>
+  );
+}
+
+/**
+ * Before the points, not after: the points cell stays the row's last, which is
+ * where every reader of this table (and `e2e/league-ledger.spec.ts`) finds it.
+ */
+function CompareCell({ row, href }: { row: StandingsRow; href: string | null }) {
+  return (
+    <td className="py-0 pl-3 text-right">
+      {href ? (
+        <Link
+          href={href}
+          aria-label={`Compare with ${row.name}`}
+          className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill inline-flex min-h-11 items-center text-xs underline underline-offset-4 focus-visible:outline-2"
+        >
+          Compare
+        </Link>
+      ) : null}
+    </td>
   );
 }

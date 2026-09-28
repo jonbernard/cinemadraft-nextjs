@@ -25,6 +25,8 @@ export function denseRank(rows: readonly { total: number }[]): number[] {
 }
 
 export type StandingsRow = {
+  /** The seat. `userId` is not it: a placeholder's is synthetic (P16.T24's `?vs=`). */
+  draftId: number;
   /** A placeholder seat has no user, so it takes `-draftId`, which no real id can be. */
   userId: number;
   name: string;
@@ -59,6 +61,7 @@ export function rankSeats(
   const ranked = [...seats].sort((a, b) => b.total - a.total);
   const positions = denseRank(ranked);
   return ranked.map((seat, index) => ({
+    draftId: seat.draftId,
     userId: seat.userId ?? -seat.draftId,
     name: seat.name,
     total: seat.total,
