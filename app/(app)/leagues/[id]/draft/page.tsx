@@ -5,6 +5,7 @@ import { addPick } from '@/actions/draft/add-pick';
 import { reorderPicks } from '@/actions/draft/reorder-picks';
 import { findFilmsAction } from '@/actions/search/find-films';
 import { DraftConsole } from '@/components/draft/DraftConsole';
+import { FinishDraftButton } from '@/components/leagues/FinishDraftButton';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
@@ -58,7 +59,35 @@ export default async function DraftConsolePage({
   }
 
   const user = await getCurrentUser();
-  if (!canManageLeague(view, user?.id)) notFound();
+  const canManage = canManageLeague(view, user?.id);
+  if (!canManage) notFound();
+  const finished = view.status === 'complete';
+
+  // The search is bound to this draft's context — the year and the films
+  // already gone — so ranking can sink a taken film and favour one eligible
+  // this season (§10). An inline Server Action rather than a prop on the
+  // component, because the context is server data and the console must stay
+  // injectable for its tests.
+  const console_ = (
+    <DraftConsole
+      seats={view.seats}
+      suggestedSeatId={view.suggestedSeatId}
+      takenMovieIds={view.takenMovieIds}
+      onSearch={async (query: string) => {
+        'use server';
+        return findFilmsAction({
+          query,
+          context: {
+            kind: 'draft',
+            year: view.year,
+            takenMovieIds: view.takenMovieIds,
+          },
+        });
+      }}
+      onAssign={addPick}
+      onReorder={reorderPicks}
+    />
+  );
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-10">
@@ -66,7 +95,11 @@ export default async function DraftConsolePage({
         <SectionHead
           as="h1"
           name
-          eyebrow={`${view.year} · Group ${view.group} · Round ${view.round}`}
+          eyebrow={
+            finished
+              ? `${view.year} · complete`
+              : `${view.year} · Group ${view.group} · Round ${view.round}`
+          }
         >
           {view.leagueName ?? 'Draft'}
         </SectionHead>
@@ -94,33 +127,38 @@ export default async function DraftConsolePage({
             ))}
           </nav>
         ) : null}
+
+        {/* 🔴 In the header, not after the last pick. Finishing ends every
+            group at once, so it belongs to the page rather than to the group
+            on screen, and the header is the one place that is always in view
+            at the top of the console on a call, whichever group is up and
+            however long the running order is. */}
+        <FinishDraftButton
+          leagueId={view.leagueId}
+          year={view.year}
+          status={view.status}
+          canManage={canManage}
+          unfilled={view.unfilled}
+        />
       </header>
 
-      {/*
-          The search is bound to this draft's context — the year and the films
-          already gone — so ranking can sink a taken film and favour one
-          eligible this season (§10). An inline Server Action rather than a
-          prop on the component, because the context is server data and the
-          console must stay injectable for its tests.
-        */}
-      <DraftConsole
-        seats={view.seats}
-        suggestedSeatId={view.suggestedSeatId}
-        takenMovieIds={view.takenMovieIds}
-        onSearch={async (query: string) => {
-          'use server';
-          return findFilmsAction({
-            query,
-            context: {
-              kind: 'draft',
-              year: view.year,
-              takenMovieIds: view.takenMovieIds,
-            },
-          });
-        }}
-        onAssign={addPick}
-        onReorder={reorderPicks}
-      />
+      {finished ? (
+        // A finished draft stops offering picks, but a correction still goes
+        // through (the guard accepts one on a complete season: award shows
+        // resolve for months, and a misheard pick is the ordinary case, D46).
+        // So the console is put away behind a disclosure rather than removed.
+        <section className="flex flex-col gap-4">
+          <p className="text-text-secondary text-sm">This draft is finished.</p>
+          <details>
+            <summary className="text-text-secondary min-h-11 cursor-pointer text-sm underline">
+              Correct a pick
+            </summary>
+            <div className="pt-6">{console_}</div>
+          </details>
+        </section>
+      ) : (
+        console_
+      )}
     </div>
   );
 }

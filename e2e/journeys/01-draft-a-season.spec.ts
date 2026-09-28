@@ -385,18 +385,37 @@ test.describe('journey 1 — a season, from nothing to a finished draft', () => 
       expect(picks.filter((row) => row.group === 2)).toHaveLength(1);
     });
 
-    await beat(page, 'The owner finishes the draft', async () => {
-      // 🔴 P19.T1. Until this phase there was no way to reach this state at
-      // all: `completeDraft` existed and nothing called it.
-      await page.goto(`/leagues/${leagueId}/setup`);
+    await beat(page, 'The owner finishes the draft from the console', async () => {
+      // 🔴 From the console, where the owner runs the draft on the call. P19.T1
+      // put this on setup only, and the owner reported it missing: nobody goes
+      // back to setup mid-call to end a draft.
+      await page.goto(`/leagues/${leagueId}/draft?year=${year}`);
       await page.getByRole('button', { name: 'Finish the draft' }).click();
       // 🔴 In-app confirmation (P14). Scoped to the dialog: the trigger
       // underneath shares its accessible name.
       const confirmFinish = page.getByRole('dialog');
       await expect(confirmFinish).toBeVisible();
+      // Finishing early is allowed, and the confirm says what is left: group 1
+      // is one pick short of round 2, and group 2 two short of round 1.
+      await expect(confirmFinish).toContainText('3 picks are still unfilled.');
       await confirmFinish.getByRole('button', { name: 'Finish the draft' }).click();
-      await expect(page.getByText('The draft is finished')).toBeVisible();
     });
+
+    await beat(
+      page,
+      'The console says it is over, and stops offering picks',
+      async () => {
+        await expect(page.getByText(`${year} · complete`)).toBeVisible();
+        await expect(page.getByText('This draft is finished.')).toBeVisible();
+        // Put away, not removed: a correction still goes through behind the
+        // disclosure, but nothing on screen invites the next pick.
+        await expect(page.getByRole('searchbox')).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Finish the draft' })).toHaveCount(
+          0,
+        );
+        expect(await statusOf(leagueId)).toBe('complete');
+      },
+    );
 
     await beat(page, 'And the league board says the season is complete', async () => {
       await page.goto(`/leagues/${leagueId}`);
