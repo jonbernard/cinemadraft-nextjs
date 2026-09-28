@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { db } from '@/lib/db';
 import { getLeagueBoard } from './draft';
+import { toRace } from './race';
 import { getSeasonLedger } from './season-ledger';
 
 /**
@@ -28,14 +29,6 @@ function leaderSets(
       .join(),
   );
   return leaders.filter((set, i) => set !== leaders[i - 1]).length;
-}
-
-/** P16.T22's measure: `standings[0]` changes seat; a tie ordered by draft order is not a change. */
-function topChanges(steps: { standings: { userId: number }[] }[]): number {
-  return steps.filter(
-    (step, i) =>
-      i > 0 && step.standings[0]?.userId !== steps[i - 1]?.standings[0]?.userId,
-  ).length;
 }
 
 describe('getSeasonLedger on league 1', () => {
@@ -74,9 +67,12 @@ describe('getSeasonLedger on league 1', () => {
     ]);
     expect([y2026.steps.length, y2025.steps.length]).toEqual([23, 22]);
     expect([leaderSets(y2026.steps), leaderSets(y2025.steps)]).toEqual([3, 6]);
-    // The race's own rule counts fewer: the first lead is not a change, nor
-    // is a tie the draft order breaks. 2025 was 2 in 2026's calendar order;
-    // in its own dates (D134, P16.T18) it is 3.
-    expect([topChanges(y2026.steps), topChanges(y2025.steps)]).toEqual([2, 3]);
+    // The race's own rule (P16.T22, `toRace`) counts fewer: the first lead is
+    // not a change, nor is a tie the draft order breaks. 2025 was 2 in 2026's
+    // calendar order; in its own dates (D134, P16.T18) it is 3.
+    const [r2026, r2025] = [toRace(y2026), toRace(y2025)];
+    expect([r2026.leadChanges.length, r2025.leadChanges.length]).toEqual([2, 3]);
+    // Every season 2017–2026 is dated (D134), so both are on the date axis.
+    expect([r2026.axis, r2025.axis]).toEqual(['date', 'date']);
   });
 });
