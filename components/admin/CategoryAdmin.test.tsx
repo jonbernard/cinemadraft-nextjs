@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -270,12 +270,18 @@ describe('CategoryAdmin — nominating', () => {
     await chooseTheFilm();
 
     const picker = await screen.findByRole('list', { name: 'Cast and crew' });
+    // The list renders while the fetch's transition is still pending, and
+    // every row is disabled until it settles (`busy`); under CI load the
+    // assertions used to land in that window. Wait for the other person to
+    // come free first, so Sean's being disabled is his own, not the busy one.
+    await waitFor(() =>
+      expect(
+        within(picker).getByRole('button', { name: /Paul Thomas Anderson/ }),
+      ).toBeEnabled(),
+    );
     const sean = within(picker).getByRole('button', { name: /Sean Penn/ });
     expect(sean).toBeDisabled();
     expect(sean).toHaveTextContent('Nominated');
-    expect(
-      within(picker).getByRole('button', { name: /Paul Thomas Anderson/ }),
-    ).toBeEnabled();
   });
 
   it('says so when TMDB does not answer, rather than showing an empty list', async () => {
