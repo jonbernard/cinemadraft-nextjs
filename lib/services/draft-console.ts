@@ -38,6 +38,14 @@ export type ConsoleView = {
   suggestedSeatId: number | null;
   /** Films already gone in this group, so the owner need not remember. */
   takenMovieIds: number[];
+  /** This season's status (D130): the console offers picks only while `active`. */
+  status: string | null;
+  /**
+   * Picks still to make before every seat, in every group, has as many as the
+   * longest seat in its group. Roster size is not stored (D34), so "behind the
+   * leader" is the only unfilled there is; the finish confirm names it.
+   */
+  unfilled: number;
 };
 
 /**
@@ -99,5 +107,12 @@ export async function getDraftConsole(
     round: currentRound(ordered),
     suggestedSeatId: nextSeatId(ordered),
     takenMovieIds: found.seats.flatMap((seat) => seat.picks.map((pick) => pick.movie.id)),
+    status: board.status,
+    unfilled: board.groups.reduce(
+      (sum, entry) =>
+        sum +
+        entry.seats.reduce((gap, seat) => gap + entry.rounds - seat.picks.length, 0),
+      0,
+    ),
   };
 }
