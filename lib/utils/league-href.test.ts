@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { leagueHref, legacyLeagueRedirect, parseLeagueSegment } from './league-href';
+import {
+  leagueHref,
+  leagueTabHref,
+  legacyLeagueRedirect,
+  parseLeagueSegment,
+  seatHref,
+} from './league-href';
 
 describe('leagueHref', () => {
   it('spells the three shapes, with tv as the only query parameter', () => {
@@ -28,6 +34,21 @@ describe('leagueHref', () => {
     expect(leagueHref(70, { year: 2027, group: 1, tv: false })).toBe(
       '/leagues/70/2027/group/1',
     );
+  });
+});
+
+describe('leagueTabHref', () => {
+  it('spells the board with leagueHref and the other tabs as static children', () => {
+    expect(leagueTabHref(70, 'board', { year: 2025, activeYear: 2026 })).toBe(
+      '/leagues/70/2025',
+    );
+    expect(leagueTabHref(70, 'standings', { year: 2026, activeYear: 2026 })).toBe(
+      '/leagues/70/standings',
+    );
+    expect(leagueTabHref(70, 'standings', { year: 2025, activeYear: 2026 })).toBe(
+      '/leagues/70/2025/standings',
+    );
+    expect(seatHref(70, 1234)).toBe('/leagues/70/seats/1234');
   });
 });
 

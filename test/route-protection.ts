@@ -173,6 +173,12 @@ export const PUBLIC_ROUTES = [
   // re-export `/leagues/[id]`'s page, so they are exactly as public as it is.
   '/leagues/[id]/[year]',
   '/leagues/[id]/[year]/group/[group]',
+  '/leagues/[id]/[year]/standings',
+  // 🔴 The league's other views (P16.T19–T21), public for the same reason and
+  // noindexed the same way: a follower reads what a player reads (§7). Each
+  // resolves the reader itself, and signing in only marks their own row.
+  '/leagues/[id]/standings',
+  '/leagues/[id]/seats/[draftId]',
   // 🔴 Owner-only, and NOT left unguarded by being listed here: the page
   // resolves the session itself and answers 404 to anyone who is not an owner,
   // which is a stronger answer than a redirect, because a bounce to sign-in
@@ -256,6 +262,11 @@ export const PUBLIC_ROUTES = [
   // `getLeagueBoardView` the page calls, so a signed-out reader gets no seat of
   // their own and no `isViewer` row. Its own `route.test.ts` pins that.
   '/api/leagues/[id]/board/stream',
+  // 🔴 The standings tab's stream, the same ruling again (P16.T20/D135):
+  // `/leagues/[id]/standings` is public, and without this line a stranger's
+  // `EventSource` is bounced and what moved never moves for them. It calls
+  // the page's own `getStandingsView` with the page's three arguments.
+  '/api/leagues/[id]/standings/stream',
   // 🔴 Member profiles, by the owner's ruling (P17.T37). The league page is the
   // member index — every seat on it links to `/members/<uuid>` — and league
   // pages are public, so without this every name on a shared league page
