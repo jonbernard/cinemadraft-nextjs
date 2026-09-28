@@ -7,7 +7,7 @@ import { beat, DEMO_PACE, startJourney } from './support/pace';
  * film, and finds another by name.
  *
  * 🔴 **Skipped whole without `TMDB_API_KEY`, never half-run.** `/browse` is
- * TMDB's discover feed and `/films/[tmdbId]` renders from TMDB, so there is no
+ * TMDB's discover feed and `/films/[film]` renders from TMDB, so there is no
  * CI version of this journey — and a journey that quietly ran three of its
  * eight beats would be worse than one that did not run, because the report
  * would say it passed. The skip is visible in the report, with its reason,

@@ -2486,7 +2486,7 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
 - [x] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies
   - Rehearsed on the agent database (5440) and on a fresh `restore-from-heroku.sh` of `.local/prod-dump.dump` into a throwaway 5461: GREEN, printing `merge will remove movies 8, watchlists 13, reviews 0, lists 0`. After migrating, `count(*)` and `count(distinct tmdb_id)` are both 1,347.
   - 🔴 **Not yet applied to 5432, 5433 or 5434.** The orchestrator applies it at merge, with the loop in the plan's § Global Constraints; until then `lib/db.test.ts` (now 1,347) is red on those three, and `npm run agent:baseline` (now also 1,347) refuses them.
-- [ ] P16.T9 — title + id film URLs: the `[film]` route, the canonical spelling and the redirects (D133; no migration)
+- [x] P16.T9 — title + id film URLs: the `[film]` route, the canonical spelling and the redirects (D133; no migration). `/films/313369` 308s to `/films/la-la-land-313369`; an unheld film (Fight Club, 550) the same, with no row written.
 - [ ] P16.T10 — every link spells `title-id`, held or not (`filmHref`, layering guard)
 - ~~P16.T11 — store every browse result~~ — dropped by the owner 2026-09-27 (title + id URLs need no row); ID kept so later numbers do not move
 - [ ] P16.T12 — tranche 2 gate

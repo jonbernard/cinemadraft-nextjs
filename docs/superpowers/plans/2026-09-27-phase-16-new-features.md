@@ -953,13 +953,13 @@ export function parseFilmSegment(segment: string): { tmdbId: string; slugPart: s
   - With `maxRedirects: 0`, `GET /films/313369` is **308** with `location` `/films/la-la-land-313369`.
   - `GET /films/la-la-lamd-313369` (stale slug) is 308 to the same place.
   - `GET /films/la-la-land-313369` is 200. `link[rel=canonical]` and the JSON-LD `url` both end `/films/la-la-land-313369`.
-  - An unheld film gets the same shape: `/films/496243` redirects to `/films/parasite-496243` (the id the spec already uses), and that is 200 **with no `movies` row created** (a SQL count before and after).
+  - An unheld film gets the same shape: `/films/550` redirects to `/films/fight-club-550`, and that is 200 **with no `movies` row created** (a SQL count before and after). (Corrected in P16.T9: the plan named Parasite, 496243, but Parasite is held — it won the 2020 Oscars — so a count of its rows proves nothing. Fight Club has no row.)
   - `/films/arrival` (no id) is 404, and so is `/films/e2e-nope-999999999`.
 
 - [ ] **Step 8: 🔴 Mutation**
   - Make `parseFilmSegment` take the *first* digit run. Expect red at "reads the id from the end".
   - Delete the redirect line. Expect the e2e 308 assertions red.
-  - Compare slugs case-insensitively in the redirect check. Expect "stale slug is 308" red.
+  - ~~Compare slugs case-insensitively in the redirect check.~~ (Replaced in P16.T9: this mutation cannot go red. `parseFilmSegment` refuses capitals, so every segment that reaches the comparison is already lowercase and case-folding changes nothing.) Instead: redirect only a bare id (`parsed.slugPart === ''`). Expect "stale slug is 308" red.
   - Restore all three.
 
 - [ ] **Step 9: Record D133 and commit**

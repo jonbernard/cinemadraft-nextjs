@@ -272,11 +272,105 @@ test.describe('a film page', () => {
   });
 });
 
+/**
+ * Fight Club: TMDB has it, the league has never drafted or nominated it, so no
+ * `movies` row exists for it. (Parasite, which the plan named, is held: it won
+ * the 2020 Oscars.)
+ */
+const UNHELD = { tmdbId: '550', canonical: '/films/fight-club-550' };
+
+/**
+ * Raw `pg`, as in `browse.spec.ts`: Playwright does not resolve the `@/` alias.
+ */
+async function moviesRowsFor(tmdbId: string): Promise<number> {
+  const { Client } = await import('pg');
+  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  await client.connect();
+  try {
+    const { rows } = await client.query(
+      'select count(*)::int as n from movies where tmdb_id = $1',
+      [tmdbId],
+    );
+    return rows[0].n as number;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
+ * D133: title + TMDB id for every film, the id authoritative, and every other
+ * spelling permanently redirected. `maxRedirects: 0` so the 308 itself is what
+ * is read, not the page it leads to.
+ */
+test.describe('a film’s address', () => {
+  test.skip(!hasTmdb, 'TMDB_API_KEY not configured');
+
+  const CANONICAL = `/films/la-la-land-${LA_LA_LAND}`;
+
+  test('an old numeric link is a 308 to the title + id spelling', async ({ request }) => {
+    const response = await request.get(`/films/${LA_LA_LAND}`, { maxRedirects: 0 });
+    expect(response.status()).toBe(308);
+    expect(new URL(response.headers().location ?? '', 'http://x').pathname).toBe(
+      CANONICAL,
+    );
+  });
+
+  test('a stale or mistyped slug part is a 308 to the same place', async ({
+    request,
+  }) => {
+    const response = await request.get(`/films/la-la-lamd-${LA_LA_LAND}`, {
+      maxRedirects: 0,
+    });
+    expect(response.status()).toBe(308);
+    expect(new URL(response.headers().location ?? '', 'http://x').pathname).toBe(
+      CANONICAL,
+    );
+  });
+
+  test('the canonical spelling is a 200, and says so twice', async ({ page }) => {
+    const response = await page.goto(CANONICAL);
+    expect(response?.status()).toBe(200);
+    expect(response?.request().redirectedFrom()).toBeNull();
+
+    const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
+    expect(new URL(canonical ?? '').pathname).toBe(CANONICAL);
+    const jsonLd = JSON.parse(
+      (await page.locator('script[type="application/ld+json"]').first().textContent()) ??
+        '{}',
+    ) as { url?: string };
+    expect(new URL(jsonLd.url ?? '').pathname).toBe(CANONICAL);
+  });
+
+  test('an unheld film gets the same shape, and no row is written', async ({
+    request,
+  }) => {
+    const before = await moviesRowsFor(UNHELD.tmdbId);
+
+    const redirect = await request.get(`/films/${UNHELD.tmdbId}`, { maxRedirects: 0 });
+    expect(redirect.status()).toBe(308);
+    expect(new URL(redirect.headers().location ?? '', 'http://x').pathname).toBe(
+      UNHELD.canonical,
+    );
+    const page = await request.get(UNHELD.canonical, { maxRedirects: 0 });
+    expect(page.status()).toBe(200);
+
+    expect(before).toBe(0);
+    expect(await moviesRowsFor(UNHELD.tmdbId)).toBe(0);
+  });
+});
+
 test.describe('a film that does not exist', () => {
   test('answers 404 rather than 500', async ({ page }) => {
     const response = await page.goto(`/films/${UNKNOWN}`);
 
     expect(response?.status()).toBe(404);
+  });
+
+  test('a well-formed title + id for a film TMDB lacks is a 404, not a redirect', async ({
+    request,
+  }) => {
+    const response = await request.get(`/films/e2e-nope-${UNKNOWN}`, { maxRedirects: 0 });
+    expect(response.status()).toBe(404);
   });
 
   test('a non-numeric id answers 404 without asking TMDB', async ({ request }) => {
@@ -295,7 +389,8 @@ test.describe('a film that does not exist', () => {
     // false failure that read exactly like a missing guard. What this route can
     // actually be handed is garbage in the id position, and that is what is
     // asserted: the last entry is 14 digits, past the 12 the pattern allows.
-    for (const id of ['abc', '1e9', '1;2', '-1', '1.5', '12345678901234']) {
+    // `arrival` has no id at all (D133).
+    for (const id of ['abc', 'arrival', '1e9', '1;2', '-1', '1.5', '12345678901234']) {
       const response = await request.get(`/films/${id}`, { maxRedirects: 0 });
       expect(response.status(), `/films/${id}`).toBe(404);
     }

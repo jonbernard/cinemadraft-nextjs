@@ -81,7 +81,8 @@ const EXPECT = {
   },
   '/award-shows/[abbr]': { url: `/award-shows/${FIXTURES.abbr}` },
   '/live/[abbr]': { url: `/live/${FIXTURES.abbr}` },
-  '/films/[tmdbId]': { url: `/films/${FIXTURES.tmdbId}` },
+  // The canonical spelling (D133), so the sweep reads the page, not a 308.
+  '/films/[film]': { url: `/films/la-la-land-${FIXTURES.tmdbId}` },
   '/join/[uuid]': { url: `/join/${FIXTURES.leagueUuid}` },
   '/members/[uuid]': { url: `/members/${FIXTURES.memberUuid}` },
 
@@ -149,7 +150,7 @@ const EXPECT = {
  */
 const NOT_SWEEPABLE = new Set([
   '/award-shows/[abbr]/opengraph-image',
-  '/films/[tmdbId]/opengraph-image',
+  '/films/[film]/opengraph-image',
   '/how-it-works/opengraph-image',
 ]);
 

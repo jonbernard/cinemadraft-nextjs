@@ -4,13 +4,11 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import type { FilmPerson } from '@/actions/awards/film-people';
 import { cn } from '@/lib/utils/cn';
+import { foldAccents } from '@/lib/utils/film-href';
 
 /** Lowercased and stripped of accents, so "skarsgard" finds Skarsgård. */
 function fold(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
+  return foldAccents(value).toLowerCase();
 }
 
 /** What a row says under the name: the character, or the jobs. */
