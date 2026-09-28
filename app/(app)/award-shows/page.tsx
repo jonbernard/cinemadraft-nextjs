@@ -1,13 +1,14 @@
 import Link from 'next/link';
-import { ShowLogo } from '@/components/awards/ShowLogo';
+import { SeasonAgenda } from '@/components/awards/SeasonAgenda';
+import { SeasonUpNext } from '@/components/awards/SeasonUpNext';
 import { InviteLink } from '@/components/leagues/InviteLink';
-import { Eyebrow } from '@/components/ui/Eyebrow';
 import { Panel } from '@/components/ui/Panel';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { StatusChip } from '@/components/ui/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { getAwardShows } from '@/lib/services/award-show';
-import { getActiveYear } from '@/lib/services/season';
+import { getSeasons } from '@/lib/services/season';
+import { getSeasonView } from '@/lib/services/season-view';
 
 /**
  * The origin the calendar subscribe URL should carry.
@@ -27,10 +28,15 @@ async function requestOrigin(): Promise<string> {
 }
 
 /**
- * Every award show (§12).
+ * The season, and every award show in it (§12, P16.T15).
  *
  * Public (D44) — the source app never guarded these, and they are the pages a
- * member opens during a ceremony to see what a film is up for.
+ * member opens during a ceremony to see what a film is up for. Since P16.T15
+ * the page is the season as an agenda: every scoring moment in date order,
+ * grouped by month, with what is up next. It replaced a grid of logo cards
+ * that carried no date at all. 🔴 Signed out is first-class (owner, §4): the
+ * counts, the headline films and Up next are the whole page without anyone's
+ * seat in it, and nothing here names a seat or a league.
  *
  * Admins additionally see which shows still need entering for the active
  * season, derived from each show's dates and what is already in
@@ -42,22 +48,59 @@ async function requestOrigin(): Promise<string> {
  * URL a person copies into a calendar app, not a link a browser would try to
  * download.
  */
-export default async function AwardShowsPage() {
-  const year = await getActiveYear();
-  const [shows, user, origin] = await Promise.all([
-    getAwardShows(year),
+export default async function AwardShowsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ year?: string }>;
+}) {
+  const { year } = await searchParams;
+  const requested = Number(year);
+  const [view, user, origin, seasons] = await Promise.all([
+    // Any positive year, as `/award-shows/[abbr]` takes it.
+    getSeasonView(Number.isSafeInteger(requested) && requested > 0 ? requested : null),
     getCurrentUser(),
     requestOrigin(),
+    getSeasons(),
   ]);
 
   const isAdmin = user?.role === 'admin';
+  const shows = isAdmin ? await getAwardShows(view.activeYear) : [];
   const outstanding = shows.filter((show) => show.needsNominations || show.needsWinners);
+  const moments = view.months.flatMap((month) => month.moments);
+  const done = moments.filter((moment) => moment.state === 'finished').length;
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-10">
-      <SectionHead as="h1" right={String(year)}>
-        Award shows
-      </SectionHead>
+      <header className="flex flex-col gap-3">
+        <SectionHead
+          as="h1"
+          eyebrow={
+            moments.length === 0 ? undefined : `${done} of ${moments.length} moments done`
+          }
+          right={String(view.year)}
+          className="pb-0"
+        >
+          Award shows
+        </SectionHead>
+        {seasons.length > 1 ? (
+          <nav aria-label="Seasons" className="flex flex-wrap gap-x-3 text-sm">
+            {seasons.map((entry) => (
+              <Link
+                key={entry}
+                href={`/award-shows?year=${entry}`}
+                aria-current={entry === view.year ? 'page' : undefined}
+                className={
+                  entry === view.year
+                    ? 'text-accent-text tabular flex min-h-11 items-center font-mono'
+                    : 'text-text-secondary tabular flex min-h-11 items-center font-mono underline'
+                }
+              >
+                {entry}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+      </header>
 
       {isAdmin && outstanding.length > 0 ? (
         <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
@@ -68,7 +111,7 @@ export default async function AwardShowsPage() {
             {outstanding.map((show) => (
               <li key={show.eventId} className="flex flex-wrap items-center gap-2">
                 <Link
-                  href={`/award-shows/${show.abbreviation}?year=${year}`}
+                  href={`/award-shows/${show.abbreviation}?year=${view.activeYear}`}
                   className="text-text-primary hover:text-accent-text font-serif text-base"
                 >
                   {show.name}
@@ -87,26 +130,13 @@ export default async function AwardShowsPage() {
         </Panel>
       ) : null}
 
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] gap-4">
-        {shows.map((show) => (
-          <li key={show.eventId}>
-            <Link
-              href={`/award-shows/${show.abbreviation}?year=${year}`}
-              className="bg-bg-panel hover:bg-bg-surface focus-visible:outline-accent-fill flex h-full flex-col gap-1 rounded-sm p-4 focus-visible:outline-2"
-            >
-              <ShowLogo imageUrl={show.imageUrl} className="mb-2" />
-              <Eyebrow>{show.abbreviation}</Eyebrow>
-              <span className="text-text-primary font-serif text-base tracking-[-0.02em]">
-                {show.name}
-              </span>
-              <span className="text-text-secondary tabular font-mono text-xs">
-                {show.categoryCount}{' '}
-                {show.categoryCount === 1 ? 'category' : 'categories'}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <SeasonUpNext view={view} now={Date.now()} />
+
+      <SeasonAgenda
+        months={view.months}
+        year={view.year}
+        nextKey={view.next?.key ?? null}
+      />
 
       <Panel tone="surface" as="section" className="flex flex-col gap-3 p-4">
         <SectionHead as="h2" className="pb-0">

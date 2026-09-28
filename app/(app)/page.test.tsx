@@ -175,6 +175,12 @@ describe('the signed-in dashboard', () => {
     // The season is still this page's own `h1`, at its own level: the hero's
     // heading is the only thing that displaced it, and it is not rendered.
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Season');
+    // P16.T15: the rail's heading opens the whole season.
+    expect(
+      within(screen.getByRole('heading', { level: 1 })).getByRole('link', {
+        name: 'Season',
+      }),
+    ).toHaveAttribute('href', '/award-shows');
 
     // 🔴 The landing facts score a whole season. A member never sees them, so
     // the page must not pay for them — this pins that the signed-in request

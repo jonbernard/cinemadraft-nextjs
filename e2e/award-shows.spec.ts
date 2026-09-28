@@ -272,7 +272,9 @@ test.describe('award shows', () => {
 
     await page.goto('/award-shows');
 
-    const card = page.getByRole('link', { name: new RegExp(`${TAG} Show`) });
+    // Since P16.T15 the index is the season, and a show has a row per moment:
+    // its (undated, upcoming) nominations row carries the category count.
+    const card = page.getByRole('link', { name: new RegExp(`${TAG} Show Nominations`) });
     await expect(card).toHaveAttribute('href', new RegExp(`/${abbreviation}\\?`));
     await expect(card).toContainText('1 category');
     await expect(card).not.toContainText('1 categories');
@@ -755,5 +757,196 @@ test.describe('award shows', () => {
       await track.click();
       await expect.poll(onAir).toBe(false);
     });
+  });
+});
+
+/**
+ * The season view on `/award-shows` (P16.T15, T16), in a scratch year of its
+ * own, 2989. Its own tag, so `award-shows`' `e2e-awards%` cleanup above cannot
+ * take its rows, and its own cleanup, run before and after.
+ *
+ * One show: nominations on 10 Jan 2989 (ten films in Picture, the first also
+ * in Director) and a ceremony on 1 Mar with no winners, so the ceremony is Up
+ * next with ten films to name. One league with two seats holding the first
+ * two films, whose names the signed-out page must never print (D44 rule b).
+ */
+const SV = 'e2e-season-view';
+const SV_YEAR = 2989;
+const SV_RIVAL = { name: 'Ravi Rival' };
+const SV_LEAGUE = `${SV} League`;
+const svFilm = (i: number) => `${SV} ${String(i).padStart(2, '0')}`;
+
+async function svCleanup(): Promise<void> {
+  await withDb(async (query) => {
+    await query(
+      `delete from draft_picks where draft_id in
+         (select d.id from drafts d join leagues l on l.id = d.league_id where l.name like $1)`,
+      [`${SV}%`],
+    );
+    await query(
+      'delete from drafts where league_id in (select id from leagues where name like $1)',
+      [`${SV}%`],
+    );
+    await query('delete from leagues where name like $1', [`${SV}%`]);
+    for (const table of ['winners', 'nominations']) {
+      await query(
+        `delete from ${table} where award_id in
+           (select a.id from awards a join events e on e.id = a.event_id
+             where e.abbreviation like $1)`,
+        [`${SV}%`],
+      );
+    }
+    await query(
+      `delete from awards where event_id in (select id from events where abbreviation like $1)`,
+      [`${SV}%`],
+    );
+    await query('delete from events where abbreviation like $1', [`${SV}%`]);
+    await query('delete from points where level like $1', [`${SV}%`]);
+    await query('delete from movies where title like $1', [`${SV}%`]);
+    await query('delete from users where email like $1', [`${SV}-%@example.test`]);
+  });
+}
+
+async function svSeed(readerId?: number): Promise<{ leagueId: number }> {
+  return withDb(async (query) => {
+    const [event] = (await query(
+      `insert into events (name, abbreviation, nom_date, awards_date, created_at, updated_at)
+         values ($1, $2, $3, $4, now(), now()) returning id`,
+      [`${SV} Show`, `${SV}-show`, Date.UTC(SV_YEAR, 0, 10), Date.UTC(SV_YEAR, 2, 1)],
+    )) as { id: number }[];
+    const [points] = (await query(
+      `insert into points (level, tier, points, created_at, updated_at)
+         values ($1, 1, 10, now(), now()) returning id`,
+      [`${SV}-level`],
+    )) as { id: number }[];
+    const awards: number[] = [];
+    for (const name of ['Picture', 'Director']) {
+      const [award] = (await query(
+        `insert into awards (name, event_id, points, created_at, updated_at)
+           values ($1, $2, $3, now(), now()) returning id`,
+        [`${SV} ${name}`, event?.id, points?.id],
+      )) as { id: number }[];
+      awards.push(award?.id as number);
+    }
+    const films: number[] = [];
+    for (let i = 0; i < 10; i += 1) {
+      const [movie] = (await query(
+        `insert into movies (title, sort_title, tmdb_id, created_at, updated_at)
+           values ($1, $1, $2, now(), now()) returning id`,
+        [svFilm(i), String(9_980_000 + i)],
+      )) as { id: number }[];
+      films.push(movie?.id as number);
+      await query(
+        `insert into nominations (movie_id, award_id, year, created_at, updated_at)
+           values ($1, $2, $3, now(), now())`,
+        [movie?.id, awards[0], SV_YEAR],
+      );
+    }
+    await query(
+      `insert into nominations (movie_id, award_id, year, created_at, updated_at)
+         values ($1, $2, $3, now(), now())`,
+      [films[0], awards[1], SV_YEAR],
+    );
+
+    const [league] = (await query(
+      `insert into leagues (name, owner, uuid, active_year, drafting_status, created_at, updated_at)
+         values ($1, '[]', gen_random_uuid(), $2, 'complete', now(), now()) returning id`,
+      [SV_LEAGUE, SV_YEAR],
+    )) as { id: number }[];
+    const [reader] = (await query(
+      readerId == null
+        ? `insert into drafts (league_id, year, "group", "order", dummy, dummy_name, created_at, updated_at)
+             values ($1, $2, 1, 1, true, 'Rhea Reader', now(), now()) returning id`
+        : `insert into drafts (league_id, user_id, year, "group", "order", created_at, updated_at)
+             values ($1, $3, $2, 1, 1, now(), now()) returning id`,
+      readerId == null ? [league?.id, SV_YEAR] : [league?.id, SV_YEAR, readerId],
+    )) as { id: number }[];
+    const [rival] = (await query(
+      `insert into drafts (league_id, year, "group", "order", dummy, dummy_name, created_at, updated_at)
+         values ($1, $2, 1, 2, true, $3, now(), now()) returning id`,
+      [league?.id, SV_YEAR, SV_RIVAL.name],
+    )) as { id: number }[];
+    for (const [draftId, movieId] of [
+      [reader?.id, films[0]],
+      [rival?.id, films[1]],
+    ]) {
+      await query(
+        `insert into draft_picks (draft_id, movie_id, "order", created_at, updated_at)
+           values ($1, $2, 1, now(), now())`,
+        [draftId, movieId],
+      );
+    }
+    return { leagueId: league?.id as number };
+  });
+}
+
+async function noSideways(page: Page): Promise<void> {
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+  ).toBeLessThanOrEqual(0);
+}
+
+test.describe('the season view', () => {
+  test.describe.configure({ mode: 'serial' });
+  test.beforeAll(svCleanup);
+  test.afterAll(svCleanup);
+
+  test('signed out: the season in date order, Up next capped, and nobody’s seat', async ({
+    page,
+  }) => {
+    await svSeed();
+    const url = `/award-shows?year=${SV_YEAR}`;
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const response = await page.goto(url);
+      expect(response?.status()).toBe(200);
+
+      // The show's two moments, each under its month, each linking to the show.
+      const nominations = page.getByRole('link', {
+        name: new RegExp(`${SV} Show Nominations · 11 nominations`),
+      });
+      const ceremony = page.getByRole('link', {
+        name: new RegExp(`${SV} Show Ceremony · 2 categories`),
+      });
+      await expect(nominations).toHaveAttribute(
+        'href',
+        `/award-shows/${SV}-show?year=${SV_YEAR}`,
+      );
+      await expect(nominations).toContainText(
+        `Most nominated: ${svFilm(0)} · 2 nominations`,
+      );
+      await expect(ceremony).toHaveAttribute('aria-current', 'step');
+      await expect(
+        page.getByRole('heading', { level: 2, name: 'January 2989' }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('heading', { level: 2, name: 'March 2989' }),
+      ).toBeVisible();
+
+      // Up next: the ceremony, eight films named, and the other two counted.
+      await expect(
+        page.getByRole('heading', { level: 2, name: `${SV} Show` }),
+      ).toBeVisible();
+      await expect(page.getByRole('link', { name: svFilm(7) })).toBeVisible();
+      await expect(page.getByRole('link', { name: svFilm(8) })).toHaveCount(0);
+      await expect(page.getByRole('link', { name: 'and 2 more' })).toBeVisible();
+
+      await noSideways(page);
+    }
+
+    // D44 rule (b): no seat and no league, by name, anywhere in the HTML.
+    const html = await page.content();
+    for (const name of ['Rhea Reader', SV_RIVAL.name, SV_LEAGUE]) {
+      expect(html.split(name).length - 1).toBe(0);
+    }
+  });
+
+  test('the rail’s heading on / opens the season', async ({ page }) => {
+    await page.goto('/');
+    const heading = page.getByRole('heading', { name: 'Season', exact: true });
+    await expect(heading.getByRole('link', { name: 'Season' })).toHaveAttribute(
+      'href',
+      '/award-shows',
+    );
   });
 });

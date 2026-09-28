@@ -1157,7 +1157,7 @@ export const UP_NEXT_FILMS = 8;
 ```
 
 **Rules:**
-- **Which year.** `?year=` if it is given and is a season. Otherwise the active year, *unless* it has no dated moment in its window and no nominations. In that case show the previous year with `offSeason: true`, and the line "Dates for the {activeYear} season come in the autumn."
+- **Which year.** `?year=` if it is given and is a season. (Settled in P16.T15: any positive year, the rule `/award-shows/[abbr]` already uses, so a scratch year needs no `available_years` row; the page also gains the show page's Seasons nav.) Otherwise the active year, *unless* it has no dated moment in its window and no nominations. In that case show the previous year with `offSeason: true`, and the line "Dates for the {activeYear} season come in the autumn."
 - **A signed-out reader gets a first-class page, not an empty shell:**
   - every moment, grouped by month (a month label, not a machine date);
   - the weekday and day;
@@ -1166,7 +1166,7 @@ export const UP_NEXT_FILMS = 8;
   - a `highlight` on finished moments: the most-nominated film at a nominations moment ("*One Battle After Another*, 9"), and the film with the most wins at a ceremony;
   - an **Up next** panel: the countdown in words ("in 3 days"), and the films most nominated at that show, capped at `UP_NEXT_FILMS` with "and N more".
   - Before nominations are out, Up next names no films and says when they are due.
-- Undated moments sit under "Not yet scheduled" at the end.
+- Undated moments sit under "Not yet scheduled" at the end. (Settled in P16.T15: an undated moment that has *finished*, which is every moment of a past season before D134's dates, sits under "Date not recorded" instead, because "not yet scheduled" would be false. "Up next" prefers the first unfinished *dated* moment, since before the dates are set every show's undated moment keeps its calendar place. A headline film is named only when one stands out: more than one, alone at the top.)
 
 - [ ] **Step 1: Service tests (DB, own tagged event and nominations in year 2989, CI)**
   - `months` groups by the month of `date`.
