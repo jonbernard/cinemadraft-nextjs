@@ -11,6 +11,8 @@ vi.mock('next/cache', () => ({ revalidatePath }));
 
 import { db } from '@/lib/db';
 import { leagueRepository } from '@/lib/repositories/leagues';
+import { getLeagueBoard } from '@/lib/services/draft';
+import { getSeasonSetup } from '@/lib/services/season-setup';
 import {
   completeDraft,
   stageNextSeason,
@@ -368,6 +370,28 @@ describe('groups', () => {
     expect(result).toMatchObject({ ok: false, code: 'CONFLICT' });
   });
 
+  it('closes the season it leaves: its groups can no longer be re-dealt', async () => {
+    // 🔴 `drafting_status` is one column for every season (D130). Opening the
+    // next season sets it to `pending`, and without `seasonStatus` the season
+    // just left read `pending` too, and could be re-dealt with picks in it.
+    // The row is written directly: the action that writes it is P16.T4's.
+    signInAs(fixture.owner);
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { activeYear: YEAR + 1, draftingStatus: 'pending' },
+    });
+    const before = await seatsOf(fixture.league.id);
+
+    const redeal = await randomiseGroups({
+      leagueId: fixture.league.id,
+      year: YEAR,
+      groupCount: 2,
+    });
+
+    expect(redeal.ok).toBe(false);
+    expect(await seatsOf(fixture.league.id)).toEqual(before);
+  });
+
   it('saves a layout the owner arranged by hand', async () => {
     signInAs(fixture.owner);
 
@@ -440,6 +464,53 @@ describe('draft status', () => {
     expect((await leagueRepository.findById(fixture.league.id)).draftingStatus).toBe(
       'pending',
     );
+  });
+
+  it('will not start or finish a season that is not the current one', async () => {
+    // Writing `active` or `complete` for 2026 while 2027 is open would write it
+    // onto 2027: the column has no year (D130).
+    signInAs(fixture.owner);
+    // Grouped, so the only thing between startDraft and a write is the
+    // current-season check, not "set up the groups first".
+    await db.draft.updateMany({
+      where: { leagueId: fixture.league.id },
+      data: { group: 1 },
+    });
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { activeYear: YEAR + 1, draftingStatus: 'pending' },
+    });
+    const status = async () =>
+      (await db.league.findUnique({ where: { id: fixture.league.id } }))?.draftingStatus;
+
+    expect(await startDraft({ leagueId: fixture.league.id, year: YEAR })).toMatchObject({
+      ok: false,
+      code: 'CONFLICT',
+    });
+    expect(await status()).toBe('pending');
+
+    // Finishing a season that is already over is a no-op, not a write.
+    expect((await completeDraft({ leagueId: fixture.league.id, year: YEAR })).ok).toBe(
+      true,
+    );
+    expect(await status()).toBe('pending');
+
+    // A season that has not been opened can be finished no more than started.
+    expect(
+      (await completeDraft({ leagueId: fixture.league.id, year: YEAR + 2 })).ok,
+    ).toBe(false);
+    expect(await status()).toBe('pending');
+  });
+
+  it('the board and the setup page read a finished season as finished (D130)', async () => {
+    await db.league.update({
+      where: { id: fixture.league.id },
+      data: { activeYear: YEAR + 1, draftingStatus: 'pending' },
+    });
+
+    expect((await getLeagueBoard(fixture.league.id, YEAR)).status).toBe('complete');
+    expect((await getSeasonSetup(fixture.league.id, YEAR)).status).toBe('complete');
+    expect((await getLeagueBoard(fixture.league.id, YEAR + 1)).status).toBe('pending');
   });
 
   it('marks the draft complete', async () => {

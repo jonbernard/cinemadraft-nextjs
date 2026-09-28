@@ -2,8 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-
 import { ConflictError } from '@/lib/errors';
+import { seasonStatus } from '@/lib/leagues/season';
 import { draftRepository } from '@/lib/repositories/drafts';
 import {
   type Assignment,
@@ -171,7 +171,7 @@ export async function randomiseGroups(
 
   try {
     const { league } = await authorizeLeague(parsed.data.leagueId);
-    if (league.draftingStatus !== 'pending') {
+    if (seasonStatus(league, parsed.data.year) !== 'pending') {
       throw new ConflictError('groups can only be arranged before the draft starts');
     }
 

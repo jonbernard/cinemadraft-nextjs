@@ -1,4 +1,5 @@
 import { NotFoundError } from '@/lib/errors';
+import { seasonStatus } from '@/lib/leagues/season';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
 import { userRepository } from '@/lib/repositories/users';
@@ -89,7 +90,7 @@ export async function getSeasonSetup(
     leagueId: league.id,
     leagueName: league.name,
     year,
-    status: league.draftingStatus,
+    status: seasonStatus(league, year),
     ownerIds: league.ownerIds,
     seats: setupSeats,
     groups: [

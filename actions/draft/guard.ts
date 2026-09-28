@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { ConflictError, ForbiddenError, NotFoundError } from '@/lib/errors';
+import { seasonStatus } from '@/lib/leagues/season';
 import { type DraftPick, draftPickRepository } from '@/lib/repositories/draft-picks';
 import { type Draft, draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
@@ -71,7 +72,14 @@ async function authorize(seat: Draft): Promise<SeatControl> {
   // Only `pending` is refused. A `complete` season still accepts corrections —
   // award shows resolve for months after a draft ends, and a misheard pick
   // entered live is the ordinary case D46 is built around.
-  if (league.draftingStatus === 'pending') {
+  //
+  // 🔴 The seat's own season, not the league's one column (D130): once the
+  // next season opens that column reads `pending`, and a correction to the
+  // season just finished must still go through. A season not yet opened
+  // (null) takes none either.
+  const status =
+    seat.year == null ? league.draftingStatus : seasonStatus(league, seat.year);
+  if (status === 'pending' || status === null) {
     throw new ConflictError('the draft has not started yet');
   }
 

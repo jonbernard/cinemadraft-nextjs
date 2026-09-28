@@ -1,3 +1,4 @@
+import { seasonStatus } from '@/lib/leagues/season';
 import { draftPickRepository } from '@/lib/repositories/draft-picks';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
@@ -183,7 +184,7 @@ export async function getLeagueBoard(leagueId: number, year: number): Promise<Bo
     year,
     leagueId,
     leagueName: league.name,
-    status: league.draftingStatus,
+    status: seasonStatus(league, year),
     ownerIds: league.ownerIds,
     uuid: league.uuid,
     groups,

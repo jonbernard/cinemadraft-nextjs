@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { ConflictError } from '@/lib/errors';
+import { isCurrentSeason, seasonStatus } from '@/lib/leagues/season';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { leagueRepository } from '@/lib/repositories/leagues';
 import { profileFeedRepository } from '@/lib/repositories/profile-feeds';
@@ -71,7 +72,12 @@ export async function startDraft(input: z.infer<typeof Status>): Promise<ActionR
 
   try {
     const { league } = await authorizeLeague(parsed.data.leagueId);
-    if (league.draftingStatus === 'active') return ok();
+    // 🔴 The status column has no year (D130): starting 2026 while 2027 is
+    // open would write `active` onto 2027.
+    if (!isCurrentSeason(league, parsed.data.year)) {
+      throw new ConflictError('only the current season can be started');
+    }
+    if (seasonStatus(league, parsed.data.year) === 'active') return ok();
 
     const seats = await draftRepository.findByLeagueIdAndYear(
       parsed.data.leagueId,
@@ -130,7 +136,13 @@ export async function completeDraft(
 
   try {
     const { league } = await authorizeLeague(parsed.data.leagueId);
-    const wasComplete = league.draftingStatus === 'complete';
+    const wasComplete = seasonStatus(league, parsed.data.year) === 'complete';
+    // An earlier season is already over, and writing `complete` for it would
+    // land on the current one (D130). Nothing to do; a later one is not open.
+    if (!isCurrentSeason(league, parsed.data.year)) {
+      if (wasComplete) return ok();
+      throw new ConflictError('that season has not been opened');
+    }
 
     await leagueRepository.update(parsed.data.leagueId, { draftingStatus: 'complete' });
 
