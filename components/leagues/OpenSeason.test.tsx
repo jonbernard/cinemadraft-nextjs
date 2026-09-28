@@ -96,7 +96,7 @@ describe('OpenSeasonPanel', () => {
 
     expect(screen.getByRole('link', { name: 'See 2026' })).toHaveAttribute(
       'href',
-      '/leagues/7?year=2026',
+      '/leagues/7/2026',
     );
   });
 });

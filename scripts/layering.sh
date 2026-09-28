@@ -206,4 +206,15 @@ check "film URLs are spelled by filmHref" \
   "$(git grep -nE '/films/\$\{' -- app components lib actions ':!lib/utils/film-href.ts' \
      2>/dev/null || true)"
 
+# D139: a league page URL puts the season and group in the path
+# (`/leagues/70/2027/group/1`), and `leagueHref` is the one place it is
+# spelled. A hand-built `/leagues/${id}?year=` is the legacy form — it costs a
+# 308 on every click, and in TV mode it is exactly how `tv=1` gets dropped
+# (D114). Static children (`/leagues/${id}/draft`) and the stream are not
+# league pages; `revalidatePath` takes the prefix and is exempt.
+check "league URLs are spelled by leagueHref" \
+  "$(git grep -nE '/leagues/\$\{[^}]*\}([`?]|/\$\{)' -- app components lib actions \
+     ':!lib/utils/league-href.ts' ':!*.test.ts' ':!*.test.tsx' 2>/dev/null \
+     | grep -v 'revalidatePath(' || true)"
+
 exit $fail

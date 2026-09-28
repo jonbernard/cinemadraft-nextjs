@@ -477,7 +477,7 @@ test.describe('live show', () => {
 
     // Every name the live page printed is a name the league page prints to the
     // same signed-out reader — the same component, from the same board.
-    await page.goto(`/leagues/${leagueId}?year=${YEAR}`);
+    await page.goto(`/leagues/${leagueId}/${YEAR}`);
     const onLeaguePage = await page.getByRole('rowheader').allInnerTexts();
     for (const name of live) expect(onLeaguePage).toContain(name);
   });
