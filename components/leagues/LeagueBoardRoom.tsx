@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { type BoardSeat, DraftBoard } from '@/components/draft/DraftBoard';
+import { HeadToHead } from '@/components/leagues/HeadToHead';
 import { type RosterFilm, RosterStrip } from '@/components/leagues/RosterStrip';
 import { StandingsPanel } from '@/components/leagues/StandingsPanel';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -11,6 +12,7 @@ import { SectionHead } from '@/components/ui/SectionHead';
 import { StatusChip } from '@/components/ui/StatusChip';
 import { SIGN_IN_URL } from '@/lib/auth-routes';
 import type { StandingsRow } from '@/lib/services/dashboard';
+import { compareSeats, headToHeadHeadline } from '@/lib/services/head-to-head';
 
 /**
  * Structurally the part of `lib/services/league-view.ts`'s `LeagueBoardView`
@@ -33,7 +35,14 @@ export type LeagueBoardRoomView = {
   /** True when the reader holds a seat, even one with no picks yet. */
   viewerSeated: boolean;
   standings: readonly StandingsRow[];
-  groups: readonly { group: number; rounds: number; seats: readonly BoardSeat[] }[];
+  groups: readonly {
+    group: number;
+    rounds: number;
+    /** The film's identity on each pick, for head-to-head's "both hold it" (P16.T24). */
+    seats: readonly (BoardSeat & {
+      picks: (BoardSeat['picks'][number] & { movieId: number; tmdbId: string | null })[];
+    })[];
+  }[];
 };
 
 /**
@@ -94,6 +103,8 @@ export function LeagueBoardRoom({
   viewerSeatId,
   tvMode = false,
   group = null,
+  vs = null,
+  boardHref = '',
 }: {
   initial: LeagueBoardRoomView;
   /**
@@ -120,6 +131,14 @@ export function LeagueBoardRoom({
   tvMode?: boolean;
   /** The group TV mode is showing, validated by the page. */
   group?: number | null;
+  /**
+   * P16.T24: `?vs=`, the seat to compare with. Ignored when it names no seat
+   * of this season, so the page renders as if it were absent. TV mode shows
+   * none because the roster slot it renders in is off the television.
+   */
+  vs?: number | null;
+  /** This page's own URL without `?vs=`, which the Compare links extend. */
+  boardHref?: string;
 }) {
   const [view, setView] = useState(initial);
 
@@ -189,6 +208,27 @@ export function LeagueBoardRoom({
    * a remote can land on, and a board that answered an unknown one with an
    * empty screen would be worse than one that answered it with a board.
    */
+  /**
+   * Head-to-head (P16.T24, D136), from the view this room already holds, so it
+   * moves with the board during a live draft instead of going stale beside it.
+   */
+  const seats = view.groups.flatMap((entry) =>
+    entry.seats.map((seat) => ({ ...seat, group: entry.group })),
+  );
+  const compareUrl = (draftId: number) => `${boardHref}?vs=${draftId}#head-to-head`;
+  const comparing =
+    vs != null && seats.some((seat) => seat.draftId === vs)
+      ? compareSeats(seats, view.standings, viewerSeatId, vs)
+      : null;
+  // Open question 3's default: the reader's own line, against the seat above.
+  const rival =
+    comparing == null && viewerSeatId != null && !view.isPending
+      ? compareSeats(seats, view.standings, viewerSeatId, null)
+      : null;
+  // A reader with a seat compares from it, so their own row has no link.
+  const compareHref = (row: StandingsRow) =>
+    row.draftId === viewerSeatId && view.viewerSeated ? null : compareUrl(row.draftId);
+
   const chosen = view.groups.find((entry) => entry.group === group) ?? view.groups[0];
   const groups = tvMode ? (chosen ? [chosen] : []) : view.groups;
 
@@ -215,43 +255,64 @@ export function LeagueBoardRoom({
             adds — rather than a hole the standings float beside. */}
       {!tvMode && view.standings.length > 0 ? (
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
-          <section className="flex min-w-0 flex-1 flex-col gap-3">
-            <SectionHead as="h2" eyebrow="Yours">
-              Your roster
-            </SectionHead>
-            {view.viewerRoster.length > 0 ? (
-              <RosterStrip films={view.viewerRoster} />
-            ) : view.viewerSeated ? (
-              // 🔴 A seat with no picks is still a seat. This branch used to
-              // test `viewerRoster.length` and fall through to "you do not
-              // hold a seat this season" — told to a member whose name was
-              // listed in the standings table directly beside it. Found by
-              // P19.T2's journey on its final frame, where the league owner
-              // is seated and has not drafted.
-              <EmptyState title="Your seat is empty until the draft">
-                You hold a seat this season. Your picks and what each one has scored
-                appear here as the draft runs.
-              </EmptyState>
-            ) : !signedIn ? (
-              <EmptyState
-                title="Sign in to see your own roster here"
-                action={{ label: 'Sign in', href: SIGN_IN_URL }}
-              >
-                The board and the standings below are the whole season, and they are open
-                to whoever has this link. Your own picks and what each one has scored sit
-                here once you are in.
-              </EmptyState>
-            ) : (
-              <EmptyState title="You do not hold a seat this season">
-                This is somebody else's league, or a season you sat out — the standings
-                and the board are still the whole story.
-              </EmptyState>
-            )}
-          </section>
+          {comparing ? (
+            <div className="flex min-w-0 flex-1 flex-col">
+              <HeadToHead h2h={comparing} closeHref={boardHref} />
+            </div>
+          ) : (
+            <section className="flex min-w-0 flex-1 flex-col gap-3">
+              <SectionHead as="h2" eyebrow="Yours">
+                Your roster
+              </SectionHead>
+              {rival ? (
+                <p className="text-text-secondary flex flex-wrap items-center gap-x-2 text-sm">
+                  <span data-rival>{headToHeadHeadline(rival)}</span>
+                  <span aria-hidden="true">·</span>
+                  <Link
+                    href={compareUrl(rival.b.draftId)}
+                    className="hover:text-text-primary focus-visible:outline-accent-fill inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline-2"
+                  >
+                    Compare
+                  </Link>
+                </p>
+              ) : null}
+              {view.viewerRoster.length > 0 ? (
+                <RosterStrip films={view.viewerRoster} />
+              ) : view.viewerSeated ? (
+                // 🔴 A seat with no picks is still a seat. This branch used to
+                // test `viewerRoster.length` and fall through to "you do not
+                // hold a seat this season" — told to a member whose name was
+                // listed in the standings table directly beside it. Found by
+                // P19.T2's journey on its final frame, where the league owner
+                // is seated and has not drafted.
+                <EmptyState title="Your seat is empty until the draft">
+                  You hold a seat this season. Your picks and what each one has scored
+                  appear here as the draft runs.
+                </EmptyState>
+              ) : !signedIn ? (
+                <EmptyState
+                  title="Sign in to see your own roster here"
+                  action={{ label: 'Sign in', href: SIGN_IN_URL }}
+                >
+                  The board and the standings below are the whole season, and they are
+                  open to whoever has this link. Your own picks and what each one has
+                  scored sit here once you are in.
+                </EmptyState>
+              ) : (
+                <EmptyState title="You do not hold a seat this season">
+                  This is somebody else's league, or a season you sat out — the standings
+                  and the board are still the whole story.
+                </EmptyState>
+              )}
+            </section>
+          )}
 
           <section className="flex w-full flex-col gap-3 lg:max-w-sm">
             <SectionHead as="h2">Standings</SectionHead>
-            <StandingsPanel rows={view.standings} />
+            <StandingsPanel
+              rows={view.standings}
+              compareHref={view.standings.length > 1 ? compareHref : undefined}
+            />
           </section>
         </div>
       ) : null}

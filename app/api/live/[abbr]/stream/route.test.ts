@@ -75,7 +75,14 @@ const league = (id: number): LiveLeague => ({
   total: 3,
   seats: [{ draftId: 1, name: 'Ada Lovelace', isViewer: false, earned: 3, films: [] }],
   standings: [
-    { userId: 42, name: 'Ada Lovelace', total: 3, position: 1, isViewer: false },
+    {
+      draftId: 1,
+      userId: 42,
+      name: 'Ada Lovelace',
+      total: 3,
+      position: 1,
+      isViewer: false,
+    },
   ],
 });
 

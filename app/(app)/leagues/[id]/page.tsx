@@ -483,6 +483,11 @@ export default async function LeaguePage({
           viewerSeatId={view.viewerSeatId}
           tvMode={tvMode}
           group={activeGroup}
+          // P16.T24 (D136): `?vs=` is a seat to compare with, public like the
+          // board. A value naming no seat of this season is ignored by the
+          // room, and a television never shows the slot it renders in.
+          vs={parseLeagueSegment(typeof query.vs === 'string' ? query.vs : undefined)}
+          boardHref={pageUrl({ group: requestedGroup, tv: false })}
         />
       )}
     </div>

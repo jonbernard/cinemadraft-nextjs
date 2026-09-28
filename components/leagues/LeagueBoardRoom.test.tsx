@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -88,7 +88,16 @@ afterEach(() => {
 });
 
 function pick(pickId: number, round: number, title: string) {
-  return { pickId, round, title, posterUrl: null, points: 0, ledger: [] };
+  return {
+    pickId,
+    movieId: pickId,
+    tmdbId: null,
+    round,
+    title,
+    posterUrl: null,
+    points: 0,
+    ledger: [],
+  };
 }
 
 function view(overrides: Partial<LeagueBoardRoomView> = {}): LeagueBoardRoomView {
@@ -99,8 +108,8 @@ function view(overrides: Partial<LeagueBoardRoomView> = {}): LeagueBoardRoomView
     viewerRoster: [],
     viewerSeated: false,
     standings: [
-      { userId: 1, name: 'Ada', total: 12, position: 1, isViewer: false },
-      { userId: 2, name: 'Grace', total: 8, position: 2, isViewer: false },
+      { draftId: 11, userId: 1, name: 'Ada', total: 12, position: 1, isViewer: false },
+      { draftId: 12, userId: 2, name: 'Grace', total: 8, position: 2, isViewer: false },
     ],
     groups: [
       {
@@ -457,5 +466,59 @@ describe('the league page’s TV seam', () => {
     // to `leagueHref`, whose own test pins that it reaches the URL (D139).
     expect(page).toContain('href={pageUrl({ group: entry.group, tv: true })}');
     expect(page).toMatch(/leagueHref\(view\.leagueId, \{[^}]*tv: next\.tv,/);
+  });
+});
+
+describe('LeagueBoardRoom head to head (P16.T24)', () => {
+  const BOARD = '/leagues/7/2026';
+  const settled = () => view({ isDrafting: false });
+  const compare = (
+    initial: LeagueBoardRoomView,
+    props: { vs?: number | null; viewerSeatId?: number | null; tvMode?: boolean },
+  ) =>
+    render(
+      <LeagueBoardRoom
+        initial={initial}
+        streamUrl={STREAM}
+        signedIn={props.viewerSeatId != null}
+        viewerSeatId={props.viewerSeatId ?? null}
+        tvMode={props.tvMode ?? false}
+        vs={props.vs ?? null}
+        boardHref={BOARD}
+      />,
+    );
+
+  it('gives every row a Compare link for a follower', () => {
+    compare(settled(), {});
+    expect(screen.getByRole('link', { name: 'Compare with Grace' })).toHaveAttribute(
+      'href',
+      `${BOARD}?vs=12#head-to-head`,
+    );
+    expect(screen.getByRole('link', { name: 'Compare with Ada' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Head to head' })).toBeNull();
+  });
+
+  it('omits the reader’s own row, and offers their rival in the roster slot', () => {
+    compare({ ...settled(), viewerSeated: true }, { viewerSeatId: 12 });
+    expect(screen.queryByRole('link', { name: 'Compare with Grace' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Compare with Ada' })).toBeInTheDocument();
+    expect(screen.getByText('You’re 4 behind Ada')).toBeInTheDocument();
+  });
+
+  it('renders the comparison in the roster slot for a valid vs', () => {
+    compare(settled(), { vs: 12 });
+    const region = screen.getByRole('region', { name: 'Head to head' });
+    expect(region).toHaveTextContent('Ada leads Grace by 4');
+    expect(screen.queryByRole('heading', { name: 'Your roster' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Close' })).toHaveAttribute('href', BOARD);
+  });
+
+  it('ignores an unknown vs, and any vs on a television', () => {
+    compare(settled(), { vs: 999 });
+    expect(screen.queryByRole('region', { name: 'Head to head' })).toBeNull();
+    cleanup();
+    compare(settled(), { vs: 12, tvMode: true });
+    expect(screen.queryByRole('region', { name: 'Head to head' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /^Compare/ })).toBeNull();
   });
 });

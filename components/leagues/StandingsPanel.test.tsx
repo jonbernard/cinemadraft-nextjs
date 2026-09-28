@@ -6,6 +6,7 @@ import { StandingsPanel } from './StandingsPanel';
 
 function row(overrides: Partial<StandingsRow> & { userId: number }): StandingsRow {
   return {
+    draftId: overrides.userId,
     name: `Member ${overrides.userId}`,
     total: 0,
     position: 1,
