@@ -2467,7 +2467,47 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
   loudly. Not fixed: `lib/db.test.ts` asserts exactly 1,355 rows, so deleting
   any of them is a deliberate change with a test to update.
 
-- [ ] P16 not started — post-cutover (`docs/PLAN.md` § Phase 16), gated on Phase 13; no plan written yet
+Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner decided every design question on 2026-09-27; five defaults await confirmation (the plan's § Open questions). Four migrations (M1–M4), each applied to all three databases and added to the Phase 13 cutover's T3b table and `restore-from-heroku.sh` C5/C7. New decisions D129–D138. 🔴 Each tranche gates on the **whole** e2e suite in CI's shape (empty database, migrations, seed), not the touched specs.
+
+**Tranche 1: opening the next season, and the AFI flag (time-sensitive; ships whole before the active year is flipped to 2027)**
+- [ ] P16.T1 — `events.has_ceremony` (M1), and the rail stops waiting for the AFI (D129)
+- [ ] P16.T2 — the rail shows the season it is labelled with
+- [ ] P16.T3 — a league's status belongs to its active season (D130)
+- [ ] P16.T4 — opening a season creates an empty one (D131)
+- [ ] P16.T5 — "Open 2027", and the rollover panel
+- [ ] P16.T6 — season setup re-seats people from earlier seasons, one tap each
+- [ ] P16.T7 — tranche 1 gate
+
+**Tranche 2: the duplicate-film merge, slugs, and storing every browse result**
+- [ ] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies
+- [ ] P16.T9 — film slugs (M3), the `[film]` route and the permanent redirect (D133)
+- [ ] P16.T10 — every internal link spells the slug (`filmHref`, layering guard)
+- [ ] P16.T11 — store every browse result, measured and bounded (D134, amends D63/D56)
+- [ ] P16.T12 — tranche 2 gate
+
+**Tranche 3: the season view on `/award-shows`**
+- [ ] P16.T13 — `moments`: a season's scoring moments, in order
+- [ ] P16.T14 — `season-ledger`: every seat's points per moment, and the standings after each
+- [ ] P16.T15 — the season view replaces the logo grid (signed out first)
+- [ ] P16.T16 — signed in, each finished moment says what it did to you
+- [ ] P16.T17 — tranche 3 gate
+
+**Tranche 4: the ledger**
+- [ ] P16.T18 — show dates per season (M4, D135)
+- [ ] P16.T19 — the Standings tab, led by "what moved"
+- [ ] P16.T20 — "what moved" streams while a ceremony is entered (D136)
+- [ ] P16.T21 — a seat's season, on its own page
+- [ ] P16.T22 — the Race tab
+- [ ] P16.T23 — tranche 4 gate
+
+**Tranche 5: head-to-head**
+- [ ] P16.T24 — "Compare" on every standings row, public (D137)
+- [ ] P16.T25 — tranche 5 gate
+
+**Tranche 6: followers**
+- [ ] P16.T26 — audit what a follower is not shown, measured, and close the gap (D138)
+- [ ] P16.T27 — the explainer and "race at the top" take the sign-in card's slot
+- [ ] P16.T28 — tranche 6 gate, and Phase 16 closes
 
 ---
 
