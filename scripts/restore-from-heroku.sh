@@ -14,7 +14,9 @@
 #   3. prisma/normalize.sql (D27),           then C4: folded counts, no uppercase left
 #   4. prisma migrate resolve --applied 0_init, migrate deploy, then C5: T3b schema
 #   5. prisma/award-logos.sql (T3),          then C6: 12 of 12 logos on Blob
-#   6. C7: counts still the dump's, 0 claimed, 0 folded-email collisions, exactly 1 active year
+#   6. C7: counts are the dump's less the movie merge's predicted deletions
+#      (M2, D132; predicted after C4, before migrating), 0 claimed,
+#      0 folded-email collisions, exactly 1 active year
 #
 # The target must be a postgres:// URL. For Neon, use the UNPOOLED one
 # (`DATABASE_URL_UNPOOLED` in .env.neon); a `-pooler` host is refused, because
@@ -125,7 +127,7 @@ step() {
 # _prisma_migrations is not in the dump.
 norm() { grep -v -e '^sequelizemeta' -e '^_prisma_migrations' | awk -F'\t' -v OFS='\t' '{gsub(/_/, "", $1); print}' | sort; }
 folded_counts() {
-  DIFF="$(diff <(norm <"$EXPECTED") <(bash scripts/row-counts.sh "$URL" | norm))" || red "$1: folded row counts differ from the dump's:
+  DIFF="$(diff <(norm <"${2:-$EXPECTED}") <(bash scripts/row-counts.sh "$URL" | norm))" || red "$1: folded row counts differ from the dump's:
 $DIFF"
 }
 
@@ -149,6 +151,32 @@ UPPER="$(q -c "select (select count(*) from information_schema.columns where tab
      where n.nspname = 'public' and t.typtype = 'e' and t.typname <> lower(t.typname))")"
 [ "$UPPER" = 0 ] || red "C4: $UPPER uppercase identifiers left; normalize.sql did not run"
 
+# M2 (20260928120000_movie_merge, D132) deletes rows by design: every movies
+# row sharing a tmdb_id folds into the oldest, and a member's doubled
+# watchlist/review/list row for the merged film goes with it. Predicted here,
+# with the migration's own rules, so C7 can hold the migration to it. On the
+# 2026-08-13 dump: movies 8, watchlists 13, reviews 0, lists 0.
+CURRENT="predicting the movie merge (C7)"
+read -r MERGE_MOVIES MERGE_WATCH MERGE_REVIEWS MERGE_LISTS < <(q -F ' ' <<'SQL'
+with l as (select id loser, keeper from (select id, min(id) over (partition by tmdb_id) keeper
+             from movies where tmdb_id is not null) r where id <> keeper),
+     k as (select distinct keeper from l)
+select (select count(*) from l),
+  (select count(*) - count(distinct (w.user_id, coalesce(l.keeper, w.movie_id))) from watchlists w
+     left join l on l.loser = w.movie_id where coalesce(l.keeper, w.movie_id) in (select keeper from k)),
+  (select count(*) - count(distinct (r.user_id, coalesce(l.keeper, r.movie_id))) from reviews r
+     left join l on l.loser = r.movie_id where coalesce(l.keeper, r.movie_id) in (select keeper from k)),
+  (select count(*) - count(distinct (x.user_id, x.year, coalesce(l.keeper, x.movie_id))) from lists x
+     left join l on l.loser = x.movie_id where coalesce(l.keeper, x.movie_id) in (select keeper from k))
+SQL
+)
+say "   merge will remove movies $MERGE_MOVIES, watchlists $MERGE_WATCH, reviews $MERGE_REVIEWS, lists $MERGE_LISTS"
+MERGED="$(mktemp)"
+trap 'rm -f "$EXPECTED" "$MERGED"' EXIT
+awk -F'\t' -v OFS='\t' -v m="$MERGE_MOVIES" -v w="$MERGE_WATCH" -v r="$MERGE_REVIEWS" -v l="$MERGE_LISTS" '
+  $1 == "movies" { $2 -= m } $1 == "watchlists" { $2 -= w }
+  $1 == "reviews" { $2 -= r } $1 == "lists" { $2 -= l } { print }' "$EXPECTED" >"$MERGED"
+
 step "4/6 prisma migrate"
 DIRECT_URL="$URL" "$PRISMA" migrate resolve --applied 0_init
 DIRECT_URL="$URL" "$PRISMA" migrate deploy
@@ -168,7 +196,17 @@ select name from (values
       and indexname = 'users_clerk_id_key' and indexdef like 'CREATE UNIQUE INDEX%')),
   ('movies_title_trgm gin trigram', exists (select 1 from pg_indexes where schemaname = 'public'
       and indexname = 'movies_title_trgm' and indexdef like '%USING gin%gin_trgm_ops%')),
-  ('pg_trgm installed', exists (select 1 from pg_extension where extname = 'pg_trgm'))
+  ('pg_trgm installed', exists (select 1 from pg_extension where extname = 'pg_trgm')),
+  ('movies_tmdb_id_key unique', exists (select 1 from pg_indexes where schemaname = 'public'
+      and indexname = 'movies_tmdb_id_key' and indexdef like 'CREATE UNIQUE INDEX%')),
+  ('no duplicate tmdb_id', not exists (select 1 from movies where tmdb_id is not null group by tmdb_id having count(*) > 1)),
+  ('no orphaned movie_id', not exists (
+      select 1 from nominations t left join movies m on m.id = t.movie_id where m.id is null
+      union all select 1 from winners t left join movies m on m.id = t.movie_id where m.id is null
+      union all select 1 from draft_picks t left join movies m on m.id = t.movie_id where m.id is null
+      union all select 1 from lists t left join movies m on m.id = t.movie_id where t.movie_id is not null and m.id is null
+      union all select 1 from reviews t left join movies m on m.id = t.movie_id where t.movie_id is not null and m.id is null
+      union all select 1 from watchlists t left join movies m on m.id = t.movie_id where t.movie_id is not null and m.id is null))
 ) as t(name, ok) where not ok;
 SQL
 )"
@@ -183,7 +221,7 @@ LOGOS="$(q -c "select count(*) filter (where image like 'https://5d9wubvvsbkemkt
 
 step "6/6 invariants"
 CURRENT="check C7 (invariants)"
-folded_counts "C7 (row counts, again, after migrating)"
+folded_counts "C7 (row counts after migrating, less the predicted merge)" "$MERGED"
 read -r CLAIMED COLLISIONS ACTIVE MIXED < <(q -F ' ' -c "select
   (select count(*) from users where clerk_id is not null),
   (select count(*) from (select 1 from users group by lower(email) having count(*) > 1) d),

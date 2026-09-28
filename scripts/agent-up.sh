@@ -117,8 +117,8 @@ say "migrate    bringing the schema up to date"
 
 COUNTS="$(PGPASSWORD=local psql -h localhost -p "$PG_PORT" -U cinemadraft -d cinemadraft -tAc \
   "select (select count(*) from users)||'/'||(select count(*) from leagues)||'/'||(select count(*) from movies)||'/'||(select count(*) from drafts)" 2>/dev/null || echo '?')"
-say "verify     $COUNTS  (expect 60/13/1355/156)"
-if [ "$COUNTS" != "60/13/1355/156" ]; then
+say "verify     $COUNTS  (expect 60/13/1347/156)"
+if [ "$COUNTS" != "60/13/1347/156" ]; then
   say "🔴 baseline does not match — the agent's row-count assertions WILL fail."
   say "   refresh it: bash scripts/agent-baseline.sh <port-of-a-clean-database>"
 fi

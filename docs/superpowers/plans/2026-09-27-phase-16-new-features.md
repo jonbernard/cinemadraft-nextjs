@@ -770,7 +770,7 @@ SELECT merge_duplicate_movies();
 DROP INDEX IF EXISTS movies_tmdb_id;
 CREATE UNIQUE INDEX movies_tmdb_id_key ON movies (tmdb_id);
 ```
-Update the schema, regenerate using the private-copy recipe, and make `upsertByTmdbId` `db.movie.upsert({ where: { tmdbId }, update: {}, create: { ... } })`. `update: {}` keeps D63's "never refresh a cached title".
+Update the schema, regenerate using the private-copy recipe, and make `upsertByTmdbId` `db.movie.upsert({ where: { tmdbId }, update: { tmdbId }, create: { ... } })`. (Corrected in P16.T8: the plan said `update: {}`, but with an empty update Prisma 7 selects then inserts rather than issuing `ON CONFLICT`, and two concurrent writers trip the new index with P2002. Setting the key to itself is the native upsert, and still refreshes nothing, so D63's "never refresh a cached title" holds. `film-ingest.test.ts` "is atomic at the repository" pins it; the existing `Promise.all([ensureFilm, ensureFilm])` case never reaches the race, because the TMDB cache serialises the two calls.)
 
 - [ ] **Step 4: Run it and confirm PASS.** Also run `film-ingest.test.ts`: its `Promise.all([ensureFilm, ensureFilm])` case is now guaranteed by the index, not by luck. Add to `award-import.test.mjs` a case where an INSERT for an existing `tmdb_id` returns the existing id.
 

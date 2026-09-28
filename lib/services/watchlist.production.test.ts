@@ -113,7 +113,10 @@ describe('loadWatchedFilms', () => {
       direction: 'asc',
     });
 
-    expect(page.count).toBe(pageFixture.pagination.count);
+    // D132: one of this user's rows (299, the second copy of Solo) was folded
+    // away by the duplicate-film merge, after the capture. See
+    // lib/repositories/watchlists.test.ts.
+    expect(page.count).toBe(pageFixture.pagination.count - 1);
     expect(page.pageCount).toBe(pageFixture.pagination.pageCount);
     expect(page.films.length).toBeGreaterThan(0);
     expect(page.films.every((film) => film.watched)).toBe(true);

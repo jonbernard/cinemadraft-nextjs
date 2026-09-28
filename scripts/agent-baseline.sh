@@ -20,8 +20,8 @@ fi
 
 COUNTS="$(PGPASSWORD=local psql -h localhost -p "$PORT" -U cinemadraft -d cinemadraft -tAc \
   "select (select count(*) from users)||'/'||(select count(*) from leagues)||'/'||(select count(*) from movies)||'/'||(select count(*) from drafts)")"
-if [ "$COUNTS" != "60/13/1355/156" ]; then
-  echo "refusing: port $PORT reads $COUNTS, not the baseline 60/13/1355/156." >&2
+if [ "$COUNTS" != "60/13/1347/156" ]; then
+  echo "refusing: port $PORT reads $COUNTS, not the baseline 60/13/1347/156." >&2
   echo "          Something has written to it. Restore it first." >&2
   exit 1
 fi

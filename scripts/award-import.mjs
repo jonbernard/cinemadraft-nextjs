@@ -326,7 +326,12 @@ export async function resolveFilm(
   const columns = movieInsertColumns();
   const placeholders = columns.map((_, index) => `$${index + 1}`).join(', ');
   const inserted = await client.query(
-    `INSERT INTO movies (${columns.join(', ')}) VALUES (${placeholders}) RETURNING id, title, release_date`,
+    // `tmdb_id` is unique (D132). A film ingested between the look-up above and
+    // this write (the app, during a live ceremony) is returned, not doubled:
+    // the no-op SET is what makes RETURNING yield the existing row.
+    `INSERT INTO movies (${columns.join(', ')}) VALUES (${placeholders})
+     ON CONFLICT (tmdb_id) DO UPDATE SET tmdb_id = EXCLUDED.tmdb_id
+     RETURNING id, title, release_date`,
     [
       detail.tmdbId,
       detail.imdbId,

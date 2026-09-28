@@ -5,6 +5,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vites
 import { db } from '@/lib/db';
 import { NotFoundError } from '@/lib/errors';
 import { clearCacheForTests } from '@/lib/external/cache';
+import { movieRepository } from '@/lib/repositories/movies';
 import { ensureFilm, resolveFilm } from './film-ingest';
 
 /**
@@ -16,7 +17,7 @@ import { ensureFilm, resolveFilm } from './film-ingest';
  * something anyone can act on. This is what converts one.
  *
  * Ported from the source app's `saveFilm`, and the field mapping is asserted
- * against it rather than reinvented: 1,355 existing rows follow those rules,
+ * against it rather than reinvented: 1,347 existing rows follow those rules,
  * and a new row that broke one would be the only row in the table that did.
  */
 const KEY = 'test-tmdb-key';
@@ -152,6 +153,29 @@ describe('ensureFilm', () => {
 
     const rows = await db.movie.findMany({ where: { tmdbId: TMDB_ID } });
     expect(rows).toHaveLength(1);
+  });
+
+  it('is atomic at the repository: two writers at once get one row, and neither throws', async () => {
+    // The case above passes through `ensureFilm`'s look-up, whose TMDB cache
+    // serialises the two calls, so it never reaches the race. This one goes
+    // straight at the write. A look-up-then-create lets both writers miss and
+    // the second trip the unique index (D132); an upsert cannot.
+    const input = {
+      tmdbId: TMDB_ID,
+      imdbId: null,
+      title: 'The Brutalist',
+      sortTitle: 'Brutalist',
+      poster: null,
+      backdrop: null,
+      releaseDate: null,
+    };
+    const [a, b] = await Promise.all([
+      movieRepository.upsertByTmdbId(input),
+      movieRepository.upsertByTmdbId(input),
+    ]);
+
+    expect(a.id).toBe(b.id);
+    expect(await db.movie.count({ where: { tmdbId: TMDB_ID } })).toBe(1);
   });
 
   it('refuses when TMDB cannot supply the film', async () => {

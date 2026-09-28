@@ -22,6 +22,16 @@ const page = loadFixture<FixturePage>('watchlist-paged');
 
 const USER = 3;
 
+/**
+ * D132: the duplicate-film merge (M2) folded one of this user's rows away.
+ * They had watchlisted both copies of Solo: A Star Wars Story (movies 258 and
+ * 332); row 299, on the newer copy, was removed and row 273 kept. Measured
+ * from `.local/baseline.dump` before and after the migration. The capture
+ * predates the merge, so its count is one higher than the port's.
+ */
+const MERGED_AWAY = 1;
+const COUNT = page.pagination.count - MERGED_AWAY;
+
 describe('watchlistRepository.findById', () => {
   it('returns the entry', async () => {
     const entry = await watchlistRepository.findById(3040);
@@ -41,7 +51,7 @@ describe('watchlistRepository.findById', () => {
 
 describe('watchlistRepository.countByUser', () => {
   it('matches the count the source API reported', async () => {
-    expect(await watchlistRepository.countByUser(USER)).toBe(page.pagination.count);
+    expect(await watchlistRepository.countByUser(USER)).toBe(COUNT);
   });
 
   it('returns 0 rather than throwing for a user with no watchlist', async () => {
@@ -57,7 +67,7 @@ describe('watchlistRepository.findPageByUser', () => {
       direction: 'asc',
     });
 
-    expect(result.pagination).toEqual(page.pagination);
+    expect(result.pagination).toEqual({ ...page.pagination, count: COUNT });
     expect(result.entries).toHaveLength(WATCHLIST_PAGE_SIZE);
   });
 
@@ -143,7 +153,7 @@ describe('watchlistRepository.findPageByUser', () => {
   it('returns an empty page past the end rather than throwing', async () => {
     const result = await watchlistRepository.findPageByUser(USER, { page: 999 });
     expect(result.entries).toEqual([]);
-    expect(result.pagination.count).toBe(page.pagination.count);
+    expect(result.pagination.count).toBe(COUNT);
   });
 
   it('rejects an unsortable column at compile time, not in Postgres', async () => {
@@ -162,7 +172,7 @@ describe('watchlistRepository.findPageByUser', () => {
 describe('watchlistRepository.findMovieIdsByUser', () => {
   it('returns every movie the user has watchlisted', async () => {
     const movieIds = await watchlistRepository.findMovieIdsByUser(USER);
-    expect(movieIds).toHaveLength(page.pagination.count);
+    expect(movieIds).toHaveLength(COUNT);
     expect(movieIds.every((id) => typeof id === 'number')).toBe(true);
   });
 

@@ -2455,7 +2455,7 @@ Tranche 2 plan: `docs/superpowers/plans/2026-09-13-phase-14-tranche-2-the-last-p
 
 ## Phase 16 — New features
 
-- 🔴 **Seven duplicate `movies` rows**, found while researching film slugs
+- ✅ **Fixed by P16.T8 (M2, D132):** seven duplicate `movies` rows, found while researching film slugs
   (2026-09-12). Eight title+year groups collide; seven of them carry a single
   `tmdb_id` across both rows, so they are the same film stored twice:
   `allegiant` 2016, `anaconda` 2025, `michael` 2026, `obsession` 2025,
@@ -2483,7 +2483,9 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
   - Browser pass in a production build, 1440 and 390, light and dark, with the executor's active year set to 2027 and restored afterwards: "+ Open 2027" and its confirm, the rollover panel, the empty-season notice, and setup's "From earlier seasons". Screenshots in the conductor workspace, `.context/phase-16/t1/`.
 
 **Tranche 2: the duplicate-film merge, and title + id film URLs**
-- [ ] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies
+- [x] P16.T8 — the duplicate-film merge and a unique `tmdb_id` (M2, D132); 1,355 → 1,347 movies
+  - Rehearsed on the agent database (5440) and on a fresh `restore-from-heroku.sh` of `.local/prod-dump.dump` into a throwaway 5461: GREEN, printing `merge will remove movies 8, watchlists 13, reviews 0, lists 0`. After migrating, `count(*)` and `count(distinct tmdb_id)` are both 1,347.
+  - 🔴 **Not yet applied to 5432, 5433 or 5434.** The orchestrator applies it at merge, with the loop in the plan's § Global Constraints; until then `lib/db.test.ts` (now 1,347) is red on those three, and `npm run agent:baseline` (now also 1,347) refuses them.
 - [ ] P16.T9 — title + id film URLs: the `[film]` route, the canonical spelling and the redirects (D133; no migration)
 - [ ] P16.T10 — every link spells `title-id`, held or not (`filmHref`, layering guard)
 - ~~P16.T11 — store every browse result~~ — dropped by the owner 2026-09-27 (title + id URLs need no row); ID kept so later numbers do not move
