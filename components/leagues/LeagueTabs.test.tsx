@@ -23,5 +23,9 @@ describe('LeagueTabs', () => {
       'href',
       '/leagues/7/2025/standings',
     );
+    expect(screen.getByRole('link', { name: 'Race' })).toHaveAttribute(
+      'href',
+      '/leagues/7/2025/race',
+    );
   });
 });
