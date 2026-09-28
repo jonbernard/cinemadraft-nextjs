@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState, useTransition } from 'react';
-import { completeDraft, startDraft } from '@/actions/leagues/manage-league';
+import { startDraft } from '@/actions/leagues/manage-league';
 import {
   addDummySeat,
   assignSeats,
@@ -21,6 +21,7 @@ import type { ReturningPerson } from '@/lib/services/season-setup';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '../ui/Button';
 import { useConfirm } from '../ui/ConfirmDialog';
+import { FinishDraftButton } from './FinishDraftButton';
 import { type CeremonyGroup, GroupCeremony } from './GroupCeremony';
 
 export type SetupSeatView = {
@@ -346,16 +347,16 @@ export function SeasonSetup({
             <p className="text-text-secondary text-sm">
               This draft is {status}. Groups are fixed once it starts.
             </p>
-            {/* Only while it is running: a finished draft has nothing more to
-                offer here, and a pending one has not begun. */}
-            {status === 'active' ? (
-              <FinishDraftButton
-                leagueId={leagueId}
-                year={year}
-                disabled={pending}
-                onDone={setMessage}
-              />
-            ) : null}
+            {/* Only while it is running; the component holds that gate, and the
+                console shows the same one. The page 404s anyone but an owner. */}
+            <FinishDraftButton
+              leagueId={leagueId}
+              year={year}
+              status={status}
+              canManage
+              disabled={pending}
+              onDone={setMessage}
+            />
           </>
         )}
       </section>
@@ -688,69 +689,6 @@ function StartDraftButton({
       >
         Start the draft
       </button>
-    </>
-  );
-}
-
-/**
- * 🔴 The draft's end state, which the app has never had.
- *
- * `completeDraft` shipped in P10.T17 and no UI called it, so an owner could
- * open a draft and never close one: the league board said `active` forever and
- * the one page that manages a season offered nothing but a sentence. Found by
- * the tranche-3 planner; built here because the missing half was always the
- * button, never the rule — the action is gated, validated and revalidating
- * already.
- *
- * Confirms, like starting does. The league stops watching when this is
- * pressed, which is not something a mis-click should be able to say. It is
- * reversible — `startDraft` sets `active` from any status — but "reversible"
- * is not the same as "harmless in front of twelve people on a call".
- *
- * The `Button` primitive in its default carmine (D69): carmine is submit and
- * destructive, brass is awards, and ending a draft is neither an award nor
- * something to dress as one.
- */
-function FinishDraftButton({
-  leagueId,
-  year,
-  disabled,
-  onDone,
-}: {
-  leagueId: number;
-  year: number;
-  disabled: boolean;
-  onDone: (message: string | null) => void;
-}) {
-  const [pending, startTransition] = useTransition();
-  const { confirm, dialog } = useConfirm();
-
-  const finish = useCallback(async () => {
-    if (
-      !(await confirm(
-        'Finish the draft? The league will be told it is over.',
-        'Finish the draft',
-      ))
-    ) {
-      return;
-    }
-    startTransition(async () => {
-      const result = await completeDraft({ leagueId, year });
-      onDone(result.ok ? 'The draft is finished' : result.message);
-    });
-  }, [leagueId, year, onDone, confirm]);
-
-  return (
-    <>
-      {dialog}
-      <Button
-        type="button"
-        disabled={disabled || pending}
-        onClick={finish}
-        sx={{ width: 'fit-content', minHeight: 44 }}
-      >
-        Finish the draft
-      </Button>
     </>
   );
 }
