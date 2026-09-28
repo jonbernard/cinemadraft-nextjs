@@ -1,9 +1,14 @@
 name: CI
 
+# Runs on pull requests into `dev` only (owner, 2026-09-27). Work lands on
+# `dev` through a PR per worktree branch, and that PR is where CI gates it, so
+# neither the merge into `dev` nor the dev -> main release PR re-runs it; `main`
+# never builds here (Vercel deploys it). `workflow_dispatch` is the escape
+# hatch for a manual run on any branch.
 on:
-  push:
-    branches: [main, dev]
   pull_request:
+    branches: [dev]
+  workflow_dispatch:
 
 # A newer push to the same branch makes an in-flight run obsolete.
 concurrency:
