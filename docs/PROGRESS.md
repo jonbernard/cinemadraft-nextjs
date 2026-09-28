@@ -2497,11 +2497,15 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
   - **Browser pass** (production build, 5440): `/films/313369` and `/films/la-la-lamd-313369` 308 to `/films/la-la-land-313369`; `/films/550` 308 to `/films/fight-club-550`, an unheld film, with no row written. Every film link on `/` (20), `/browse` page 1 (1, the current release month), `/watchlist` (3) and a member page (50) is `title-id` and answers 200 with no redirect. Held and unheld film pages at 1440 and 390, light and dark, in the conductor workspace's `.context/phase-16/t2/`.
 
 **Tranche 3: the season view on `/award-shows`**
-- [ ] P16.T13 — `moments`: a season's scoring moments, in order
-- [ ] P16.T14 — `season-ledger`: every seat's points per moment, and the standings after each
-- [ ] P16.T15 — the season view replaces the logo grid (signed out first)
-- [ ] P16.T16 — signed in, each finished moment says what it did to you
-- [ ] P16.T17 — tranche 3 gate
+- [x] P16.T13 — `moments`: a season's scoring moments, in order (9 pure tests; mutations: clock-based state → 3 red, drop the active-year half of `live` → 1 red, ignore `datesForYear` → 1 red)
+- [x] P16.T14 — `season-ledger`: every seat's points per moment, and the standings after each (8 pure + 3 restored tests; Sasha Downey 1190, Jacob 1130; lead changes 3/6 by leader set, 2/2 by `standings[0]`)
+- [x] P16.T15 — the season view replaces the logo grid (signed out first). 6 service (DB, CI) + 8 component + 4 words tests; e2e "the season view" (2); mutation `UP_NEXT_FILMS = 20` → service and e2e red
+- [x] P16.T16 — signed in, each finished moment says what it did to you. 4 service (DB, CI) + 2 page tests, e2e signed in vs a signed-out context; mutations: lines on live moments → red; viewer loaded signed out → red
+- [x] P16.T17 — tranche 3 gate (2026-09-27, branch `agent/p16-t3`, with `origin/dev` 22d28cd, PR #10, merged in)
+  - **CI shape** (empty postgres:17 on 5455, `prisma migrate deploy`, `CI=1`, production build, `TMDB_API_KEY`, the Clerk keys, `VERCEL_OIDC_TOKEN` and the Blob keys blanked): lint, typecheck, `npm run layering` (with PR #10's `leagueHref` guard) and `npm run build-storybook` green. `npm run test:ci` **before the seed: 169 files, 1,877 passed**, 0 failed; **after `seed-e2e.mjs`: 1,877 passed** on one run and 1,876 + 1 red on the final one, the known `CategoryAdmin` jsdom flake ("marks a person already nominated…"), green 3 of 3 alone and not touched here. `npm run test:e2e`: **179 passed, 105 skipped, 0 failed**, 1 flaky (the known `errors.spec` 404 panel, green on retry). The 105 skips are the same set as tranche 2: `VISUAL=1`, the Clerk-key opt-outs, `TMDB_API_KEY not configured` and the restored-corpus specs.
+  - **Executor** (restored copy on 5440): `npx vitest run` **2,440 passed**, 0 failed (208 files). `npm run test:e2e`: **229 passed, 54 skipped, 1 failed**, the known `browse.spec.ts` "marking a film watched › survives a reload"; it left no movie row this time (1,347).
+  - **Browser pass** (production build, a scratch clone of 5440): `/award-shows` signed out and signed in (user 3, two leagues), at 1440 and 390, light and dark, in three states: mid-season (the 2026 Oscar winners removed and the server's `Date.now()` pinned to Sat 14 Mar 2026 by a `--require` preload, the prototype's "now"), the complete season (September, as it is) and the off-season (active year 2027). No horizontal scroll in any of the 24. The AFI appears once with no ceremony row; the rail on `/` reads "12 of 12 shows complete". Screenshots in the conductor workspace's `.context/phase-16/t3/`.
+  - Found in the browser pass and fixed here: "at stake" listed one row per nomination, so the Oscars read *One Battle After Another* eight times. It is now one row per film with its categories, capped at 8 films (§4). The season-view e2e seeds its points row only for the signed-in case, because `how-it-works.spec.ts` compares the points table with its page and went flaky once with a second scratch level in the table.
 
 **Tranche 4: the ledger**
 - [ ] P16.T18 — show dates per season (M3, D134)

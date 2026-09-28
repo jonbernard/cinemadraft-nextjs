@@ -1058,11 +1058,12 @@ export type Moment = {
 export function toMoments(input: {
   events: readonly Pick<Event, 'id' | 'abbreviation' | 'name' | 'hasCeremony' | 'nomDate' | 'awardsDate' | 'awardsActive'>[];
   year: number;
+  activeYear: number;                          // corrected in P16.T13: "live" needs to know the active season
   nominations: ReadonlyMap<number, number>;   // eventId → count, this year
   winners: ReadonlyMap<number, number>;
   datesForYear?: ReadonlyMap<number, { nomDate: number | null; awardsDate: number | null }>; // P16.T18
 }): Moment[];
-export async function getSeasonMoments(year: number): Promise<Moment[]>; // 3 queries: events, two counts
+export async function getSeasonMoments(year: number): Promise<Moment[]>; // 3 queries: events, two counts (and the active-year lookup)
 ```
 
 **Rules, each a test:**
@@ -1071,7 +1072,7 @@ export async function getSeasonMoments(year: number): Promise<Moment[]>; // 3 qu
 - `order` uses `seasonOffset(date)` when dated, and otherwise `seasonOffset` of the event's current column (whatever year it holds). That puts a past season, which has no dates, in this year's calendar order. An event with no date anywhere sorts last.
 - `state`:
   - nominations moments are `finished` when `nominations > 0`;
-  - ceremony moments are `live` when `awardsActive` and the year is the one being viewed, and `finished` when `winners > 0 && !awardsActive`;
+  - ceremony moments are `live` when `awardsActive` and the year viewed is the active year (settled in P16.T13: a past season's ceremony is never on air), and `finished` when `winners > 0 && !awardsActive`;
   - anything else is `upcoming`.
 - Sorting is by `order`, then nominations before ceremony, then name.
 
@@ -1125,6 +1126,7 @@ export async function getSeasonLedger(leagueId: number, year: number, viewerId: 
 - [ ] **Step 2: The restored-data test**
   - League 1 2026: `steps.at(-1)!.standings[0]` is Sasha Downey on **1190**. Jacob is on **1130**. This is D125's measured pair.
   - The lead changed 3 times in 2026 and 6 times in 2025, as the proposal measured. Count the changes of `standings[0].draftId` across steps.
+  - (Corrected in P16.T14: 3 and 6 are the proposal's *leader-set* count, the steps where the set of seats sharing first place changes, with the first lead counted. Counting `standings[0]` changes, T22's rule, where a tie the draft order breaks is not a change, gives **2 and 2**: Indiana Jones → Sasha Downey in 2026, Jon Bernard → Robert Bernard → Felix Ortiz in 2025. The test pins both. 2025 has 22 steps and 2026 has 23.)
 - [ ] **Step 3: Run them and confirm they fail. Implement. Run and confirm PASS.**
 - [ ] **Step 4: 🔴 Mutation.** Count a won line's `earned` (2P) in `win`. Expect red at the invariant. Restore.
 - [ ] **Step 5: Commit.** `git commit -m "feat(ledger): each seat's season by moment, from the board's own ledger (P16.T14)"`
@@ -1155,7 +1157,7 @@ export const UP_NEXT_FILMS = 8;
 ```
 
 **Rules:**
-- **Which year.** `?year=` if it is given and is a season. Otherwise the active year, *unless* it has no dated moment in its window and no nominations. In that case show the previous year with `offSeason: true`, and the line "Dates for the {activeYear} season come in the autumn."
+- **Which year.** `?year=` if it is given and is a season. (Settled in P16.T15: any positive year, the rule `/award-shows/[abbr]` already uses, so a scratch year needs no `available_years` row; the page also gains the show page's Seasons nav.) Otherwise the active year, *unless* it has no dated moment in its window and no nominations. In that case show the previous year with `offSeason: true`, and the line "Dates for the {activeYear} season come in the autumn."
 - **A signed-out reader gets a first-class page, not an empty shell:**
   - every moment, grouped by month (a month label, not a machine date);
   - the weekday and day;
@@ -1164,7 +1166,7 @@ export const UP_NEXT_FILMS = 8;
   - a `highlight` on finished moments: the most-nominated film at a nominations moment ("*One Battle After Another*, 9"), and the film with the most wins at a ceremony;
   - an **Up next** panel: the countdown in words ("in 3 days"), and the films most nominated at that show, capped at `UP_NEXT_FILMS` with "and N more".
   - Before nominations are out, Up next names no films and says when they are due.
-- Undated moments sit under "Not yet scheduled" at the end.
+- Undated moments sit under "Not yet scheduled" at the end. (Settled in P16.T15: an undated moment that has *finished*, which is every moment of a past season before D134's dates, sits under "Date not recorded" instead, because "not yet scheduled" would be false. "Up next" prefers the first unfinished *dated* moment, since before the dates are set every show's undated moment keeps its calendar place. A headline film is named only when one stands out: more than one, alone at the top.)
 
 - [ ] **Step 1: Service tests (DB, own tagged event and nominations in year 2989, CI)**
   - `months` groups by the month of `date`.
@@ -1197,14 +1199,14 @@ export type SeasonViewer = {
     /** moment.key → { points, position, move } for the reader's seat; finished moments only. */
     byMoment: ReadonlyMap<string, { points: number; position: number; move: number }> }[];
   /** For the next ceremony: the reader's nominations at stake. */
-  atStake: { films: { title: string; tmdbId: string | null; category: string }[]; points: number; more: number } | null;
+  atStake: { films: { title: string; tmdbId: string | null; categories: string[] }[]; nominations: number; points: number; more: number } | null; // corrected in P16.T17: one entry per film, capped at 8 films (§4 caps films, not lines)
 };
 export const MAX_LEAGUES = 5; // ponytail: one board load per league; raise when someone plays in more than five
 export async function getSeasonViewer(userId: number, year: number): Promise<SeasonViewer>;
 ```
 - It covers leagues where the reader holds a seat in `year` and the league has ≥ 2 seats, up to `MAX_LEAGUES`, newest league first.
 - A row reads: "Racso award +170 · 16th ▼3". The direction is in words for screen readers ("down 3 places").
-- **Finished moments only.** A live ceremony shows no per-league line (the owner's rule), and `/live` is linked instead.
+- **Finished moments only.** A live ceremony shows no per-league line (the owner's rule), and `/live` is linked instead. (Settled in P16.T16: the link is Up next's "Follow live →" and the row's "On air" chip, because each agenda row is itself a link and cannot hold another. `atStake` counts each undecided nomination once across the reader's leagues, and is null unless the next moment is an upcoming ceremony.)
 
 - [ ] **Step 1: Failing tests.** Seed a league with the reader and a rival, and a tagged show in 2989 with one nomination on each seat's film.
   - The reader's line at that nominations moment has `points` equal to the nomination's points.
@@ -1463,7 +1465,7 @@ export function toRace(ledger: SeasonLedger): Race;
 
 - [ ] **Step 1: Failing pure tests**
   - `axis` is `'order'` when one step is undated, and `'date'` when all are dated.
-  - `leadChanges` counts a change only when `standings[0].draftId` differs from the previous step's. A tie at the top that `rankSeats` orders by draft order is not a change.
+  - `leadChanges` counts a change only when `standings[0].draftId` differs from the previous step's. A tie at the top that `rankSeats` orders by draft order is not a change. (Measured in P16.T14: this gives 2 for league 1's 2025, not the proposal's 6, which counted leader sets; the `OrderOnlyPastSeason` story and T23's check should expect 2, or T22 should adopt the leader-set rule and say so.)
   - The last point of each line equals the seat's total.
 - [ ] **Step 2: Component test.** The table has one row per seat, and its last column equals the totals. The SVG has one `path` per seat.
 - [ ] **Step 3: Implement. Stories:** `DatedSeason` (2026-shaped), `OrderOnlyPastSeason` (2025-shaped, 6 lead changes), `FlatSeason`.

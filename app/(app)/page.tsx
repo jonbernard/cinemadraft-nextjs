@@ -134,7 +134,13 @@ export default async function DashboardPage({ searchParams }: PageProps<'/'>) {
           eyebrow={shows === 0 ? undefined : `${complete} of ${shows} shows complete`}
           right={view.year}
         >
-          Season
+          {/* The whole season, in date order, lives on /award-shows (P16.T15). */}
+          <Link
+            href="/award-shows"
+            className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
+          >
+            Season
+          </Link>
         </SectionHead>
 
         {/* Renders nothing when the season has no shows yet, so the heading
