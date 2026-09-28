@@ -55,7 +55,6 @@ const BASE: StandingsView = {
     {
       draftId: 1,
       name: 'Ada Lovelace',
-      uuid: 'seat-uuid',
       isViewer: false,
       position: 1,
       byShow: { oscars: 3 },

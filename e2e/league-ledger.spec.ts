@@ -177,10 +177,11 @@ async function totals(page: Page, table: string): Promise<Record<string, string>
 test.describe('the standings tab', () => {
   test.describe.configure({ mode: 'serial' });
   let leagueId = 0;
+  let draftIds: number[] = [];
 
   test.beforeAll(async () => {
     await cleanupTag(TAG);
-    ({ leagueId } = await seedLedger(TAG, YEAR));
+    ({ leagueId, draftIds } = await seedLedger(TAG, YEAR));
     await enterWinner(TAG, YEAR);
   });
   test.afterAll(() => cleanupTag(TAG));
@@ -230,6 +231,54 @@ test.describe('the standings tab', () => {
     await page.goto(`/leagues/${leagueId}/standings?year=${YEAR}`);
     await expect(page.getByRole('list', { name: 'League standings' })).toBeVisible();
     await noSideways(page);
+  });
+
+  test('opens from a name on Standings, signed out, and switches seats by GET', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/leagues/${leagueId}/standings?year=${YEAR}`);
+    await page
+      .getByRole('table', { name: 'League standings with points by award show' })
+      .getByRole('link', { name: `${TAG} Bea` })
+      .click();
+    await expect(page).toHaveURL(
+      new RegExp(`/leagues/${leagueId}/seats/${draftIds[1]}$`),
+    );
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${TAG} Bea`);
+    // Bravo: 7 on nomination, doubled by its win.
+    const table = page.getByRole('table', { name: /picks at each award show/ });
+    await expect(table.locator('[data-season-total]')).toHaveText('14');
+
+    await page
+      .getByRole('combobox', { name: 'Seat' })
+      .selectOption({ label: `${TAG} Cy` });
+    await page.getByRole('button', { name: 'Open' }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`/leagues/${leagueId}/seats/${draftIds[2]}$`),
+    );
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${TAG} Cy`);
+  });
+
+  test('a seat page fits a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/leagues/${leagueId}/seats/${draftIds[0]}`);
+    await expect(page.getByRole('list', { name: `${TAG} Ada’s picks` })).toBeVisible();
+    await noSideways(page);
+  });
+
+  test('a seat of another league is a 404', async ({ page }) => {
+    const other = await seedLedger(`${TAG}-other`, YEAR);
+    try {
+      const response = await page.goto(`/leagues/${leagueId}/seats/${other.draftIds[0]}`);
+      expect(response?.status()).toBe(404);
+      const own = await page.goto(
+        `/leagues/${other.leagueId}/seats/${other.draftIds[0]}`,
+      );
+      expect(own?.status()).toBe(200);
+    } finally {
+      await cleanupTag(`${TAG}-other`);
+    }
   });
 });
 

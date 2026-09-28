@@ -40,6 +40,7 @@ const SAMPLES: Record<string, string> = {
   '[id]': '999999',
   '[year]': '2026',
   '[group]': '1',
+  '[draftId]': '999999',
   '[abbr]': 'e2e-clerk-nope',
   // A well-formed film URL (D133) for an id TMDB does not have: a 404 from the page.
   '[film]': 'e2e-nope-999999999',

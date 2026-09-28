@@ -5,6 +5,7 @@ import {
   leagueTabHref,
   legacyLeagueRedirect,
   parseLeagueSegment,
+  seatHref,
 } from './league-href';
 
 describe('leagueHref', () => {
@@ -47,6 +48,7 @@ describe('leagueTabHref', () => {
     expect(leagueTabHref(70, 'standings', { year: 2025, activeYear: 2026 })).toBe(
       '/leagues/70/standings?year=2025',
     );
+    expect(seatHref(70, 1234)).toBe('/leagues/70/seats/1234');
   });
 });
 

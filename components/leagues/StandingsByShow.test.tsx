@@ -12,7 +12,6 @@ const SHOWS = [
 const row = (overrides: Partial<StandingsSeatRow>): StandingsSeatRow => ({
   draftId: 1,
   name: 'Ada',
-  uuid: null,
   isViewer: false,
   position: 1,
   byShow: { gg: 40, oscars: 60 },
@@ -27,7 +26,7 @@ describe('StandingsByShow', () => {
     // Cells sum to 100 and the total says 105. Real data never produces this
     // (buildSeasonLedger's invariant, tested there), which is the point: it
     // tells a re-sum from a pass-through.
-    render(<StandingsByShow rows={[row({ total: 105 })]} shows={SHOWS} />);
+    render(<StandingsByShow rows={[row({ total: 105 })]} shows={SHOWS} leagueId={7} />);
     const table = screen.getByRole('table', {
       name: /standings with points by award show/i,
     });
@@ -37,7 +36,7 @@ describe('StandingsByShow', () => {
   });
 
   it('prints each show as nominations plus wins, in the order given', () => {
-    render(<StandingsByShow rows={[row({})]} shows={SHOWS} />);
+    render(<StandingsByShow rows={[row({})]} shows={SHOWS} leagueId={7} />);
     const table = screen.getByRole('table');
     const headers = within(table)
       .getAllByRole('columnheader')
@@ -57,6 +56,7 @@ describe('StandingsByShow', () => {
           row({ draftId: 2, name: 'Grace', position: 2, move: -1 }),
         ]}
         shows={SHOWS}
+        leagueId={7}
       />,
     );
     const table = screen.getByRole('table');
@@ -69,6 +69,7 @@ describe('StandingsByShow', () => {
       <StandingsByShow
         rows={[row({ isViewer: true }), row({ draftId: 2, name: 'Grace', position: 1 })]}
         shows={SHOWS}
+        leagueId={7}
       />,
     );
     const table = screen.getByRole('table');

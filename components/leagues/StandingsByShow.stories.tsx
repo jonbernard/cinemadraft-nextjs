@@ -7,7 +7,7 @@ import { SHOWS, sixteenSeats } from './standings-fixtures';
 const meta = {
   title: 'Leagues/StandingsByShow',
   component: StandingsByShow,
-  args: { rows: sixteenSeats(), shows: SHOWS },
+  args: { rows: sixteenSeats(), shows: SHOWS, leagueId: 1 },
 } satisfies Meta<typeof StandingsByShow>;
 
 export default meta;

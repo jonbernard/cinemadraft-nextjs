@@ -1,8 +1,11 @@
+import { NotFoundError } from '@/lib/errors';
 import { awardRepository } from '@/lib/repositories/awards';
+import { draftRepository } from '@/lib/repositories/drafts';
 import { posterUrl } from '@/lib/utils/poster';
 import { rankSeats, type StandingsRow } from '@/lib/utils/rank';
-import { getLeagueBoard, type Seat } from './draft';
+import { type BoardView, getLeagueBoard, type Seat } from './draft';
 import { getSeasonMoments, type Moment } from './moments';
+import type { LedgerLine } from './scoring';
 
 /**
  * A league's season, moment by moment (P16.T14).
@@ -247,8 +250,6 @@ export type WhatMovedView = {
 export type StandingsSeatRow = {
   draftId: number;
   name: string;
-  /** The member's profile uuid, null for a placeholder seat. */
-  uuid: string | null;
   isViewer: boolean;
   /** `rankSeats` over the season totals. */
   position: number;
@@ -318,7 +319,6 @@ export function toStandingsView(input: {
     return {
       draftId,
       name: row.name,
-      uuid: seat?.uuid ?? null,
       isViewer: row.isViewer,
       position: row.position,
       byShow: Object.fromEntries(
@@ -420,4 +420,121 @@ export async function getStandingsView(
     viewerId,
     categories,
   });
+}
+
+/** One pick on a seat's page: its ledger for `PointsLedger`, and each show's share. */
+export type SeatSeasonPick = {
+  pickId: number;
+  round: number;
+  title: string;
+  posterUrl: string | null;
+  /** The board's `pick.points`. */
+  points: number;
+  ledger: LedgerLine[];
+  /** abbreviation → points earned there (Σ `earned`) and how many lines won. */
+  byShow: Record<string, { points: number; wins: number }>;
+};
+
+/** Everything `/leagues/[id]/seats/[draftId]` renders (P16.T21). */
+export type SeatSeasonView = {
+  leagueId: number;
+  leagueName: string | null;
+  year: number;
+  seat: { draftId: number; name: string; total: number; position: number };
+  /** Every seat of the season, in standings order, for the switcher. */
+  seats: { draftId: number; name: string }[];
+  /** The shows that scored anywhere in the league, in moment order. */
+  shows: StandingsView['shows'];
+  /** In draft order. */
+  picks: SeatSeasonPick[];
+  /** abbreviation → nom + win, the footer (`SeatSeason.byShow`). */
+  byShow: Record<string, number>;
+};
+
+/** The pure half of `getSeatSeasonView`, or null when `draftId` holds no seat on this board. */
+export function toSeatSeasonView(
+  board: Pick<BoardView, 'leagueId' | 'leagueName' | 'year' | 'groups'>,
+  moments: readonly Moment[],
+  draftId: number,
+  viewerId: number | null,
+): SeatSeasonView | null {
+  const seats = board.groups.flatMap((group) => group.seats);
+  const seat = seats.find((entry) => entry.draftId === draftId);
+  if (!seat) return null;
+  const ledger = buildSeasonLedger(seats, moments, viewerId);
+  const standings = toStandingsView({
+    leagueId: board.leagueId,
+    leagueName: board.leagueName,
+    year: board.year,
+    ledger,
+    moments,
+    viewerId,
+    categories: null,
+  });
+  const season = ledger.seats.find((entry) => entry.draftId === draftId);
+  return {
+    leagueId: board.leagueId,
+    leagueName: board.leagueName,
+    year: board.year,
+    seat: {
+      draftId,
+      name: seat.name,
+      total: seat.total,
+      position: standings.rows.find((row) => row.draftId === draftId)?.position ?? 0,
+    },
+    seats: standings.rows.map((row) => ({ draftId: row.draftId, name: row.name })),
+    shows: standings.shows,
+    picks: seat.picks.map((pick) => {
+      const byShow: SeatSeasonPick['byShow'] = {};
+      for (const line of pick.ledger) {
+        const cell = byShow[line.eventAbbreviation] ?? { points: 0, wins: 0 };
+        cell.points += line.earned;
+        if (line.won) cell.wins += 1;
+        byShow[line.eventAbbreviation] = cell;
+      }
+      return {
+        pickId: pick.pickId,
+        round: pick.round,
+        title: pick.movie.title ?? 'Untitled',
+        posterUrl: posterUrl(pick.movie.poster, 'w92'),
+        points: pick.points,
+        ledger: pick.ledger,
+        byShow,
+      };
+    }),
+    byShow: Object.fromEntries(
+      [...(season?.byShow ?? [])].map(([abbr, v]) => [abbr, v.nom + v.win]),
+    ),
+  };
+}
+
+/**
+ * A seat's season (P16.T21), or null when `draftId` is not a seat of league
+ * `leagueId`. The draft fixes the season, so there is no year to ask for.
+ *
+ * 🔴 A draft id is a sequence number, so `/leagues/1/seats/<any id>` must not
+ * render another league's seat under league 1's name. Two guards: the league
+ * check below, which also spares the board load, and the seat being looked up
+ * on the URL's league's board, never the draft's own. `seat-season.test.ts`
+ * goes red only with both removed (measured), so neither is load-bearing
+ * alone; keep both.
+ */
+export async function getSeatSeasonView(
+  leagueId: number,
+  draftId: number,
+  viewerId: number | null,
+): Promise<SeatSeasonView | null> {
+  let draft: Awaited<ReturnType<typeof draftRepository.findById>>;
+  try {
+    draft = await draftRepository.findById(draftId);
+  } catch (error) {
+    if (error instanceof NotFoundError) return null;
+    throw error;
+  }
+  if (draft.leagueId !== leagueId || draft.year == null) return null;
+  const [board, moments] = await Promise.all([
+    getLeagueBoard(leagueId, draft.year),
+    getSeasonMoments(draft.year),
+  ]);
+  return toSeatSeasonView(board, moments, draftId, viewerId);
 }

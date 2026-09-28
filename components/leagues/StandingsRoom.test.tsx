@@ -4,8 +4,8 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { StandingsView } from '@/lib/services/season-ledger';
-import { KEEPS_LEAD, LIVE } from './standings-fixtures';
 import { StandingsRoom } from './StandingsRoom';
+import { KEEPS_LEAD, LIVE } from './standings-fixtures';
 
 /**
  * The stop conditions (P16.T20, D135), with `LeagueBoardRoom.test.tsx`'s
@@ -79,7 +79,6 @@ function view(overrides: Partial<StandingsView> = {}): StandingsView {
       {
         draftId: 1,
         name: 'Ada',
-        uuid: null,
         isViewer: false,
         position: 1,
         byShow: { oscars: 12 },
@@ -148,7 +147,9 @@ describe('StandingsRoom', () => {
     room(view());
     only().frame(
       view({
-        rows: [{ ...view().rows[0], last: 30, total: 30 } as StandingsView['rows'][number]],
+        rows: [
+          { ...view().rows[0], last: 30, total: 30 } as StandingsView['rows'][number],
+        ],
       }),
     );
     expect(screen.getAllByText('30').length).toBeGreaterThan(0);

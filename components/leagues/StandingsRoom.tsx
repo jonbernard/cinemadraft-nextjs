@@ -98,7 +98,7 @@ export function StandingsRoom({
         <SectionHead as="h2" eyebrow="Every show this season">
           Standings
         </SectionHead>
-        <StandingsByShow rows={view.rows} shows={view.shows} />
+        <StandingsByShow rows={view.rows} shows={view.shows} leagueId={view.leagueId} />
       </section>
     </>
   );

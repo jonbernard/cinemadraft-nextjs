@@ -1,4 +1,8 @@
-import type { StandingsView, WhatMovedView } from '@/lib/services/season-ledger';
+import type {
+  SeatSeasonView,
+  StandingsView,
+  WhatMovedView,
+} from '@/lib/services/season-ledger';
 
 /**
  * League-1-shaped standings for stories and component tests (P16.T19): the
@@ -43,7 +47,6 @@ export function sixteenSeats(): StandingsView['rows'] {
     return {
       draftId: 100 + index,
       name,
-      uuid: null,
       isViewer: index === 4,
       position: 0,
       byShow,
@@ -115,3 +118,57 @@ export const UNDATED_PAST: WhatMovedView = {
   ...KEEPS_LEAD,
   moment: { ...OSCARS_CEREMONY, date: null },
 };
+
+const TITLES = [
+  'One Battle After Another',
+  'Sinners',
+  'Hamnet',
+  'Marty Supreme',
+  'Frankenstein',
+  'Bugonia',
+  'Wicked: For Good',
+  'The Smashing Machine',
+];
+
+/** Sasha Downey's 2026, league-1-shaped: eight picks across the season's shows. */
+export function seatView(picks = TITLES.length): SeatSeasonView {
+  const list = TITLES.slice(0, picks).map((title, index) => {
+    const byShow: SeatSeasonView['picks'][number]['byShow'] = {};
+    for (const [s, show] of SHOWS.entries()) {
+      if ((index + s) % 3 === 0) continue;
+      const wins = (index + s) % 4 === 0 ? 1 : 0;
+      byShow[show.abbreviation] = { points: (10 + index * 3) * (wins + 1), wins };
+    }
+    const points = Object.values(byShow).reduce((sum, cell) => sum + cell.points, 0);
+    return {
+      pickId: index + 1,
+      round: index + 1,
+      title,
+      posterUrl: null,
+      points,
+      ledger: [],
+      byShow,
+    };
+  });
+  const byShow = Object.fromEntries(
+    SHOWS.map((show) => [
+      show.abbreviation,
+      list.reduce((sum, pick) => sum + (pick.byShow[show.abbreviation]?.points ?? 0), 0),
+    ]),
+  );
+  return {
+    leagueId: 1,
+    leagueName: 'The Oscar Pool',
+    year: 2026,
+    seat: {
+      draftId: 100,
+      name: 'Sasha Downey',
+      total: Object.values(byShow).reduce((sum, points) => sum + points, 0),
+      position: 1,
+    },
+    seats: NAMES.map((name, index) => ({ draftId: 100 + index, name })),
+    shows: SHOWS,
+    picks: list,
+    byShow,
+  };
+}

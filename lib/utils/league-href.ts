@@ -56,6 +56,11 @@ export function leagueTabHref(
   return year != null && year !== activeYear ? `${path}?year=${year}` : path;
 }
 
+/** A seat's season page (P16.T21): a static child too, and the draft fixes the season. */
+export function seatHref(leagueId: number, draftId: number): string {
+  return `/leagues/${leagueId}/seats/${draftId}`;
+}
+
 /**
  * A `[year]` or `[group]` segment as a number, or null.
  *

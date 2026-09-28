@@ -177,6 +177,7 @@ export const PUBLIC_ROUTES = [
   // noindexed the same way: a follower reads what a player reads (§7). Each
   // resolves the reader itself, and signing in only marks their own row.
   '/leagues/[id]/standings',
+  '/leagues/[id]/seats/[draftId]',
   // 🔴 Owner-only, and NOT left unguarded by being listed here: the page
   // resolves the session itself and answers 404 to anyone who is not an owner,
   // which is a stronger answer than a redirect, because a bounce to sign-in

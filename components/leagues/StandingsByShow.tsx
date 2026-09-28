@@ -2,22 +2,19 @@ import Link from 'next/link';
 
 import type { StandingsSeatRow, StandingsView } from '@/lib/services/season-ledger';
 import { cn } from '@/lib/utils/cn';
+import { seatHref } from '@/lib/utils/league-href';
 import { Move, Signed } from './WhatMoved';
 
-/** A seat's name, linked to where its season is read. */
-function SeatName({ row }: { row: StandingsSeatRow }) {
+/** A seat's name, linked to its season (P16.T21). */
+function SeatName({ row, leagueId }: { row: StandingsSeatRow; leagueId: number }) {
   return (
     <>
-      {row.uuid ? (
-        <Link
-          href={`/members/${row.uuid}`}
-          className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
-        >
-          {row.name}
-        </Link>
-      ) : (
-        row.name
-      )}
+      <Link
+        href={seatHref(leagueId, row.draftId)}
+        className="hover:text-accent-text focus-visible:outline-accent-fill focus-visible:outline-2"
+      >
+        {row.name}
+      </Link>
       {row.isViewer ? (
         <span className="text-text-secondary ml-2 font-sans text-xs">You</span>
       ) : null}
@@ -34,7 +31,11 @@ function SeatName({ row }: { row: StandingsSeatRow }) {
  * cells. That the cells add up to it is `buildSeasonLedger`'s invariant,
  * tested there; a re-sum here would hide a break in it instead of showing it.
  */
-export function StandingsByShow({ rows, shows }: Pick<StandingsView, 'rows' | 'shows'>) {
+export function StandingsByShow({
+  rows,
+  shows,
+  leagueId,
+}: Pick<StandingsView, 'rows' | 'shows' | 'leagueId'>) {
   const shared = new Set(
     rows
       .map((row) => row.position)
@@ -114,7 +115,7 @@ export function StandingsByShow({ rows, shows }: Pick<StandingsView, 'rows' | 's
                 scope="row"
                 className="text-text-primary py-2 text-left font-serif font-normal"
               >
-                <SeatName row={row} />
+                <SeatName row={row} leagueId={leagueId} />
               </th>
               {shows.map((show) => {
                 const points = row.byShow[show.abbreviation] ?? 0;
@@ -159,7 +160,7 @@ export function StandingsByShow({ rows, shows }: Pick<StandingsView, 'rows' | 's
                 {pos(row)}
               </span>
               <span className="text-text-primary min-w-0 font-serif leading-tight">
-                <SeatName row={row} />
+                <SeatName row={row} leagueId={leagueId} />
               </span>
               <span className="text-text-secondary text-xs">
                 <Signed points={row.last} />
