@@ -13,7 +13,9 @@ import { expect, type Page, test } from '@playwright/test';
  * A scratch league of its own, with two seasons nobody else uses — one of
  * them with two groups — so every claim has a wrong answer available.
  */
-const TAG = 'e2e-league-urls';
+// Not `e2e-league…`: leagues.spec.ts clears `e2e-league%`, and took this
+// spec's league out from under it mid-run.
+const TAG = 'e2e-urls';
 const ONE_GROUP = 2988;
 const TWO_GROUPS = 2989;
 
