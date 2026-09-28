@@ -13,6 +13,7 @@ const revalidatePath = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({ revalidatePath }));
 
 import { db } from '@/lib/db';
+import { FILM_PAGE_ROUTE } from '@/lib/utils/film-href';
 import { setWatched } from './set-watched';
 
 /**
@@ -198,6 +199,7 @@ describe('marking a film watched', () => {
     const paths = revalidatePath.mock.calls.map((call) => call.at(0));
     expect(paths).toContain('/browse');
     expect(paths).toContain('/watchlist');
+    expect(revalidatePath.mock.calls).toContainEqual([FILM_PAGE_ROUTE, 'page']);
   });
 });
 

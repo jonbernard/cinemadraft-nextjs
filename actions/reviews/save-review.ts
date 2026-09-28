@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { requireUser } from '@/lib/auth';
 import { type MyReview, saveMyReview } from '@/lib/services/reviews';
+import { FILM_PAGE_ROUTE } from '@/lib/utils/film-href';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 
 /**
@@ -57,7 +58,8 @@ export async function saveReview(
     const user = await requireUser();
     const saved = await saveMyReview(user.id, parsed.data.tmdbId, draft);
 
-    revalidatePath(`/films/${parsed.data.tmdbId}`);
+    // Every film page's cache entry, whatever spelling a reader holds (D133).
+    revalidatePath(FILM_PAGE_ROUTE, 'page');
 
     return ok(saved);
   } catch (error) {

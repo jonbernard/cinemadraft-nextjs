@@ -63,7 +63,8 @@ async function watchlistCountFor(address: string): Promise<number> {
 /** The TMDB id of the first poster on the shelf, so a badge can be addressed. */
 async function firstFilmId(page: Page): Promise<string> {
   const href = await page.locator('a[href^="/films/"]').first().getAttribute('href');
-  const id = href?.split('/').at(-1);
+  // Title + id (D133): the id is the trailing digits.
+  const id = href?.match(/(\d+)$/)?.[1];
   if (!id) throw new Error('no film on the browse page to mark');
   return id;
 }
@@ -328,7 +329,22 @@ test.describe('browse', () => {
     await page.goto('/browse');
 
     const first = page.locator('a[href^="/films/"]').first();
-    await expect(first).toHaveAttribute('href', /^\/films\/\d+$/);
+    await expect(first).toHaveAttribute('href', /^\/films\/[a-z0-9-]+-\d+$/);
+  });
+
+  test('a poster’s link is the canonical spelling: following it is not a redirect', async ({
+    page,
+  }) => {
+    // D133. A link that is not `filmHref` of the film's title costs a 308 on
+    // every click; this is what `scripts/layering.sh`'s guard is for.
+    await page.goto('/browse');
+    const href = await page.locator('a[href^="/films/"]').first().getAttribute('href');
+    expect(href).toMatch(/^\/films\/[a-z0-9-]+-\d+$/);
+
+    const response = await page.goto(href ?? '');
+    expect(response?.status()).toBe(200);
+    expect(response?.request().redirectedFrom()).toBeNull();
+    expect(new URL(page.url()).pathname).toBe(href);
   });
 
   test('the watched badge is hidden from a signed-out reader', async ({ page }) => {

@@ -5,6 +5,7 @@ import { WatchedToggle } from '@/components/films/WatchedToggle';
 import { RemoteImage } from '@/components/ui/RemoteImage';
 import { SectionHead } from '@/components/ui/SectionHead';
 import type { BrowseMonth as BrowseMonthData } from '@/lib/services/browse';
+import { filmHref } from '@/lib/utils/film-href';
 
 /** UTC, to match the UTC month the service groups by. */
 const monthName = new Intl.DateTimeFormat('en-US', {
@@ -58,7 +59,7 @@ export function BrowseMonth({
                 press so marking a film watched would navigate instead. */}
             <div className="relative">
               <Link
-                href={`/films/${film.tmdbId}`}
+                href={filmHref({ tmdbId: film.tmdbId, title: film.title })}
                 // 🔴 The same href as the title below it, and nothing to
                 // announce — an `alt=""` poster inside a link is a link with no
                 // accessible name. Measured on /browse: 17 of 54 links. Hidden
@@ -99,7 +100,7 @@ export function BrowseMonth({
             </div>
 
             <Link
-              href={`/films/${film.tmdbId}`}
+              href={filmHref({ tmdbId: film.tmdbId, title: film.title })}
               className="text-text-secondary hover:text-text-primary focus-visible:outline-accent-fill font-serif text-sm leading-tight focus-visible:outline-2"
             >
               {film.title}

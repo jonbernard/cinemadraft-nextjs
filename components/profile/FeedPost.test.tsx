@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FeedPost } from '@/components/profile/FeedPost';
 import type { FeedFilm, FeedItem } from '@/lib/services/profile';
+import { filmHref } from '@/lib/utils/film-href';
 
 const film = (movieId: number, title: string): FeedFilm => ({
   movieId,
@@ -69,9 +70,12 @@ describe('a feed post', () => {
     const roster = screen.getByRole('list', { name: 'Drafted films, in draft order' });
     const links = within(roster).getAllByRole('link');
     expect(links).toHaveLength(8);
+    // Title + id (D133), each spelled from the film the post carries.
+    const attachment = DRAFTED.attachments[0] as { films: FeedFilm[] };
     expect(links.map((link) => link.getAttribute('href'))).toEqual(
-      [1, 2, 3, 4, 5, 6, 7, 8].map((id) => `/films/${1000 + id}`),
+      attachment.films.map((f) => filmHref({ tmdbId: f.tmdbId ?? '', title: f.title })),
     );
+    expect(links[0]?.getAttribute('href')).toBe('/films/oppenheimer-1001');
     expect(within(roster).getByText('The Holdovers')).toBeInTheDocument();
     expect(screen.queryByText(/more films?$/)).toBeNull();
   });
@@ -81,7 +85,7 @@ describe('a feed post', () => {
 
     expect(screen.getByRole('link', { name: 'The Brutalist' })).toHaveAttribute(
       'href',
-      '/films/1006',
+      '/films/the-brutalist-1006',
     );
     expect(
       screen.getByText('Three and a half hours and not one of them wasted.'),

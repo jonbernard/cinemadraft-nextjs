@@ -10,6 +10,7 @@ const revalidatePath = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({ revalidatePath }));
 
 import { db } from '@/lib/db';
+import { FILM_PAGE_ROUTE } from '@/lib/utils/film-href';
 import { deleteReview } from './delete-review';
 import { saveReview } from './save-review';
 
@@ -262,9 +263,9 @@ describe('one review per member per film (R13)', () => {
     const tmdbId = fixture.film.tmdbId as string;
     await saveReview({ tmdbId, rating: 3, review: null });
 
-    expect(revalidatePath.mock.calls.map((call) => call.at(0))).toContain(
-      `/films/${tmdbId}`,
-    );
+    // Every film page, by route (D133): a path built from a title could miss
+    // the spelling a reader has cached.
+    expect(revalidatePath.mock.calls).toContainEqual([FILM_PAGE_ROUTE, 'page']);
   });
 });
 

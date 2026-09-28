@@ -1,6 +1,15 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import { filmHref, filmSlugPart, foldAccents, parseFilmSegment } from './film-href';
+import {
+  FILM_PAGE_ROUTE,
+  filmHref,
+  filmSlugPart,
+  foldAccents,
+  parseFilmSegment,
+} from './film-href';
 
 describe('film URLs (D133)', () => {
   it('spells every film title-then-id, held or not', () => {
@@ -56,5 +65,12 @@ describe('film URLs (D133)', () => {
 
   it('never links to /films/null', () => {
     expect(filmHref({ tmdbId: '313369', title: null })).toBe('/films/313369');
+  });
+
+  it('names the page file that revalidation has to match, route group included', () => {
+    expect(existsSync(join(process.cwd(), 'app', FILM_PAGE_ROUTE, 'page.tsx'))).toBe(
+      true,
+    );
+    expect(FILM_PAGE_ROUTE.startsWith('/(')).toBe(true);
   });
 });

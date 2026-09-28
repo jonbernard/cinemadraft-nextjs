@@ -24,7 +24,9 @@ import { expect, test } from '@playwright/test';
  * setting the scheme attribute and then reading `getComputedStyle` forces a
  * style recalculation synchronously inside the same evaluate.
  */
-const ROUTES = ['/', '/browse', '/award-shows', '/films/313369'] as const;
+// The film page at its canonical spelling (D133), so nothing is measured
+// through a redirect.
+const ROUTES = ['/', '/browse', '/award-shows', '/films/la-la-land-313369'] as const;
 const SCHEMES = ['dark', 'light'] as const;
 
 type Inventory = {

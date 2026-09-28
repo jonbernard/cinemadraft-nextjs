@@ -42,7 +42,8 @@ describe('SearchOverlay', () => {
     await waitFor(() => expect(screen.getByText(/Fight Club/)).toBeInTheDocument());
 
     await user.click(screen.getByText(/Fight Club/));
-    expect(push).toHaveBeenCalledWith('/films/550');
+    // Title + id (D133), for a held film and an unheld one alike.
+    expect(push).toHaveBeenCalledWith('/films/fight-club-550');
   });
 
   it('reports a failed search rather than rendering an empty grid', async () => {

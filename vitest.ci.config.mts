@@ -128,4 +128,7 @@ export default config([
   // own rules are `lib/repositories/movie-merge.test.ts`, which seeds its
   // rows in a rolled-back transaction and runs here.
   'lib/repositories/movie-merge.production.test.ts',
+  // D133's ceiling: reads league 1's drafted films and calls TMDB. CI has
+  // neither the rows nor a key. The spelling rules are film-href.test.ts.
+  'lib/utils/film-titles.production.test.ts',
 ]);

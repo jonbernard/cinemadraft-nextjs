@@ -83,7 +83,7 @@ test.describe('journey 4 — a reader browses', () => {
 
     const title = await beat(page, 'A poster opens the film', async () => {
       await page.locator('a[href^="/films/"]').first().click();
-      await page.waitForURL(/\/films\/\d+/);
+      await page.waitForURL(/\/films\/(?:[a-z0-9-]+-)?\d+$/);
       const heading = page.getByRole('heading', { level: 1 });
       await expect(heading).toBeVisible();
       // The name only — the lockup carries the release year beside it.
@@ -122,7 +122,8 @@ test.describe('journey 4 — a reader browses', () => {
     });
 
     await beat(page, 'And lands on it', async () => {
-      await page.waitForURL(new RegExp(`/films/${LA_LA_LAND}`));
+      // Title + id (D133).
+      await page.waitForURL(new RegExp(`/films/la-la-land-${LA_LA_LAND}$`));
       await expect(
         page.getByRole('heading', { name: /La La Land/, level: 1 }),
       ).toBeVisible();

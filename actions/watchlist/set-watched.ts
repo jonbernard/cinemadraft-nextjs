@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { requireUser } from '@/lib/auth';
 import { watchlistRepository } from '@/lib/repositories/watchlists';
 import { ensureFilm } from '@/lib/services/film-ingest';
+import { FILM_PAGE_ROUTE } from '@/lib/utils/film-href';
 import { type ActionResult, fail, ok, toActionResult } from '../result';
 
 const Input = z.object({
@@ -68,10 +69,11 @@ export async function setWatched(
 
     // The three surfaces that render the badge or the list. Named individually
     // rather than revalidating a layout: these are unrelated routes, and
-    // `/films/[tmdbId]` is public and cached, so it needs its own mention.
+    // `/films/[film]` is public and cached, so it needs its own mention.
     revalidatePath('/browse');
     revalidatePath('/watchlist');
-    revalidatePath(`/films/${parsed.data.tmdbId}`);
+    // Every film page's cache entry, whatever spelling a reader holds (D133).
+    revalidatePath(FILM_PAGE_ROUTE, 'page');
 
     return ok({ watched: parsed.data.watched });
   } catch (error) {

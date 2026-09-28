@@ -55,3 +55,13 @@ export function parseFilmSegment(
   const match = SEGMENT.exec(segment);
   return match ? { tmdbId: match[2] as string, slugPart: match[1] ?? '' } : null;
 }
+
+/**
+ * The film page's route, for `revalidatePath(FILM_PAGE_ROUTE, 'page')`: every
+ * film page's cache entry, whatever spelling a reader holds, with no title.
+ *
+ * 🔴 With the route group. Next tags a page by its file path, `/(app)/…`
+ * (`next/dist/server/lib/implicit-tags.js`), so `/films/[film]` would match
+ * nothing and revalidate nothing. `film-href.test.ts` holds it to the file.
+ */
+export const FILM_PAGE_ROUTE = '/(app)/films/[film]';

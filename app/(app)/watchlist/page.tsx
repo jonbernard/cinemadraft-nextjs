@@ -27,6 +27,7 @@ import {
   type WatchlistSort,
 } from '@/lib/services/watchlist';
 import { cn } from '@/lib/utils/cn';
+import { filmHref } from '@/lib/utils/film-href';
 import { formatReleaseDate } from '@/lib/utils/format';
 
 /**
@@ -452,7 +453,7 @@ function FilmTitle({ film }: { film: Pick<WatchlistFilm, 'title' | 'tmdbId'> }) 
 
   return (
     <Link
-      href={`/films/${film.tmdbId}`}
+      href={filmHref({ tmdbId: film.tmdbId, title: film.title })}
       className="text-text-primary hover:text-accent-text focus-visible:outline-accent-fill font-serif text-base focus-visible:outline-2"
     >
       {film.title}
