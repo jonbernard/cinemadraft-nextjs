@@ -560,6 +560,8 @@ Reuse the prototype's `useStage` hook and its confirm flow (`git show agent/p16-
 
 The board room is not rendered for an unopened season.
 
+(Settled in P16.T5, following the e2e below, which has the stranger read the notice *after* the owner opens: the notice is for any non-owner viewing a season after the league's newest that nobody is seated in yet, whether unopened or opened and still empty. The owner's nav button is hidden while the panel, the same act, is on screen. The offer reads `league.activeYear` before `canOpenSeason`, as `openSeason` does, because an opened season has no `drafts` rows and would otherwise stay "openable".)
+
 - [ ] **Step 1: Component tests (jsdom)**
   - The button opens the confirm and calls `openSeason` only after "Open".
   - An `ok: false` shows the message in an `aria-live` region and does not navigate.

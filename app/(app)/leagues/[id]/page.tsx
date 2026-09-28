@@ -5,12 +5,18 @@ import type { ReactNode } from 'react';
 
 import { InviteDialog } from '@/components/leagues/InviteDialog';
 import { LeagueBoardRoom } from '@/components/leagues/LeagueBoardRoom';
+import { OpenSeasonButton, OpenSeasonPanel } from '@/components/leagues/OpenSeason';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { TvModeLink } from '@/components/ui/TvModeLink';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
 import { NOINDEX } from '@/lib/seo';
-import { getLeagueBoard, getLeagueSeasons } from '@/lib/services/draft';
+import {
+  getLeagueBoard,
+  getLeagueSeasons,
+  getOpenableSeason,
+} from '@/lib/services/draft';
 import { canManageLeague } from '@/lib/services/league-access';
 import { getLeagueBoardView } from '@/lib/services/league-view';
 import { getActiveYear } from '@/lib/services/season';
@@ -151,6 +157,21 @@ export default async function LeaguePage({
   const canManage = canManageLeague(view, user?.id);
   const isPending = view.isPending;
 
+  // 🔴 D131: the season the owner may open, when the site has moved one
+  // season past this league's newest. While the page shows that season it has
+  // not been opened, so the owner gets the act in place of the board.
+  const openable = await getOpenableSeason(leagueId, seasons);
+  const unopened = openable != null && view.year === openable.year;
+  // Everyone else, on a season after the newest that nobody is seated in yet
+  // (unopened, or opened and still empty), gets a notice pointing back at the
+  // season that exists, not an empty board with an empty standings table.
+  const newest = seasons[0];
+  const notice =
+    !canManage && view.groups.length === 0 && newest != null && view.year > newest
+      ? newest
+      : null;
+  const boardless = unopened || notice != null;
+
   // 🔴 Built from the page's own `?year=`, so the stream renders the view the
   // first paint already showed. A stream asked for different parameters is a
   // second, disagreeing page (the note on `LiveRoom`'s `streamUrl`).
@@ -242,7 +263,7 @@ export default async function LeaguePage({
               owner reported it as a stray square button on a line by itself.
               A reader who manages nothing still gets the row, holding only TV
               mode, left-aligned where the owner's actions would start. */}
-        {tvMode ? null : (
+        {tvMode || boardless ? null : (
           <div className="flex flex-wrap items-center gap-3">
             {canManage ? (
               view.groups.length === 0 || isPending ? (
@@ -303,8 +324,8 @@ export default async function LeaguePage({
           </div>
         )}
 
-        {seasons.length > 1 && !tvMode ? (
-          <nav aria-label="Seasons" className="flex flex-wrap gap-3 text-sm">
+        {(seasons.length > 1 || (canManage && openable)) && !tvMode ? (
+          <nav aria-label="Seasons" className="flex flex-wrap items-center gap-3 text-sm">
             {seasons.map((entry) => (
               <Link
                 key={entry}
@@ -319,6 +340,10 @@ export default async function LeaguePage({
                 {entry}
               </Link>
             ))}
+            {/* Owners only, and not while the panel below is the same act. */}
+            {canManage && openable && !unopened ? (
+              <OpenSeasonButton leagueId={view.leagueId} year={openable.year} />
+            ) : null}
           </nav>
         ) : null}
       </header>
@@ -364,21 +389,44 @@ export default async function LeaguePage({
         </div>
       ) : null}
 
-      <LeagueBoardRoom
-        // 🔴 Keyed on the stream URL, so switching season reconciles into a new
-        // connection rather than leaving one open to the old one.
-        //
-        // 🔴 `tv` and `group` are NOT in that URL, and that is the point: a
-        // toggle or a group change reconciles rather than remounts, so the
-        // `EventSource` is never dropped in the middle of a live draft (D114).
-        key={streamUrl}
-        initial={view}
-        streamUrl={streamUrl}
-        signedIn={user != null}
-        viewerSeatId={view.viewerSeatId}
-        tvMode={tvMode}
-        group={activeGroup}
-      />
+      {boardless ? (
+        tvMode ? null : notice == null ? (
+          openable && (
+            <OpenSeasonPanel
+              leagueId={view.leagueId}
+              year={openable.year}
+              fromYear={openable.fromYear}
+            />
+          )
+        ) : (
+          <EmptyState
+            title={`The ${view.year} season hasn’t been set up yet`}
+            action={{
+              label: `See ${notice}`,
+              href: `/leagues/${view.leagueId}?year=${notice}`,
+            }}
+          >
+            The league’s owner opens each season and seats everyone before the draft. The{' '}
+            {notice} board and standings are where they were.
+          </EmptyState>
+        )
+      ) : (
+        <LeagueBoardRoom
+          // 🔴 Keyed on the stream URL, so switching season reconciles into a new
+          // connection rather than leaving one open to the old one.
+          //
+          // 🔴 `tv` and `group` are NOT in that URL, and that is the point: a
+          // toggle or a group change reconciles rather than remounts, so the
+          // `EventSource` is never dropped in the middle of a live draft (D114).
+          key={streamUrl}
+          initial={view}
+          streamUrl={streamUrl}
+          signedIn={user != null}
+          viewerSeatId={view.viewerSeatId}
+          tvMode={tvMode}
+          group={activeGroup}
+        />
+      )}
     </div>
   );
 }

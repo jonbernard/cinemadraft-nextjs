@@ -19,7 +19,7 @@ vi.mock('@/lib/services/season', async (real) => ({
 
 import { db } from '@/lib/db';
 import { leagueRepository } from '@/lib/repositories/leagues';
-import { getLeagueBoard } from '@/lib/services/draft';
+import { getLeagueBoard, getOpenableSeason } from '@/lib/services/draft';
 import { getSeasonSetup } from '@/lib/services/season-setup';
 import {
   completeDraft,
@@ -686,6 +686,21 @@ describe('opening a season (D131)', () => {
     expect(
       (await db.league.findUnique({ where: { id: fixture.league.id } }))?.draftingStatus,
     ).toBe('active');
+  });
+
+  it('offers the season until it is opened, and not after', async () => {
+    // The league page's offer reads the same two checks the action makes. An
+    // opened season has no seats yet, so the seasons list alone would keep
+    // offering it; the league's active year is what withdraws it.
+    signInAs(fixture.owner);
+    expect(await getOpenableSeason(fixture.league.id, [YEAR])).toEqual({
+      year: YEAR + 1,
+      fromYear: YEAR,
+    });
+
+    await openSeason({ leagueId: fixture.league.id, year: YEAR + 1 });
+
+    expect(await getOpenableSeason(fixture.league.id, [YEAR])).toBeNull();
   });
 
   /** The status a season reaches once it is under way, written directly. */
