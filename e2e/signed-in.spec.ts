@@ -182,18 +182,14 @@ async function cleanupLeagues() {
 }
 
 /**
- * A season of the admin test's own to offer the switch. CI's database holds
- * exactly one season, so "pick any other option" found none there and the
- * test failed as `the corpus has only one season` — it only ever passed on the
- * restored copy. Inactive, so `available_years_one_active` is untouched.
+ * The season before the active one, for the admin test's switch back. CI's
+ * database holds exactly one season, so the test inserts that year when it is
+ * missing — inactive, so `available_years_one_active` is untouched — and
+ * deletes only a row it inserted itself: on the restored copy the year is real.
  *
  * 🔴 Removed by the test itself, not `afterAll` — every worker runs a
- * file-level hook, and one could delete the row mid-test in another. And only
- * while inactive: if a regression ever let the switch commit, the row survives
- * and `lib/db.test.ts`'s ten-season count goes red — loud — rather than this
- * delete leaving the database with no active season at all.
+ * file-level hook, and one could delete the row mid-test in another.
  */
-const SCRATCH_YEAR = 2992;
 
 /*
  * 🔴 No file-level `afterAll` deleting this file's users — the same hazard the
@@ -207,73 +203,67 @@ const SCRATCH_YEAR = 2992;
  */
 
 test.describe('signed-in surfaces', () => {
-  test('the active season cannot be changed without confirming', async ({ page }) => {
-    // 🔴 This test never accepts the confirmation, so it never writes. The
-    // scratch account is promoted to admin rather than skipping — a skipped
-    // safety test is not a safety test — and removed by the global teardown.
+  test('the season cannot be changed without confirming', async ({ page }) => {
+    // 🔴 This test never accepts a confirmation, so it never writes the flag.
+    // The scratch account is promoted to admin rather than skipping — a
+    // skipped safety test is not a safety test — and removed by the global
+    // teardown.
     const id = await signInAs(page, {
       email: `${TAG}-admin@example.test`,
       firstName: 'Admin',
     });
-    await withDb(async (query) => {
+    const { before, inserted } = await withDb(async (query) => {
       await query(`update users set role = 'admin' where id = $1`, [id]);
-      await query(
-        `insert into available_years (year, is_active, created_at, updated_at)
-           values ($1, false, now(), now()) on conflict (year) do nothing`,
-        [SCRATCH_YEAR],
-      );
-    });
-
-    const before = await withDb(async (query) => {
       const { rows } = await query<{ year: number }>(
         `select year from available_years where is_active = true`,
       );
-      return rows[0]?.year ?? null;
+      const year = rows[0]?.year;
+      if (year == null) throw new Error('no active season; run scripts/seed-e2e.mjs');
+      const added = await query<{ id: number }>(
+        `insert into available_years (year, is_active, created_at, updated_at)
+           values ($1, false, now(), now()) on conflict (year) do nothing returning id`,
+        [year - 1],
+      );
+      return { before: year, inserted: added.rows[0]?.id ?? null };
     });
 
     try {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.goto('/admin/season');
-      await expect(page.getByRole('heading', { name: 'Active season' })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Active season', level: 1 }),
+      ).toBeVisible();
 
-      // One control, not one trigger per season. Ten adjacent "Make active"
-      // buttons a few pixels apart was the defect.
-      // Scoped to the content landmark: the shell's chrome (search, More) are
-      // buttons too, and counting those would make this pass at any count.
+      // Two acts, not one trigger per season (D138): start the next, or switch
+      // back one. Scoped to the content landmark: the shell's chrome (search,
+      // More) are buttons too, and counting those would pass at any count.
       const buttons = page.locator('main').getByRole('button');
-      await expect(buttons).toHaveCount(1);
-      const commit = buttons.first();
-      const box = await commit.boundingBox();
-      expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+      await expect(buttons).toHaveText([
+        `Start the ${before + 1} season`,
+        `Switch back to ${before - 1}`,
+      ]);
+      for (const button of await buttons.all()) {
+        expect((await button.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+      }
 
       // The blast radius is on the page as well as in the dialog.
-      await expect(page.getByText(/re-scopes every league/i)).toBeVisible();
+      await expect(page.getByText(/for all \d+ (person|people)/)).toBeVisible();
 
-      const select = page.getByLabel(/season/i);
-      const other = (await select.locator('option').allTextContents()).find((text) =>
-        text.includes(String(SCRATCH_YEAR)),
-      );
-      if (!other) throw new Error(`the scratch season ${SCRATCH_YEAR} is not offered`);
-
-      await select.selectOption({ label: other });
-      await commit.click();
-
-      // 🔴 The confirmation is an in-app dialog now (P14), not browser chrome,
-      // so the wording is read off the rendered element rather than out of a
-      // `page.on('dialog')` handler. That is strictly stronger: the old version
-      // asserted the text of a string that `window.confirm` was *asked* to
-      // show, which is not evidence that anything reached the screen.
+      // 🔴 Each act raises an in-app confirmation (P14) naming its year and the
+      // people it moves, read off the rendered element.
       const confirm = page.getByRole('dialog');
-      await expect(confirm, 'pressing commit must raise a confirmation').toBeVisible();
-      const dialogMessage = (await confirm.textContent()) ?? '';
-
-      expect(dialogMessage).toContain(other.trim());
-      expect(dialogMessage).toMatch(/\d+ (person|people)/);
-      expect(dialogMessage).toMatch(/cannot be undone/i);
-
-      // Declining is a click on Cancel, not `dialog.dismiss()`.
-      await confirm.getByRole('button', { name: 'Cancel' }).click();
-      await expect(confirm).toBeHidden();
+      for (const [button, year] of [
+        [buttons.first(), before + 1],
+        [buttons.last(), before - 1],
+      ] as const) {
+        await button.click();
+        await expect(confirm, 'pressing must raise a confirmation').toBeVisible();
+        const text = (await confirm.textContent()) ?? '';
+        expect(text).toMatch(new RegExp(`${year}( season)?\\?`));
+        expect(text).toMatch(/\d+ (person|people)/);
+        await confirm.getByRole('button', { name: 'Cancel' }).click();
+        await expect(confirm).toBeHidden();
+      }
 
       // Declining changes nothing — in the UI, and in the table.
       await expect(page.getByText(/is now the active season/)).toHaveCount(0);
@@ -284,12 +274,22 @@ test.describe('signed-in surfaces', () => {
         return rows[0]?.year ?? null;
       });
       expect(after).toBe(before);
+      const created = await withDb(async (query) => {
+        const { rows } = await query<{ n: number }>(
+          'select count(*)::int as n from available_years where year = $1',
+          [before + 1],
+        );
+        return rows[0]?.n;
+      });
+      expect(created).toBe(0);
     } finally {
-      await withDb((query) =>
-        query('delete from available_years where year = $1 and not is_active', [
-          SCRATCH_YEAR,
-        ]),
-      );
+      if (inserted != null) {
+        await withDb((query) =>
+          query('delete from available_years where id = $1 and not is_active', [
+            inserted,
+          ]),
+        );
+      }
     }
   });
 
