@@ -188,7 +188,7 @@ test.describe('the standings tab', () => {
 
   test('opens signed out on what moved, dated at the latest moment', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    const response = await page.goto(`/leagues/${leagueId}/standings?year=${YEAR}`);
+    const response = await page.goto(`/leagues/${leagueId}/${YEAR}/standings`);
     expect(response?.status()).toBe(200);
 
     const moved = page.getByRole('heading', { level: 2, name: /ceremony/ });
@@ -208,7 +208,7 @@ test.describe('the standings tab', () => {
 
   test('its totals are the board’s totals', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`/leagues/${leagueId}/standings?year=${YEAR}`);
+    await page.goto(`/leagues/${leagueId}/${YEAR}/standings`);
     const standings = await totals(page, 'League standings with points by award show');
 
     await page.goto(`/leagues/${leagueId}/${YEAR}`);
@@ -228,7 +228,7 @@ test.describe('the standings tab', () => {
 
   test('fits a phone', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/leagues/${leagueId}/standings?year=${YEAR}`);
+    await page.goto(`/leagues/${leagueId}/${YEAR}/standings`);
     await expect(page.getByRole('list', { name: 'League standings' })).toBeVisible();
     await noSideways(page);
   });
@@ -237,7 +237,7 @@ test.describe('the standings tab', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`/leagues/${leagueId}/standings?year=${YEAR}`);
+    await page.goto(`/leagues/${leagueId}/${YEAR}/standings`);
     await page
       .getByRole('table', { name: 'League standings with points by award show' })
       .getByRole('link', { name: `${TAG} Bea` })

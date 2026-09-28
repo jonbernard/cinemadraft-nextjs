@@ -1,8 +1,15 @@
 // @vitest-environment node
 
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/lib/db';
+
+// CI runs this before the seed too, when there is no active season to read.
+vi.mock('@/lib/services/season', async (real) => ({
+  ...(await real<typeof import('@/lib/services/season')>()),
+  getActiveYear: vi.fn(async () => 2026),
+}));
+
 import { getSeatSeasonView } from './season-ledger';
 
 /**

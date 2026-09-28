@@ -21,7 +21,7 @@ describe('LeagueTabs', () => {
     );
     expect(screen.getByRole('link', { name: 'Standings' })).toHaveAttribute(
       'href',
-      '/leagues/7/standings?year=2025',
+      '/leagues/7/2025/standings',
     );
   });
 });

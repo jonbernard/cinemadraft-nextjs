@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 import { LeagueTabs } from '@/components/leagues/LeagueTabs';
 import { StandingsRoom } from '@/components/leagues/StandingsRoom';
@@ -13,28 +13,21 @@ import { getActiveYear } from '@/lib/services/season';
 import { getStandingsView } from '@/lib/services/season-ledger';
 import { leagueTabHref, parseLeagueSegment } from '@/lib/utils/league-href';
 
-type Params = Promise<{ id: string }>;
-type Query = Promise<Record<string, string | string[] | undefined>>;
-
-/** `?year=` as canonical digits, or null: a malformed one is the current season. */
-function yearOf(query: Record<string, string | string[] | undefined>): number | null {
-  const value = query.year;
-  return parseLeagueSegment(Array.isArray(value) ? value[0] : value);
-}
+/** `/leagues/[id]/standings` and `/leagues/[id]/[year]/standings` (D139): one page. */
+type Params = Promise<{ id: string; year?: string }>;
 
 /** Public and out of the index, like the board (D44, §7). */
 export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Params;
-  searchParams: Query;
 }): Promise<Metadata> {
-  const leagueId = Number((await params).id);
+  const { id, year: segment } = await params;
+  const leagueId = Number(id);
   if (!Number.isSafeInteger(leagueId) || leagueId <= 0)
     return { title: 'Not here', robots: NOINDEX };
   try {
-    const year = yearOf(await searchParams) ?? (await getActiveYear());
+    const year = parseLeagueSegment(segment) ?? (await getActiveYear());
     const view = await getStandingsView(leagueId, year, null);
     return {
       title: `${view.leagueName ?? `League ${leagueId}`} standings`,
@@ -50,22 +43,22 @@ export async function generateMetadata({
  * follower reads what a player reads (§7), and signing in only marks the
  * reader's own row.
  */
-export default async function StandingsPage({
-  params,
-  searchParams,
-}: {
-  params: Params;
-  searchParams: Query;
-}) {
-  const leagueId = Number((await params).id);
+export default async function StandingsPage({ params }: { params: Params }) {
+  const { id, year: segment } = await params;
+  const leagueId = Number(id);
   if (!Number.isSafeInteger(leagueId) || leagueId <= 0) notFound();
+  // Canonical digits or a 404, as on the board (D139).
+  const requested = segment === undefined ? null : parseLeagueSegment(segment);
+  if (segment !== undefined && requested == null) notFound();
 
   const [activeYear, seasons, user] = await Promise.all([
     getActiveYear(),
     getLeagueSeasons(leagueId),
     getCurrentUser(),
   ]);
-  const year = yearOf(await searchParams) ?? activeYear;
+  // The current season is the bare URL; 307, never 308 (see `leagueHref`).
+  if (requested === activeYear) redirect(leagueTabHref(leagueId, 'standings'));
+  const year = requested ?? activeYear;
   // The board's rule (D139): a season this league never had is a 404.
   if (year !== activeYear && !seasons.includes(year)) notFound();
 

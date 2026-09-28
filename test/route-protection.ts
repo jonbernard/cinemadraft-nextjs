@@ -173,6 +173,7 @@ export const PUBLIC_ROUTES = [
   // re-export `/leagues/[id]`'s page, so they are exactly as public as it is.
   '/leagues/[id]/[year]',
   '/leagues/[id]/[year]/group/[group]',
+  '/leagues/[id]/[year]/standings',
   // 🔴 The league's other views (P16.T19–T21), public for the same reason and
   // noindexed the same way: a follower reads what a player reads (§7). Each
   // resolves the reader itself, and signing in only marks their own row.

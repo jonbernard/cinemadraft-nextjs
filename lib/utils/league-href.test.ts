@@ -46,7 +46,7 @@ describe('leagueTabHref', () => {
       '/leagues/70/standings',
     );
     expect(leagueTabHref(70, 'standings', { year: 2025, activeYear: 2026 })).toBe(
-      '/leagues/70/standings?year=2025',
+      '/leagues/70/2025/standings',
     );
     expect(seatHref(70, 1234)).toBe('/leagues/70/seats/1234');
   });

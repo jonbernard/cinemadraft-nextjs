@@ -42,18 +42,17 @@ export function leagueHref(
 }
 
 /**
- * A league tab's URL (P16.T19): the board is `leagueHref`; the other tabs are
- * static children of `/leagues/[id]` that win over `[year]` (D139) and carry
- * a season other than the current one as `?year=`.
+ * A league tab's URL (P16.T19), nested the way the board is (D139): the
+ * current season's is `/leagues/70/standings`, another season's
+ * `/leagues/70/2025/standings`. The board itself is `leagueHref`.
  */
 export function leagueTabHref(
   leagueId: number,
   tab: 'board' | 'standings' | 'race',
   { year, activeYear }: { year?: number | null; activeYear?: number | null } = {},
 ): string {
-  if (tab === 'board') return leagueHref(leagueId, { year, activeYear });
-  const path = `/leagues/${leagueId}/${tab}`;
-  return year != null && year !== activeYear ? `${path}?year=${year}` : path;
+  const season = leagueHref(leagueId, { year, activeYear });
+  return tab === 'board' ? season : `${season}/${tab}`;
 }
 
 /** A seat's season page (P16.T21): a static child too, and the draft fixes the season. */
