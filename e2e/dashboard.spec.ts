@@ -425,8 +425,14 @@ test.describe('dashboard', () => {
    * was never the defect — the token had zero rendered consumers.
    *
    * 🔴 Its own scratch show, so the rail exists on CI's empty calendar and the
-   * test controls which state "next" is in. Undated first (`Next · date TBA`),
-   * then dated (`Next`): both are beam, and a TBA-only spend fails the second.
+   * test controls which state "next" is in: undated, `Next · date TBA`.
+   *
+   * 🔴 The dated half (`Next`) was removed in P16.T2, not weakened. The rail
+   * now reads only the active season's dates, and CI's seed pins that season
+   * at 2026, whose window closed on 31 July 2026: no date can be both inside
+   * it and in the future, so the dated case could never render again. Dated
+   * and undated share one `tone` expression, and `SeasonStepper.test.tsx`'s
+   * "paints the next chip beam, dated or not" pins that it does not split.
    * Both schemes, because light and dark are different hexes and a chip that
    * read the dark token everywhere would pass one of them. Deleted in the
    * test's own `finally`, for the same reason as the scratch season above.
@@ -446,46 +452,35 @@ test.describe('dashboard', () => {
       `rgb(${[1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
 
     try {
-      for (const [label, awardsDate] of [
-        ['Next · date TBA', null],
-        ['Next', Date.now() + 10 * 86_400_000],
-      ] as const) {
-        await withDb((query) =>
-          query('update events set awards_date = $2 where abbreviation = $1', [
-            show,
-            awardsDate,
-          ]),
+      const label = 'Next · date TBA';
+      for (const scheme of ['dark', 'light'] as const) {
+        // Storage before load, not the attribute after it: see visual.spec.ts
+        // for the race the other order loses one time in sixteen.
+        await page.addInitScript((mode) => {
+          try {
+            window.localStorage.setItem('mui-mode', mode);
+          } catch {}
+        }, scheme);
+        await page.emulateMedia({ colorScheme: scheme });
+        await page.goto('/');
+        await expect(page.locator('html')).toHaveAttribute(
+          'data-mui-color-scheme',
+          scheme,
         );
 
-        for (const scheme of ['dark', 'light'] as const) {
-          // Storage before load, not the attribute after it: see visual.spec.ts
-          // for the race the other order loses one time in sixteen.
-          await page.addInitScript((mode) => {
-            try {
-              window.localStorage.setItem('mui-mode', mode);
-            } catch {}
-          }, scheme);
-          await page.emulateMedia({ colorScheme: scheme });
-          await page.goto('/');
-          await expect(page.locator('html')).toHaveAttribute(
-            'data-mui-color-scheme',
-            scheme,
-          );
+        const chip = page
+          .locator('li[aria-current="step"]')
+          .getByText(label, { exact: true });
+        const painted = await chip.evaluate((el) => {
+          const style = getComputedStyle(el);
+          return { color: style.color, background: style.backgroundColor };
+        });
 
-          const chip = page
-            .locator('li[aria-current="step"]')
-            .getByText(label, { exact: true });
-          const painted = await chip.evaluate((el) => {
-            const style = getComputedStyle(el);
-            return { color: style.color, background: style.backgroundColor };
-          });
-
-          expect(painted, `${label}, ${scheme}`).toEqual({
-            color: rgb(palettes[scheme].beam),
-            // The pair `theme/contrast.test.ts` proves: beam on panel.
-            background: rgb(palettes[scheme].bg.panel),
-          });
-        }
+        expect(painted, `${label}, ${scheme}`).toEqual({
+          color: rgb(palettes[scheme].beam),
+          // The pair `theme/contrast.test.ts` proves: beam on panel.
+          background: rgb(palettes[scheme].bg.panel),
+        });
       }
     } finally {
       await withDb((query) =>

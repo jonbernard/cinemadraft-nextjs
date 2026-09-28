@@ -37,4 +37,16 @@ describe('toSeasonPhases', () => {
       complete: false,
     });
   });
+
+  it('reads only its own season’s dates: 2026’s are not 2027’s', () => {
+    // 🔴 The trap the owner's flip to 2027 springs. `events` holds one row of
+    // dates per show, overwritten each season, so until the award-entry skill
+    // sets 2027's every show still carries 2026's — all past. Without the
+    // window the rail would call 2027 finished on the day it opens.
+    const phases = toSeasonPhases([show(1)], 2027, NOW);
+    expect(phases.map(({ date, complete }) => ({ date, complete }))).toEqual([
+      { date: null, complete: false },
+      { date: null, complete: false },
+    ]);
+  });
 });

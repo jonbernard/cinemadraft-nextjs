@@ -2471,7 +2471,7 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
 
 **Tranche 1: opening the next season, and the AFI flag (time-sensitive; ships whole before the active year is flipped to 2027)**
 - [x] P16.T1 — `events.has_ceremony` (M1), and the rail stops waiting for the AFI (D129)
-- [ ] P16.T2 — the rail shows the season it is labelled with
+- [x] P16.T2 — the rail shows the season it is labelled with
 - [ ] P16.T3 — a league's status belongs to its active season (D130)
 - [ ] P16.T4 — opening a season creates an empty one (D131)
 - [ ] P16.T5 — "Open 2027", and the rollover panel

@@ -371,6 +371,8 @@ Expected: PASS. `dashboard.test.ts` is restored-data, and 2026 is active there, 
 
 Drop the `inSeason` guard in `toSeasonPhases`. Expect the 2027 case to go red. Restore.
 
+(Found in P16.T2: `e2e/dashboard.spec.ts`'s beam test had a dated `Next` half at `Date.now() + 10 days`. With the window, and CI's seed pinned to 2026, whose window closed on 31 July 2026, no date can be both in the active season and in the future, so that half can never render again. It was removed, not weakened; `SeasonStepper.test.tsx` already pins that dated and undated share one tone.)
+
 - [ ] **Step 6: Commit**
 
 `git commit -m "fix(dashboard): the rail reads only its own season's dates (P16.T2)"`

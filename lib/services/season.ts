@@ -1,5 +1,6 @@
 import { availableYearRepository } from '@/lib/repositories/available-years';
 import { eventRepository } from '@/lib/repositories/events';
+import { inSeason } from '@/lib/utils/season-window';
 
 /**
  * The season the app is currently showing (D22).
@@ -69,11 +70,21 @@ export async function getSeasons(): Promise<number[]> {
  */
 export function toSeasonPhases(
   events: readonly PhaseEvent[],
-  _season: number,
+  season: number,
   now: number = Date.now(),
 ): SeasonPhase[] {
+  // 🔴 Only this season's dates (P16.T2). A show holds one row of dates,
+  // overwritten each season, so once the active year moves on every show
+  // still carries last season's, all past, and without this the rail would
+  // call the new season finished the day it opens. Out of season is "not
+  // scheduled yet", which is exactly what it is.
+  const own = (date: number | null) =>
+    date != null && inSeason(date, season) ? date : null;
+
   return events
     .flatMap((event) => {
+      const nomDate = own(event.nomDate);
+      const awardsDate = own(event.awardsDate);
       const shared = {
         eventId: event.id,
         name: event.name,
@@ -83,8 +94,8 @@ export function toSeasonPhases(
         ...shared,
         key: `${event.id}-nominations`,
         phase: 'nominations',
-        date: event.nomDate,
-        complete: event.nomDate != null && event.nomDate < now,
+        date: nomDate,
+        complete: nomDate != null && nomDate < now,
       };
       // 🔴 A show with no ceremony (D129, the AFI) has one moment. Emitting a
       // ceremony box for it anyway is what read "11 of 12 · Next · date TBA"
@@ -96,8 +107,8 @@ export function toSeasonPhases(
           ...shared,
           key: `${event.id}-ceremony`,
           phase: 'ceremony' as const,
-          date: event.awardsDate,
-          complete: event.awardsDate != null && event.awardsDate < now,
+          date: awardsDate,
+          complete: awardsDate != null && awardsDate < now,
         },
       ];
     })
