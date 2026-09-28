@@ -185,14 +185,18 @@ export function AtStake({
         {atStake.films.map((film) => (
           <li
             key={film.tmdbId ?? film.title}
-            className="flex min-h-11 flex-col justify-center gap-1 py-1 sm:flex-row sm:items-baseline sm:gap-3"
+            className="flex min-h-11 flex-col justify-center py-1"
           >
-            <span className="text-text-primary shrink-0 font-serif text-base">
-              {film.title}
-            </span>
-            <span className="text-text-secondary text-xs">
-              {film.categories.join(', ')}
-            </span>
+            {/* The row's own flex centres vertically; the line inside flows
+                from the left. One flex doing both centred short rows. */}
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
+              <span className="text-text-primary shrink-0 font-serif text-base">
+                {film.title}
+              </span>
+              <span className="text-text-secondary text-xs">
+                {film.categories.join(', ')}
+              </span>
+            </div>
           </li>
         ))}
       </ul>

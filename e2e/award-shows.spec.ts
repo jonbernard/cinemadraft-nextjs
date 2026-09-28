@@ -977,6 +977,14 @@ test.describe('the season view', () => {
     ).toBeVisible();
     // One row per film, its categories together.
     await expect(page.getByText(`${SV} Director, ${SV} Picture`)).toBeVisible();
+    // A short row starts where its heading does. The row's `justify-center`
+    // once centred it sideways at desktop width, off the rows above it.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const left = async (locator: ReturnType<Page['locator']>) =>
+      (await locator.boundingBox())?.x;
+    const heading = page.getByText('2 of your nominations are up for 20 more points');
+    const title = heading.locator('..').getByText(svFilm(0), { exact: true });
+    expect(await left(title)).toBe(await left(heading));
 
     const stranger = await browser.newContext();
     try {
