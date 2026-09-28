@@ -89,7 +89,10 @@ export default async function AwardShowsPage({
         <SectionHead
           as="h1"
           eyebrow={
-            moments.length === 0 ? undefined : `${done} of ${moments.length} moments done`
+            moments.length === 0
+              ? undefined
+              : // A past season is over: what is left was never entered, not pending.
+                `${done} of ${moments.length} moments ${view.past ? 'recorded' : 'done'}`
           }
           right={String(view.year)}
           className="pb-0"
@@ -158,6 +161,7 @@ export default async function AwardShowsPage({
         months={view.months}
         year={view.year}
         nextKey={view.next?.key ?? null}
+        past={view.past}
         aside={aside}
       />
 

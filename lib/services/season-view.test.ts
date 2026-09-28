@@ -210,6 +210,31 @@ describe('getSeasonView', () => {
     expect(view).toMatchObject({ year: YEAR, offSeason: true, activeYear: YEAR + 1 });
   });
 
+  // 🔴 2024's WGA ceremony has no winners, and read "Up next · date to be
+  // announced" two years later. A past season has nothing still to come.
+  it('a past season has no Up next, and an unentered moment is not "not yet scheduled"', async () => {
+    const { eventId } = await seed();
+    const now = new Date();
+    const undated = await db.event.create({
+      data: {
+        name: `${TAG} Undated`,
+        abbreviation: `${TAG}-undated`,
+        createdAt: now,
+        updatedAt: now,
+      },
+      select: { id: true },
+    });
+    activeYear.value = YEAR + 1;
+    const view = await getSeasonView(YEAR);
+    expect(view).toMatchObject({ year: YEAR, past: true, next: null });
+    const labelOf = (key: string) =>
+      view.months.find((month) => month.moments.some((m) => m.key === key))?.label;
+    expect(labelOf(`${undated.id}-nominations`)).toBe('Date not recorded');
+    expect(view.months.map((month) => month.label)).not.toContain('Not yet scheduled');
+    // Its ceremony has no winners, but keeps its date.
+    expect(labelOf(`${eventId}-ceremony`)).toBe('March 2989');
+  });
+
   it('shows the active year while it has dates, even before any nominations', async () => {
     await seed({ nominations: false });
     const view = await getSeasonView(null);

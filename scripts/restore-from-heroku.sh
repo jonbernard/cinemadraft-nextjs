@@ -124,8 +124,9 @@ step() {
 }
 # The underscore-stripping fix (plan, "departs from PLAN.md" 3): lower("DraftPicks")
 # is draftpicks, not draft_picks. SequelizeMeta is dropped by normalize.sql;
-# _prisma_migrations is not in the dump.
-norm() { grep -v -e '^sequelizemeta' -e '^_prisma_migrations' | awk -F'\t' -v OFS='\t' '{gsub(/_/, "", $1); print}' | sort; }
+# _prisma_migrations is not in the dump, and neither is event_dates (M3
+# creates it; C5 counts it instead).
+norm() { grep -v -e '^sequelizemeta' -e '^_prisma_migrations' -e '^event_dates' | awk -F'\t' -v OFS='\t' '{gsub(/_/, "", $1); print}' | sort; }
 folded_counts() {
   DIFF="$(diff <(norm <"${2:-$EXPECTED}") <(bash scripts/row-counts.sh "$URL" | norm))" || red "$1: folded row counts differ from the dump's:
 $DIFF"
@@ -185,6 +186,8 @@ BAD="$(q <<'SQL'
 select name from (values
   ('nominations.year is integer', coalesce((select data_type = 'integer' from information_schema.columns
       where table_schema = 'public' and table_name = 'nominations' and column_name = 'year'), false)),
+  ('event_dates: 12 shows x 2017-2026', coalesce((select count(*) = 120 and count(distinct year) = 10
+      and min(year) = 2017 and max(year) = 2026 from event_dates), false)),
   ('events.has_ceremony, afi false', coalesce((select not has_ceremony from events where abbreviation = 'afi'), false)),
   ('events.focused_award_id',   exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'events' and column_name = 'focused_award_id')),
   ('available_years.is_active', exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'available_years' and column_name = 'is_active')),

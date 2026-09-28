@@ -9,6 +9,12 @@ vi.mock('@clerk/nextjs/server', () => ({ currentUser }));
 const revalidatePath = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({ revalidatePath }));
 
+const activeYear = vi.hoisted(() => ({ value: 2026 }));
+vi.mock('@/lib/services/season', async (real) => ({
+  ...(await real<typeof import('@/lib/services/season')>()),
+  getActiveYear: vi.fn(async () => activeYear.value),
+}));
+
 import { db } from '@/lib/db';
 import { updateEvent } from './update-event';
 
@@ -65,6 +71,13 @@ async function makeEvent() {
 }
 
 async function cleanup() {
+  const events = await db.event.findMany({
+    where: { fbId: { startsWith: TAG } },
+    select: { id: true },
+  });
+  await db.eventDate.deleteMany({
+    where: { eventId: { in: events.map((event) => event.id) } },
+  });
   await db.event.deleteMany({ where: { fbId: { startsWith: TAG } } });
   await db.user.deleteMany({ where: { email: { contains: `${TAG}-` } } });
 }
@@ -341,5 +354,126 @@ describe('updateEvent', () => {
       `/award-shows/${event.abbreviation}`,
       'layout',
     );
+  });
+});
+
+/** One season's dates, from the "Edit this show" dialog (D134). */
+describe('updateEvent — a season', () => {
+  const YEAR = 2986;
+  const dates = (over: Partial<Record<string, number | null>> = {}) => ({
+    year: YEAR,
+    nomDate: Date.UTC(YEAR, 0, 21),
+    nomTime: 46_800_000,
+    awardsDate: Date.UTC(YEAR, 2, 14),
+    awardsTime: 90_000_000,
+    ...over,
+  });
+  const rows = (eventId: number) =>
+    db.eventDate.findMany({ where: { eventId }, orderBy: { year: 'asc' } });
+
+  beforeEach(() => {
+    activeYear.value = YEAR + 1;
+  });
+
+  it('adds the row, then updates it on the next save: one row, no duplicate', async () => {
+    const event = await makeEvent();
+    signInAs(await makeUser('admin'));
+
+    expect((await updateEvent({ eventId: event.id, season: dates() })).ok).toBe(true);
+    const later = Date.UTC(YEAR, 0, 28);
+    await updateEvent({ eventId: event.id, season: dates({ nomDate: later }) });
+
+    const stored = await rows(event.id);
+    expect(stored).toHaveLength(1);
+    expect(stored[0]).toMatchObject({
+      year: YEAR,
+      nomDate: BigInt(later),
+      nomTime: 46_800_000n,
+      awardsDate: BigInt(Date.UTC(YEAR, 2, 14)),
+      awardsTime: 90_000_000n,
+    });
+  });
+
+  it('leaves events alone for a season that is not the active one', async () => {
+    const event = await makeEvent();
+    signInAs(await makeUser('admin'));
+
+    await updateEvent({ eventId: event.id, season: dates() });
+
+    const row = await db.event.findUnique({ where: { id: event.id } });
+    expect(row?.nomDate).toBeNull();
+    expect(row?.awardsDate).toBeNull();
+  });
+
+  it('writes events too for the active season, and never nulls it', async () => {
+    const event = await makeEvent();
+    signInAs(await makeUser('admin'));
+    activeYear.value = YEAR;
+
+    await updateEvent({ eventId: event.id, season: dates() });
+    await updateEvent({
+      eventId: event.id,
+      season: dates({ awardsDate: null, awardsTime: null }),
+    });
+
+    const row = await db.event.findUnique({ where: { id: event.id } });
+    expect(row?.nomDate).toBe(BigInt(Date.UTC(YEAR, 0, 21)));
+    expect(row?.nomTime).toBe(46_800_000n);
+    // The emptied awards date is the season row's to lose, not events'.
+    expect(row?.awardsDate).toBe(BigInt(Date.UTC(YEAR, 2, 14)));
+    expect((await rows(event.id))[0]?.awardsDate).toBeNull();
+  });
+
+  it('refuses a non-admin and writes no row', async () => {
+    const event = await makeEvent();
+    signInAs(await makeUser('user'));
+
+    expect((await updateEvent({ eventId: event.id, season: dates() })).ok).toBe(false);
+    expect(await rows(event.id)).toHaveLength(0);
+  });
+
+  it('refuses a date outside the season, and writes nothing', async () => {
+    const event = await makeEvent();
+    signInAs(await makeUser('admin'));
+
+    const result = await updateEvent({
+      eventId: event.id,
+      name: 'Should not land',
+      season: dates({ nomDate: Date.UTC(YEAR - 1, 0, 21) }),
+    });
+
+    expect(result).toMatchObject({ ok: false, code: 'INVALID' });
+    expect(result.ok === false && result.message).toMatch(/outside the 2986 season/);
+    expect(await rows(event.id)).toHaveLength(0);
+    expect((await db.event.findUnique({ where: { id: event.id } }))?.name).toBe(
+      event.name,
+    );
+  });
+
+  it('refuses nominations after the awards', async () => {
+    const event = await makeEvent();
+    signInAs(await makeUser('admin'));
+
+    const result = await updateEvent({
+      eventId: event.id,
+      season: dates({ nomDate: Date.UTC(YEAR, 2, 20) }),
+    });
+
+    expect(result).toMatchObject({ ok: false, code: 'INVALID' });
+    expect(await rows(event.id)).toHaveLength(0);
+  });
+
+  it('refuses an awards date for a show with no ceremony (D129)', async () => {
+    const event = await makeEvent();
+    signInAs(await makeUser('admin'));
+
+    const result = await updateEvent({
+      eventId: event.id,
+      hasCeremony: false,
+      season: dates(),
+    });
+
+    expect(result).toMatchObject({ ok: false, code: 'INVALID' });
+    expect(await rows(event.id)).toHaveLength(0);
   });
 });
