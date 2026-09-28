@@ -1022,7 +1022,7 @@ A permanent redirect on every internal click is the failure the films proposal w
 ### Task P16.T12: Tranche 2 gate
 
 - [ ] **Step 1:** Run § The tranche gate (CI shape, every spec), then the full suites on the executor.
-- [ ] **Step 2:** Run `scripts/restore-from-heroku.sh .local/baseline.dump <scratch agent:up URL> --yes` end to end. It must be GREEN, printing the merge prediction 8/13/0/0 (step 8 of T8), the C5 lines for M2, and C7.
+- [ ] **Step 2:** Run `scripts/restore-from-heroku.sh .local/prod-dump.dump <scratch URL, 5460+> --yes` end to end. (Corrected in P16.T12: the plan named `.local/baseline.dump`, which is already normalized to snake_case, so `normalize.sql` fails on it at `"Users" does not exist`. The script takes a Heroku-shaped dump.) It must be GREEN, printing the merge prediction 8/13/0/0 (step 8 of T8), the C5 lines for M2, and C7.
 - [ ] **Step 3: Production-build browser pass**
   - `/films/313369` redirects to `/films/la-la-land-313369`. Check that every film link on `/browse` page 1, `/watchlist`, `/` and a member page is `title-id`, with no 308s in the network log.
   - At 1440 and 390, light and dark.
