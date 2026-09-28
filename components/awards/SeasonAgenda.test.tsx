@@ -77,4 +77,14 @@ describe('SeasonAgenda', () => {
       '1 category',
     );
   });
+
+  it('a past season: an unentered moment reads "No results recorded", never TBA', () => {
+    const months = [
+      { label: 'Date not recorded', moments: [undated('99-nominations', 'A new show')] },
+    ];
+    render(<SeasonAgenda months={months} year={2024} nextKey={null} past />);
+    const row = screen.getByRole('link', { name: /A new show/ });
+    expect(row).toHaveTextContent('Nominations · No results recorded');
+    expect(row).not.toHaveTextContent('Date TBA');
+  });
 });

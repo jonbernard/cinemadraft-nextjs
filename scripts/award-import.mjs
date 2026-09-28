@@ -1028,13 +1028,20 @@ export async function applyDates(client, plan, state, { commit, secret }) {
   await client.query('BEGIN');
   try {
     for (const change of changes) {
-      const columns =
+      const [date, time] =
         change.field === 'nominations'
-          ? 'nom_date = $1, nom_time = $2'
-          : 'awards_date = $1, awards_time = $2';
+          ? ['nom_date', 'nom_time']
+          : ['awards_date', 'awards_time'];
       await client.query(
-        `UPDATE events SET ${columns}, updated_at = now() WHERE id = $3`,
+        `UPDATE events SET ${date} = $1, ${time} = $2, updated_at = now() WHERE id = $3`,
         [change.date, change.time, change.id],
+      );
+      // The season's own copy (D134): `events` is overwritten next year.
+      await client.query(
+        `INSERT INTO event_dates (year, event_id, ${date}, ${time}) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (year, event_id)
+         DO UPDATE SET ${date} = EXCLUDED.${date}, ${time} = EXCLUDED.${time}, updated_at = now()`,
+        [plan.year, change.id, change.date, change.time],
       );
     }
     await client.query('COMMIT');

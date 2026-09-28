@@ -26,11 +26,12 @@ import { config, EXCLUDE } from './vitest.config.mts';
 export default config([
   ...EXCLUDE,
   // Contract tests against restored production data. The extglob spares
-  // the three files that seed every row they touch — the `userId`/`year`
+  // the four files that seed every row they touch — the `userId`/`year`
   // scoping on the list writes and the ownership scoping on the
-  // watchlist's progress reads are security claims, and the duplicate-film
-  // merge's refusal is a data-loss guard (D132); all belong on every push.
-  'lib/repositories/!(lists.writes|watchlists.scoping|movie-merge).test.ts',
+  // watchlist's progress reads are security claims, the duplicate-film
+  // merge's refusal is a data-loss guard (D132), and the per-season dates
+  // check M3's literals (D134); all belong on every push.
+  'lib/repositories/!(lists.writes|watchlists.scoping|movie-merge|event-dates).test.ts',
   'lib/schema.test.ts',
   'lib/services/clerk-identity.production.test.ts',
   // Asserts the local Docker connection string (port 5433) and the

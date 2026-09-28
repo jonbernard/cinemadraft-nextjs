@@ -1,3 +1,4 @@
+import { eventDateRepository } from '@/lib/repositories/event-dates';
 import { type Event, eventRepository } from '@/lib/repositories/events';
 import { nominationRepository } from '@/lib/repositories/nominations';
 import { winnerRepository } from '@/lib/repositories/winners';
@@ -16,7 +17,7 @@ export type Moment = {
   abbreviation: string;
   name: string;
   phase: 'nominations' | 'ceremony';
-  /** This season's date (epoch ms), or null: unscheduled, or a past season with no stored dates. */
+  /** This season's date (epoch ms), or null: unscheduled, or a season with no stored dates. */
   date: number | null;
   /** Sort key: `seasonOffset` of `date`, or of the show's current column when undated. */
   order: number;
@@ -38,10 +39,10 @@ type MomentEvent = Pick<
 >;
 
 /**
- * 🔴 `state` is read from the rows, never from the date. A past season has no
- * dates (only this year's are stored on `events`), so a clock rule would
- * finish none of its moments; and a ceremony entered late is still finished
- * once its winners are in.
+ * 🔴 `state` is read from the rows, never from the date. A season with no
+ * stored dates (`event_dates`, D134) would finish none of its moments under a
+ * clock rule; and a ceremony entered late is still finished once its winners
+ * are in.
  *
  * `live` is `awards_active` in the active year only: the flag is about
  * tonight's broadcast, and a past season's ceremony with winners is finished
@@ -120,13 +121,14 @@ export function toMoments(input: {
     );
 }
 
-/** A season's moments: the events, and one grouped count each of nominations and winners. */
+/** A season's moments: the events, their stored dates for the year, and one grouped count each of nominations and winners. */
 export async function getSeasonMoments(year: number): Promise<Moment[]> {
-  const [events, nominations, winners, activeYear] = await Promise.all([
+  const [events, nominations, winners, activeYear, datesForYear] = await Promise.all([
     eventRepository.findAll(),
     nominationRepository.countByEventForYear(year),
     winnerRepository.countByEventForYear(year),
     getActiveYear(),
+    eventDateRepository.findByYear(year),
   ]);
-  return toMoments({ events, year, activeYear, nominations, winners });
+  return toMoments({ events, year, activeYear, nominations, winners, datesForYear });
 }
