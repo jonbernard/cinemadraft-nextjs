@@ -185,7 +185,7 @@ export function AtStake({
         {atStake.films.map((film) => (
           <li
             key={film.tmdbId ?? film.title}
-            className="flex min-h-11 flex-col justify-center gap-0.5 py-1 sm:flex-row sm:items-baseline sm:gap-3"
+            className="flex min-h-11 flex-col justify-center gap-1 py-1 sm:flex-row sm:items-baseline sm:gap-3"
           >
             <span className="text-text-primary shrink-0 font-serif text-base">
               {film.title}
