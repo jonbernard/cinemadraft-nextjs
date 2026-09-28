@@ -324,7 +324,8 @@ describe('getSeasonViewer', () => {
     const { readerId } = await seedLeague();
     const viewer = await getSeasonViewer(readerId, YEAR);
     expect(viewer.atStake).toEqual({
-      films: [{ title: `${TAG} mine`, tmdbId: null, category: 'Picture' }],
+      films: [{ title: `${TAG} mine`, tmdbId: null, categories: ['Picture'] }],
+      nominations: 1,
       points: 10,
       more: 0,
     });

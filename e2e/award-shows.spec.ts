@@ -819,11 +819,17 @@ async function svSeed(readerId?: number): Promise<{ leagueId: number }> {
          values ($1, $2, $3, $4, now(), now()) returning id`,
       [`${SV} Show`, `${SV}-show`, Date.UTC(SV_YEAR, 0, 10), Date.UTC(SV_YEAR, 2, 1)],
     )) as { id: number }[];
-    const [points] = (await query(
-      `insert into points (level, tier, points, created_at, updated_at)
-         values ($1, 1, 10, now(), now()) returning id`,
-      [`${SV}-level`],
-    )) as { id: number }[];
+    // A points row only when a seat is scored: `how-it-works.spec.ts` compares
+    // the points table with its page, and every scratch level is a window in
+    // which a parallel read of the two can disagree.
+    const [points] =
+      readerId == null
+        ? [undefined]
+        : ((await query(
+            `insert into points (level, tier, points, created_at, updated_at)
+               values ($1, 1, 10, now(), now()) returning id`,
+            [`${SV}-level`],
+          )) as { id: number }[]);
     const awards: number[] = [];
     for (const name of ['Picture', 'Director']) {
       const [award] = (await query(
@@ -969,6 +975,8 @@ test.describe('the season view', () => {
     await expect(
       page.getByText('2 of your nominations are up for 20 more points'),
     ).toBeVisible();
+    // One row per film, its categories together.
+    await expect(page.getByText(`${SV} Director, ${SV} Picture`)).toBeVisible();
 
     const stranger = await browser.newContext();
     try {

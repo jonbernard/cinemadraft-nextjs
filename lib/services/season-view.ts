@@ -184,8 +184,12 @@ export type SeasonViewer = {
   }[];
   /** For the next ceremony: the reader's nominations at stake. */
   atStake: {
-    films: { title: string; tmdbId: string | null; category: string }[];
+    /** One entry per film, most categories first, capped at `UP_NEXT_FILMS`. */
+    films: { title: string; tmdbId: string | null; categories: string[] }[];
+    /** Every undecided nomination, and what winning them all would add. */
+    nominations: number;
     points: number;
+    /** Films beyond the cap. */
     more: number;
   } | null;
 };
@@ -270,12 +274,29 @@ export async function getSeasonViewer(
   if (next?.phase === 'ceremony' && next.state === 'upcoming' && leagues.length > 0) {
     // A win is worth a nomination's points a second time: that is what is at stake.
     const lines = [...held.values()].filter((line) => line.show === next.abbreviation);
+    const byFilm = new Map<
+      string,
+      { title: string; tmdbId: string | null; categories: string[] }
+    >();
+    for (const line of lines) {
+      const key = line.tmdbId ?? line.title;
+      const film = byFilm.get(key) ?? {
+        title: line.title,
+        tmdbId: line.tmdbId,
+        categories: [],
+      };
+      if (!film.categories.includes(line.category)) film.categories.push(line.category);
+      byFilm.set(key, film);
+    }
+    const films = [...byFilm.values()].sort(
+      (a, b) =>
+        b.categories.length - a.categories.length || a.title.localeCompare(b.title),
+    );
     atStake = {
-      films: lines
-        .slice(0, UP_NEXT_FILMS)
-        .map(({ title, tmdbId, category }) => ({ title, tmdbId, category })),
+      films: films.slice(0, UP_NEXT_FILMS),
+      nominations: lines.length,
       points: lines.reduce((sum, line) => sum + line.points, 0),
-      more: Math.max(0, lines.length - UP_NEXT_FILMS),
+      more: Math.max(0, films.length - UP_NEXT_FILMS),
     };
   }
 

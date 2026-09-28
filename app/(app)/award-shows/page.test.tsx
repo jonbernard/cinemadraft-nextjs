@@ -43,7 +43,10 @@ describe('the award shows page', () => {
         },
       ],
       atStake: {
-        films: [{ title: 'Frankenstein', tmdbId: '1062722', category: 'Best Picture' }],
+        films: [
+          { title: 'Frankenstein', tmdbId: '1062722', categories: ['Best Picture'] },
+        ],
+        nominations: 1,
         points: 20,
         more: 0,
       },

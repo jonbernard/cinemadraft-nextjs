@@ -157,8 +157,8 @@ export function SeasonUpNext({
 
 /**
  * The reader's nominations at stake at the next ceremony (P16.T16): a win
- * pays a nomination's points a second time, so that is the sum. Capped like
- * the films above, and plain text (D73).
+ * pays a nomination's points a second time, so that is the sum. One row per
+ * film with its categories, capped like the films above; plain text (D73).
  */
 export function AtStake({
   atStake,
@@ -169,8 +169,7 @@ export function AtStake({
   year: number;
   abbreviation: string;
 }) {
-  const count = atStake.films.length + atStake.more;
-  if (count === 0) {
+  if (atStake.nominations === 0) {
     return (
       <p className="text-text-secondary text-sm">None of your films is nominated here.</p>
     );
@@ -178,20 +177,22 @@ export function AtStake({
   return (
     <div className="flex flex-col gap-2">
       <h3 className="text-text-secondary text-sm">
-        {count === 1
+        {atStake.nominations === 1
           ? `1 of your nominations is up for ${atStake.points} more points`
-          : `${count} of your nominations are up for ${atStake.points} more points`}
+          : `${atStake.nominations} of your nominations are up for ${atStake.points} more points`}
       </h3>
-      <ul className="grid gap-x-6 sm:grid-cols-2">
+      <ul className="flex flex-col">
         {atStake.films.map((film) => (
           <li
-            key={`${film.title}-${film.category}`}
-            className="flex min-h-11 items-center justify-between gap-3"
+            key={film.tmdbId ?? film.title}
+            className="flex min-h-11 flex-col justify-center gap-0.5 py-1 sm:flex-row sm:items-baseline sm:gap-3"
           >
-            <span className="text-text-primary min-w-0 truncate font-serif text-base">
+            <span className="text-text-primary shrink-0 font-serif text-base">
               {film.title}
             </span>
-            <span className="text-text-secondary shrink-0 text-xs">{film.category}</span>
+            <span className="text-text-secondary text-xs">
+              {film.categories.join(', ')}
+            </span>
           </li>
         ))}
       </ul>
@@ -200,7 +201,7 @@ export function AtStake({
           href={`/award-shows/${abbreviation}?year=${year}`}
           className="text-text-secondary hover:text-text-primary flex min-h-11 w-fit items-center text-sm underline"
         >
-          and {atStake.more} more
+          and {atStake.more} more {atStake.more === 1 ? 'film' : 'films'}
         </Link>
       ) : null}
     </div>

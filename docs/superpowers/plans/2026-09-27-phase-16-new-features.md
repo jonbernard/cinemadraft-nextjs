@@ -1199,7 +1199,7 @@ export type SeasonViewer = {
     /** moment.key → { points, position, move } for the reader's seat; finished moments only. */
     byMoment: ReadonlyMap<string, { points: number; position: number; move: number }> }[];
   /** For the next ceremony: the reader's nominations at stake. */
-  atStake: { films: { title: string; tmdbId: string | null; category: string }[]; points: number; more: number } | null;
+  atStake: { films: { title: string; tmdbId: string | null; categories: string[] }[]; nominations: number; points: number; more: number } | null; // corrected in P16.T17: one entry per film, capped at 8 films (§4 caps films, not lines)
 };
 export const MAX_LEAGUES = 5; // ponytail: one board load per league; raise when someone plays in more than five
 export async function getSeasonViewer(userId: number, year: number): Promise<SeasonViewer>;

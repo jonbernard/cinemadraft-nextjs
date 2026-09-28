@@ -42,21 +42,36 @@ export const SignedInAtStake: Story = {
         abbreviation="oscars"
         atStake={{
           films: [
-            ['Frankenstein', 'Best Picture'],
-            ['Frankenstein', 'Cinematography'],
-            ['Frankenstein', 'Production Design'],
-            ['Frankenstein', 'Costume Design'],
-            ['Blue Moon', 'Actor in a Leading Role'],
-            ['Blue Moon', 'Writing Original Screenplay'],
-            ['Song Sung Blue', 'Actress in a Leading Role'],
-            ['If I Had Legs I’d Kick You', 'Actress in a Leading Role'],
-          ].map(([title, category]) => ({
-            title: title as string,
-            tmdbId: null,
-            category: category as string,
-          })),
+            {
+              title: 'Frankenstein',
+              tmdbId: null,
+              categories: [
+                'Best Picture',
+                'Cinematography',
+                'Production Design',
+                'Costume Design',
+                'Sound',
+              ],
+            },
+            {
+              title: 'Blue Moon',
+              tmdbId: null,
+              categories: ['Actor in a Leading Role', 'Writing Original Screenplay'],
+            },
+            {
+              title: 'Song Sung Blue',
+              tmdbId: null,
+              categories: ['Actress in a Leading Role'],
+            },
+            {
+              title: 'If I Had Legs I’d Kick You',
+              tmdbId: null,
+              categories: ['Actress in a Leading Role'],
+            },
+          ],
+          nominations: 13,
           points: 170,
-          more: 5,
+          more: 0,
         }}
       />
     ),
