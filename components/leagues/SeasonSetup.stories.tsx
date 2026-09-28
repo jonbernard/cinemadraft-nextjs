@@ -68,3 +68,23 @@ export const Running: Story = { args: { status: 'active' } };
 
 /** After: no controls, because there is nothing left to arrange or to end. */
 export const Finished: Story = { args: { status: 'complete' } };
+
+/**
+ * A season just opened (D131): nobody carried forward, and everyone from
+ * earlier seasons is one "Add" away. Members first, then people who have not
+ * registered, then characters.
+ */
+export const WithReturningPeople: Story = {
+  args: {
+    year: 2027,
+    status: 'pending',
+    seats: [],
+    groups: [],
+    returning: [
+      { fromDraftId: 11, name: 'Ada Lovelace', kind: 'member', lastYear: 2026 },
+      { fromDraftId: 12, name: 'Grace Hopper', kind: 'member', lastYear: 2026 },
+      { fromDraftId: 13, name: 'Aunt Jo', kind: 'unregistered', lastYear: 2025 },
+      { fromDraftId: 14, name: 'Neo', kind: 'character', lastYear: 2026 },
+    ],
+  },
+};

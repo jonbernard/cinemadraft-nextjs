@@ -624,7 +624,7 @@ Render `OpenSeasonButton` for non-owners. Expect the stranger assertion to go re
 
 - [ ] **Step 3: UI**
 
-A `SectionHead as="h2"` "From earlier seasons" with one row per person: the name, `· character` or `· not registered yet` in dim text (the same words `SeasonSetup.tsx:448` uses), "last in 2026", and an "Add" `Button` (44px). The row leaves the list once the action resolves. Nothing is batched, and there is no "add everyone", because D121 says one press seats one person.
+A `SectionHead as="h2"` "From earlier seasons" with one row per person: the name, `· character` or `· not registered yet` in dim text (the same words `SeasonSetup.tsx:448` uses), "last in 2026", and an "Add" `Button` (44px). The row leaves the list once the action resolves. Nothing is batched, and there is no "add everyone", because D121 says one press seats one person. (Built in P16.T6 with the component's own section heading, the small dim `h2` "Who is playing", "Groups" and "The draft" already use, rather than `SectionHead`: a display-size heading here would outrank the seat list it serves. The Add control is the `Button` primitive.)
 
 - [ ] **Step 4: Component test, story (`WithReturningPeople`), and extend the e2e**
 

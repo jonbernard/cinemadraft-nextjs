@@ -2475,7 +2475,7 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
 - [x] P16.T3 — a league's status belongs to its active season (D130)
 - [x] P16.T4 — opening a season creates an empty one (D131)
 - [x] P16.T5 — "Open 2027", and the rollover panel
-- [ ] P16.T6 — season setup re-seats people from earlier seasons, one tap each
+- [x] P16.T6 — season setup re-seats people from earlier seasons, one tap each
 - [ ] P16.T7 — tranche 1 gate
 
 **Tranche 2: the duplicate-film merge, and title + id film URLs**

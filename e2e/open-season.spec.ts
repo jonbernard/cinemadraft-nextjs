@@ -42,8 +42,8 @@ const address = (role: string) =>
   `${TAG}-${role}-${Date.now()}-${Math.floor(performance.now())}@example.test`;
 
 /**
- * A league that played last season and has not opened this one: the owner and
- * one member, both seated in `previous`, and the draft finished.
+ * A league that played last season and has not opened this one: the owner,
+ * one member and one character, seated in `previous`, and the draft finished.
  */
 async function seedLeague(page: Page) {
   const [active] = (await withDb((query) =>
@@ -77,6 +77,11 @@ async function seedLeague(page: Page) {
         [league?.id, userId, previous, order],
       );
     }
+    await query(
+      `insert into drafts (league_id, year, "group", "order", dummy, dummy_name, created_at, updated_at)
+         values ($1, $2, 1, 3, true, 'Neo', now(), now())`,
+      [league?.id, previous],
+    );
     return league?.id as number;
   });
 
@@ -109,7 +114,7 @@ test.describe('opening the next season', () => {
   test.beforeAll(cleanup);
   test.afterAll(cleanup);
 
-  test('the owner opens an empty season; nobody else can, and they read a notice', async ({
+  test('the owner opens an empty season and re-seats people one tap each; nobody else can', async ({
     page,
     browser,
   }) => {
@@ -159,19 +164,47 @@ test.describe('opening the next season', () => {
       await page.waitForURL(`**/leagues/${leagueId}/setup?year=${year}`);
       expect(await seatCount(leagueId, year)).toBe(0);
 
-      // The season it left is exactly as it was: both seats, and finished.
+      // Opened but empty: the stranger still reads the notice, not an empty board.
+      await outsider.page.goto(`/leagues/${leagueId}`);
+      await notice(outsider.page);
+      await expect(outsider.page.getByRole('button', { name: /Open/ })).toHaveCount(0);
+
+      // Setup opens on nobody, with everyone from before one tap away (P16.T6).
+      const playing = page.locator('section', {
+        has: page.getByRole('heading', { name: 'Who is playing' }),
+      });
+      await expect(playing.getByRole('listitem')).toHaveCount(0);
+      const earlier = page.getByRole('list', { name: 'From earlier seasons' });
+      await expect(earlier.getByRole('listitem')).toHaveCount(3);
+      const memberName = `${member.firstName} ${member.lastName}`;
+      await earlier.getByRole('button', { name: `Add ${memberName}` }).click();
+      await expect(earlier.getByText(memberName)).toHaveCount(0);
+      await earlier.getByRole('button', { name: 'Add Neo' }).click();
+      await expect(earlier.getByText('Neo')).toHaveCount(0);
+
+      const memberRow = playing.getByRole('listitem').filter({ hasText: memberName });
+      await expect(memberRow).toBeVisible();
+      await expect(memberRow).not.toContainText('not registered');
+      await expect(
+        playing.getByRole('listitem').filter({ hasText: 'Neo' }),
+      ).toContainText('character');
+      expect(await seatCount(leagueId, year)).toBe(2);
+      await noSidewaysScroll(page);
+      await page.setViewportSize({ width: 1440, height: 900 });
+
+      // The season it left is exactly as it was: its seats, and finished.
       await page.goto(`/leagues/${leagueId}?year=${previous}`);
       await expect(page.getByText(`${previous} · complete`)).toBeVisible();
       await expect(
         page.getByText(`${member.firstName} ${member.lastName}`).first(),
       ).toBeVisible();
-      expect(await seatCount(leagueId, previous)).toBe(2);
+      expect(await seatCount(leagueId, previous)).toBe(3);
       // And the offer is gone.
       await expect(page.getByRole('button', { name: `+ Open ${year}` })).toHaveCount(0);
 
-      // Opened but empty: the stranger still reads the notice, not an empty board.
+      // Opened and seated: the stranger reads the new season's board, not a notice.
       await outsider.page.goto(`/leagues/${leagueId}`);
-      await notice(outsider.page);
+      await expect(outsider.page.getByText(memberName).first()).toBeVisible();
       await expect(outsider.page.getByRole('button', { name: /Open/ })).toHaveCount(0);
     } finally {
       await outsider.context.close();
