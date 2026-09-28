@@ -131,4 +131,8 @@ export default config([
   // D133's ceiling: reads league 1's drafted films and calls TMDB. CI has
   // neither the rows nor a key. The spelling rules are film-href.test.ts.
   'lib/utils/film-titles.production.test.ts',
+  // P16.T14: reads league 1's 2025 and 2026 boards (Sasha Downey 1190,
+  // Jacob 1130; 16 seats; the lead changes). The ledger's arithmetic runs
+  // here on synthetic seats, in season-ledger.test.ts.
+  'lib/services/season-ledger.production.test.ts',
 ]);

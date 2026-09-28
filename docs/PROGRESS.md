@@ -2497,7 +2497,7 @@ Plan: `docs/superpowers/plans/2026-09-27-phase-16-new-features.md`. The owner de
 
 **Tranche 3: the season view on `/award-shows`**
 - [x] P16.T13 — `moments`: a season's scoring moments, in order (9 pure tests; mutations: clock-based state → 3 red, drop the active-year half of `live` → 1 red, ignore `datesForYear` → 1 red)
-- [ ] P16.T14 — `season-ledger`: every seat's points per moment, and the standings after each
+- [x] P16.T14 — `season-ledger`: every seat's points per moment, and the standings after each (8 pure + 3 restored tests; Sasha Downey 1190, Jacob 1130; lead changes 3/6 by leader set, 2/2 by `standings[0]`)
 - [ ] P16.T15 — the season view replaces the logo grid (signed out first)
 - [ ] P16.T16 — signed in, each finished moment says what it did to you
 - [ ] P16.T17 — tranche 3 gate

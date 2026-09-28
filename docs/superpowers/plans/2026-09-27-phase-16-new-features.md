@@ -1126,6 +1126,7 @@ export async function getSeasonLedger(leagueId: number, year: number, viewerId: 
 - [ ] **Step 2: The restored-data test**
   - League 1 2026: `steps.at(-1)!.standings[0]` is Sasha Downey on **1190**. Jacob is on **1130**. This is D125's measured pair.
   - The lead changed 3 times in 2026 and 6 times in 2025, as the proposal measured. Count the changes of `standings[0].draftId` across steps.
+  - (Corrected in P16.T14: 3 and 6 are the proposal's *leader-set* count, the steps where the set of seats sharing first place changes, with the first lead counted. Counting `standings[0]` changes, T22's rule, where a tie the draft order breaks is not a change, gives **2 and 2**: Indiana Jones → Sasha Downey in 2026, Jon Bernard → Robert Bernard → Felix Ortiz in 2025. The test pins both. 2025 has 22 steps and 2026 has 23.)
 - [ ] **Step 3: Run them and confirm they fail. Implement. Run and confirm PASS.**
 - [ ] **Step 4: 🔴 Mutation.** Count a won line's `earned` (2P) in `win`. Expect red at the invariant. Restore.
 - [ ] **Step 5: Commit.** `git commit -m "feat(ledger): each seat's season by moment, from the board's own ledger (P16.T14)"`
@@ -1464,7 +1465,7 @@ export function toRace(ledger: SeasonLedger): Race;
 
 - [ ] **Step 1: Failing pure tests**
   - `axis` is `'order'` when one step is undated, and `'date'` when all are dated.
-  - `leadChanges` counts a change only when `standings[0].draftId` differs from the previous step's. A tie at the top that `rankSeats` orders by draft order is not a change.
+  - `leadChanges` counts a change only when `standings[0].draftId` differs from the previous step's. A tie at the top that `rankSeats` orders by draft order is not a change. (Measured in P16.T14: this gives 2 for league 1's 2025, not the proposal's 6, which counted leader sets; the `OrderOnlyPastSeason` story and T23's check should expect 2, or T22 should adopt the leader-set rule and say so.)
   - The last point of each line equals the seat's total.
 - [ ] **Step 2: Component test.** The table has one row per seat, and its last column equals the totals. The SVG has one `path` per seat.
 - [ ] **Step 3: Implement. Stories:** `DatedSeason` (2026-shaped), `OrderOnlyPastSeason` (2025-shaped, 6 lead changes), `FlatSeason`.
