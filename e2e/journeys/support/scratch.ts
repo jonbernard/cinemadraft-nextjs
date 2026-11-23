@@ -96,6 +96,10 @@ export async function cleanupShow(tag: string): Promise<void> {
       'delete from awards where event_id in (select id from events where abbreviation like $1)',
       [`${tag}%`],
     );
+    await query(
+      'delete from event_dates where event_id in (select id from events where abbreviation like $1)',
+      [`${tag}%`],
+    );
     await query('delete from events where abbreviation like $1', [`${tag}%`]);
     await query('delete from points where level like $1', [`${tag}%`]);
   });

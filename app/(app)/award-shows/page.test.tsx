@@ -74,4 +74,17 @@ describe('the award shows page', () => {
       screen.getByText('1 of your nominations is up for 20 more points'),
     ).toBeInTheDocument();
   });
+
+  it('a past season counts moments recorded, not done', async () => {
+    getCurrentUser.mockResolvedValue(null);
+    getSeasonView.mockResolvedValue({
+      ...season2026(DAY_BEFORE_OSCARS),
+      activeYear: 2027,
+      past: true,
+      next: null,
+    });
+    render(await AwardShowsPage(props('2026')));
+    expect(screen.getByText('22 of 23 moments recorded')).toBeInTheDocument();
+    expect(screen.queryByText(/Up next/)).not.toBeInTheDocument();
+  });
 });

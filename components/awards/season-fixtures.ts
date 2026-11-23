@@ -374,6 +374,7 @@ export function season2026(asOf: number = Number.POSITIVE_INFINITY): SeasonView 
     year: 2026,
     offSeason: false,
     activeYear: 2026,
+    past: false,
     months,
     next: upcoming
       ? {

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 
 import { InviteDialog } from '@/components/leagues/InviteDialog';
 import { LeagueBoardRoom } from '@/components/leagues/LeagueBoardRoom';
+import { LeagueTabs } from '@/components/leagues/LeagueTabs';
 import { OpenSeasonButton, OpenSeasonPanel } from '@/components/leagues/OpenSeason';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SectionHead } from '@/components/ui/SectionHead';
@@ -286,6 +287,17 @@ export default async function LeaguePage({
         >
           {view.leagueName ?? 'League'}
         </SectionHead>
+
+        {/* P16.T19: the league's views. Not on a television, and not before
+            the season has a board to be a view of. */}
+        {tvMode || boardless ? null : (
+          <LeagueTabs
+            leagueId={view.leagueId}
+            year={view.year}
+            activeYear={activeYear}
+            current="board"
+          />
+        )}
 
         {/* 🔴 Controls, not metadata (P17.T30). These were `text-accent-text
               underline` inside a baseline row between the year and the status

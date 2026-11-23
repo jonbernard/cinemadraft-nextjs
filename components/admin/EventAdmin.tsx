@@ -10,18 +10,30 @@ export type AdminEvent = {
   name: string;
   abbreviation: string;
   image: string | null;
-  nomDate: number | null;
-  nomTime: number | null;
   nomDuration: number | null;
-  awardsDate: number | null;
-  awardsTime: number | null;
   awardsDuration: number | null;
   hasCeremony: boolean;
 };
 
-/** Local midnight of a `Date`, in epoch milliseconds — what `nomDate` stores. */
-function localMidnight(date: Date): number {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+/** The season the dialog dates (the page's `?year=`), and its stored row, if any. */
+export type AdminSeason = {
+  year: number;
+  dates: {
+    nomDate: number | null;
+    nomTime: number | null;
+    awardsDate: number | null;
+    awardsTime: number | null;
+  } | null;
+};
+
+/**
+ * UTC midnight of the day as the admin typed it, in epoch milliseconds: what
+ * `nomDate` stores (the award-entry skill and the M3 backfill write the same),
+ * and what keeps a day inside its season whatever the browser's zone. The
+ * time is the rest of the instant, so an 8pm ET ceremony is 25 hours past it.
+ */
+function dayMidnight(date: Date): number {
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 /** Combine a date-at-midnight and a ms-past-midnight offset into one `datetime-local` value. */
@@ -37,12 +49,16 @@ function fromLocalInput(value: string): { date: number; time: number } | null {
   if (value === '') return null;
   const moment = new Date(value);
   if (Number.isNaN(moment.getTime())) return null;
-  const midnight = localMidnight(moment);
+  const midnight = dayMidnight(moment);
   return { date: midnight, time: moment.getTime() - midnight };
 }
 
 /**
- * Edit a show's name, mark and dates (T26).
+ * Edit a show's name, mark and one season's dates (T26, D134).
+ *
+ * The dates are `season.year`'s, read from and written to `event_dates`; the
+ * action copies them to `events` only for the active season. They start empty
+ * for a season with no row.
  *
  * 🔴 Desktop-first, the stated exception (D49): an admin sets ceremony dates
  * once a season, from a laptop.
@@ -54,20 +70,25 @@ function fromLocalInput(value: string): { date: number; time: number } | null {
  */
 export function EventAdmin({
   event,
+  season,
   className,
 }: {
   event: AdminEvent;
+  season: AdminSeason;
   className?: string;
 }) {
+  const dates = season.dates;
   const [name, setName] = useState(event.name);
   const [abbreviation, setAbbreviation] = useState(event.abbreviation);
   const [image, setImage] = useState(event.image ?? '');
-  const [nomAt, setNomAt] = useState(toLocalInput(event.nomDate, event.nomTime));
+  const [nomAt, setNomAt] = useState(
+    toLocalInput(dates?.nomDate ?? null, dates?.nomTime ?? null),
+  );
   const [nomMinutes, setNomMinutes] = useState(
     event.nomDuration == null ? '' : String(Math.round(event.nomDuration / 60_000)),
   );
   const [awardsAt, setAwardsAt] = useState(
-    toLocalInput(event.awardsDate, event.awardsTime),
+    toLocalInput(dates?.awardsDate ?? null, dates?.awardsTime ?? null),
   );
   const [awardsMinutes, setAwardsMinutes] = useState(
     event.awardsDuration == null ? '' : String(Math.round(event.awardsDuration / 60_000)),
@@ -87,7 +108,8 @@ export function EventAdmin({
       }
 
       const nom = fromLocalInput(nomAt);
-      const awards = fromLocalInput(awardsAt);
+      // D129: a show with no ceremony has no awards date.
+      const awards = hasCeremony ? fromLocalInput(awardsAt) : null;
       const nomDuration = nomMinutes.trim() === '' ? null : Number(nomMinutes) * 60_000;
       const awardsDuration =
         awardsMinutes.trim() === '' ? null : Number(awardsMinutes) * 60_000;
@@ -99,19 +121,23 @@ export function EventAdmin({
           name: trimmedName,
           abbreviation: trimmedAbbr,
           image: image.trim() === '' ? null : image.trim(),
-          nomDate: nom?.date ?? null,
-          nomTime: nom?.time ?? null,
           nomDuration,
-          awardsDate: awards?.date ?? null,
-          awardsTime: awards?.time ?? null,
           awardsDuration,
           hasCeremony,
+          season: {
+            year: season.year,
+            nomDate: nom?.date ?? null,
+            nomTime: nom?.time ?? null,
+            awardsDate: awards?.date ?? null,
+            awardsTime: awards?.time ?? null,
+          },
         });
         setMessage(result.ok ? 'Saved' : result.message);
       });
     },
     [
       event.id,
+      season.year,
       name,
       abbreviation,
       image,
@@ -163,6 +189,10 @@ export function EventAdmin({
         </label>
       </div>
 
+      <h3 className="text-text-primary text-sm font-semibold">
+        {season.year} season dates
+      </h3>
+
       <fieldset className="flex flex-wrap items-end gap-3">
         <legend className="text-text-dim mb-1 text-xs">Nominations</legend>
         <label className="flex flex-col gap-1">
@@ -198,28 +228,30 @@ export function EventAdmin({
         This show has a ceremony
       </label>
 
-      <fieldset className="flex flex-wrap items-end gap-3">
-        <legend className="text-text-dim mb-1 text-xs">Awards</legend>
-        <label className="flex flex-col gap-1">
-          <span className="text-text-dim text-xs">Announced</span>
-          <input
-            type="datetime-local"
-            value={awardsAt}
-            onChange={(e) => setAwardsAt(e.target.value)}
-            className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-3 text-sm"
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-text-dim text-xs">Minutes</span>
-          <input
-            type="number"
-            min={0}
-            value={awardsMinutes}
-            onChange={(e) => setAwardsMinutes(e.target.value)}
-            className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-24 border px-3 text-sm"
-          />
-        </label>
-      </fieldset>
+      {hasCeremony ? (
+        <fieldset className="flex flex-wrap items-end gap-3">
+          <legend className="text-text-dim mb-1 text-xs">Awards</legend>
+          <label className="flex flex-col gap-1">
+            <span className="text-text-dim text-xs">Announced</span>
+            <input
+              type="datetime-local"
+              value={awardsAt}
+              onChange={(e) => setAwardsAt(e.target.value)}
+              className="border-border-rule bg-bg-surface text-text-primary min-h-11 border px-3 text-sm"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-text-dim text-xs">Minutes</span>
+            <input
+              type="number"
+              min={0}
+              value={awardsMinutes}
+              onChange={(e) => setAwardsMinutes(e.target.value)}
+              className="border-border-rule bg-bg-surface text-text-primary min-h-11 w-24 border px-3 text-sm"
+            />
+          </label>
+        </fieldset>
+      ) : null}
 
       <div className="flex items-center gap-3">
         <button

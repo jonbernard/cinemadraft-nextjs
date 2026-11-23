@@ -38,25 +38,23 @@ const EVENT = {
   name: 'Academy Awards',
   abbreviation: 'oscars',
   image: null,
-  nomDate: null,
-  nomTime: null,
   nomDuration: null,
-  awardsDate: null,
-  awardsTime: null,
   awardsDuration: null,
   hasCeremony: true,
 };
 
+const SEASON = { year: 2027, dates: null };
+
 describe('EventAdminDialog', () => {
   it('is one button until it is asked for — the form is not on the page', () => {
-    render(<EventAdminDialog event={EVENT} />);
+    render(<EventAdminDialog event={EVENT} season={SEASON} />);
 
     expect(screen.getByRole('button', { name: 'Edit this show' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Name')).not.toBeInTheDocument();
   });
 
   it('opens the form MODALLY', async () => {
-    render(<EventAdminDialog event={EVENT} />);
+    render(<EventAdminDialog event={EVENT} season={SEASON} />);
 
     await userEvent.click(screen.getByRole('button', { name: 'Edit this show' }));
 
@@ -67,7 +65,7 @@ describe('EventAdminDialog', () => {
   });
 
   it('closes on the close control, and takes the form with it', async () => {
-    render(<EventAdminDialog event={EVENT} />);
+    render(<EventAdminDialog event={EVENT} season={SEASON} />);
     await userEvent.click(screen.getByRole('button', { name: 'Edit this show' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Close' }));

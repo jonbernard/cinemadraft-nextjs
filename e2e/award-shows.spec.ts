@@ -62,6 +62,10 @@ async function cleanup(): Promise<void> {
       `delete from awards where event_id in (select id from events where abbreviation like $1)`,
       [`${TAG}%`],
     );
+    await query(
+      'delete from event_dates where event_id in (select id from events where abbreviation like $1)',
+      [`${TAG}%`],
+    );
     await query('delete from events where abbreviation like $1', [`${TAG}%`]);
     await query('delete from points where level like $1', [`${TAG}%`]);
     await query('delete from movies where title like $1', [`${TAG}%`]);
@@ -270,7 +274,10 @@ test.describe('award shows', () => {
     // positive one would also pass on the plural, since it is a substring.
     const { abbreviation } = await seedShow();
 
-    await page.goto('/award-shows');
+    // The scratch season, which is after the active one: with no year, CI's
+    // empty database is off-season and shows last season, where an unentered
+    // show reads "No results recorded" (P16.T18), not its category count.
+    await page.goto(`/award-shows?year=${YEAR}`);
 
     // Since P16.T15 the index is the season, and a show has a row per moment:
     // its (undated, upcoming) nominations row carries the category count.
@@ -361,6 +368,74 @@ test.describe('award shows', () => {
   });
 
   test.describe('as an admin', () => {
+    // D134: the dialog dates the season on the page, in `event_dates`, and
+    // leaves `events` (the active season's schedule) alone for any other.
+    test.describe('the season dates', () => {
+      // A fixed zone, so the typed wall-clock times are known instants.
+      test.use({ timezoneId: 'America/New_York' });
+
+      test("adds a season's dates, reads them back, and refuses one outside it", async ({
+        page,
+      }) => {
+        const { abbreviation } = await seedShow();
+        await signInAsAdmin(page);
+        await page.goto(`/award-shows/${abbreviation}?year=${YEAR}`);
+
+        const open = async () => {
+          await page.getByRole('button', { name: 'Edit this show' }).click();
+          return page.getByRole('dialog', { name: 'Edit this show' });
+        };
+        const announced = (edit: Awaited<ReturnType<typeof open>>, group: string) =>
+          edit.getByRole('group', { name: group }).getByLabel('Announced');
+
+        let edit = await open();
+        await expect(
+          edit.getByRole('heading', { name: `${YEAR} season dates` }),
+        ).toBeVisible();
+        await expect(announced(edit, 'Nominations')).toHaveValue('');
+        await announced(edit, 'Nominations').fill(`${YEAR}-01-21T08:00`);
+        await announced(edit, 'Awards').fill(`${YEAR}-02-14T20:00`);
+        await edit.getByRole('button', { name: 'Save show' }).click();
+        await expect(edit.getByText('Saved')).toBeVisible();
+
+        const stored = () =>
+          withDb((query) =>
+            query(
+              `select d.year, d.nom_date::text, d.nom_time::text, d.awards_date::text,
+                      d.awards_time::text, e.nom_date::text as events_nom
+                 from event_dates d join events e on e.id = d.event_id
+                where e.abbreviation = $1`,
+              [abbreviation],
+            ),
+          );
+        // UTC midnight of the day typed, and the ET wall clock past it:
+        // 8am is 13h, 8pm is 25h, as the award-entry skill stores them
+        // (both in EST: after the March clock change 8pm is 24h).
+        expect(await stored()).toEqual([
+          {
+            year: YEAR,
+            nom_date: String(Date.UTC(YEAR, 0, 21)),
+            nom_time: String(13 * 3_600_000),
+            awards_date: String(Date.UTC(YEAR, 1, 14)),
+            awards_time: String(25 * 3_600_000),
+            events_nom: null,
+          },
+        ]);
+
+        await page.reload();
+        edit = await open();
+        await expect(announced(edit, 'Nominations')).toHaveValue(`${YEAR}-01-21T08:00`);
+        await expect(announced(edit, 'Awards')).toHaveValue(`${YEAR}-02-14T20:00`);
+
+        await announced(edit, 'Nominations').fill(`${YEAR - 1}-01-21T08:00`);
+        await edit.getByRole('button', { name: 'Save show' }).click();
+        await expect(edit.getByText(`outside the ${YEAR} season`)).toBeVisible();
+        expect((await stored())[0]).toMatchObject({
+          nom_date: String(Date.UTC(YEAR, 0, 21)),
+        });
+      });
+    });
+
     test('nominates a film, marks a winner, then corrects it', async ({ page }) => {
       const { abbreviation } = await seedShow();
       await signInAsAdmin(page);

@@ -2,7 +2,11 @@
 
 import { useCallback, useId, useRef, useState } from 'react';
 
-import { type AdminEvent, EventAdmin } from '@/components/admin/EventAdmin';
+import {
+  type AdminEvent,
+  type AdminSeason,
+  EventAdmin,
+} from '@/components/admin/EventAdmin';
 import { cn } from '@/lib/utils/cn';
 
 /**
@@ -22,9 +26,11 @@ import { cn } from '@/lib/utils/cn';
  */
 export function EventAdminDialog({
   event,
+  season,
   className,
 }: {
   event: AdminEvent;
+  season: AdminSeason;
   className?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -77,7 +83,7 @@ export function EventAdminDialog({
               </button>
             </div>
 
-            <EventAdmin event={event} />
+            <EventAdmin event={event} season={season} />
           </div>
         ) : null}
       </dialog>

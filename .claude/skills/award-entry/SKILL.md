@@ -257,7 +257,8 @@ something to page every member about.
    ```
 
    This revalidates each changed show itself, so the show page's schedule is
-   current. Without the secret it refuses before writing anything and exits 1
+   current. Each date is also kept per season in `event_dates` (D134), in the
+   same transaction, so a past season keeps its dates after `events` moves on. Without the secret it refuses before writing anything and exits 1
    — set it and re-run. A dry run, without `--commit`, needs no secret.
 
 ### What to know about the shows

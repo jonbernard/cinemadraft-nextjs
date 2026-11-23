@@ -11,14 +11,11 @@ const meta = {
       name: 'Academy of Motion Picture Arts and Sciences',
       abbreviation: 'oscars',
       image: null,
-      nomDate: null,
-      nomTime: null,
       nomDuration: null,
-      awardsDate: null,
-      awardsTime: null,
       awardsDuration: 10_800_000,
       hasCeremony: true,
     },
+    season: { year: 2027, dates: null },
   },
 } satisfies Meta<typeof EventAdminDialog>;
 

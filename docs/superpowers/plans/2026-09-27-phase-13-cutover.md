@@ -67,7 +67,7 @@ S11 repeats the script run against a fresh Heroku dump.
 
 ## What a full restore wipes
 
-**Schema.** These are the eight changes from PLAN.md § T3b and after. They are gone after the wipe in S17, the script's `migrate deploy` puts them back, and each has its own line in check C5:
+**Schema.** These are the nine changes from PLAN.md § T3b and after. They are gone after the wipe in S17, the script's `migrate deploy` puts them back, and each has its own line in check C5:
 
 | Migration | Change |
 |---|---|
@@ -79,6 +79,7 @@ S11 repeats the script run against a fresh Heroku dump.
 | `20260913120000_event_focused_award` | `events.focused_award_id` (D117) |
 | `20260928090000_event_has_ceremony` | `events.has_ceremony`, AFI false (D129). Without it the rail waits for an AFI ceremony forever |
 | `20260928120000_movie_merge` | `merge_duplicate_movies()`, run once; `movies.tmdb_id` unique (D132). Changes row counts: see C7 |
+| `20260929090000_event_dates` | `event_dates`, with 2017–2026 backfilled, 12 shows × 10 seasons (D134). Without it every past season's race is undated, and 2026 is too |
 
 **Data: all of it.** Everything on Neon is replaced by the dump. None of it is re-applied. The lines worth knowing:
 

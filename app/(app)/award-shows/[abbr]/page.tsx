@@ -15,6 +15,7 @@ import { SectionHead } from '@/components/ui/SectionHead';
 import { StatusChip } from '@/components/ui/StatusChip';
 import { getCurrentUser } from '@/lib/auth';
 import { NotFoundError } from '@/lib/errors';
+import { eventDateRepository } from '@/lib/repositories/event-dates';
 import { eventRepository } from '@/lib/repositories/events';
 import { pointRepository } from '@/lib/repositories/points';
 import { canonical } from '@/lib/seo';
@@ -95,12 +96,13 @@ export default async function AwardShowPage({
 
   // Only fetched for an admin — the event's raw row and the tier table are
   // for the edit controls below, not anything a member's view needs.
-  const [event, tiers] = isAdmin
+  const [event, tiers, seasonDates] = isAdmin
     ? await Promise.all([
         eventRepository.findByAbbreviation(abbr),
         pointRepository.findAll(),
+        eventDateRepository.findByYear(show.year),
       ])
-    : [null, []];
+    : [null, [], null];
 
   // 🔴 Everyone who is not an admin is in View, whatever `?mode=` says, and
   // an admin with no `?mode=` lands in Winners while the show is on air
@@ -192,13 +194,13 @@ export default async function AwardShowPage({
                   name: event.name,
                   abbreviation: event.abbreviation,
                   image: event.image,
-                  nomDate: event.nomDate,
-                  nomTime: event.nomTime,
                   nomDuration: event.nomDuration,
-                  awardsDate: event.awardsDate,
-                  awardsTime: event.awardsTime,
                   awardsDuration: event.awardsDuration,
                   hasCeremony: event.hasCeremony,
+                }}
+                season={{
+                  year: show.year,
+                  dates: seasonDates?.get(event.id) ?? null,
                 }}
               />
             </div>

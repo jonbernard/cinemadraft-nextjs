@@ -95,6 +95,22 @@ model Event {
   @@map("events")
 }
 
+/// A show's dates for one season (D134): `events` holds only the current one.
+model EventDate {
+  id         Int      @id @default(autoincrement())
+  year       Int
+  eventId    Int      @map("event_id")
+  nomDate    BigInt?  @map("nom_date")
+  nomTime    BigInt?  @map("nom_time")
+  awardsDate BigInt?  @map("awards_date")
+  awardsTime BigInt?  @map("awards_time")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([year, eventId])
+  @@map("event_dates")
+}
+
 model League {
   id             Int                   @id @default(autoincrement())
   fbId           String?               @map("fb_id")

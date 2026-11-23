@@ -26,6 +26,8 @@ export type SeasonView = {
   /** True when the active year has nothing yet: the view shows `year` (the finished season) and says dates come in the autumn. */
   offSeason: boolean;
   activeYear: number;
+  /** `year` is before the active season: nothing in it is still coming, so nothing is next. */
+  past: boolean;
   months: { label: string; moments: SeasonMoment[] }[];
   next:
     | (SeasonMoment & { films: UpNextFilm[]; more: number; imageUrl: string | null })
@@ -139,11 +141,15 @@ export async function getSeasonView(requestedYear: number | null): Promise<Seaso
     };
   });
 
+  // 🔴 A past season's moment with no rows was never entered; it is not
+  // coming. Without this, 2024's WGA ceremony was "Up next, date to be
+  // announced" two years on.
+  const past = year < activeYear;
   const months: SeasonView['months'] = [];
   const undated = new Map<string, SeasonMoment[]>();
   for (const moment of view) {
     if (moment.date == null) {
-      const label = moment.state === 'upcoming' ? NOT_SCHEDULED : NOT_RECORDED;
+      const label = moment.state === 'upcoming' && !past ? NOT_SCHEDULED : NOT_RECORDED;
       undated.set(label, [...(undated.get(label) ?? []), moment]);
       continue;
     }
@@ -157,7 +163,7 @@ export async function getSeasonView(requestedYear: number | null): Promise<Seaso
     if (list) months.push({ label, moments: list });
   }
 
-  const upcoming = nextMoment(view);
+  const upcoming = past ? undefined : nextMoment(view);
   let next: SeasonView['next'] = null;
   if (upcoming) {
     // Before its nominations are out a moment has no films to name.
@@ -172,7 +178,7 @@ export async function getSeasonView(requestedYear: number | null): Promise<Seaso
     };
   }
 
-  return { year, offSeason, activeYear, months, next };
+  return { year, offSeason, activeYear, past, months, next };
 }
 
 export type SeasonViewer = {
