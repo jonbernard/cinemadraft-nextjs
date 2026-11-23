@@ -1,3 +1,4 @@
+import { cachedFromDb } from '@/lib/external/cache';
 import { getNowPlaying } from '@/lib/external/tmdb-now-playing';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { eventRepository } from '@/lib/repositories/events';
@@ -5,7 +6,7 @@ import type { Movie } from '@/lib/repositories/movies';
 import { posterUrl } from '@/lib/utils/poster';
 import { rankSeats, type StandingsRow } from '@/lib/utils/rank';
 import { getLeagueBoard, type Seat } from './draft';
-import { getActiveYear, type SeasonPhase, toSeasonPhases } from './season';
+import { getActiveYear, getAllEvents, type SeasonPhase, toSeasonPhases } from './season';
 
 /** One drafted film on the viewer's own strip. */
 export type RosterEntry = {
@@ -140,11 +141,12 @@ export async function getDashboard(userId: number | null): Promise<DashboardView
     // rather than passing a sentinel id keeps it impossible for the public
     // page to accidentally resolve somebody else's leagues (D44).
     userId == null ? Promise.resolve([]) : draftRepository.findLeagueIdsByUserId(userId),
-    eventRepository.findAll(),
+    getAllEvents(),
     getNowPlaying(),
     // Batched, not awaited in sequence: the banner must not cost the dashboard
-    // a serial round trip for a row that is empty most of the year.
-    eventRepository.findActive(),
+    // a serial round trip for a row that is empty most of the year. Cached:
+    // going on air is a write, and every write purges it.
+    cachedFromDb('events:on-air', () => eventRepository.findActive()),
   ]);
   const onAir = active.filter((event) => event.awardsActive === true);
 

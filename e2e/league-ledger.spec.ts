@@ -7,9 +7,10 @@ import { expect, type Page, test } from '@playwright/test';
  * 🔴 Scratch rows only, under this file's own `TAG` and scratch year 2990
  * (the plan's assignment). Every assertion reads this league's own rows.
  *
- * The show's dates are the `events` columns, inside 2990's window, which is
- * what `moments` reads for a season with no stored row (P16.T13). ponytail:
- * seed `event_dates` for 2990 instead once P16.T18 lands.
+ * A dated show carries its season's `event_dates` row (P16.T18, D134) and the
+ * same days in its `events` columns; an undated one has neither, which is
+ * the only way a season reaches the race's order-only axis now that
+ * 2017–2026 are backfilled. The race's undated case is scratch year 2986.
  */
 const TAG = 'e2e-ledger';
 const YEAR = 2990;
@@ -53,6 +54,10 @@ async function cleanupTag(tag: string): Promise<void> {
       'delete from awards where event_id in (select id from events where abbreviation like $1)',
       [`${tag}%`],
     );
+    await query(
+      'delete from event_dates where event_id in (select id from events where abbreviation like $1)',
+      [`${tag}%`],
+    );
     await query('delete from events where abbreviation like $1', [`${tag}%`]);
     await query('delete from points where level like $1', [`${tag}%`]);
     await query('delete from movies where title like $1', [`${tag}%`]);
@@ -82,6 +87,12 @@ async function seedLedger(
          values ($1, $2, $3, $4, $5, now(), now()) returning id`,
       [`${tag} Show`, `${tag}-show`, nom, awards, onAir],
     )) as { id: number }[];
+    if (dated)
+      await query(
+        `insert into event_dates (year, event_id, nom_date, awards_date)
+           values ($1, $2, $3, $4)`,
+        [year, event?.id, nom, awards],
+      );
     const [points] = (await query(
       `insert into points (level, tier, points, created_at, updated_at)
          values ($1, 3, 7, now(), now()) returning id`,
@@ -265,6 +276,61 @@ test.describe('the standings tab', () => {
     await page.goto(`/leagues/${leagueId}/seats/${draftIds[0]}`);
     await expect(page.getByRole('list', { name: `${TAG} Ada’s picks` })).toBeVisible();
     await noSideways(page);
+  });
+
+  test('the race: signed out, on the date axis, with the board’s totals', async ({
+    page,
+  }) => {
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const response = await page.goto(`/leagues/${leagueId}/${YEAR}/race`);
+      expect(response?.status()).toBe(200);
+      await expect(page.getByRole('link', { name: 'Race' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      await expect(page.locator('[data-race-plot]')).toHaveAttribute('data-axis', 'date');
+      await expect(page.getByText("dates weren't recorded")).toHaveCount(0);
+      await noSideways(page);
+    }
+    // Bea draws level at the ceremony; draft order keeps Ada first, so no change.
+    await expect(page.getByRole('heading', { name: 'Lead changes' })).toBeVisible();
+    await expect(
+      page.getByText(`${TAG} Ada has led from the first moment.`),
+    ).toBeVisible();
+    expect(
+      await totals(page, 'Each seat’s running total after every scoring moment'),
+    ).toEqual({
+      [SEATS[0] as string]: '14',
+      [SEATS[1] as string]: '14',
+      [SEATS[2] as string]: '7',
+    });
+  });
+
+  test('the race of a season with no stored dates is in order, and says so', async ({
+    page,
+  }) => {
+    const tag = `${TAG}-undated`;
+    const UNDATED = 2986;
+    await cleanupTag(tag);
+    const other = await seedLedger(tag, UNDATED, { dated: false });
+    try {
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        const response = await page.goto(`/leagues/${other.leagueId}/${UNDATED}/race`);
+        expect(response?.status()).toBe(200);
+        await expect(page.locator('[data-race-plot]')).toHaveAttribute(
+          'data-axis',
+          'order',
+        );
+        await expect(
+          page.getByText("This season's dates weren't recorded"),
+        ).toBeVisible();
+        await noSideways(page);
+      }
+    } finally {
+      await cleanupTag(tag);
+    }
   });
 
   test('a seat of another league is a 404', async ({ page }) => {

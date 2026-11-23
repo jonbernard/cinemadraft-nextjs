@@ -6,10 +6,10 @@ import { leagueTabHref } from '@/lib/utils/league-href';
 
 type Tab = 'board' | 'standings' | 'race';
 
-// ponytail: Race joins this list with P16.T22.
 const TABS: { tab: Tab; label: string }[] = [
   { tab: 'board', label: 'Board' },
   { tab: 'standings', label: 'Standings' },
+  { tab: 'race', label: 'Race' },
 ];
 
 /**

@@ -1,3 +1,4 @@
+import { cachedFromDb } from '@/lib/external/cache';
 import { availableYearRepository } from '@/lib/repositories/available-years';
 import { eventRepository } from '@/lib/repositories/events';
 import { inSeason } from '@/lib/utils/season-window';
@@ -14,16 +15,15 @@ import { inSeason } from '@/lib/utils/season-window';
  * index permits zero as readily as one. A blank site in January is a worse
  * failure than showing the most recent season.
  *
- * Deliberately uncached for now. `PLAN.md` asks for this to be cached and
- * tagged `active-year`, which in Next 16 means `'use cache'` and therefore
- * `cacheComponents` — and that flag turns every uncached read during
- * prerendering into a build error, so adopting it requires Suspense
- * boundaries drawn around every session-dependent page. Those pages do not
- * exist yet; drawing their boundaries before they do would be guessing. The
- * cost of waiting is one indexed lookup against a ten-row table per request.
- * See D42.
+ * Cached through `cachedFromDb` rather than `'use cache'`: the framework route
+ * needs `cacheComponents`, which turns every uncached read during prerendering
+ * into a build error (D42). Any write purges it, including `set-active-year`.
  */
-export async function getActiveYear(): Promise<number> {
+export function getActiveYear(): Promise<number> {
+  return cachedFromDb('active-year', readActiveYear);
+}
+
+async function readActiveYear(): Promise<number> {
   const active = await availableYearRepository.findActive();
   if (active?.year != null) return active.year;
 
@@ -44,8 +44,16 @@ export async function getActiveYear(): Promise<number> {
  * Separate from `getActiveYear` because the two answer different questions:
  * this one is "what may I look at", that one is "what am I looking at now".
  */
-export async function getSeasons(): Promise<number[]> {
-  return availableYearRepository.listYears();
+export function getSeasons(): Promise<number[]> {
+  return cachedFromDb('seasons', () => availableYearRepository.listYears());
+}
+
+/**
+ * Every award show, through the public-read cache — the events table changes a
+ * few times a season. For the pages, not for a stream's poll.
+ */
+export function getAllEvents() {
+  return cachedFromDb('events', () => eventRepository.findAll());
 }
 
 /**
@@ -130,10 +138,8 @@ export type PhaseEvent = {
 
 /** Every scoring moment in the calendar, read from the events table. */
 export async function getSeasonPhases(): Promise<SeasonPhase[]> {
-  const [events, season] = await Promise.all([
-    eventRepository.findAll(),
-    getActiveYear(),
-  ]);
+  // The rows are cached; `toSeasonPhases` reads the clock, so it runs after.
+  const [events, season] = await Promise.all([getAllEvents(), getActiveYear()]);
   return toSeasonPhases(events, season);
 }
 

@@ -5,6 +5,7 @@ import { posterUrl } from '@/lib/utils/poster';
 import { rankSeats, type StandingsRow } from '@/lib/utils/rank';
 import { type BoardView, getLeagueBoard, type Seat } from './draft';
 import { getSeasonMoments, type Moment } from './moments';
+import { type Race, toRace } from './race';
 import type { LedgerLine } from './scoring';
 
 /**
@@ -220,6 +221,24 @@ export async function getSeasonLedger(
     moments,
     viewerId,
   );
+}
+
+/** Everything `/leagues/[id]/race` renders (P16.T22): one board load, as the standings tab. */
+export async function getRaceView(
+  leagueId: number,
+  year: number,
+  viewerId: number | null,
+): Promise<{ leagueName: string | null; year: number; race: Race }> {
+  const [board, moments] = await Promise.all([
+    getLeagueBoard(leagueId, year),
+    getSeasonMoments(year),
+  ]);
+  const ledger = buildSeasonLedger(
+    board.groups.flatMap((group) => group.seats),
+    moments,
+    viewerId,
+  );
+  return { leagueName: board.leagueName, year: board.year, race: toRace(ledger) };
 }
 
 /** A moment as the standings tab names it: enough to say which, when and how far along. */

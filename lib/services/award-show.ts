@@ -1,4 +1,5 @@
 import { NotFoundError } from '@/lib/errors';
+import { cachedFromDb } from '@/lib/external/cache';
 import { awardRepository } from '@/lib/repositories/awards';
 import { type Event, eventRepository } from '@/lib/repositories/events';
 import { type Movie, movieRepository } from '@/lib/repositories/movies';
@@ -117,6 +118,24 @@ function toNominee(
     detailId: nomination.detailId,
     isWinner: winningNominationIds.has(nomination.id),
   };
+}
+
+/**
+ * `getAwardShow` through the public-read cache, for the show page, its
+ * metadata and its share card.
+ *
+ * 🔴 **Not for `lib/services/live.ts`.** The live stream polls `getAwardShow`
+ * every two seconds and has to see a winner the moment it is entered, so it
+ * keeps reading the database. An unknown show throws `NotFoundError` as
+ * before, and a throw is never cached.
+ */
+export function getPublicAwardShow(
+  abbreviation: string,
+  year: number,
+): Promise<AwardShowView> {
+  return cachedFromDb(`award-show:${abbreviation}:${year}`, () =>
+    getAwardShow(abbreviation, year),
+  );
 }
 
 /**

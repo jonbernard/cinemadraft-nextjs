@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const revalidatePath = vi.hoisted(() => vi.fn());
 vi.mock('next/cache', () => ({ revalidatePath }));
 
+import { cachedFromDb, clearCacheForTests } from '@/lib/external/cache';
+
 import { POST } from './route';
 
 function request(body: unknown): Request {
@@ -32,6 +34,29 @@ describe('POST /api/revalidate', () => {
       ['/leaderboard'],
       ['/'],
     ]);
+  });
+
+  // 🔴 The award-import script writes with its own Prisma client, so
+  // `lib/db.ts`'s purge never sees those writes. Without this, a ceremony's
+  // results stayed off every public page for the cache's hour.
+  it('expires the public-read cache', async () => {
+    vi.stubEnv('VERCEL', '1');
+    clearCacheForTests();
+    try {
+      const produce = vi.fn(async () => 'scores');
+      await cachedFromDb('revalidate-probe', produce);
+      await cachedFromDb('revalidate-probe', produce);
+      expect(produce).toHaveBeenCalledTimes(1);
+
+      await POST(
+        request({ secret: 'correct-horse-battery-staple', abbreviation: 'dga' }),
+      );
+
+      await cachedFromDb('revalidate-probe', produce);
+      expect(produce).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   // 🔴 404, not 401: a 401 confirms the route exists and that the secret is

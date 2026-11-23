@@ -136,4 +136,8 @@ export default config([
   // Jacob 1130; 16 seats; the lead changes). The ledger's arithmetic runs
   // here on synthetic seats, in season-ledger.test.ts.
   'lib/services/season-ledger.production.test.ts',
+  // P16.T24: every league 1 season's picks (the "cancels out" pin) and the
+  // 2026 pair the proposal measured, James Kinney 810 against Micah Baird,
+  // 415 shared. The comparison's rules run in head-to-head.test.ts.
+  'lib/services/head-to-head.production.test.ts',
 ]);

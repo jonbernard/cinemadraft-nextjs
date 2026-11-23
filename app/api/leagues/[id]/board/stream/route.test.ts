@@ -46,7 +46,14 @@ const BASE: LeagueBoardView = {
   viewerRoster: [],
   viewerSeated: false,
   standings: [
-    { userId: 42, name: 'Ada Lovelace', total: 3, position: 1, isViewer: false },
+    {
+      draftId: 1,
+      userId: 42,
+      name: 'Ada Lovelace',
+      total: 3,
+      position: 1,
+      isViewer: false,
+    },
   ],
   groups: [
     {
@@ -63,6 +70,8 @@ const BASE: LeagueBoardView = {
           picks: [
             {
               pickId: 5,
+              movieId: 9,
+              tmdbId: '329865',
               round: 1,
               title: 'Arrival',
               posterUrl: null,
@@ -85,7 +94,14 @@ const seated: LeagueBoardView = {
   ],
   viewerSeated: true,
   standings: [
-    { userId: 42, name: 'Ada Lovelace', total: 3, position: 1, isViewer: true },
+    {
+      draftId: 1,
+      userId: 42,
+      name: 'Ada Lovelace',
+      total: 3,
+      position: 1,
+      isViewer: true,
+    },
   ],
 };
 
@@ -188,6 +204,8 @@ describe('GET /api/leagues/[id]/board/stream', () => {
                 ...BASE.groups[0].seats[0].picks,
                 {
                   pickId: 6,
+                  movieId: 10,
+                  tmdbId: '438631',
                   round: 2,
                   title: 'Dune',
                   posterUrl: null,

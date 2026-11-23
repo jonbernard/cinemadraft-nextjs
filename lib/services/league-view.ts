@@ -29,6 +29,9 @@ export type LeagueBoardSeat = {
    */
   picks: {
     pickId: number;
+    /** The film, for head-to-head's "both hold it" (P16.T24). */
+    movieId: number;
+    tmdbId: string | null;
     round: number;
     title: string;
     posterUrl: string | null;
@@ -152,6 +155,8 @@ export async function getLeagueBoardView(
         order: seat.order,
         picks: seat.picks.map((pick) => ({
           pickId: pick.pickId,
+          movieId: pick.movie.id,
+          tmdbId: pick.movie.tmdbId,
           round: pick.round,
           title: pick.movie.title ?? 'Untitled',
           posterUrl: posterUrl(pick.movie.poster, 'w185'),

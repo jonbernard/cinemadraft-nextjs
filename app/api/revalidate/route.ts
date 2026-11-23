@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 
 import { revalidateEnv } from '@/lib/env';
+import { DB_TAG, expireCached } from '@/lib/external/cache';
 
 /**
  * Clear the render cache for an award show, from outside the app.
@@ -60,6 +61,10 @@ export async function POST(request: Request): Promise<Response> {
   revalidatePath('/award-shows');
   revalidatePath('/leaderboard');
   revalidatePath('/');
+  // 🔴 The script writes through a Prisma client of its own, so `lib/db.ts`'s
+  // purge never saw those writes. This is the only thing that tells the
+  // public-read cache that scores moved.
+  await expireCached(DB_TAG);
 
   return Response.json({ revalidated: paths });
 }

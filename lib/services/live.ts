@@ -105,6 +105,7 @@ export type LiveSeat = {
  * second definition of a tie.
  */
 export type LiveStanding = {
+  draftId: number;
   /** A dummy seat has no user, so it takes `-draftId`, as the league page does. */
   userId: number;
   name: string;
