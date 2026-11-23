@@ -1,5 +1,5 @@
+import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
-
 import { canonical, SITE_URL, TITLE_TEMPLATE } from '@/lib/seo';
 import { fontVariables } from '@/theme/fonts';
 import { Providers } from './providers';
@@ -38,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={fontVariables} suppressHydrationWarning>
       <body>
+        <Analytics />
         <Providers>{children}</Providers>
       </body>
     </html>
