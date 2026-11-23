@@ -43,6 +43,11 @@ const FIXTURES = {
   tmdbId: '313369',
   leagueUuid: 'fd2b3a70-810c-4b09-802c-ea05999ae2a6',
   memberUuid: 'b33be120-a6b9-41e0-93e2-5929eb63ede3',
+  // Read from the Heroku dump of 2026-11-23: league 1's last full past season,
+  // one of its four groups that year, and one of its 2026 seats.
+  pastYear: '2025',
+  group: '1',
+  seat: '305',
 };
 
 /**
@@ -63,8 +68,31 @@ const EXPECT = {
     why: 'Clerk renders the form; the heading is inside its component, not ours',
   },
   '/auth/register/[[...register]]': { url: '/auth/register', h1: false, why: 'as above' },
+  // The all-shows feed; `/api/ical/<abbr>` filters the same cached list.
+  '/api/ical/[[...slug]]': {
+    url: '/api/ical',
+    h1: false,
+    why: 'an iCalendar feed, not HTML',
+  },
 
   '/leagues/[id]': { url: `/leagues/${FIXTURES.league}` },
+  // A past season: the active one redirects to the bare tab (D139).
+  '/leagues/[id]/[year]': { url: `/leagues/${FIXTURES.league}/${FIXTURES.pastYear}` },
+  '/leagues/[id]/[year]/group/[group]': {
+    url: `/leagues/${FIXTURES.league}/${FIXTURES.pastYear}/group/${FIXTURES.group}`,
+  },
+  '/leagues/[id]/standings': { url: `/leagues/${FIXTURES.league}/standings` },
+  '/leagues/[id]/[year]/standings': {
+    url: `/leagues/${FIXTURES.league}/${FIXTURES.pastYear}/standings`,
+  },
+  '/leagues/[id]/race': { url: `/leagues/${FIXTURES.league}/race` },
+  '/leagues/[id]/[year]/race': {
+    url: `/leagues/${FIXTURES.league}/${FIXTURES.pastYear}/race`,
+  },
+  // Redirects only on `?seat=`; the bare URL is the seat's own page.
+  '/leagues/[id]/seats/[draftId]': {
+    url: `/leagues/${FIXTURES.league}/seats/${FIXTURES.seat}`,
+  },
   // Both resolve the session themselves and `notFound()` a non-owner — a
   // stronger answer than a redirect, which would confirm the league exists.
   '/leagues/[id]/draft': {
@@ -133,6 +161,13 @@ const EXPECT = {
     stream: true,
     h1: false,
     why: '200 while a draft is running, 204 otherwise',
+  },
+  '/api/leagues/[id]/standings/stream': {
+    url: `/api/leagues/${FIXTURES.league}/standings/stream`,
+    status: [200, 204],
+    stream: true,
+    h1: false,
+    why: '200 while a show of the active season is on air, 204 otherwise (D135)',
   },
 };
 

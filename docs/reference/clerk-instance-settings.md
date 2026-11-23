@@ -119,6 +119,8 @@ cutover blocker in `syncClerkIdentity`, not a copy defect.
 
 | # | Case | Expected | Result |
 |---|---|---|---|
-| 1 | An address with no Clerk identity and no `users` row | The card continues to registration, not "Couldn't find your account" | _pending owner_ |
-| 2 | A pre-migration member — a `users` row with a null `clerk_id` | Registration completes and the dashboard shows that member's leagues | _pending owner_ |
-| 3 | An already-linked member | Ordinary log in | _pending owner_ |
+| 1 | An address with no Clerk identity and no `users` row | The card continues to registration, not "Couldn't find your account" | ✅ 2026-11-23 on `next.` (Dev instance): code sent, empty dashboard |
+| 2 | A pre-migration member — a `users` row with a null `clerk_id` | Registration completes and the dashboard shows that member's leagues | ✅ 2026-11-23: owner's Clerk Dev user deleted and `users.id=3` unlinked; fresh registration re-linked row 3 with its leagues, no duplicate |
+| 3 | An already-linked member | Ordinary log in | ✅ 2026-11-23 |
+
+Not exercised: one address signing in by code and then by Google (account linking). The owner's address has no Google account, so it rests on the dashboard setting until S24c tries it on Production.
