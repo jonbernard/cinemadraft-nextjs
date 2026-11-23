@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 import { OgMark } from '@/components/ui/OgMark';
 import { CARD, CARD_SIZE } from '@/lib/og';
-import { getAwardShow } from '@/lib/services/award-show';
+import { getPublicAwardShow } from '@/lib/services/award-show';
 import { getActiveYear } from '@/lib/services/season';
 
 /**
@@ -23,7 +23,7 @@ export default async function Image({ params }: { params: Promise<{ abbr: string
   let season: number | null = null;
   try {
     season = await getActiveYear();
-    const show = await getAwardShow(abbr, season);
+    const show = await getPublicAwardShow(abbr, season);
     name = show.name;
     logo = show.imageUrl;
   } catch {

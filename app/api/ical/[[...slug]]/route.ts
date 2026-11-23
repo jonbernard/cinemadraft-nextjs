@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 
-import { eventRepository } from '@/lib/repositories/events';
 import { buildCalendarFeed } from '@/lib/services/ical';
+import { getAllEvents } from '@/lib/services/season';
 
 /**
  * The ceremony-dates calendar feed (T25) — one of D8's three permitted
@@ -44,11 +44,15 @@ export async function GET(
     return new Response('not found', { status: 404 });
   }
 
+  // From the cached list rather than a query per feed: calendar apps poll a
+  // subscribed feed on a schedule of their own, and each poll would otherwise
+  // wake the database. Same rows, same exact match as `findByAbbreviation`.
+  const all = await getAllEvents();
   const shows =
     slug.length === 0
-      ? await eventRepository.findAll()
-      : await (async () => {
-          const show = await eventRepository.findByAbbreviation(slug[0]);
+      ? all
+      : (() => {
+          const show = all.find((event) => event.abbreviation === slug[0]);
           return show ? [show] : null;
         })();
 

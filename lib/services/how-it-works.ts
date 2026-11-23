@@ -1,3 +1,4 @@
+import { cachedFromDb } from '@/lib/external/cache';
 import { awardRepository } from '@/lib/repositories/awards';
 import { eventRepository } from '@/lib/repositories/events';
 import { movieRepository } from '@/lib/repositories/movies';
@@ -67,7 +68,11 @@ export type WorkedExample = {
  * exactly what CI and a fresh deploy look like. The page renders its prose
  * without an example rather than a zero, and nothing here throws.
  */
-export async function getWorkedExample(): Promise<WorkedExample | null> {
+export function getWorkedExample(): Promise<WorkedExample | null> {
+  return cachedFromDb('worked-example', readWorkedExample);
+}
+
+async function readWorkedExample(): Promise<WorkedExample | null> {
   const seasons = await availableSeasons();
   // `getActiveYear` throws when `available_years` is empty, which is a real
   // state on a freshly migrated database. Asking it only once there is a
@@ -168,7 +173,11 @@ export type ShowGroup = {
  * Groups come back in `groupPointsByLevel`'s order, which is most valuable
  * first, so the Razzies land last — where the page wants them.
  */
-export async function getShowGroups(): Promise<ShowGroup[]> {
+export function getShowGroups(): Promise<ShowGroup[]> {
+  return cachedFromDb('show-groups', readShowGroups);
+}
+
+async function readShowGroups(): Promise<ShowGroup[]> {
   const [points, events, awards] = await Promise.all([
     pointRepository.findAll(),
     eventRepository.findAll(),
@@ -236,7 +245,11 @@ export type LandingFacts = {
   films: LandingFilm[];
 };
 
-export async function getLandingFacts(limit = 10): Promise<LandingFacts | null> {
+export function getLandingFacts(limit = 10): Promise<LandingFacts | null> {
+  return cachedFromDb(`landing-facts:${limit}`, () => readLandingFacts(limit));
+}
+
+async function readLandingFacts(limit: number): Promise<LandingFacts | null> {
   const seasons = await availableSeasons();
   if (seasons.length === 0) return null;
 

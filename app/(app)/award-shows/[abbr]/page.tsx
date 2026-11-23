@@ -19,7 +19,7 @@ import { eventDateRepository } from '@/lib/repositories/event-dates';
 import { eventRepository } from '@/lib/repositories/events';
 import { pointRepository } from '@/lib/repositories/points';
 import { canonical } from '@/lib/seo';
-import { getAwardShow } from '@/lib/services/award-show';
+import { getPublicAwardShow } from '@/lib/services/award-show';
 import { getActiveYear, getSeasons } from '@/lib/services/season';
 import { type AdminMode, resolveAdminMode } from '@/lib/utils/admin-mode';
 
@@ -55,7 +55,7 @@ export async function generateMetadata({
     Number.isSafeInteger(requested) && requested > 0 ? requested : await getActiveYear();
 
   try {
-    const show = await getAwardShow(abbr, season);
+    const show = await getPublicAwardShow(abbr, season);
     const name = show.name;
     return {
       title: `${name} ${season}`,
@@ -81,9 +81,9 @@ export default async function AwardShowPage({
   const season =
     Number.isSafeInteger(requested) && requested > 0 ? requested : await getActiveYear();
 
-  let show: Awaited<ReturnType<typeof getAwardShow>>;
+  let show: Awaited<ReturnType<typeof getPublicAwardShow>>;
   try {
-    show = await getAwardShow(abbr, season);
+    show = await getPublicAwardShow(abbr, season);
   } catch (error) {
     if (error instanceof NotFoundError) notFound();
     throw error;

@@ -1,3 +1,4 @@
+import { cachedFromDb } from '@/lib/external/cache';
 import { awardRepository } from '@/lib/repositories/awards';
 import { draftRepository } from '@/lib/repositories/drafts';
 import { eventRepository } from '@/lib/repositories/events';
@@ -64,7 +65,13 @@ function hasBegun(moments: readonly Moment[]): boolean {
  * season before, with `offSeason`, because October's reader wants the season
  * that just finished, not twelve undated rows.
  */
-export async function getSeasonView(requestedYear: number | null): Promise<SeasonView> {
+export function getSeasonView(requestedYear: number | null): Promise<SeasonView> {
+  return cachedFromDb(`season-view:${requestedYear ?? 'active'}`, () =>
+    readSeasonView(requestedYear),
+  );
+}
+
+async function readSeasonView(requestedYear: number | null): Promise<SeasonView> {
   const activeYear = await getActiveYear();
   let year = requestedYear ?? activeYear;
   let moments = await getSeasonMoments(year);
