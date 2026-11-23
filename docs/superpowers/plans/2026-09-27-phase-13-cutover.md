@@ -249,6 +249,8 @@ Before starting, re-export the shell block in Conventions. Confirm `git rev-pars
   heroku ps:scale <each non-web type from before.txt>=0 -a cinemadraft     # if S6 flagged any
   ```
 
+  🔴 **Then disable the Heroku Scheduler job** (Heroku → cinemadraft → Resources → Heroku Scheduler). It runs `node tasks/clearLiveEvents.js`, which writes `nomActive`/`awardsActive = false`, and maintenance mode does not stop it. Found by S6 on 2026-11-23. Left on, it moves C1 between the freeze and the dump.
+
   **Check (AGENT):** `curl -s -o /dev/null -w '%{http_code}\n' https://cinemadraft.com/` returns `503`. Run **C1** twice, two minutes apart; the two readings must be equal. Save them.
   **Red:** a `200` means maintenance is not on. A moving counter means something is still writing. Find it with `heroku pg:ps -a cinemadraft`; if it is the web dyno, `heroku ps:scale web=0 -a cinemadraft`. Re-run C1.
   **Rollback (R1):** `heroku maintenance:off -a cinemadraft`, then restore the formation recorded in `before.txt`.
@@ -292,6 +294,16 @@ Before starting, re-export the shell block in Conventions. Confirm `git rev-pars
   ```bash
   "$PSQL" "$NEON_DIRECT" -Atc "select image from events order by 1" | while read -r u; do curl -s -o /dev/null -w "%{http_code} $u\n" "$u"; done
   ```
+
+  🔴 **Then purge the Runtime Cache** (added 2026-11-23, PR #21). Public reads are cached under the tag `db` and purged by the app's Prisma write hook, but `pg_restore` writes outside the app, so without this the public pages serve staging-era data for up to an hour. `/api/revalidate` expires the tag:
+
+  ```bash
+  S="$(grep -m1 '^REVALIDATE_SECRET=' "$REPO/.env.local" | cut -d= -f2-)"
+  curl -s -X POST https://next.cinemadraft.com/api/revalidate -H 'content-type: application/json' \
+    -d "{\"secret\":\"$S\",\"abbreviation\":\"oscars\"}"
+  ```
+
+  **Green:** `{"revalidated":[...]}`.
 
 - [ ] **S18–S20 · (Folded into S17 on 2026-09-27.)** Normalize, migrate and the logo URLs are steps 3–5 of the script.
 
@@ -341,7 +353,7 @@ Before starting, re-export the shell block in Conventions. Confirm `git rev-pars
 
   **Go:** everything green. **No-go:** fix it forward if that fits the budget, otherwise take R1. Heroku has been frozen since S13 and has lost nothing.
 
-- [ ] **S25 · OWNER — Move the apex (T4). ⟵ POINT OF NO RETURN.** At the DNS host, set `cinemadraft.com` and `www` to the values Vercel → Domains shows for this project (historically `A 76.76.21.21` and `CNAME cname.vercel-dns.com`). Leave MX, TXT and Clerk's records untouched. Note the time in UTC as `$GOLIVE`.
+- [ ] **S25 · OWNER — Move the apex (T4). ⟵ POINT OF NO RETURN.** At the DNS host, set `cinemadraft.com` and `www` to the values Vercel → Domains shows for this project. As of 2026-11-23, `vercel domains verify cinemadraft.com` asks for `CNAME @ 6eb76f67e413b68d.vercel-dns-017.com` with **Proxy: Disabled** (Cloudflare flattens the apex CNAME). Historically it was `A 76.76.21.21` and `CNAME cname.vercel-dns.com`. Do not use Vercel's "Domain Connect" auto-configure link before this step: it moves the apex immediately. Leave MX, TXT and Clerk's records untouched. Note the time in UTC as `$GOLIVE`.
   **Check (AGENT):**
 
   ```bash
