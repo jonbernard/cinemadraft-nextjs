@@ -1,8 +1,9 @@
-import { availableYearRepository } from '@/lib/repositories/available-years';
+import { cachedFromDb } from '@/lib/external/cache';
 import { eventRepository } from '@/lib/repositories/events';
 import { movieRepository } from '@/lib/repositories/movies';
 import { nominationRepository } from '@/lib/repositories/nominations';
 import { ledgerForMovies } from './scoring';
+import { getSeasons } from './season';
 
 /** One award show, as a column of the grid. */
 export type LeaderboardEvent = {
@@ -41,7 +42,11 @@ export type Leaderboard = {
  * per award inline, and it keeps this grid unable to disagree with any other
  * total in the app.
  */
-export async function getLeaderboard(year: number): Promise<Leaderboard> {
+export function getLeaderboard(year: number): Promise<Leaderboard> {
+  return cachedFromDb(`leaderboard:${year}`, () => readLeaderboard(year));
+}
+
+async function readLeaderboard(year: number): Promise<Leaderboard> {
   const nominations = await nominationRepository.findByYear(year);
   const movieIds = [...new Set(nominations.map((nomination) => nomination.movieId))];
   if (movieIds.length === 0) return { year, events: [], rows: [] };
@@ -117,6 +122,6 @@ export async function getLeaderboard(year: number): Promise<Leaderboard> {
  * directly on the page: the page assembles no data of its own, it only
  * decides layout.
  */
-export async function availableSeasons(): Promise<number[]> {
-  return availableYearRepository.listYears();
+export function availableSeasons(): Promise<number[]> {
+  return getSeasons();
 }

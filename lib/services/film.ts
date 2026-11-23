@@ -1,3 +1,4 @@
+import { cachedFromDb } from '@/lib/external/cache';
 import { fetchOmdb, type OmdbFacts } from '@/lib/external/omdb';
 import {
   type FilmCastMember,
@@ -186,14 +187,17 @@ export async function loadFilmPage(tmdbId: string): Promise<FilmPage | null> {
   const film = await fetchTmdbFilmPage(tmdbId);
   if (!film) return null;
 
-  const [facts, local] = await Promise.all([
+  const [facts, scoring] = await Promise.all([
     // OMDb is keyed on the imdb id. Asking without one is a guaranteed miss
     // against a 1,000-request daily quota shared by the whole app.
     film.imdbId ? fetchOmdb(film.imdbId) : Promise.resolve(null),
-    movieRepository.findByTmdbId(tmdbId),
+    // TMDB and OMDb carry caches of their own; this is the database half, and
+    // the same for every reader.
+    cachedFromDb(`film-scoring:${tmdbId}`, async () => {
+      const local = await movieRepository.findByTmdbId(tmdbId);
+      return local ? scoringFor(local.id) : null;
+    }),
   ]);
-
-  const scoring = local ? await scoringFor(local.id) : null;
 
   return {
     tmdbId: film.tmdbId,

@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { dbQueryEvents } from '@/lib/db';
 
 /**
  * Count the database round trips a piece of work makes.
@@ -51,7 +51,7 @@ function subscribeOnce(): void {
   subscribed = true;
   // The generated client types `$on` per log level; only the fact of the event
   // is needed here, not its payload.
-  const emitter = db as unknown as {
+  const emitter = dbQueryEvents as unknown as {
     $on: (event: 'query', cb: () => void) => void;
   };
   emitter.$on('query', () => {

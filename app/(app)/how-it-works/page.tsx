@@ -4,6 +4,7 @@ import { ScoringTable } from '@/components/awards/ScoringTable';
 import { WorkedExample } from '@/components/awards/WorkedExample';
 import { SectionHead } from '@/components/ui/SectionHead';
 import { PITCH, PITCH_HEADLINE } from '@/lib/copy';
+import { cachedFromDb } from '@/lib/external/cache';
 import { pointRepository } from '@/lib/repositories/points';
 import { canonical } from '@/lib/seo';
 import {
@@ -81,7 +82,7 @@ const BAND = '-mx-4 px-4 sm:-mx-6 sm:px-6 xl:-mx-8 xl:px-8';
  */
 export default async function HowItWorksPage() {
   const [points, example, groups, phases, facts] = await Promise.all([
-    pointRepository.findAll(),
+    cachedFromDb('points', () => pointRepository.findAll()),
     getWorkedExample(),
     getShowGroups(),
     getSeasonPhases(),
