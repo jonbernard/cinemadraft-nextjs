@@ -1,4 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { db } from '@/lib/db';
 import { clearCacheForTests } from '@/lib/external/cache';
@@ -14,9 +23,26 @@ import { availableSeasons, getLeaderboard } from './leaderboard';
  * fix: once warm, the signed-out home page costs nothing, and any write makes
  * the next read fresh.
  *
- * Runs on CI's seeded database as well as the restored one — every assertion
- * is about query counts, not rows.
+ * Runs on CI's empty database as well as the restored one — every assertion
+ * is about query counts, not rows. 🔴 CI runs unit tests before
+ * `seed-e2e.mjs`, so there is no season yet and `getActiveYear` throws; seat
+ * a scratch one then, and remove it afterwards (the start-next-season test's
+ * fix, 0b9728f).
  */
+const SCRATCH_YEAR = 2979;
+let scratch = false;
+
+beforeAll(async () => {
+  const active = await db.availableYear.findFirst({ where: { isActive: true } });
+  if (active?.year == null) {
+    await db.availableYear.create({ data: { year: SCRATCH_YEAR, isActive: true } });
+    scratch = true;
+  }
+});
+
+afterAll(async () => {
+  if (scratch) await db.availableYear.deleteMany({ where: { year: SCRATCH_YEAR } });
+});
 
 /** Exactly what `app/(app)/page.tsx` reads for a signed-out visitor. */
 async function signedOutHome() {
