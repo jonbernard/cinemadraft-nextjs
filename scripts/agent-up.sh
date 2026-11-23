@@ -101,8 +101,11 @@ DB_URL="postgresql://cinemadraft:local@localhost:${PG_PORT}/cinemadraft"
 # Running migrations here rather than re-capturing the baseline on every schema
 # change is what makes the baseline a DATA fixture instead of a data-and-schema
 # one, so it only has to be refreshed when the ROWS should change.
+# 🔴 From the WORKTREE, not $REPO: the main checkout's branch can lag the base
+# this worktree was cut from, and then the agent's database is missing the
+# base's newest migrations (hit on 2026-09-28: no event_dates).
 say "migrate    bringing the schema up to date"
-( cd "$REPO" && DATABASE_URL="$DB_URL" npx prisma migrate deploy >/dev/null 2>&1 ) || {
+( cd "$WT" && DATABASE_URL="$DB_URL" npx prisma migrate deploy >/dev/null 2>&1 ) || {
   say "🔴 migrate deploy failed against $PG_PORT — the agent's schema is behind"
   exit 1
 }
