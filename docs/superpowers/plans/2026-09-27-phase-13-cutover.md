@@ -249,7 +249,7 @@ Before starting, re-export the shell block in Conventions. Confirm `git rev-pars
   heroku ps:scale <each non-web type from before.txt>=0 -a cinemadraft     # if S6 flagged any
   ```
 
-  🔴 **Then disable the Heroku Scheduler job** (Heroku → cinemadraft → Resources → Heroku Scheduler). It runs `node tasks/clearLiveEvents.js`, which writes `nomActive`/`awardsActive = false`, and maintenance mode does not stop it. Found by S6 on 2026-11-23. Left on, it moves C1 between the freeze and the dump.
+  🔴 **Confirm the Heroku Scheduler lists no jobs** (Heroku → cinemadraft → Resources → Heroku Scheduler). It used to run `node tasks/clearLiveEvents.js`, which writes `nomActive`/`awardsActive = false`, and maintenance mode does not stop a scheduled job. The owner deleted it on 2026-11-23. If a job is back, delete it here; left on, it moves C1 between the freeze and the dump.
 
   **Check (AGENT):** `curl -s -o /dev/null -w '%{http_code}\n' https://cinemadraft.com/` returns `503`. Run **C1** twice, two minutes apart; the two readings must be equal. Save them.
   **Red:** a `200` means maintenance is not on. A moving counter means something is still writing. Find it with `heroku pg:ps -a cinemadraft`; if it is the web dyno, `heroku ps:scale web=0 -a cinemadraft`. Re-run C1.
